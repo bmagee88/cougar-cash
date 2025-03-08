@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "jsx": "react",
+    "baseUrl": "src",
+    "esModuleInterop": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "noEmit": false
+  }
+}
