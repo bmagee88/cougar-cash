@@ -1,10 +1,11 @@
 {
   "compilerOptions": {
-    "jsx": "react",
+    "jsx": "react-jsx",
     "baseUrl": "src",
     "esModuleInterop": true,
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": false
-  }
+  },
+  "exclude": ["node_modules", "build"]
 }
