@@ -1,7 +1,5 @@
 import { Autocomplete, Box, Stack, TextField } from "@mui/material";
-import { List, ListItem, ListItemText, ListItemIcon, Divider } from "@mui/material";
 import React, { useState } from "react";
-import { Inbox, Star } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 import { RootState } from "store/store";
 import ListItemDisplay from "./ListItemDisplay";
@@ -80,22 +78,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ startingState }) => {
           />
         )}
       />
-      {/* <List>
-        <ListItem>
-          <ListItemIcon>
-            <Inbox />
-          </ListItemIcon>
-          <ListItemText primary='Inbox' />
-        </ListItem>
-        <Divider />
-        <ListItem>
-          <ListItemIcon>
-            <Star />
-          </ListItemIcon>
-          <ListItemText primary='Starred' />
-        </ListItem>
-        <Divider />
-      </List> */}
+
       <Box sx={{ height: "200px", overflowY: "auto" }}>
         {respectStudents.map((student) => {
           return (

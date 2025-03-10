@@ -4,9 +4,6 @@ import React from "react";
 import RespectDisplay from "./RespectDisplay";
 import { Student } from "store/student/studentsSlice";
 import { Paper } from "@mui/material";
-import RandomStudentButton from "./RandomStudentButton";
-import { useSelector } from "react-redux";
-import { RootState } from "store/store";
 
 interface PillarDisplayProps {
   title: string;

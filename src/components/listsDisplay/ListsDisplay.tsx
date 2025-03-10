@@ -1,15 +1,11 @@
-import { Box, Stack, Typography } from "@mui/material";
+import { Stack } from "@mui/material";
 import React from "react";
-import RespectDisplay from "./RespectDisplay";
-import ResponsibleDisplay from "./ResponsibleDisplay";
-import OnTaskDisplay from "./OnTaskDisplay";
-import AchieveDisplay from "./AchieveDisplay";
 import PillarDisplay from "./PillarDisplay";
 import { useSelector } from "react-redux";
 import { RootState } from "store/store";
 import RandomStudentButton from "./RandomStudentButton";
 
-const ListsDisplay = () => {
+const ListsDisplay: React.FC = () => {
   const masterStudentList = useSelector((state: RootState) => state.students.students);
   console.log("masterStudentList: ", masterStudentList);
   const pillarOptions = [

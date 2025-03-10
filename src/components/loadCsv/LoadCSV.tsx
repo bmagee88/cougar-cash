@@ -24,7 +24,7 @@ const CSVUploader: React.FC = () => {
       setData(JSON.parse(savedData));
       dispatch(setStudents(JSON.parse(savedData)));
     }
-  }, []);
+  }, [dispatch]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -51,14 +51,14 @@ const CSVUploader: React.FC = () => {
     });
   };
 
-  const handleBalanceChange = (id: number, newBalance: number) => {
-    const updatedData = data.map((entry) =>
-      entry.id === id ? { ...entry, balance: newBalance } : entry
-    );
-    setData(updatedData);
-    dispatch(setStudents(updatedData));
-    localStorage.setItem("csvData", JSON.stringify(updatedData));
-  };
+  // const handleBalanceChange = (id: number, newBalance: number) => {
+  //   const updatedData = data.map((entry) =>
+  //     entry.id === id ? { ...entry, balance: newBalance } : entry
+  //   );
+  //   setData(updatedData);
+  //   dispatch(setStudents(updatedData));
+  //   localStorage.setItem("csvData", JSON.stringify(updatedData));
+  // };
 
   const handleDownloadCSV = () => {
     const csv = Papa.unparse(data);

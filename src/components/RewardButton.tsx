@@ -1,7 +1,7 @@
-import { Button, TextField } from "@mui/material";
+import { Button } from "@mui/material";
 import React from "react";
 
-const RewardButton = () => {
+const RewardButton: React.FC = () => {
   return <Button>reward</Button>;
 };
 
