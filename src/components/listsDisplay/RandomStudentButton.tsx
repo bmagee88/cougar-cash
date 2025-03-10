@@ -33,7 +33,13 @@ const RandomStudentButton: React.FC<RandomStudentButtonProps> = ({ list }) => {
     setModifiedStudentList(newModifiedStudentList);
     console.log("newmodstudentlist: ", newModifiedStudentList);
   };
-  return <Button onClick={onClick}>Select Random Student</Button>;
+  return (
+    <Button
+      variant={"outlined"}
+      onClick={onClick}>
+      Select Random Student
+    </Button>
+  );
 };
 
 export default RandomStudentButton;

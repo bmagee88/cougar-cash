@@ -1,4 +1,4 @@
-import { Grid, Stack, Typography } from "@mui/material";
+import { Grid, Paper, Stack, Typography } from "@mui/material";
 import Grid2 from "@mui/material/Unstable_Grid2"; // Make sure you're importing from the right location
 
 import React from "react";
@@ -24,19 +24,29 @@ const CashBalancesDisplay: React.FC = () => {
           justifyContent: "flex-start",
         }}>
         {masterStudentList.map((student: Student) => (
-          <Stack
-            direction={"row"}
-            key={student.name}
-            sx={{
-              width: "150px", // Fixed width for each cell
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "8px",
-              border: "1px solid lightgray",
-            }}>
-            <Typography variant='body1'>{student.name}</Typography>
-            <Typography variant='body2'>{student.balance}</Typography>
-          </Stack>
+          <Paper key={student.name}>
+            <Stack
+              direction={"row"}
+              sx={{
+                width: "200px", // Fixed width for each cell
+                display: "flex",
+                justifyContent: "space-between",
+                padding: "8px",
+                border: "1px solid lightgray",
+              }}>
+              <Typography variant='body1'>
+                {student.name}
+                <Typography
+                  variant='body2'
+                  color='grey'
+                  sx={{ marginTop: "-5px" }}>
+                  {student.id}
+                </Typography>
+              </Typography>
+
+              <Typography variant='body2'>{student.balance}</Typography>
+            </Stack>
+          </Paper>
         ))}
       </Stack>
     </Stack>

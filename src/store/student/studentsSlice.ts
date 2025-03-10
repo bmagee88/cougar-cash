@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 export interface Student {
+  id: number;
+  label: string;
   name: string;
   balance: number;
 }

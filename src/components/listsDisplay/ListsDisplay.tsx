@@ -25,7 +25,7 @@ const ListsDisplay = () => {
       {pillarOptions.map((pillar) => {
         const { title, startingState } = pillar;
         return (
-          <Stack>
+          <Stack key={pillar.title}>
             <PillarDisplay
               title={title}
               startingState={startingState}
