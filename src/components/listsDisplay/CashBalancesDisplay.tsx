@@ -1,6 +1,4 @@
 import { Grid, Paper, Stack, Typography } from "@mui/material";
-import Grid2 from "@mui/material/Unstable_Grid2"; // Make sure you're importing from the right location
-
 import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "store/store";
