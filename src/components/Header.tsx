@@ -25,7 +25,12 @@ const Header: React.FC<HeaderProps> = () => {
         direction={"row"}
         gap={"2rem"}>
         {nav_items.map((item) => {
-          return <NavItemDisplay data={item} />;
+          return (
+            <NavItemDisplay
+              key={item.title}
+              data={item}
+            />
+          );
         })}
       </Stack>
     </Stack>

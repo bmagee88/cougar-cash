@@ -2,16 +2,15 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import React from "react";
 import RespectDisplay from "./RespectDisplay";
-import { Student } from "store/student/studentsSlice";
 import { Paper } from "@mui/material";
 
 interface PillarDisplayProps {
   title: string;
-  startingState: Student[];
 }
 
-const PillarDisplay: React.FC<PillarDisplayProps> = ({ title, startingState }) => {
-  console.log("starting state: pillar display:", startingState, title);
+const PillarDisplay: React.FC<PillarDisplayProps> = ({ title }) => {
+  console.log("starting state: pillar display:", title);
+
   return (
     <Stack>
       <Typography
@@ -20,7 +19,7 @@ const PillarDisplay: React.FC<PillarDisplayProps> = ({ title, startingState }) =
         {title}
       </Typography>
       <Paper sx={{ padding: "5px" }}>
-        <RespectDisplay startingState={startingState} />
+        <RespectDisplay title={title} />
       </Paper>
     </Stack>
   );

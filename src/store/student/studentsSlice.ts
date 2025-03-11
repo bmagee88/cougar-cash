@@ -7,7 +7,7 @@ export interface Student {
   balance: number;
 }
 
-interface StudentState {
+export interface StudentState {
   students: Student[] | [];
   respect: Student[] | null;
   responsible: Student[] | null;
@@ -47,7 +47,9 @@ const studentsSlice = createSlice({
     // Add student to a category if they are not already present
     addRespect: (state, action: { payload: Student }) => {
       if (!state.respect.some((student) => student.id === action.payload.id)) {
-        state.respect.push(action.payload);
+        state.respect = [...state.respect, action.payload].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
       }
     },
     addResponsible: (state, action: { payload: Student }) => {
@@ -68,7 +70,9 @@ const studentsSlice = createSlice({
 
     // Remove student from a category
     rmRespect: (state, action: { payload: number }) => {
-      state.respect = state.respect.filter((student) => student.id !== action.payload);
+      state.respect = state.respect
+        .filter((student) => student.id !== action.payload)
+        .sort((a, b) => a.name.localeCompare(b.name));
     },
     rmResponsible: (state, action: { payload: number }) => {
       state.responsible = state.responsible.filter((student) => student.id !== action.payload);
@@ -82,7 +86,20 @@ const studentsSlice = createSlice({
   },
 });
 
-export const { setStudents, setRespect, setResponsible, setOnTask, setAchieve } =
-  studentsSlice.actions;
+export const {
+  setStudents,
+  setRespect,
+  setResponsible,
+  setOnTask,
+  setAchieve,
+  addAchieve,
+  addOnTask,
+  addRespect,
+  addResponsible,
+  rmAchieve,
+  rmOnTask,
+  rmRespect,
+  rmResponsible,
+} = studentsSlice.actions;
 
 export default studentsSlice.reducer;

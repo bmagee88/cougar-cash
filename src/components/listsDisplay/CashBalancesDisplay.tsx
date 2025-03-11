@@ -32,15 +32,15 @@ const CashBalancesDisplay: React.FC = () => {
                 padding: "8px",
                 border: "1px solid lightgray",
               }}>
-              <Typography variant='body1'>
-                {student.name}
+              <Stack>
+                <Typography variant='body1'>{student.name}</Typography>
                 <Typography
                   variant='body2'
                   color='grey'
                   sx={{ marginTop: "-5px" }}>
                   {student.id}
                 </Typography>
-              </Typography>
+              </Stack>
 
               <Typography variant='body2'>{student.balance}</Typography>
             </Stack>
