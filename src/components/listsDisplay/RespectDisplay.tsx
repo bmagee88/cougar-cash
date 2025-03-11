@@ -95,16 +95,14 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         size='small'
         onChange={(event, newValue) => setValue(newValue)}
         options={inputValue ? students : []}
-        inputValue={inputValue}
-        onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
+        inputValue={inputValue.replace("\n", "")}
+        onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
         onKeyDown={handleKeyDown}
         open={Boolean(inputValue)}
         getOptionLabel={(option) => option.name || ""}
         renderInput={(params) => (
           <TextField
             {...params}
-            multiline
-            rows={1}
             label=''
             InputProps={{
               ...params.InputProps,
