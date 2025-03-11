@@ -26,9 +26,10 @@ const CashBalancesDisplay: React.FC = () => {
             <Stack
               direction={"row"}
               sx={{
-                width: "200px", // Fixed width for each cell
+                minWidth: "100px", // Fixed width for each cell
                 display: "flex",
                 justifyContent: "space-between",
+                gap: ".5rem",
                 padding: "8px",
                 border: "1px solid lightgray",
               }}>
