@@ -45,7 +45,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter") {
+    if (event.key === "Enter" && (event.target as HTMLElement).nodeName !== "TEXTAREA") {
       const filteredOptions = students.filter((student: Student) =>
         student.name.toLowerCase().includes(inputValue.toLowerCase())
       );
@@ -91,6 +91,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         id={`autocomplete-${title}`}
         key={`autocomplete-${title}`}
         sx={{ width: "250px" }}
+        disableClearable
         value={value}
         size='small'
         onChange={(event, newValue) => setValue(newValue)}
