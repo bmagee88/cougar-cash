@@ -11,6 +11,7 @@ interface PillarDisplayProps {
 }
 
 const PillarDisplay: React.FC<PillarDisplayProps> = ({ title, startingState }) => {
+  console.log("starting state: pillar display:", startingState, title);
   return (
     <Stack>
       <Typography

@@ -26,7 +26,7 @@ const RandomStudentButton: React.FC<RandomStudentButtonProps> = ({ list }) => {
 
     // Remove the selected student from the modified list
     const newModifiedStudentList = modifiedStudentList.filter(
-      (student) => student.name !== selectedStudent.name
+      (student: Student) => student.name !== selectedStudent.name
     );
 
     // Update the modified list

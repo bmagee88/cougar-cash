@@ -8,8 +8,7 @@ export interface Student {
 }
 
 interface StudentState {
-  students: Student[] | null;
-  master: Student[] | null;
+  students: Student[] | [];
   respect: Student[] | null;
   responsible: Student[] | null;
   onTask: Student[] | null;
@@ -17,24 +16,73 @@ interface StudentState {
 }
 
 let initialState: StudentState = {
-  students: null,
-  master: null,
-  respect: null,
-  responsible: null,
-  onTask: null,
-  achieve: null,
+  students: [],
+  respect: [],
+  responsible: [],
+  onTask: [],
+  achieve: [],
 };
 
 const studentsSlice = createSlice({
   name: "students",
   initialState,
   reducers: {
+    // set all students to a category
     setStudents: (state, action: { payload: Student[] }) => {
       state.students = action.payload;
+    },
+    setRespect: (state, action: { payload: Student[] }) => {
+      state.respect = action.payload;
+    },
+    setResponsible: (state, action: { payload: Student[] }) => {
+      state.responsible = action.payload;
+    },
+    setOnTask: (state, action: { payload: Student[] }) => {
+      state.onTask = action.payload;
+    },
+    setAchieve: (state, action: { payload: Student[] }) => {
+      state.achieve = action.payload;
+    },
+
+    // Add student to a category if they are not already present
+    addRespect: (state, action: { payload: Student }) => {
+      if (!state.respect.some((student) => student.id === action.payload.id)) {
+        state.respect.push(action.payload);
+      }
+    },
+    addResponsible: (state, action: { payload: Student }) => {
+      if (!state.responsible.some((student) => student.id === action.payload.id)) {
+        state.responsible.push(action.payload);
+      }
+    },
+    addOnTask: (state, action: { payload: Student }) => {
+      if (!state.onTask.some((student) => student.id === action.payload.id)) {
+        state.onTask.push(action.payload);
+      }
+    },
+    addAchieve: (state, action: { payload: Student }) => {
+      if (!state.achieve.some((student) => student.id === action.payload.id)) {
+        state.achieve.push(action.payload);
+      }
+    },
+
+    // Remove student from a category
+    rmRespect: (state, action: { payload: number }) => {
+      state.respect = state.respect.filter((student) => student.id !== action.payload);
+    },
+    rmResponsible: (state, action: { payload: number }) => {
+      state.responsible = state.responsible.filter((student) => student.id !== action.payload);
+    },
+    rmOnTask: (state, action: { payload: number }) => {
+      state.onTask = state.onTask.filter((student) => student.id !== action.payload);
+    },
+    rmAchieve: (state, action: { payload: number }) => {
+      state.achieve = state.achieve.filter((student) => student.id !== action.payload);
     },
   },
 });
 
-export const { setStudents } = studentsSlice.actions;
+export const { setStudents, setRespect, setResponsible, setOnTask, setAchieve } =
+  studentsSlice.actions;
 
 export default studentsSlice.reducer;

@@ -1,5 +1,5 @@
 import { Autocomplete, Box, Stack, TextField } from "@mui/material";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "store/store";
 import ListItemDisplay from "./ListItemDisplay";
@@ -10,11 +10,19 @@ interface RespectDisplayProps {
 }
 
 const RespectDisplay: React.FC<RespectDisplayProps> = ({ startingState }) => {
+  console.log("startingState:", startingState);
   const [value, setValue] = useState(null);
   const [inputValue, setInputValue] = useState("");
   const masterStudentsList = useSelector((state: RootState) => state.students.students);
-  const [respectStudents, setRespecStudents] = useState(startingState);
+  const respectStudentsList = useSelector((state: RootState) => state.students.respect);
+  const [respectStudents, setRespecStudents] = useState<Student[]>([]);
+
+  useEffect(() => {
+    setRespecStudents(startingState);
+  }, [startingState]);
+
   console.log("students:", masterStudentsList);
+  console.log("respectStudentsList:", respectStudentsList);
   console.log("value:", value);
   console.log("respectStudents:", respectStudents);
   console.log("inputValue:", inputValue);
@@ -30,7 +38,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ startingState }) => {
 
   const handleKeyDown = (event) => {
     if (event.key === "Enter") {
-      const filteredOptions = masterStudentsList.filter((student) =>
+      const filteredOptions = masterStudentsList.filter((student: Student) =>
         student.name.toLowerCase().includes(inputValue.toLowerCase())
       );
       if (filteredOptions.length > 0) {
@@ -55,32 +63,29 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ startingState }) => {
         sx={{ width: "250px" }}
         value={value}
         size='small'
-        onChange={(event, newValue) => setValue(newValue)} // When a selection is made
+        onChange={(event, newValue) => setValue(newValue)}
         options={inputValue ? masterStudentsList : []}
-        inputValue={inputValue} // Control input value
+        inputValue={inputValue}
         onInputChange={(event, newInputValue) => setInputValue(newInputValue)}
-        onKeyDown={handleKeyDown} // Handle Enter key press
-        open={Boolean(inputValue)} // Hide dropdown when input is empty
-        // open={
-        //   inputValue.length > 0 &&
-        //   students.some((student) => student.name.toLowerCase().includes(inputValue.toLowerCase()))
-        // }
+        onKeyDown={handleKeyDown}
+        open={Boolean(inputValue)}
         getOptionLabel={(option) => option.name || ""}
-        // getOptionLabel={(option) => option.label} // Specify the field to display in the dropdown
         renderInput={(params) => (
           <TextField
             {...params}
             label=''
             InputProps={{
               ...params.InputProps,
-              endAdornment: null, // Remove the arrow icon from the input field
+              endAdornment: null,
             }}
           />
         )}
       />
 
-      <Box sx={{ height: "200px", overflowY: "auto" }}>
+      <Box sx={{ height: "200px", overflowY: "scroll" }}>
         {respectStudents.map((student) => {
+          console.log("in list");
+          console.log("list student::", student);
           return (
             <ListItemDisplay
               key={student.name}
