@@ -91,10 +91,9 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         id={`autocomplete-${title}`}
         key={`autocomplete-${title}`}
         sx={{ width: "250px" }}
-        disableClearable
-        disableCloseOnSelect
         value={value}
         size='small'
+        disablePortal
         onChange={(event, newValue) => setValue(newValue)}
         options={inputValue ? students : []}
         inputValue={inputValue}
