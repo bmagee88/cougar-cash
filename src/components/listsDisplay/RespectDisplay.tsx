@@ -92,6 +92,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         key={`autocomplete-${title}`}
         sx={{ width: "250px" }}
         disableClearable
+        disableCloseOnSelect
         value={value}
         size='small'
         onChange={(event, newValue) => setValue(newValue)}
@@ -104,6 +105,8 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         renderInput={(params) => (
           <TextField
             {...params}
+            autoComplete='off'
+            inputMode='none'
             label=''
             InputProps={{
               ...params.InputProps,
