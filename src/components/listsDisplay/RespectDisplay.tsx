@@ -93,7 +93,6 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         sx={{ width: "250px" }}
         value={value}
         size='small'
-        disablePortal
         onChange={(event, newValue) => setValue(newValue)}
         options={inputValue ? students : []}
         inputValue={inputValue}
@@ -104,8 +103,8 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         renderInput={(params) => (
           <TextField
             {...params}
-            autoComplete='off'
-            inputMode='none'
+            multiline
+            rows={1}
             label=''
             InputProps={{
               ...params.InputProps,
