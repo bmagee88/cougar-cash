@@ -12,7 +12,7 @@ const PillarDisplay: React.FC<PillarDisplayProps> = ({ title }) => {
   console.log("starting state: pillar display:", title);
 
   return (
-    <Stack>
+    <Stack alignItems={"center"}>
       <Typography
         fontSize={"large"}
         fontWeight={"bold"}>

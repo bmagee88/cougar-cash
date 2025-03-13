@@ -11,9 +11,9 @@ const ListsDisplay: React.FC = () => {
   console.log("masterStudentList: ", masterStudentList);
   const pillarOptions = [
     { title: "Respect" },
-    { title: "Responsible" },
     { title: "On Task" },
     { title: "Achieve" },
+    { title: "Responsible" },
   ];
 
   const dispatch = useDispatch();
