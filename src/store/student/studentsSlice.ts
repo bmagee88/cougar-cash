@@ -1,4 +1,4 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface Student {
   id: number;
@@ -54,17 +54,23 @@ const studentsSlice = createSlice({
     },
     addResponsible: (state, action: { payload: Student }) => {
       if (!state.responsible.some((student) => student.id === action.payload.id)) {
-        state.responsible.push(action.payload);
+        state.responsible = [...state.responsible, action.payload].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
       }
     },
     addOnTask: (state, action: { payload: Student }) => {
       if (!state.onTask.some((student) => student.id === action.payload.id)) {
-        state.onTask.push(action.payload);
+        state.onTask = [...state.onTask, action.payload].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
       }
     },
     addAchieve: (state, action: { payload: Student }) => {
       if (!state.achieve.some((student) => student.id === action.payload.id)) {
-        state.achieve.push(action.payload);
+        state.achieve = [...state.achieve, action.payload].sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
       }
     },
 
@@ -83,6 +89,24 @@ const studentsSlice = createSlice({
     rmAchieve: (state, action: { payload: number }) => {
       state.achieve = state.achieve.filter((student) => student.id !== action.payload);
     },
+
+    updateBalances: (state, action: PayloadAction<Student[]>) => {
+      const updatedStudents = action.payload;
+      const updateList = (list: Student[]) =>
+        list.map((student) => {
+          const updatedStudent = updatedStudents.find((s) => s.id === student.id);
+          return updatedStudent ? { ...student, balance: updatedStudent.balance } : student;
+        });
+
+      state.students = updateList(state.students);
+      // state.respect = updateList(state.respect);
+      // state.responsible = updateList(state.responsible);
+      // state.onTask = updateList(state.onTask);
+      // state.achieve = updateList(state.achieve);
+
+      // Save updated state to local storage
+      localStorage.setItem("students", JSON.stringify(state));
+    },
   },
 });
 
@@ -100,6 +124,7 @@ export const {
   rmOnTask,
   rmRespect,
   rmResponsible,
+  updateBalances,
 } = studentsSlice.actions;
 
 export default studentsSlice.reducer;

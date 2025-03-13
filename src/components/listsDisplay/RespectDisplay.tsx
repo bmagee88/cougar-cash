@@ -45,7 +45,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" && (event.target as HTMLElement).nodeName !== "TEXTAREA") {
+    if (event.key === "Enter") {
       const filteredOptions = students.filter((student: Student) =>
         student.name.toLowerCase().includes(inputValue.toLowerCase())
       );
@@ -93,7 +93,11 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
         sx={{ width: "250px" }}
         value={value}
         size='small'
-        onChange={(event, newValue) => setValue(newValue)}
+        onChange={(event, newValue) => {
+          console.log("Selected:", newValue);
+          setValue(newValue);
+          // i think i need to dispatch here
+        }}
         options={inputValue ? students : []}
         inputValue={inputValue.replace("\n", "")}
         onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
