@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Papa from "papaparse";
 import Stack from "@mui/material/Stack";
-import { Box, Button } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { setStudents } from "store/student/studentsSlice";
 import { RootState } from "store/store";
@@ -86,43 +86,27 @@ const CSVUploader: React.FC = () => {
   };
 
   return (
-    <Box sx={{ marginTop: "1rem", marginLeft: "1rem" }}>
-      <Stack direction='row'>
-        <Stack>
-          <h2>Upload CSV File</h2>
-
+    <Box sx={{ margin: "1rem" }}>
+      <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>Roster</Typography>
+      <Stack
+        direction='row'
+        gap={"1rem"}>
+        <Button
+          variant='contained'
+          component='label'>
+          Upload
           <input
             type='file'
             accept='.csv'
             onChange={handleFileUpload}
+            hidden
           />
-        </Stack>
-        {/* {data.length > 0 && (
-          <table border={1}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.map((entry) => (
-                <tr key={entry.id}>
-                  <td>{entry.id}</td>
-                  <td>{entry.name}</td>
-                  <td>{entry.balance}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )} */}
+        </Button>
         <Button
           variant='contained'
           color='primary'
-          sx={{ marginTop: "20px" }}
           onClick={handleDownloadCSV}>
-          Download Updated CSV
+          Download
         </Button>
       </Stack>
     </Box>

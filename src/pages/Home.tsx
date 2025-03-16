@@ -3,9 +3,7 @@ import { Divider, Stack } from "@mui/material";
 import CashBalanceDisplay from "../components/listsDisplay/CashBalancesDisplay";
 import ListsDisplay from "components/listsDisplay/ListsDisplay";
 import RewardButton from "components/RewardButton";
-// import { useDispatch } from "react-redux";
-// import { setStudents, Student } from "store/student/studentsSlice";
-import LoadCSV from "components/loadCsv/LoadCSV";
+import DataAccordion from "components/DataAccordion";
 
 const Home: React.FC = () => {
   // const testStudents: Student[] = [
@@ -23,7 +21,8 @@ const Home: React.FC = () => {
   // ];
   return (
     <Stack gap={"1rem"}>
-      <LoadCSV />
+      <DataAccordion />
+
       <Divider />
       <CashBalanceDisplay />
       <Divider />
