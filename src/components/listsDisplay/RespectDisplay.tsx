@@ -25,7 +25,12 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
   const [value, setValue] = useState<Student | null>(null);
   const [inputValue, setInputValue] = useState("");
   const studentState: StudentState = useSelector((state: RootState) => state.students);
-  const { students, respect, responsible, onTask, achieve } = studentState;
+  const activeRosterTeacher: string = useSelector(
+    (state: RootState) => state.students.activeRoster
+  );
+  const { students, respect = [], responsible = [], onTask = [], achieve = [] } = studentState;
+
+  const activeRosterStudents = students[activeRosterTeacher] || [];
 
   const handleRemove = (studentId: number) => {
     switch (title) {
@@ -46,7 +51,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
-      const filteredOptions = students.filter((student: Student) =>
+      const filteredOptions = activeRosterStudents.filter((student: Student) =>
         student.name.toLowerCase().includes(inputValue.toLowerCase())
       );
       if (filteredOptions.length > 0) {
@@ -98,7 +103,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
           setValue(newValue);
           // i think i need to dispatch here
         }}
-        options={inputValue ? students : []}
+        options={inputValue ? students[activeRosterTeacher] : []}
         inputValue={inputValue.replace("\n", "")}
         onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
         onKeyDown={handleKeyDown}

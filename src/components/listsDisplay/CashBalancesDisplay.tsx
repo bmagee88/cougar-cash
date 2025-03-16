@@ -5,7 +5,9 @@ import { RootState } from "store/store";
 import { Student } from "store/student/studentsSlice";
 
 const CashBalancesDisplay: React.FC = () => {
+  const activeRosterTeacher = useSelector((state: RootState) => state.students.activeRoster);
   const masterStudentList = useSelector((state: RootState) => state.students.students); // Get the list from Redux store
+  const activeRosterStudents = masterStudentList[activeRosterTeacher] || [];
 
   return (
     <Stack sx={{ marginX: "10px" }}>
@@ -21,7 +23,7 @@ const CashBalancesDisplay: React.FC = () => {
           gap: 2, // Space between items
           justifyContent: "flex-start",
         }}>
-        {masterStudentList.map((student: Student) => (
+        {activeRosterStudents.map((student: Student) => (
           <Paper key={student.name}>
             <Stack
               direction={"row"}

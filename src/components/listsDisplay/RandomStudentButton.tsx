@@ -1,7 +1,5 @@
 import { Button } from "@mui/material";
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "store/store";
 import { Student } from "store/student/studentsSlice";
 
 interface RandomStudentButtonProps {
@@ -10,8 +8,7 @@ interface RandomStudentButtonProps {
 }
 
 const RandomStudentButton: React.FC<RandomStudentButtonProps> = ({ list }) => {
-  const masterStudentList = useSelector((state: RootState) => state.students.students);
-  const [modifiedStudentList, setModifiedStudentList] = useState(masterStudentList);
+  const [modifiedStudentList, setModifiedStudentList] = useState(list);
   console.log("modifiedStudentList: onRerender: ", modifiedStudentList);
   const onClick = () => {
     // Pick a random student from the modified list

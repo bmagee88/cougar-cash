@@ -8,19 +8,21 @@ export interface Student {
 }
 
 export interface StudentState {
-  students: Student[] | [];
+  students: { [classRoster: string]: Student[] };
   respect: Student[] | null;
   responsible: Student[] | null;
   onTask: Student[] | null;
   achieve: Student[] | null;
+  activeRoster: string;
 }
 
 let initialState: StudentState = {
-  students: [],
+  students: {},
   respect: [],
   responsible: [],
   onTask: [],
   achieve: [],
+  activeRoster: "",
 };
 
 const studentsSlice = createSlice({
@@ -28,7 +30,7 @@ const studentsSlice = createSlice({
   initialState,
   reducers: {
     // set all students to a category
-    setStudents: (state, action: { payload: Student[] }) => {
+    setStudents: (state, action: { payload: { [classRoster: string]: Student[] } }) => {
       state.students = action.payload;
     },
     setRespect: (state, action: { payload: Student[] }) => {
@@ -92,17 +94,18 @@ const studentsSlice = createSlice({
 
     updateBalances: (state, action: PayloadAction<Student[]>) => {
       const updatedStudents = action.payload;
+
+      // Function to update balances in a student list
       const updateList = (list: Student[]) =>
         list.map((student) => {
           const updatedStudent = updatedStudents.find((s) => s.id === student.id);
           return updatedStudent ? { ...student, balance: updatedStudent.balance } : student;
         });
 
-      state.students = updateList(state.students);
-      // state.respect = updateList(state.respect);
-      // state.responsible = updateList(state.responsible);
-      // state.onTask = updateList(state.onTask);
-      // state.achieve = updateList(state.achieve);
+      // Update balances for each class roster in the dictionary
+      Object.keys(state.students).forEach((classRoster) => {
+        state.students[classRoster] = updateList(state.students[classRoster]);
+      });
 
       // Save updated state to local storage
       localStorage.setItem("students", JSON.stringify(state));

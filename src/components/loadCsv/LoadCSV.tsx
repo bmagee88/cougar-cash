@@ -15,7 +15,8 @@ interface Account {
 
 const CSVUploader: React.FC = () => {
   const dispatch = useDispatch();
-  const students = useSelector((state: RootState) => state.students.students); // Get updated list
+  const students = useSelector((state: RootState) => state.students.students); // Get updated student rosters
+  const activeRoster = useSelector((state: RootState) => state.students.activeRoster); // Get active class roster
   const [data, setData] = useState<Account[]>([]);
   console.log("data", data);
 
@@ -24,22 +25,22 @@ const CSVUploader: React.FC = () => {
     const savedData = localStorage.getItem("students");
     if (savedData) {
       const parsedData = JSON.parse(savedData);
-      setData(parsedData);
+      setData(parsedData[activeRoster] || []); // Load active roster students
       dispatch(setStudents(parsedData));
     }
-  }, [dispatch]);
+  }, [dispatch, activeRoster]);
 
   // Save Redux store data to localStorage when students update
   useEffect(() => {
-    if (students.length > 0) {
+    if (Object.keys(students).length > 0) {
       localStorage.setItem("students", JSON.stringify(students));
-      setData(students); // Update local state for UI consistency
+      setData(students[activeRoster] || []); // Ensure UI updates when the active roster changes
     }
-  }, [students]);
+  }, [students, activeRoster]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !activeRoster) return;
 
     Papa.parse<Account>(file, {
       header: true,
@@ -54,9 +55,14 @@ const CSVUploader: React.FC = () => {
               typeof row.balance === "number"
           )
           .sort((a, b) => a.name.localeCompare(b.name)); // Sorting alphabetically;
-        // setData(validData);
-        dispatch(setStudents(validData));
-        // localStorage.setItem("students", JSON.stringify(validData));
+
+        // Merge into existing students, replacing only the active roster
+        const updatedStudents = {
+          ...students,
+          [activeRoster]: validData, // Only update active roster
+        };
+
+        dispatch(setStudents(updatedStudents));
       },
       error: (error) => {
         console.error("CSV parsing error:", error);
@@ -64,22 +70,15 @@ const CSVUploader: React.FC = () => {
     });
   };
 
-  // const handleBalanceChange = (id: number, newBalance: number) => {
-  //   const updatedData = data.map((entry) =>
-  //     entry.id === id ? { ...entry, balance: newBalance } : entry
-  //   );
-  //   setData(updatedData);
-  //   dispatch(setStudents(updatedData));
-  //   localStorage.setItem("csvData", JSON.stringify(updatedData));
-  // };
-
   const handleDownloadCSV = () => {
-    const csv = Papa.unparse(data);
+    if (!activeRoster || !students[activeRoster]) return;
+
+    const csv = Papa.unparse(students[activeRoster]);
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "students.csv");
+    link.setAttribute("download", `${activeRoster}_students.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -87,7 +86,9 @@ const CSVUploader: React.FC = () => {
 
   return (
     <Box sx={{ margin: "1rem" }}>
-      <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>Roster</Typography>
+      <Typography sx={{ fontWeight: "bold", fontSize: "18px" }}>
+        Roster: {activeRoster || "None Selected"}
+      </Typography>
       <Stack
         direction='row'
         gap={"1rem"}>
