@@ -23,9 +23,9 @@ const Home: React.FC = () => {
     <Stack gap={"1rem"}>
       <DataAccordion />
 
-      <Divider />
+      {/* <Divider /> */}
       <CashBalanceDisplay />
-      <Divider />
+      {/* <Divider /> */}
       <ListsDisplay />
       <Divider />
       <RewardButton />

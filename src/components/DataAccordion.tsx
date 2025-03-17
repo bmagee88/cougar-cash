@@ -14,11 +14,15 @@ const DataAccordion: React.FC = () => {
         expandIcon={<ExpandMoreIcon />}
         aria-controls='accordion-summary'
         id='accordion-summary'>
-        <Typography component='span'>{activeTeacher ? activeTeacher : "upload data"}</Typography>
+        <Typography
+          component='span'
+          fontWeight={"bold"}
+          fontSize={"large"}>
+          {activeTeacher ? activeTeacher : "upload data"}
+        </Typography>
       </AccordionSummary>
       <AccordionDetails>
         <ClassDropdown />
-        <Divider />
         <LoadCSV />
       </AccordionDetails>
     </Accordion>
