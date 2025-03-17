@@ -14,7 +14,7 @@ import {
   rmResponsible,
   Student,
   TeacherState,
-} from "store/student/studentsSlice";
+} from "store/teacher/teacherSlice";
 
 interface RespectDisplayProps {
   title: string;

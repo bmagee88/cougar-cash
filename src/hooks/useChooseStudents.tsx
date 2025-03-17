@@ -2,7 +2,7 @@
 import { useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "../store/store";
-import { Student, updateBalances } from "store/student/studentsSlice";
+import { Student, updateBalances } from "store/teacher/teacherSlice";
 
 const useChooseStudents = () => {
   const dispatch = useDispatch();

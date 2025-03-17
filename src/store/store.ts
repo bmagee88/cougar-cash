@@ -1,13 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { combineReducers } from "redux";
-import studentsReducer from "./student/studentsSlice";
+import teacherReducer from "./teacher/teacherSlice";
 import achieveReducer from "./achieve/achieveSlice";
 import onTaskReducer from "./onTask/onTaskSlice";
 import responsibleReducer from "./responsible/responsibleSlice";
 import respectReducer from "./respect/respectSlice";
 
 const reducers = combineReducers({
-  teachers: studentsReducer,
+  teachers: teacherReducer,
   achieve: achieveReducer,
   onTask: onTaskReducer,
   responsible: responsibleReducer,

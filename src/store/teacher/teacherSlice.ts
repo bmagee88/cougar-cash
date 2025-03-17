@@ -27,7 +27,7 @@ let initialState: TeacherState = storedData
       lists: { respect: [], responsible: [], onTask: [], achieve: [] },
     };
 
-const studentsSlice = createSlice({
+const teacherSlice = createSlice({
   name: "teachers",
   initialState,
   reducers: {
@@ -156,6 +156,6 @@ export const {
   updateBalances,
   setActiveTeacher,
   addNewTeacher,
-} = studentsSlice.actions;
+} = teacherSlice.actions;
 
-export default studentsSlice.reducer;
+export default teacherSlice.reducer;

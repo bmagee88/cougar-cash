@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Student } from "store/student/studentsSlice";
+import { Student } from "store/teacher/teacherSlice";
 
 interface RespectState {
   respectfulStudents: Student[] | null;

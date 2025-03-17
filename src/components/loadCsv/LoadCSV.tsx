@@ -3,7 +3,7 @@ import Papa from "papaparse";
 import Stack from "@mui/material/Stack";
 import { Box, Button, Typography } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
-import { setStudents } from "store/student/studentsSlice";
+import { setStudents } from "store/teacher/teacherSlice";
 import { RootState } from "store/store";
 
 interface Account {

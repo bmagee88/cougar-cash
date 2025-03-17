@@ -9,7 +9,7 @@ import {
 import React from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "store/store";
-import { Student } from "store/student/studentsSlice";
+import { Student } from "store/teacher/teacherSlice";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const CashBalancesDisplay: React.FC = () => {

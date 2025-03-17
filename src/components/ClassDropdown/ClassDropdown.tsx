@@ -2,7 +2,7 @@ import { FormControl, MenuItem, Select, SelectChangeEvent, Stack, Typography } f
 import React from "react";
 import AddClass from "./AddClass";
 import { useDispatch } from "react-redux";
-import { setActiveTeacher } from "store/student/studentsSlice";
+import { setActiveTeacher } from "store/teacher/teacherSlice";
 import { useSelector } from "react-redux";
 import { RootState } from "store/store";
 

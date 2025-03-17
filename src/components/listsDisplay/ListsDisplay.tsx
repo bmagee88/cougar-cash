@@ -4,7 +4,7 @@ import PillarDisplay from "./PillarDisplay";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "store/store";
 import RandomStudentButton from "./RandomStudentButton";
-import { setRespect } from "store/student/studentsSlice";
+import { setRespect } from "store/teacher/teacherSlice";
 
 const ListsDisplay: React.FC = () => {
   const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);

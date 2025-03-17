@@ -1,7 +1,7 @@
 import { Button, Stack, TextField } from "@mui/material";
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { addNewTeacher } from "store/student/studentsSlice";
+import { addNewTeacher } from "store/teacher/teacherSlice";
 
 const AddClass: React.FC = () => {
   const [newTeacher, setNewTeacher] = useState<string>("");
