@@ -30,7 +30,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
   const { teachers, lists } = studentState;
   const { respect = [], responsible = [], onTask = [], achieve = [] } = lists;
   let studentList = [];
-  if (activeTeacher) {
+  if (activeTeacher && teachers) {
     studentList = teachers[activeTeacher];
   }
 
