@@ -26,7 +26,10 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
   const [inputValue, setInputValue] = useState("");
   const studentState: TeacherState = useSelector((state: RootState) => state.teachers);
 
-  const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
+  const activeTeacher: string = useSelector((state: RootState) => {
+    if (!activeTeacher) return "";
+    return state.teachers.activeTeacher;
+  });
   const { teachers, lists } = studentState;
   const { respect = [], responsible = [], onTask = [], achieve = [] } = lists;
   const studentList = teachers[activeTeacher] || [];
