@@ -1,5 +1,5 @@
 import { FormControl, MenuItem, Select, SelectChangeEvent, Stack, Typography } from "@mui/material";
-import React, { useEffect } from "react";
+import React from "react";
 import AddClass from "./AddClass";
 import { useDispatch } from "react-redux";
 import { setActiveTeacher } from "store/student/studentsSlice";
@@ -9,9 +9,9 @@ import { RootState } from "store/store";
 const ClassDropdown: React.FC = () => {
   const dispatch = useDispatch();
   const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
-  const teachers = useSelector((state: RootState) => state.teachers.teachers);
+  const teachers = useSelector((state: RootState) => state.teachers.teachers) || [];
   console.log("teachers", teachers);
-  const teachersList = Object.keys(teachers) || [];
+  const teachersList = Object.keys(teachers);
   console.log("teachersList", teachersList);
 
   // useEffect(() => {

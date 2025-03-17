@@ -23,7 +23,6 @@ const AddClass: React.FC = () => {
         id='add-class_text-field'
         variant='outlined'
         size='small'
-        defaultValue=''
         placeholder='enter a new class'
         value={newTeacher ?? ""}
         onChange={handleNewClassChange}

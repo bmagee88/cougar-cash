@@ -124,13 +124,15 @@ const studentsSlice = createSlice({
           return updatedStudent ? { ...student, balance: updatedStudent.balance } : student;
         });
 
-      state.teachers[state.activeTeacher] = updateList(state[state.activeTeacher] || []);
-      // state.respect = updateList(state.respect);
-      // state.responsible = updateList(state.responsible);
-      // state.onTask = updateList(state.onTask);
-      // state.achieve = updateList(state.achieve);
+      // Update the main student list for the active teacher
+      if (state.teachers[state.activeTeacher]) {
+        state.teachers[state.activeTeacher] = updateList(state.teachers[state.activeTeacher]);
+      }
 
-      // Save updated state to local storage
+      // Clear out the lists while keeping the main student list intact
+      state.lists = { respect: [], responsible: [], onTask: [], achieve: [] };
+
+      // Persist updated data to localStorage
       localStorage.setItem("students", JSON.stringify(state));
     },
   },

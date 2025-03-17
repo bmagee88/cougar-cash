@@ -6,9 +6,10 @@ import { Student } from "store/student/studentsSlice";
 
 const CashBalancesDisplay: React.FC = () => {
   const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
+  console.log("active teacher", activeTeacher);
   const studentList =
     useSelector((state: RootState) => state.teachers.teachers[activeTeacher]) || []; // Get the list from Redux store
-
+  console.log("studentList", studentList);
   return (
     <Stack sx={{ marginX: "10px" }}>
       <Typography

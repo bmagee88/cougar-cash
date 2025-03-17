@@ -19,9 +19,9 @@ const CSVUploader: React.FC = () => {
   const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
 
   const teacherState = useSelector((state: RootState) => state.teachers);
-  const studentList = useSelector(
-    (state: RootState) => state.teachers.teachers[activeTeacher] || []
-  ); // Get updated list
+  // const studentList = useSelector(
+  //   (state: RootState) => state.teachers.teachers[activeTeacher]
+  // ) || []; // Get updated list
   const [data, setData] = useState<Account[]>([]);
   console.log("data", data);
 
@@ -48,13 +48,18 @@ const CSVUploader: React.FC = () => {
   // }, [studentList, teacherState]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("handling upload");
+    const input = event.target;
     if (!activeTeacher) {
       alert("Please select an active teacher before uploading a student list.");
       return;
     }
 
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log("no file ::");
+      return;
+    }
 
     Papa.parse<Account>(file, {
       header: true,
@@ -70,12 +75,14 @@ const CSVUploader: React.FC = () => {
           )
           .sort((a, b) => a.name.localeCompare(b.name)); // Sorting alphabetically;
         // setData(validData);
+        console.log("validData", validData);
         dispatch(
           setStudents({
             ...teacherState.teachers, // Keep existing teachers
             [activeTeacher]: validData, // Overwrite only the active teacher's students
           })
         );
+        input.value = "";
       },
       error: (error) => {
         console.error("CSV parsing error:", error);
@@ -117,7 +124,11 @@ const CSVUploader: React.FC = () => {
           <input
             type='file'
             accept='.csv'
-            onChange={handleFileUpload}
+            onChange={(e) => {
+              console.log("onChange");
+              handleFileUpload(e);
+              return;
+            }}
             hidden
           />
         </Button>
