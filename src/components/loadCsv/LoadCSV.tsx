@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Papa from "papaparse";
 import Stack from "@mui/material/Stack";
 import { Box, Button, Typography } from "@mui/material";
@@ -22,7 +22,7 @@ const CSVUploader: React.FC = () => {
   // const studentList = useSelector(
   //   (state: RootState) => state.teachers.teachers[activeTeacher]
   // ) || []; // Get updated list
-  const [data, setData] = useState<Account[]>([]);
+  const [data] = useState<Account[]>([]);
   console.log("data", data);
 
   // Load stored data on mount
