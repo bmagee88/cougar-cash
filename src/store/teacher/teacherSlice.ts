@@ -19,16 +19,30 @@ export interface TeacherState {
 }
 
 // const storedData = localStorage.getItem("students");
-let initialState: TeacherState = {
-  activeTeacher: "prime",
-  teachers: {} as { [teachers: string]: Student[] },
-  lists: { respect: [], responsible: [], onTask: [], achieve: [] },
-};
+let initialState: TeacherState =
+  // storedData
+  //   ? JSON.parse(storedData)
+  //   :
+  {
+    activeTeacher: "prime",
+    teachers: {} as { [teachers: string]: Student[] },
+    lists: { respect: [], responsible: [], onTask: [], achieve: [] },
+  };
 
 const teacherSlice = createSlice({
   name: "teachers",
   initialState,
   reducers: {
+    loadFromLocal: (state) => {
+      const storedData = localStorage.getItem("students");
+      state = storedData
+        ? JSON.parse(storedData)
+        : {
+            activeTeacher: "prime",
+            teachers: {} as { [teachers: string]: Student[] },
+            lists: { respect: [], responsible: [], onTask: [], achieve: [] },
+          };
+    },
     // set all students to a category
     setStudents: (state, action: { payload: { [teachers: string]: Student[] } }) => {
       state.teachers = action.payload;
