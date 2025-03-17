@@ -13,10 +13,13 @@ import { Student } from "store/student/studentsSlice";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 const CashBalancesDisplay: React.FC = () => {
-  const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
+  let activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
   console.log("active teacher", activeTeacher);
-  const studentList =
-    useSelector((state: RootState) => state.teachers.teachers[activeTeacher]) || []; // Get the list from Redux store
+
+  const studentList = useSelector((state: RootState) => {
+    if (!activeTeacher) return []; // Prevents errors
+    return state.teachers.teachers[activeTeacher] || [];
+  });
   console.log("studentList", studentList);
   return (
     <Accordion>
