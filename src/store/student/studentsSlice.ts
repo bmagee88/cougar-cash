@@ -8,7 +8,7 @@ export interface Student {
 }
 
 export interface TeacherState {
-  activeTeacher: string;
+  activeTeacher: string | null;
   teachers: { [teachers: string]: Student[] };
   lists: {
     respect: Student[] | null;
@@ -22,7 +22,7 @@ const storedData = localStorage.getItem("students");
 let initialState: TeacherState = storedData
   ? JSON.parse(storedData)
   : {
-      activeTeacher: "",
+      activeTeacher: null,
       teachers: {} as { [teachers: string]: Student[] },
       lists: { respect: [], responsible: [], onTask: [], achieve: [] },
     };
