@@ -8,13 +8,13 @@ export interface Student {
 }
 
 export interface TeacherState {
-  activeTeacher: string | null;
+  activeTeacher: string;
   teachers: { [teachers: string]: Student[] };
   lists: {
-    respect: Student[] | null;
-    responsible: Student[] | null;
-    onTask: Student[] | null;
-    achieve: Student[] | null;
+    respect: Student[];
+    responsible: Student[];
+    onTask: Student[];
+    achieve: Student[];
   };
 }
 
@@ -22,7 +22,7 @@ const storedData = localStorage.getItem("students");
 let initialState: TeacherState = storedData
   ? JSON.parse(storedData)
   : {
-      activeTeacher: null,
+      activeTeacher: "prime",
       teachers: {} as { [teachers: string]: Student[] },
       lists: { respect: [], responsible: [], onTask: [], achieve: [] },
     };
