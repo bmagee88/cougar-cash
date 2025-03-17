@@ -96,6 +96,7 @@ const studentsSlice = createSlice({
         state.teachers[action.payload] = [];
         localStorage.setItem("students", JSON.stringify(state));
       }
+      state.activeTeacher = action.payload;
     },
 
     // Remove student from a category
