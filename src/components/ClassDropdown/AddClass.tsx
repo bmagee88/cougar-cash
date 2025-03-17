@@ -1,7 +1,20 @@
 import { Button, Stack, TextField } from "@mui/material";
-import React from "react";
+import React, { useState } from "react";
+import { useDispatch } from "react-redux";
+import { addNewTeacher } from "store/student/studentsSlice";
 
 const AddClass: React.FC = () => {
+  const [newTeacher, setNewTeacher] = useState<string>("");
+  const dispatch = useDispatch();
+
+  const handleNewClassChange = (e) => {
+    setNewTeacher(e.target.value);
+  };
+
+  const handleAddNewTeacher = (e) => {
+    dispatch(addNewTeacher(newTeacher));
+  };
+
   return (
     <Stack
       direction={"row"}
@@ -11,8 +24,14 @@ const AddClass: React.FC = () => {
         variant='outlined'
         size='small'
         placeholder='enter a new class'
+        value={newTeacher ?? ""}
+        onChange={handleNewClassChange}
       />
-      <Button variant='contained'>Add Class</Button>
+      <Button
+        variant='contained'
+        onClick={handleAddNewTeacher}>
+        Add Class
+      </Button>
     </Stack>
   );
 };

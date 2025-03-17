@@ -15,31 +15,51 @@ interface Account {
 
 const CSVUploader: React.FC = () => {
   const dispatch = useDispatch();
-  const students = useSelector((state: RootState) => state.students.students); // Get updated list
+
+  const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
+
+  const teacherState = useSelector((state: RootState) => state.teachers);
+  // const studentList = useSelector(
+  //   (state: RootState) => state.teachers.teachers[activeTeacher]
+  // ) || []; // Get updated list
   const [data, setData] = useState<Account[]>([]);
   console.log("data", data);
 
   // Load stored data on mount
-  useEffect(() => {
-    const savedData = localStorage.getItem("students");
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setData(parsedData);
-      dispatch(setStudents(parsedData));
-    }
-  }, [dispatch]);
+  // useEffect(() => {
+  //   console.log("loading data on mount");
+  //   const savedData = localStorage.getItem("students");
+  //   if (savedData) {
+  //     const parsedData = JSON.parse(savedData);
+  //     console.log("parsedData1", parsedData);
+  //     setData(parsedData);
+  //     dispatch(setStudents(parsedData));
+  //   }
+  // }, [dispatch]);
 
-  // Save Redux store data to localStorage when students update
-  useEffect(() => {
-    if (students.length > 0) {
-      localStorage.setItem("students", JSON.stringify(students));
-      setData(students); // Update local state for UI consistency
-    }
-  }, [students]);
+  // useEffect(()=>{
+
+  // },[activeTeacher])
+
+  // // Save Redux store data to localStorage when students update
+  // useEffect(() => {
+  //   localStorage.setItem("students", JSON.stringify(teacherState));
+  //   setData(studentList); // Update local state for UI consistency
+  // }, [studentList, teacherState]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log("handling upload");
+    const input = event.target;
+    if (!activeTeacher) {
+      alert("Please select an active teacher before uploading a student list.");
+      return;
+    }
+
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      console.log("no file ::");
+      return;
+    }
 
     Papa.parse<Account>(file, {
       header: true,
@@ -55,8 +75,14 @@ const CSVUploader: React.FC = () => {
           )
           .sort((a, b) => a.name.localeCompare(b.name)); // Sorting alphabetically;
         // setData(validData);
-        dispatch(setStudents(validData));
-        // localStorage.setItem("students", JSON.stringify(validData));
+        console.log("validData", validData);
+        dispatch(
+          setStudents({
+            ...teacherState.teachers, // Keep existing teachers
+            [activeTeacher]: validData, // Overwrite only the active teacher's students
+          })
+        );
+        input.value = "";
       },
       error: (error) => {
         console.error("CSV parsing error:", error);
@@ -98,7 +124,11 @@ const CSVUploader: React.FC = () => {
           <input
             type='file'
             accept='.csv'
-            onChange={handleFileUpload}
+            onChange={(e) => {
+              console.log("onChange");
+              handleFileUpload(e);
+              return;
+            }}
             hidden
           />
         </Button>

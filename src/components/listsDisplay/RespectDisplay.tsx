@@ -13,7 +13,7 @@ import {
   rmRespect,
   rmResponsible,
   Student,
-  StudentState,
+  TeacherState,
 } from "store/student/studentsSlice";
 
 interface RespectDisplayProps {
@@ -24,8 +24,12 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
   const dispatch = useDispatch();
   const [value, setValue] = useState<Student | null>(null);
   const [inputValue, setInputValue] = useState("");
-  const studentState: StudentState = useSelector((state: RootState) => state.students);
-  const { students, respect, responsible, onTask, achieve } = studentState;
+  const studentState: TeacherState = useSelector((state: RootState) => state.teachers);
+
+  const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
+  const { teachers, lists } = studentState;
+  const { respect = [], responsible = [], onTask = [], achieve = [] } = lists;
+  const studentList = teachers[activeTeacher] || [];
 
   const handleRemove = (studentId: number) => {
     switch (title) {
@@ -46,7 +50,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     if (event.key === "Enter") {
-      const filteredOptions = students.filter((student: Student) =>
+      const filteredOptions = studentList.filter((student: Student) =>
         student.name.toLowerCase().includes(inputValue.toLowerCase())
       );
       if (filteredOptions.length > 0) {
@@ -98,7 +102,7 @@ const RespectDisplay: React.FC<RespectDisplayProps> = ({ title }) => {
           setValue(newValue);
           // i think i need to dispatch here
         }}
-        options={inputValue ? students : []}
+        options={inputValue ? studentList : []}
         inputValue={inputValue.replace("\n", "")}
         onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
         onKeyDown={handleKeyDown}

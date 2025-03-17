@@ -8,9 +8,12 @@ const useChooseStudents = () => {
   const dispatch = useDispatch();
 
   // Select the lists from the Redux store
-  const { respect, responsible, onTask, achieve } = useSelector(
-    (state: RootState) => state.students
-  );
+  const {
+    respect = [],
+    responsible = [],
+    onTask = [],
+    achieve = [],
+  } = useSelector((state: RootState) => state.teachers.lists);
 
   // Combine all the lists into one array
   const allValues = useMemo(
