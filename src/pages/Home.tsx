@@ -12,7 +12,7 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     dispatch(loadFromLocal());
-  }, []);
+  }, [dispatch]);
   // const testStudents: Student[] = [
   //   { id: 15378, label: "Morty", name: "Morty", balance: 0 },
   //   { id: 23461, label: "Larry", name: "Larry", balance: 0 },

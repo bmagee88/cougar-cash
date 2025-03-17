@@ -24,7 +24,7 @@ let initialState: TeacherState =
   //   ? JSON.parse(storedData)
   //   :
   {
-    activeTeacher: "prime",
+    activeTeacher: "Data",
     teachers: {} as { [teachers: string]: Student[] },
     lists: { respect: [], responsible: [], onTask: [], achieve: [] },
   };
@@ -38,7 +38,7 @@ const teacherSlice = createSlice({
       state = storedData
         ? JSON.parse(storedData)
         : {
-            activeTeacher: "prime",
+            activeTeacher: "Data",
             teachers: {} as { [teachers: string]: Student[] },
             lists: { respect: [], responsible: [], onTask: [], achieve: [] },
           };
