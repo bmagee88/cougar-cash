@@ -9,7 +9,7 @@ const useChooseStudents = () => {
 
   // Select the lists from the Redux store
   const {
-    respect = [],
+    // respect = [],
     responsible = [],
     onTask = [],
     achieve = [],
@@ -17,8 +17,8 @@ const useChooseStudents = () => {
 
   // Combine all the lists into one array
   const allValues = useMemo(
-    () => [...respect, ...responsible, ...onTask, ...achieve],
-    [respect, responsible, onTask, achieve]
+    () => [...responsible, ...onTask, ...achieve],
+    [responsible, onTask, achieve]
   );
 
   const uniqueValueCount = useMemo(() => new Set(allValues).size, [allValues]);
