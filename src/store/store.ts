@@ -7,7 +7,7 @@ import responsibleReducer from "./responsible/responsibleSlice";
 import respectReducer from "./respect/respectSlice";
 
 const reducers = combineReducers({
-  students: studentsReducer,
+  teachers: studentsReducer,
   achieve: achieveReducer,
   onTask: onTaskReducer,
   responsible: responsibleReducer,

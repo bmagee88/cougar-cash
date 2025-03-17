@@ -7,8 +7,9 @@ import RandomStudentButton from "./RandomStudentButton";
 import { setRespect } from "store/student/studentsSlice";
 
 const ListsDisplay: React.FC = () => {
-  const masterStudentList = useSelector((state: RootState) => state.students.students);
-  console.log("masterStudentList: ", masterStudentList);
+  const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
+  const studentList = useSelector((state: RootState) => state.teachers.teachers[activeTeacher]);
+  console.log("masterStudentList: ", studentList);
   const pillarOptions = [
     { title: "Respect" },
     { title: "On Task" },
@@ -18,8 +19,8 @@ const ListsDisplay: React.FC = () => {
 
   const dispatch = useDispatch();
   useEffect(() => {
-    dispatch(setRespect(masterStudentList));
-  }, [dispatch, masterStudentList]);
+    dispatch(setRespect(studentList));
+  }, [dispatch, studentList]);
 
   return (
     <Stack
@@ -31,7 +32,7 @@ const ListsDisplay: React.FC = () => {
           <Stack key={pillar.title}>
             <PillarDisplay title={title} />
 
-            {title === "Responsible" && <RandomStudentButton list={masterStudentList} />}
+            {title === "Responsible" && <RandomStudentButton list={studentList} />}
           </Stack>
         );
       })}

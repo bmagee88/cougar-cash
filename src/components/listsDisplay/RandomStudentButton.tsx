@@ -10,8 +10,9 @@ interface RandomStudentButtonProps {
 }
 
 const RandomStudentButton: React.FC<RandomStudentButtonProps> = ({ list }) => {
-  const masterStudentList = useSelector((state: RootState) => state.students.students);
-  const [modifiedStudentList, setModifiedStudentList] = useState(masterStudentList);
+  const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
+  const studentList = useSelector((state: RootState) => state.teachers.teachers[activeTeacher]);
+  const [modifiedStudentList, setModifiedStudentList] = useState(studentList);
   console.log("modifiedStudentList: onRerender: ", modifiedStudentList);
   const onClick = () => {
     // Pick a random student from the modified list
