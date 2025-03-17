@@ -1,11 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Divider, Stack } from "@mui/material";
 import CashBalanceDisplay from "../components/listsDisplay/CashBalancesDisplay";
 import ListsDisplay from "components/listsDisplay/ListsDisplay";
 import RewardButton from "components/RewardButton";
 import DataAccordion from "components/DataAccordion";
+import { useDispatch } from "react-redux";
+import { loadFromLocal } from "store/teacher/teacherSlice";
 
 const Home: React.FC = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(loadFromLocal());
+  }, []);
   // const testStudents: Student[] = [
   //   { id: 15378, label: "Morty", name: "Morty", balance: 0 },
   //   { id: 23461, label: "Larry", name: "Larry", balance: 0 },

@@ -168,6 +168,7 @@ export const {
   updateBalances,
   setActiveTeacher,
   addNewTeacher,
+  loadFromLocal,
 } = teacherSlice.actions;
 
 export default teacherSlice.reducer;
