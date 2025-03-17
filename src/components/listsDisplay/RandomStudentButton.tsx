@@ -15,7 +15,9 @@ interface RandomStudentButtonProps {
 const RandomStudentButton: React.FC<RandomStudentButtonProps> = ({ list }) => {
   const dispatch = useDispatch();
   const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
-  const responsibleList = useSelector((state: RootState) => state.teachers.lists.responsible);
+  const responsibleList = useSelector(
+    (state: RootState) => state.teachers.lists?.responsible || []
+  );
   const studentList = useSelector((state: RootState) => {
     if (!activeTeacher) return []; // Prevents errors
     return state.teachers.teachers[activeTeacher] || [];
