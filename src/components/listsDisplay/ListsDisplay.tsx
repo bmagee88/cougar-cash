@@ -8,7 +8,10 @@ import { setRespect } from "store/student/studentsSlice";
 
 const ListsDisplay: React.FC = () => {
   const activeTeacher = useSelector((state: RootState) => state.teachers.activeTeacher);
-  const studentList = useSelector((state: RootState) => state.teachers.teachers[activeTeacher]);
+  const studentList = useSelector((state: RootState) => {
+    if (!activeTeacher) return [];
+    return state.teachers.teachers[activeTeacher];
+  });
   console.log("masterStudentList: ", studentList);
   const pillarOptions = [
     { title: "Respect" },
