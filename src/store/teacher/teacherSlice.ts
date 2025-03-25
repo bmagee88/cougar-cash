@@ -35,13 +35,12 @@ const teacherSlice = createSlice({
   reducers: {
     loadFromLocal: (state) => {
       const storedData = localStorage.getItem("students");
-      state = storedData
-        ? JSON.parse(storedData)
-        : {
-            activeTeacher: "Data",
-            teachers: {} as { [teachers: string]: Student[] },
-            lists: { respect: [], responsible: [], onTask: [], achieve: [] },
-          };
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        state.activeTeacher = parsedData.activeTeacher || "Data";
+        state.teachers = parsedData.teachers || {};
+        state.lists = parsedData.lists || { respect: [], responsible: [], onTask: [], achieve: [] };
+      }
     },
     // set all students to a category
     setStudents: (state, action: { payload: { [teachers: string]: Student[] } }) => {

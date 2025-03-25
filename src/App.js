@@ -4,6 +4,7 @@ import Directions from "./pages/Directions";
 import About from "./pages/About";
 import Header from "./components/Header";
 import { Box } from "@mui/material";
+import SheetsTestPage from "./pages/SheetsTestPage";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
@@ -23,6 +24,9 @@ function App() {
           <Route
             path='/about'
             element={<About />}></Route>
+          <Route
+            path='/sheets'
+            element={<SheetsTestPage />}></Route>
         </Routes>
       </Router>
     </Box>
