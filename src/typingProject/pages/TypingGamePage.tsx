@@ -39,7 +39,7 @@ const TypingGamePage: React.FC = () => {
   const [gameCompleted, setGameCompleted] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const [highscoreUpdated, setHighscoreUpdated] = useState(false);
-  const [levelCompleted, setLevelCompleted] = useState(false);
+  // const [levelCompleted, setLevelCompleted] = useState(false);
 
   const [showConfetti, setShowConfetti] = useState(false);
 
@@ -91,6 +91,7 @@ const TypingGamePage: React.FC = () => {
     if (gameCompleted) {
       startNextLevel(); // Start the next level automatically when the game is completed
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameCompleted]);
 
   // Add this inside your TypingGamePage component
@@ -110,6 +111,7 @@ const TypingGamePage: React.FC = () => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showModal]); // Run this effect when 'showModal' changes
 
   const getRandomWords = (level: number): string[] => {
