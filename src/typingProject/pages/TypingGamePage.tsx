@@ -26,7 +26,7 @@ const TypingGamePage: React.FC = () => {
   const [currentLevel, setCurrentLevel] = usePersistedLevel();
 
   const [shouldShake, setShouldShake] = useState(false);
-  const [highscore, setHighscore] = useState<string>("1.0");
+  const [highscore, setHighscore] = useState<string>(currentLevel + ".0");
   const [activeWordList, setActiveWordList] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
