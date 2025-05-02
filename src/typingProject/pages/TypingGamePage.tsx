@@ -1,10 +1,11 @@
-import { Box, Stack, TextField, Typography, Modal, Button } from "@mui/material";
+import { Box, Stack, TextField, Typography, Modal, Button, styled } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { words } from "typingProject/resources/staticData";
 /** @jsxImportSource @emotion/react */
 import { keyframes } from "@emotion/react";
 import Confetti from "typingProject/Confetti";
 import { usePersistedLevel } from "typingProject/hooks/usePersistedLevel";
+import { usePersistedHighscore } from "typingProject/hooks/usePersistedHighscore";
 
 const shake = keyframes`
   0%   { transform: translate(0, 0) rotate(0deg); font-size: 1rem; color: #2980b9; }  /* Blue */
@@ -20,13 +21,42 @@ const shake = keyframes`
   100% { transform: translate(0, 0) rotate(0deg); font-size: 1rem; color: #2980b9; }  /* Back to Blue */
 `;
 
+const pulse = keyframes`
+  0% {
+    transform: scale(1);
+    color: inherit;
+  }
+  50% {
+    transform: scale(1.5);
+    color: red;
+  }
+  100% {
+    transform: scale(1);
+    color: inherit;
+  }
+`;
+
+// const AnimatedTimer = styled(Typography, {
+//   shouldForwardProp: (prop) => prop !== "animate",
+// })<{ animate?: boolean }>(({ animate }) => ({
+//   ...(animate && {
+//     animation: `${pulse} 0.5s ease-in-out`,
+//   }),
+// }));
+
+const AnimatedTimer = styled(Typography)(({ theme }) => ({
+  transition: "transform 0.5s ease-in-out",
+  display: "inline-block",
+}));
+
 const TIMER = 60;
 
 const TypingGamePage: React.FC = () => {
   const [currentLevel, setCurrentLevel] = usePersistedLevel();
+  const [scrollAnchorLine, setScrollAnchorLine] = useState(0);
 
   const [shouldShake, setShouldShake] = useState(false);
-  const [highscore, setHighscore] = useState<string>(currentLevel + ".0");
+  const [highscore, setHighscore] = usePersistedHighscore();
   const [activeWordList, setActiveWordList] = useState<string[]>([]);
   const [input, setInput] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -40,8 +70,114 @@ const TypingGamePage: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [highscoreUpdated, setHighscoreUpdated] = useState(false);
   // const [levelCompleted, setLevelCompleted] = useState(false);
-
+  const [isNewHighscore, setIsNewHighscore] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const [lineCharCount, setLineCharCount] = useState<number[]>([]);
+
+  const [currentLine, setCurrentLine] = useState(0);
+
+  const lineHeight = 24 * 1.2; // or whatever you used for lineHeight in your Box
+
+  useEffect(() => {
+    const totalCharsSoFar = lineCharCount
+      .slice(0, currentLine + 1)
+      .reduce((acc, val) => acc + val, 0);
+
+    console.log("totalCharSoFar", totalCharsSoFar);
+
+    if (currentIndex >= totalCharsSoFar && currentLine < lineCharCount.length - 1) {
+      console.log("current index exceeds line");
+      setCurrentLine((prev) => prev + 1);
+
+      if (containerRef.current) {
+        console.log("scrolling");
+        containerRef.current.scrollBy({
+          top: lineHeight,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [currentIndex, lineCharCount]);
+
+  const calculateLineWidths = (containerRef, activeWordList): number[] => {
+    const containerWidth = containerRef.current?.offsetWidth;
+    console.log("containerWidth", containerWidth);
+    const charWidth = containerRef.current?.querySelector("span")?.offsetWidth; // Measure a single character's width
+    console.log("charwidth", charWidth);
+
+    if (!containerWidth || !charWidth) return [];
+
+    let lineWidths = []; // array of numbers
+    let currentLineWidth = 0; // pixels // updates
+    let currentLine = 0;
+    let charsInCurrentLine = 0; // numbers
+    let wordsInCurrentLine = 0;
+    let spacesInLine = 0;
+
+    // Split the word list into individual words
+    activeWordList.forEach((word) => {
+      console.log(word);
+      const wordLength = word.length; // number of cahracters in the word
+      const wordWidth = wordLength * charWidth; // pixels in the word
+      // wordsInCurrentLine++;
+
+      console.log(
+        "currentLineWidth + wordWidth > containerWidth",
+        currentLineWidth,
+        wordWidth,
+        currentLineWidth + wordWidth,
+        containerWidth
+      );
+      // Check if adding this word exceeds the container width
+      currentLineWidth += 10;
+      if (currentLineWidth + wordWidth > containerWidth) {
+        // If it does, move to the next line
+        spacesInLine = wordsInCurrentLine - 1;
+        lineWidths[currentLine] = charsInCurrentLine + spacesInLine; // Save the number of characters for this line
+        currentLine++;
+        currentLineWidth = 0; // Reset width for new line
+        charsInCurrentLine = 0; // Reset characters in line
+        wordsInCurrentLine = 0;
+      }
+
+      console.log("lineWidths", lineWidths);
+
+      // Add word width to current line width
+      // adds the word that exceeded the width to the next line
+      currentLineWidth -= 10;
+      currentLineWidth += wordWidth;
+      charsInCurrentLine += wordLength; // Count characters in current line
+      wordsInCurrentLine++;
+    });
+
+    // Store the last line characters count
+    spacesInLine = wordsInCurrentLine - 1;
+    lineWidths[currentLine] = charsInCurrentLine + spacesInLine;
+    console.log("lineWidths", lineWidths);
+
+    return lineWidths[0] === -1 ? lineWidths.splice(1, lineWidths.length) : lineWidths;
+  };
+
+  useEffect(() => {
+    setLineCharCount(calculateLineWidths(containerRef, activeWordList));
+    let debounceTimeout: NodeJS.Timeout;
+
+    const handleResize = () => {
+      clearTimeout(debounceTimeout);
+      debounceTimeout = setTimeout(() => {
+        setLineCharCount(calculateLineWidths(containerRef, activeWordList));
+      }, 2000); // 2 seconds
+    };
+    window.addEventListener("resize", handleResize); // Recalculate on window resize
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, [activeWordList, containerRef]);
+
+  // useEffect(() => {}, [currentLevel]);
 
   const handleWin = () => {
     setShowConfetti(true);
@@ -58,7 +194,13 @@ const TypingGamePage: React.FC = () => {
   // };
 
   useEffect(() => {
-    setActiveWordList(getRandomWords(currentLevel)); // Set active words when level changes or game resets
+    const newRandomWords = getRandomWords(currentLevel);
+
+    if (containerRef.current) {
+      const widths = calculateLineWidths(containerRef, newRandomWords);
+      setLineCharCount(widths);
+    }
+    setActiveWordList(newRandomWords); // Set active words when level changes or game resets
   }, [currentLevel]);
 
   useEffect(() => {
@@ -162,6 +304,28 @@ const TypingGamePage: React.FC = () => {
     setCurrentIndex(currentIndex + 1);
     setInput(value);
 
+    const totalCharsBeforeNextLine = lineCharCount
+      .slice(0, currentLine + 1)
+      .reduce((acc, val) => acc + val, 0);
+
+    console.log("totalCharsBeforeNextLine", totalCharsBeforeNextLine);
+    console.log("index", currentIndex);
+    console.log("currentLine", currentLine);
+
+    const newIndex = currentIndex + 1;
+    if (newIndex > totalCharsBeforeNextLine && currentLine < lineCharCount.length - 1) {
+      console.log("setting current Line + 1");
+      setCurrentLine((prev) => prev + 1);
+      if (containerRef.current && currentLine >= scrollAnchorLine + 3) {
+        const lineHeight = 21.84 * 1.2; // adjust if needed /////////////////////////////
+        console.log("scrolling");
+        containerRef.current.scrollBy({
+          top: lineHeight,
+          behavior: "smooth",
+        });
+      }
+    }
+
     // Update highscore based on the number of correct characters typed so far
     const correctCount = newStatuses.filter((s) => s === "correct").length;
     const score = `${currentLevel}.${correctCount}`;
@@ -171,6 +335,7 @@ const TypingGamePage: React.FC = () => {
       score.split(".")[0] >= highscore.split(".")[0] &&
       parseFloat(score.split(".")[1]) > parseFloat(highscore.split(".")[1])
     ) {
+      setIsNewHighscore(true);
       setHighscore(score);
       setShouldShake(true);
       setHighscoreUpdated(true);
@@ -202,7 +367,7 @@ const TypingGamePage: React.FC = () => {
     if (parseFloat(score) > parseFloat(highscore)) {
       setHighscore(score); // Update highscore if new one is better
     }
-
+    setCurrentLine(0);
     setActiveWordList(getRandomWords(currentLevel + 1)); // Generate random words for the next level
     setTimer(TIMER); // Reset the timer
     setInput(""); // Clear the input field
@@ -210,19 +375,35 @@ const TypingGamePage: React.FC = () => {
     setCurrentIndex(0); // Reset index
     setTimerStarted(false); // Reset the timer start flag
     setGameCompleted(false); // Reset the game completed flag
+    if (containerRef.current) {
+      console.log("scrolling up====================================");
+      containerRef.current.scrollBy({
+        top: -10000,
+        behavior: "smooth",
+      });
+    }
   };
 
   const resetGame = () => {
+    if (containerRef.current) {
+      console.log("scrolling up====================================");
+      containerRef.current.scrollBy({
+        top: -10000,
+        behavior: "smooth",
+      });
+    }
+    setCurrentLine(0);
+    setIsNewHighscore(false);
     setHighscoreUpdated(false); // call this wherever you reset game
     setTimer(TIMER); // Reset timer
     setGameCompleted(false);
     setShowModal(false);
     setInput(""); // Reset input field
     setCurrentIndex(0); // Reset index
-    setCurrentLevel(1);
+    setCurrentLevel((prev) => prev - 2);
     setStatuses(Array(activeWordList.join(" ").length).fill(null)); // Reset statuses
     setTimerStarted(false); // Reset timer start flag
-    setActiveWordList(getRandomWords(1)); // Start with one word at level 1
+    setActiveWordList(getRandomWords(currentLevel - 2)); // Start with one word at level 1
   };
 
   return (
@@ -234,13 +415,14 @@ const TypingGamePage: React.FC = () => {
         background: "linear-gradient(to right, #283c86, #45a247)",
       }}>
       <Box
+        id='box_for_level'
         sx={{
           fontFamily: "monospace",
           padding: 3,
           borderRadius: 3,
           backgroundColor: "#2e2e2e",
-          width: "80%",
-          maxWidth: "600px",
+          maxWidth: "80%",
+          // maxWidth: "600px",
         }}>
         <Typography sx={{ color: "#fff", textAlign: "center", fontSize: 28, marginBottom: 2 }}>
           Level {currentLevel}
@@ -265,34 +447,82 @@ const TypingGamePage: React.FC = () => {
               {highscore}
             </Box>
           </Typography>
-          <Typography>Time left: {timer}s</Typography>
+          {timer <= 5 ? (
+            <AnimatedTimer
+              key={"timer-" + timer} // Re-mounts each second!
+              sx={{
+                animation: `${pulse} 0.5s ease-in-out`,
+              }}>
+              Time left: {timer}s
+            </AnimatedTimer>
+          ) : (
+            <Typography>Time left: {timer}s</Typography>
+          )}
         </Box>
-        <Box sx={{ fontSize: 24, marginBottom: 2 }}>
+        <Box
+          id='active-word-list-box'
+          ref={containerRef}
+          sx={{
+            fontSize: 21.84,
+            marginBottom: 2,
+            lineHeight: 1.2,
+            // maxHeight: `${24 * 1.2 * 3}px`, // 3 lines
+            maxHeight: "80vh",
+            overflowY: "auto",
+            scrollbarWidth: "none", // Firefox
+            "&::-webkit-scrollbar": {
+              display: "none", // Chrome, Safari
+            },
+          }}>
           {activeWordList
             .join(" ")
             .split("")
-            .map((char, i) => (
-              <span
-                key={i}
-                style={{
-                  color:
-                    statuses[i] === "correct"
-                      ? "green"
-                      : statuses[i] === "incorrect"
-                      ? "red"
-                      : "lightgray",
-                  backgroundColor:
-                    statuses[i] === "correct"
-                      ? "lightgreen"
-                      : statuses[i] === "incorrect"
-                      ? "lightcoral"
-                      : "transparent",
-                  padding: "2px 5px", // Add padding for better visual
-                }}>
-                {char}
-              </span>
-            ))}
+            .map((char, i) => {
+              const isActive = i === currentIndex;
+              const status = statuses[i];
+
+              const baseColor = isActive
+                ? "#3D2E00" // Dark yellow font color for current character
+                : status === "correct"
+                ? "green"
+                : status === "incorrect"
+                ? "red"
+                : "lightgray";
+
+              const backgroundColor = isActive
+                ? "#ffe135" // Banana yellow background for current character
+                : status === "correct"
+                ? "lightgreen"
+                : status === "incorrect"
+                ? "lightcoral"
+                : "transparent";
+
+              return (
+                <span
+                  key={"awl-" + i}
+                  style={{
+                    color: baseColor,
+                    backgroundColor,
+                    padding: "2px 5px",
+                    borderRadius: isActive ? "4px" : "0px",
+                    fontWeight: isActive ? "bold" : "normal",
+                  }}>
+                  {char}
+                </span>
+              );
+            })}
         </Box>
+
+        {/* {lineCharCount.map((w, index) => {
+          // console.log("linewidths", lineWidths);
+          return (
+            <Typography
+              key={w + "-" + index}
+              color='white'>
+              {w}
+            </Typography>
+          );
+        })} */}
 
         <TextField
           type='text'
@@ -321,22 +551,40 @@ const TypingGamePage: React.FC = () => {
               left: "50%",
               transform: "translate(-50%, -50%)",
               backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "8px",
-              boxShadow: 3,
-              width: "300px",
+              padding: 4,
+              borderRadius: 3,
+              boxShadow: 5,
+              width: "340px",
               textAlign: "center",
+              border: isNewHighscore ? "3px solid #4caf50" : "none",
             }}>
             <Typography
               id='modal-title'
-              variant='h6'>
-              So close, try again!
+              variant='h5'
+              sx={{
+                fontWeight: "bold",
+                color: isNewHighscore ? "#4caf50" : "text.primary",
+                mb: 2,
+              }}>
+              {isNewHighscore ? "🏆 New High Score!" : "So close, try again!"}
             </Typography>
+
+            {isNewHighscore && (
+              <Typography
+                sx={{
+                  fontSize: 16,
+                  color: "#388e3c",
+                  mb: 2,
+                }}>
+                You're improving fast — keep it up!
+              </Typography>
+            )}
+
             <Button
               onClick={resetGame}
               variant='contained'
               sx={{
-                marginTop: 2,
+                marginTop: 1,
                 borderRadius: 2,
                 fontSize: 16,
                 backgroundColor: "#45a247",
@@ -344,13 +592,10 @@ const TypingGamePage: React.FC = () => {
                   backgroundColor: "#3c8e3c",
                 },
               }}>
-              Try Again
+              {isNewHighscore ? "Keep Going! 🔥" : "Try Again! 💪"}
             </Button>
           </Box>
         </Modal>
-        {gameCompleted && (
-          <Typography sx={{ color: "green", textAlign: "center" }}>🎉 All correct!</Typography>
-        )}
       </Box>
       {/* Show Confetti when a level is completed */}
       {showConfetti && <Confetti />}
