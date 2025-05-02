@@ -53,7 +53,7 @@ const TIMER = 60;
 
 const TypingGamePage: React.FC = () => {
   const [currentLevel, setCurrentLevel] = usePersistedLevel();
-  const [scrollAnchorLine, setScrollAnchorLine] = useState(0);
+  const [scrollAnchorLine] = useState(0);
 
   const [shouldShake, setShouldShake] = useState(false);
   const [highscore, setHighscore] = usePersistedHighscore();
@@ -100,6 +100,7 @@ const TypingGamePage: React.FC = () => {
         });
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentIndex, lineCharCount]);
 
   const calculateLineWidths = (containerRef, activeWordList): number[] => {
