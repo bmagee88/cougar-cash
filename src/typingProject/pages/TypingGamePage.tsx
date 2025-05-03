@@ -1,5 +1,5 @@
 import { Box, Stack, TextField, Typography, Modal, Button, styled } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { words } from "typingProject/resources/staticData";
 /** @jsxImportSource @emotion/react */
 import { keyframes } from "@emotion/react";
@@ -194,14 +194,24 @@ const TypingGamePage: React.FC = () => {
   //   }, 2000); // Duration to match confetti animation time
   // };
 
-  useEffect(() => {
-    const newRandomWords = getRandomWords(currentLevel);
+  // useEffect(() => {
+  //   const newRandomWords = getRandomWords(currentLevel);
 
+  //   if (containerRef.current) {
+  //     const widths = calculateLineWidths(containerRef, newRandomWords);
+  //     setLineCharCount(widths);
+  //   }
+  //   setActiveWordList(newRandomWords); // Set active words when level changes or game resets
+  // }, [currentLevel]);
+
+  useEffect(() => {
+    const newWords = getRandomWords(currentLevel);
+    setActiveWordList(newWords);
+    setStatuses(Array(newWords.join(" ").length).fill(null)); // immediate sync
     if (containerRef.current) {
-      const widths = calculateLineWidths(containerRef, newRandomWords);
+      const widths = calculateLineWidths(containerRef, newWords);
       setLineCharCount(widths);
     }
-    setActiveWordList(newRandomWords); // Set active words when level changes or game resets
   }, [currentLevel]);
 
   useEffect(() => {
@@ -271,6 +281,8 @@ const TypingGamePage: React.FC = () => {
     return result;
   };
 
+  const fullText = useMemo(() => activeWordList.join(" "), [activeWordList]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const lastChar = value[value.length - 1];
@@ -292,10 +304,10 @@ const TypingGamePage: React.FC = () => {
       return;
     }
 
-    if (currentIndex >= activeWordList.join(" ").length) return; // prevent typing beyond the word list
+    if (currentIndex >= fullText.length) return; // prevent typing beyond the word list
 
     const newStatuses = [...statuses];
-    if (lastChar === activeWordList.join(" ")[currentIndex]) {
+    if (lastChar === fullText[currentIndex]) {
       newStatuses[currentIndex] = "correct";
     } else {
       newStatuses[currentIndex] = "incorrect";
@@ -345,7 +357,7 @@ const TypingGamePage: React.FC = () => {
 
     // Check if all the letters are correct before timer runs out
     const totalCorrect = newStatuses.filter((s) => s === "correct").length;
-    if (totalCorrect === activeWordList.join(" ").length) {
+    if (totalCorrect === fullText.length) {
       startNextLevel();
     }
 
@@ -372,7 +384,7 @@ const TypingGamePage: React.FC = () => {
     setActiveWordList(getRandomWords(currentLevel + 1)); // Generate random words for the next level
     setTimer(TIMER); // Reset the timer
     setInput(""); // Clear the input field
-    setStatuses(Array(activeWordList.join(" ").length).fill(null)); // Reset statuses
+    setStatuses(Array(fullText.length).fill(null)); // Reset statuses
     setCurrentIndex(0); // Reset index
     setTimerStarted(false); // Reset the timer start flag
     setGameCompleted(false); // Reset the game completed flag
