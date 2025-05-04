@@ -135,38 +135,39 @@ const TypingGamePage: React.FC = () => {
       };
       localStorage.setItem("dailies", JSON.stringify(dailies));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyGoalMet]);
 
-  const calculateStreak = (): number => {
-    const saved = localStorage.getItem("dailies");
-    if (!saved) return 0;
-    const dailies = JSON.parse(saved);
+  // const calculateStreak = (): number => {
+  //   const saved = localStorage.getItem("dailies");
+  //   if (!saved) return 0;
+  //   const dailies = JSON.parse(saved);
 
-    let streak = 0;
-    const today = new Date();
+  //   let streak = 0;
+  //   const today = new Date();
 
-    for (let i = 0; i < 100; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const key = date.toISOString().split("T")[0];
+  //   for (let i = 0; i < 100; i++) {
+  //     const date = new Date(today);
+  //     date.setDate(today.getDate() - i);
+  //     const key = date.toISOString().split("T")[0];
 
-      if (dailies[key]?.goalMet) {
-        streak++;
-      } else {
-        break;
-      }
-    }
+  //     if (dailies[key]?.goalMet) {
+  //       streak++;
+  //     } else {
+  //       break;
+  //     }
+  //   }
 
-    return streak;
-  };
+  //   return streak;
+  // };
 
-  const [streak, setStreak] = useState(() => calculateStreak());
+  // const [streak, setStreak] = useState(() => calculateStreak());
 
-  useEffect(() => {
-    if (dailyGoalMet) {
-      setStreak(calculateStreak());
-    }
-  }, [dailyGoalMet]);
+  // useEffect(() => {
+  //   if (dailyGoalMet) {
+  //     setStreak(calculateStreak());
+  //   }
+  // }, [dailyGoalMet]);
 
   useEffect(() => {
     console.log("correctWordCount", correctWordCount);
@@ -192,6 +193,7 @@ const TypingGamePage: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timerStarted, gameCompleted]);
 
   useEffect(() => {
