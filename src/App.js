@@ -2,7 +2,7 @@ import "./App.css";
 import Home from "./pages/Home";
 import Directions from "./pages/Directions";
 import About from "./pages/About";
-import Header from "./components/Header";
+// import Header from "./components/Header";
 import { Box } from "@mui/material";
 import SheetsTestPage from "./pages/SheetsTestPage";
 import TypingGamePage from "./typingProject/pages/TypingGamePage";
