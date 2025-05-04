@@ -20,18 +20,24 @@ const Header: React.FC<HeaderProps> = () => {
     <Stack
       direction={"row"}
       justifyContent={"center"}
-      sx={{ backgroundColor: "#000080", color: "#C0C0C0" }}>
+      sx={{
+        backgroundColor: "#000080", // Navy
+        color: "#C0C0C0", // Silver
+        paddingY: 2,
+        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+        borderBottom: "3px solid #C0C0C0",
+        zIndex: 10,
+      }}>
       <Stack
         direction={"row"}
-        gap={"2rem"}>
-        {nav_items.map((item) => {
-          return (
-            <NavItemDisplay
-              key={item.title}
-              data={item}
-            />
-          );
-        })}
+        gap={"2rem"}
+        alignItems='center'>
+        {nav_items.map((item) => (
+          <NavItemDisplay
+            key={item.title}
+            data={item}
+          />
+        ))}
       </Stack>
     </Stack>
   );

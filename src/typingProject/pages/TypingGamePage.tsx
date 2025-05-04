@@ -7,6 +7,12 @@ import Confetti from "typingProject/Confetti";
 import { usePersistedLevel } from "typingProject/hooks/usePersistedLevel";
 import { usePersistedHighscore } from "typingProject/hooks/usePersistedHighscore";
 
+const glow = keyframes`
+  0% { text-shadow: 0 0 5px #fff, 0 0 10px #ff00ff, 0 0 15px #00ffff; }
+  50% { text-shadow: 0 0 10px #ffff00, 0 0 20px #00ff00, 0 0 30px #ff0000; }
+  100% { text-shadow: 0 0 5px #fff, 0 0 10px #ff00ff, 0 0 15px #00ffff; }
+`;
+
 const shake = keyframes`
   0%   { transform: translate(0, 0) rotate(0deg); font-size: 1rem; color: #2980b9; }  /* Blue */
   10%  { transform: translate(-3px, 2px) rotate(-1deg); font-size: 1.05rem; color: #16a085; }  /* Teal */
@@ -80,6 +86,113 @@ const TypingGamePage: React.FC = () => {
   const [currentLine, setCurrentLine] = useState(0);
 
   const lineHeight = 24 * 1.2; // or whatever you used for lineHeight in your Box
+
+  const DAILY_GOAL_SECONDS = 15 * 60;
+
+  const getTodayKey = () => new Date().toISOString().split("T")[0];
+  const [correctWordCount, setCorrectWordCount] = useState(() => {
+    const saved = localStorage.getItem("dailies");
+    const dailies = saved ? JSON.parse(saved) : {};
+    const today = getTodayKey();
+    return dailies[today]?.correctWordCount || 0;
+  });
+
+  useEffect(() => {
+    if (!timerStarted || gameCompleted) return;
+
+    const today = getTodayKey();
+    const saved = localStorage.getItem("dailies");
+    const dailies = saved ? JSON.parse(saved) : {};
+
+    dailies[today] = {
+      ...(dailies[today] || {}),
+      correctWordCount,
+    };
+
+    localStorage.setItem("dailies", JSON.stringify(dailies));
+  }, [correctWordCount, timerStarted, gameCompleted]);
+
+  const [playTime, setPlayTime] = useState(() => {
+    const saved = localStorage.getItem("dailies");
+    const dailies = saved ? JSON.parse(saved) : {};
+    const today = getTodayKey();
+    return dailies[today]?.playTime || 0;
+  });
+
+  const dailyGoalMet = correctWordCount >= 75 && playTime >= DAILY_GOAL_SECONDS && currentLevel > 5;
+
+  useEffect(() => {
+    const today = getTodayKey();
+    const saved = localStorage.getItem("dailies");
+    const dailies = saved ? JSON.parse(saved) : {};
+
+    if (dailyGoalMet && !dailies[today]?.goalMet) {
+      dailies[today] = {
+        ...(dailies[today] || {}),
+        goalMet: true,
+        playTime,
+        correctWordCount,
+      };
+      localStorage.setItem("dailies", JSON.stringify(dailies));
+    }
+  }, [dailyGoalMet]);
+
+  const calculateStreak = (): number => {
+    const saved = localStorage.getItem("dailies");
+    if (!saved) return 0;
+    const dailies = JSON.parse(saved);
+
+    let streak = 0;
+    const today = new Date();
+
+    for (let i = 0; i < 100; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const key = date.toISOString().split("T")[0];
+
+      if (dailies[key]?.goalMet) {
+        streak++;
+      } else {
+        break;
+      }
+    }
+
+    return streak;
+  };
+
+  const [streak, setStreak] = useState(() => calculateStreak());
+
+  useEffect(() => {
+    if (dailyGoalMet) {
+      setStreak(calculateStreak());
+    }
+  }, [dailyGoalMet]);
+
+  useEffect(() => {
+    console.log("correctWordCount", correctWordCount);
+    if (!timerStarted || gameCompleted) return;
+
+    const interval = setInterval(() => {
+      const today = getTodayKey();
+
+      setPlayTime((prev) => {
+        const updated = prev + 1;
+
+        const saved = localStorage.getItem("dailies");
+        const dailies = saved ? JSON.parse(saved) : {};
+        dailies[today] = {
+          ...(dailies[today] || {}),
+          playTime: updated,
+          correctWordCount, // save the latest word count as well
+        };
+        localStorage.setItem("dailies", JSON.stringify(dailies));
+
+        return updated;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timerStarted, gameCompleted]);
 
   useEffect(() => {
     const totalCharsSoFar = lineCharCount
@@ -286,6 +399,24 @@ const TypingGamePage: React.FC = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const lastChar = value[value.length - 1];
+    const justTypedChar = fullText[currentIndex];
+    const newIndex = currentIndex + 1;
+
+    // Check if space was just typed and we're on a word boundary
+    if (lastChar === " " && justTypedChar === " ") {
+      // Get the word the user just typed (excluding the space)
+      const typedWords = value.trimEnd().split(" ");
+      const lastTypedWord = typedWords[typedWords.length - 1];
+
+      // Get the corresponding word from the target text
+      const fullWords = fullText.split(" ");
+      const targetWord = fullWords[typedWords.length - 1];
+
+      if (lastTypedWord === targetWord) {
+        setCorrectWordCount((prev) => prev + 1);
+      }
+    }
+
     const isBackspace = value.length < input.length;
 
     if (isBackspace) {
@@ -325,7 +456,7 @@ const TypingGamePage: React.FC = () => {
     console.log("index", currentIndex);
     console.log("currentLine", currentLine);
 
-    const newIndex = currentIndex + 1;
+    // newIndex = currentIndex + 1;
     if (newIndex > totalCharsBeforeNextLine && currentLine < lineCharCount.length - 1) {
       console.log("setting current Line + 1");
       setCurrentLine((prev) => prev + 1);
@@ -388,6 +519,7 @@ const TypingGamePage: React.FC = () => {
     setCurrentIndex(0); // Reset index
     setTimerStarted(false); // Reset the timer start flag
     setGameCompleted(false); // Reset the game completed flag
+    setCorrectWordCount((prev) => prev + 1);
     if (containerRef.current) {
       console.log("scrolling up====================================");
       containerRef.current.scrollBy({
@@ -427,6 +559,92 @@ const TypingGamePage: React.FC = () => {
         minHeight: "calc(100vh - 1.5rem)",
         background: "linear-gradient(to right, #283c86, #45a247)",
       }}>
+      {/* <Typography
+        variant='subtitle1'
+        color='gold'
+        sx={{ fontWeight: "bold", mb: 1 }}>
+        🔥 Streak: {streak} day{streak === 1 ? "" : "s"}
+      </Typography> */}
+      <Typography
+        variant='h5'
+        color='white'
+        sx={{
+          animation: dailyGoalMet ? `${glow} 1.5s infinite alternate` : undefined,
+          fontWeight: dailyGoalMet ? "bold" : "normal",
+          letterSpacing: dailyGoalMet ? 1.5 : "normal",
+          textTransform: dailyGoalMet ? "uppercase" : "none",
+          mb: ".5rem",
+        }}>
+        Daily Goal {dailyGoalMet ? "COMPLETE" : "Progress"}
+      </Typography>
+
+      {!dailyGoalMet && (
+        <Box
+          sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".3rem" }}>
+          <Box
+            sx={{
+              width: `${
+                playTime / DAILY_GOAL_SECONDS >= 1 ? 100 : (playTime / DAILY_GOAL_SECONDS) * 100
+              }%`,
+              height: "100%",
+              borderRadius: "12px",
+              bgcolor: correctWordCount >= 75 && currentLevel >= 5 ? "green" : "grey",
+              transition: "width 0.5s ease",
+            }}
+          />
+        </Box>
+      )}
+      {/* <Typography
+        variant='caption'
+        color='white'
+        textAlign='center'
+        sx={{ marginBottom: "1rem" }}>
+        {Math.floor(playTime / 60)}m {playTime % 60}s / 15m
+      </Typography> */}
+      {!dailyGoalMet && (
+        <Box
+          sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".3rem" }}>
+          <Box
+            sx={{
+              width: `${correctWordCount >= 75 ? 100 : (correctWordCount / 75) * 100}%`,
+              height: "100%",
+              borderRadius: "12px",
+              bgcolor: correctWordCount >= 75 ? "green" : "grey",
+              transition: "width 0.5s ease",
+            }}
+          />
+        </Box>
+      )}
+      {/* <Typography
+        variant='caption'
+        color='white'
+        textAlign='center'
+        sx={{ marginBottom: "1rem" }}>
+        {correctWordCount + "/ 75"}
+      </Typography> */}
+
+      {!dailyGoalMet && (
+        <Box
+          sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".5rem" }}>
+          <Box
+            sx={{
+              width: `${currentLevel >= 5 ? 100 : (currentLevel / 5) * 100}%`,
+              height: "100%",
+              borderRadius: "12px",
+              bgcolor: currentLevel >= 5 ? "green" : "grey",
+              transition: "width 0.5s ease",
+            }}
+          />
+        </Box>
+      )}
+      {/* <Typography
+        variant='caption'
+        color='white'
+        textAlign='center'
+        sx={{ marginBottom: "1rem" }}>
+        {currentLevel + "/ 5"}
+      </Typography> */}
+
       <Box
         id='box_for_level'
         sx={{
@@ -434,7 +652,7 @@ const TypingGamePage: React.FC = () => {
           padding: 3,
           borderRadius: 3,
           backgroundColor: "#2e2e2e",
-          maxWidth: "80%",
+          width: "80%",
           // maxWidth: "600px",
         }}>
         <Typography sx={{ color: "#fff", textAlign: "center", fontSize: 28, marginBottom: 2 }}>
