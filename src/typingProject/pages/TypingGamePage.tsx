@@ -85,9 +85,34 @@ const TypingGamePage: React.FC = () => {
 
   const [currentLine, setCurrentLine] = useState(0);
 
+  const [pausedForInactivity, setPausedForInactivity] = useState(false);
+
+  const [goalMetFromStorage, setGoalMetFromStorage] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("dailies");
+    if (saved) {
+      const dailies = JSON.parse(saved);
+      const today = getTodayKey();
+      if (dailies[today]?.goalMet) {
+        setGoalMetFromStorage(true);
+      }
+    }
+  }, []);
+
   const lineHeight = 24 * 1.2; // or whatever you used for lineHeight in your Box
 
   const DAILY_GOAL_SECONDS = 15 * 60;
+
+  const inactivityRef = useRef<NodeJS.Timeout | null>(null);
+
+  const resetInactivityTimer = () => {
+    if (inactivityRef.current) clearTimeout(inactivityRef.current);
+
+    inactivityRef.current = setTimeout(() => {
+      setPausedForInactivity(true);
+    }, 5000); // 5 seconds
+  };
 
   const getTodayKey = () => new Date().toISOString().split("T")[0];
   const [correctWordCount, setCorrectWordCount] = useState(() => {
@@ -119,7 +144,8 @@ const TypingGamePage: React.FC = () => {
     return dailies[today]?.playTime || 0;
   });
 
-  const dailyGoalMet = correctWordCount >= 75 && playTime >= DAILY_GOAL_SECONDS && currentLevel > 5;
+  const dailyGoalMet =
+    correctWordCount >= 75 && playTime >= DAILY_GOAL_SECONDS && currentLevel >= 5;
 
   useEffect(() => {
     const today = getTodayKey();
@@ -134,6 +160,7 @@ const TypingGamePage: React.FC = () => {
         correctWordCount,
       };
       localStorage.setItem("dailies", JSON.stringify(dailies));
+      setGoalMetFromStorage(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyGoalMet]);
@@ -171,7 +198,7 @@ const TypingGamePage: React.FC = () => {
 
   useEffect(() => {
     console.log("correctWordCount", correctWordCount);
-    if (!timerStarted || gameCompleted) return;
+    if (!timerStarted || gameCompleted || pausedForInactivity) return;
 
     const interval = setInterval(() => {
       const today = getTodayKey();
@@ -194,7 +221,7 @@ const TypingGamePage: React.FC = () => {
 
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timerStarted, gameCompleted]);
+  }, [timerStarted, gameCompleted, pausedForInactivity]);
 
   useEffect(() => {
     const totalCharsSoFar = lineCharCount
@@ -333,15 +360,27 @@ const TypingGamePage: React.FC = () => {
     inputRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    let timerInterval: NodeJS.Timeout | null = null;
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    if (timerStarted && !gameCompleted) {
-      // Start the timer countdown
-      timerInterval = setInterval(() => {
+  useEffect(() => {
+    if (!timerStarted || gameCompleted) return;
+
+    // Stop timer if paused
+    if (pausedForInactivity) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Start timer
+    if (!timerIntervalRef.current) {
+      timerIntervalRef.current = setInterval(() => {
         setTimer((prev) => {
-          if (prev === 1) {
-            clearInterval(timerInterval as NodeJS.Timeout); // Stop the timer when it reaches 0
+          if (prev <= 1) {
+            clearInterval(timerIntervalRef.current as NodeJS.Timeout);
+            timerIntervalRef.current = null;
             handleTimeOut();
             return 0;
           }
@@ -351,9 +390,12 @@ const TypingGamePage: React.FC = () => {
     }
 
     return () => {
-      if (timerInterval) clearInterval(timerInterval); // Clean up the timer on unmount
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
     };
-  }, [timerStarted, gameCompleted]);
+  }, [timerStarted, gameCompleted, pausedForInactivity]);
 
   useEffect(() => {
     if (gameCompleted) {
@@ -403,6 +445,9 @@ const TypingGamePage: React.FC = () => {
     const lastChar = value[value.length - 1];
     const justTypedChar = fullText[currentIndex];
     const newIndex = currentIndex + 1;
+
+    resetInactivityTimer();
+    if (pausedForInactivity) setPausedForInactivity(false);
 
     // Check if space was just typed and we're on a word boundary
     if (lastChar === " " && justTypedChar === " ") {
@@ -571,16 +616,16 @@ const TypingGamePage: React.FC = () => {
         variant='h5'
         color='white'
         sx={{
-          animation: dailyGoalMet ? `${glow} 1.5s infinite alternate` : undefined,
-          fontWeight: dailyGoalMet ? "bold" : "normal",
-          letterSpacing: dailyGoalMet ? 1.5 : "normal",
-          textTransform: dailyGoalMet ? "uppercase" : "none",
+          animation: goalMetFromStorage ? `${glow} 1.5s infinite alternate` : undefined,
+          fontWeight: goalMetFromStorage ? "bold" : "normal",
+          letterSpacing: goalMetFromStorage ? 1.5 : "normal",
+          textTransform: goalMetFromStorage ? "uppercase" : "none",
           mb: ".5rem",
         }}>
-        Daily Goal {dailyGoalMet ? "COMPLETE" : "Progress"}
+        Daily Goal {goalMetFromStorage ? "COMPLETE" : "Progress"}
       </Typography>
 
-      {!dailyGoalMet && (
+      {!goalMetFromStorage && (
         <Box
           sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".3rem" }}>
           <Box
@@ -603,7 +648,7 @@ const TypingGamePage: React.FC = () => {
         sx={{ marginBottom: "1rem" }}>
         {Math.floor(playTime / 60)}m {playTime % 60}s / 15m
       </Typography> */}
-      {!dailyGoalMet && (
+      {!goalMetFromStorage && (
         <Box
           sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".3rem" }}>
           <Box
@@ -625,7 +670,7 @@ const TypingGamePage: React.FC = () => {
         {correctWordCount + "/ 75"}
       </Typography> */}
 
-      {!dailyGoalMet && (
+      {!goalMetFromStorage && (
         <Box
           sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".5rem" }}>
           <Box
@@ -680,9 +725,15 @@ const TypingGamePage: React.FC = () => {
               {highscore}
             </Box>
           </Typography>
-          {timer <= 5 ? (
+
+          {pausedForInactivity ? (
+            <Typography
+              sx={{ color: "orange", fontWeight: "bold", animation: `${pulse} 1s infinite` }}>
+              ⏸ Paused
+            </Typography>
+          ) : timer <= 5 ? (
             <AnimatedTimer
-              key={"timer-" + timer} // Re-mounts each second!
+              key={"timer-" + timer}
               sx={{
                 animation: `${pulse} 0.5s ease-in-out`,
               }}>
@@ -692,6 +743,7 @@ const TypingGamePage: React.FC = () => {
             <Typography>Time left: {timer}s</Typography>
           )}
         </Box>
+
         <Box
           id='active-word-list-box'
           ref={containerRef}
