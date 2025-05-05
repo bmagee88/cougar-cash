@@ -138,36 +138,36 @@ const TypingGamePage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dailyGoalMet]);
 
-  // const calculateStreak = (): number => {
-  //   const saved = localStorage.getItem("dailies");
-  //   if (!saved) return 0;
-  //   const dailies = JSON.parse(saved);
+  const calculateStreak = (): number => {
+    const saved = localStorage.getItem("dailies");
+    if (!saved) return 0;
+    const dailies = JSON.parse(saved);
 
-  //   let streak = 0;
-  //   const today = new Date();
+    let streak = 0;
+    const today = new Date();
 
-  //   for (let i = 0; i < 100; i++) {
-  //     const date = new Date(today);
-  //     date.setDate(today.getDate() - i);
-  //     const key = date.toISOString().split("T")[0];
+    for (let i = 0; i < 100; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const key = date.toISOString().split("T")[0];
 
-  //     if (dailies[key]?.goalMet) {
-  //       streak++;
-  //     } else {
-  //       break;
-  //     }
-  //   }
+      if (dailies[key]?.goalMet) {
+        streak++;
+      } else {
+        break;
+      }
+    }
 
-  //   return streak;
-  // };
+    return streak;
+  };
 
-  // const [streak, setStreak] = useState(() => calculateStreak());
+  const [streak, setStreak] = useState(() => calculateStreak());
 
-  // useEffect(() => {
-  //   if (dailyGoalMet) {
-  //     setStreak(calculateStreak());
-  //   }
-  // }, [dailyGoalMet]);
+  useEffect(() => {
+    if (dailyGoalMet) {
+      setStreak(calculateStreak());
+    }
+  }, [dailyGoalMet]);
 
   useEffect(() => {
     console.log("correctWordCount", correctWordCount);
@@ -561,12 +561,12 @@ const TypingGamePage: React.FC = () => {
         minHeight: "calc(100vh - 1.5rem)",
         background: "linear-gradient(to right, #283c86, #45a247)",
       }}>
-      {/* <Typography
+      <Typography
         variant='subtitle1'
         color='gold'
         sx={{ fontWeight: "bold", mb: 1 }}>
         🔥 Streak: {streak} day{streak === 1 ? "" : "s"}
-      </Typography> */}
+      </Typography>
       <Typography
         variant='h5'
         color='white'
