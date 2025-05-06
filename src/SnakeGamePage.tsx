@@ -119,6 +119,7 @@ const SnakeGamePage: React.FC = () => {
             <div
               key={i}
               style={{
+                borderRadius: "15px",
                 width: "20px",
                 height: "20px",
                 backgroundColor: isSnake ? "limegreen" : isFood ? "red" : "black",
