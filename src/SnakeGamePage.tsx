@@ -12,7 +12,7 @@ const getRandomCoord = (): Coord => ({
   y: Math.floor(Math.random() * gridSize),
 });
 
-const SnakeGame: React.FC = () => {
+const SnakeGamePage: React.FC = () => {
   const [snake, setSnake] = useState<Coord[]>([{ x: 10, y: 10 }]);
   const [direction, setDirection] = useState<Direction>("RIGHT");
   const [food, setFood] = useState<Coord>(getRandomCoord);
@@ -131,4 +131,4 @@ const SnakeGame: React.FC = () => {
   );
 };
 
-export default SnakeGame;
+export default SnakeGamePage;
