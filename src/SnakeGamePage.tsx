@@ -14,7 +14,7 @@ const getRandomCoord = (): Coord => ({
 
 const SnakeGamePage: React.FC = () => {
   const [snake, setSnake] = useState<Coord[]>([{ x: 10, y: 10 }]);
-  const [direction, setDirection] = useState<Direction>("RIGHT");
+  const [direction] = useState<Direction>("RIGHT");
   const [food, setFood] = useState<Coord>(getRandomCoord);
   const [gameOver, setGameOver] = useState(false);
   const moveRef = useRef(direction);
