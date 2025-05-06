@@ -573,7 +573,6 @@ export const words: WordsByLength = {
     "nature",
     "object",
     "parrot",
-    "quartz",
     "rocket",
     "silent",
     "ticket",

@@ -73,6 +73,12 @@ const AnimatedTimer = styled(Typography)(({ theme }) => ({
 const TIMER = 60;
 
 const TypingGamePage: React.FC = () => {
+  const leagueTrophies = {
+    bronze: { emoji: "🥉", color: "#cd7f32" },
+    silver: { emoji: "🥈", color: "#c0c0c0" },
+    gold: { emoji: "🥇", color: "#ffd700" },
+    platinum: { emoji: "🌟", color: "#e5e4e2" }, // or pick a custom
+  };
   const [currentLevel, setCurrentLevel] = usePersistedLevel();
   const [scrollAnchorLine] = useState(0);
 
@@ -681,13 +687,26 @@ const TypingGamePage: React.FC = () => {
         minHeight: "calc(100vh - 1.5rem)",
         background: "linear-gradient(to right, #283c86, #45a247)",
       }}>
-      <Box sx={{ position: "absolute", top: 10, right: 10 }}>
+      <Stack
+        direction={"row"}
+        sx={{ position: "absolute", top: 10, right: 10 }}>
+        <Stack
+          direction='row'
+          alignItems='center'
+          spacing={1}>
+          <Typography sx={{ color: leagueTrophies[selectedLeague].color, fontWeight: "bold" }}>
+            {leagueTrophies[selectedLeague].emoji}
+          </Typography>
+          <Typography sx={{ color: "white", fontWeight: "bold", textTransform: "capitalize" }}>
+            {selectedLeague} League
+          </Typography>
+        </Stack>
         <IconButton
           onClick={() => setSettingsOpen(true)}
           sx={{ color: "white" }}>
           <SettingsIcon />
         </IconButton>
-      </Box>
+      </Stack>
 
       <Modal
         open={settingsOpen}
@@ -714,38 +733,36 @@ const TypingGamePage: React.FC = () => {
             value={selectedLeague}
             onChange={(e) => setSelectedLeague(e.target.value)}
             sx={{ display: "flex", gap: 1 }}>
-            {["bronze", "silver (coming soon)", "gold (coming soon)", "platinum (coming soon)"].map(
-              (league) => (
-                <FormControlLabel
-                  key={league}
-                  value={league}
-                  control={<Radio sx={{ display: "none" }} />}
-                  label={
-                    <Box
-                      sx={{
-                        textTransform: "capitalize",
-                        border: selectedLeague === league ? "2px solid #ffe135" : "1px solid grey",
-                        borderRadius: 2,
-                        px: 2,
-                        py: 1,
-                        backgroundColor: selectedLeague === league ? "#3D2E00" : "#1c1c1c",
-                        color: "white",
-                        cursor: "pointer",
-                        fontWeight: selectedLeague === league ? "bold" : "normal",
-                        textAlign: "center",
-                        ":hover": {
-                          backgroundColor: "#333",
-                        },
-                      }}>
-                      {league}
-                    </Box>
-                  }
-                  sx={{ m: 0 }}
-                />
-              )
-            )}
+            {["bronze", "silver", "gold", "platinum"].map((league) => (
+              <FormControlLabel
+                key={league}
+                value={league}
+                // name={league}
+                control={<Radio sx={{ display: "none" }} />}
+                label={
+                  <Box
+                    sx={{
+                      textTransform: "capitalize",
+                      border: selectedLeague === league ? "2px solid #ffe135" : "1px solid grey",
+                      borderRadius: 2,
+                      px: 2,
+                      py: 1,
+                      backgroundColor: selectedLeague === league ? "#3D2E00" : "#1c1c1c",
+                      color: "white",
+                      cursor: "pointer",
+                      fontWeight: selectedLeague === league ? "bold" : "normal",
+                      textAlign: "center",
+                      ":hover": {
+                        backgroundColor: "#333",
+                      },
+                    }}>
+                    {league}
+                  </Box>
+                }
+                sx={{ m: 0 }}
+              />
+            ))}
           </RadioGroup>
-
           <Typography
             variant='h6'
             sx={{ mt: 3, mb: 1, textAlign: "center", color: "gold" }}>
@@ -769,6 +786,7 @@ const TypingGamePage: React.FC = () => {
                       // (e) => setDifficulties((prev) => ({ ...prev, [diff]: e.target.checked }))
                     }
                     sx={{ color: "white" }}
+                    disabled={diff !== "casual"} // ⬅️ Only allow "casual"
                   />
                 }
                 label={
