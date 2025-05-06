@@ -1,4 +1,24 @@
-import { Box, Stack, TextField, Typography, Modal, Button, styled } from "@mui/material";
+import {
+  Box,
+  Stack,
+  TextField,
+  Typography,
+  Modal,
+  Button,
+  styled,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  FormControl,
+  FormLabel,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Checkbox,
+  FormGroup,
+  Divider,
+} from "@mui/material";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { words } from "typingProject/resources/staticData";
 /** @jsxImportSource @emotion/react */
@@ -6,6 +26,7 @@ import { keyframes } from "@emotion/react";
 import Confetti from "typingProject/Confetti";
 import { usePersistedLevel } from "typingProject/hooks/usePersistedLevel";
 import { usePersistedHighscore } from "typingProject/hooks/usePersistedHighscore";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 const glow = keyframes`
   0% { text-shadow: 0 0 5px #fff, 0 0 10px #ff00ff, 0 0 15px #00ffff; }
@@ -89,6 +110,36 @@ const TypingGamePage: React.FC = () => {
 
   const [goalMetFromStorage, setGoalMetFromStorage] = useState(false);
 
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedLeague, setSelectedLeague] = useState("bronze");
+  const [difficulties, setDifficulties] = useState({
+    casual: false,
+    hardcore: false,
+    perfection: false,
+  });
+
+  const handleDifficultiesChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = event.target;
+    console.log("name checked", name, checked);
+    console.log("difficulties", difficulties);
+    setDifficulties((prev) => {
+      const newDifficulties = { ...prev, [name]: checked };
+
+      if (name === "casual" && prev.casual && !checked) {
+        // Reset game only if casual is turned OFF
+        resetGame(true);
+      }
+
+      return newDifficulties;
+    });
+  };
+
+  const handleLeagueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedLeague(event.target.value);
+  };
+
+  const isCasual = difficulties.casual;
+
   useEffect(() => {
     const saved = localStorage.getItem("dailies");
     if (saved) {
@@ -107,11 +158,13 @@ const TypingGamePage: React.FC = () => {
   const inactivityRef = useRef<NodeJS.Timeout | null>(null);
 
   const resetInactivityTimer = () => {
+    if (isCasual) return; // Don't set inactivity timer in casual mode
+
     if (inactivityRef.current) clearTimeout(inactivityRef.current);
 
     inactivityRef.current = setTimeout(() => {
       setPausedForInactivity(true);
-    }, 5000); // 5 seconds
+    }, 5000);
   };
 
   const getTodayKey = () => new Date().toISOString().split("T")[0];
@@ -190,12 +243,14 @@ const TypingGamePage: React.FC = () => {
 
   const [streak, setStreak] = useState(() => calculateStreak());
 
+  // streak
   useEffect(() => {
     if (dailyGoalMet) {
       setStreak(calculateStreak());
     }
   }, [dailyGoalMet]);
 
+  // updates playtime each second in local storage
   useEffect(() => {
     console.log("correctWordCount", correctWordCount);
     if (!timerStarted || gameCompleted || pausedForInactivity) return;
@@ -366,7 +421,7 @@ const TypingGamePage: React.FC = () => {
     if (!timerStarted || gameCompleted) return;
 
     // Stop timer if paused
-    if (pausedForInactivity) {
+    if (pausedForInactivity || isCasual) {
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
@@ -395,7 +450,7 @@ const TypingGamePage: React.FC = () => {
         timerIntervalRef.current = null;
       }
     };
-  }, [timerStarted, gameCompleted, pausedForInactivity]);
+  }, [timerStarted, gameCompleted, pausedForInactivity, isCasual]);
 
   useEffect(() => {
     if (gameCompleted) {
@@ -524,7 +579,8 @@ const TypingGamePage: React.FC = () => {
     // Update highscore if the new count is greater
     if (
       score.split(".")[0] >= highscore.split(".")[0] &&
-      parseFloat(score.split(".")[1]) > parseFloat(highscore.split(".")[1])
+      parseFloat(score.split(".")[1]) > parseFloat(highscore.split(".")[1]) &&
+      !isCasual
     ) {
       setIsNewHighscore(true);
       setHighscore(score);
@@ -555,7 +611,7 @@ const TypingGamePage: React.FC = () => {
     setGameCompleted(true);
     setCurrentLevel((prev) => prev + 1);
     const score = `${currentLevel + 1}.0`;
-    if (parseFloat(score) > parseFloat(highscore)) {
+    if (parseFloat(score) > parseFloat(highscore) && !isCasual) {
       setHighscore(score); // Update highscore if new one is better
     }
     setCurrentLine(0);
@@ -576,7 +632,8 @@ const TypingGamePage: React.FC = () => {
     }
   };
 
-  const resetGame = () => {
+  const resetGame = (offCasual?: boolean) => {
+    console.log("offcasual", offCasual);
     if (containerRef.current) {
       console.log("scrolling up====================================");
       containerRef.current.scrollBy({
@@ -592,11 +649,35 @@ const TypingGamePage: React.FC = () => {
     setShowModal(false);
     setInput(""); // Reset input field
     setCurrentIndex(0); // Reset index
-    setCurrentLevel((prev) => prev - 2);
+    setCurrentLevel((prev) => (prev > 1 ? (offCasual ? 1 : prev - 1) : 1));
     setStatuses(Array(activeWordList.join(" ").length).fill(null)); // Reset statuses
     setTimerStarted(false); // Reset timer start flag
-    setActiveWordList(getRandomWords(currentLevel - 2)); // Start with one word at level 1
+    setActiveWordList(getRandomWords(offCasual ? 1 : currentLevel - 1)); // Start with one word at level 1
   };
+
+  // const [leaderboard, setLeaderboard] = useState([
+  //   { name: "brian", highscore: 12 },
+  //   { name: "derp", highscore: 16 },
+  // ]);
+
+  // useEffect(() => {
+  //   const ws = new WebSocket("ws://localhost:3001");
+
+  //   ws.onmessage = (event) => {
+  //     const msg = JSON.parse(event.data);
+  //     if (msg.type === "leaderboard") {
+  //       setLeaderboard(msg.data); // Set state
+  //     }
+  //   };
+
+  //   ws.onopen = () => {
+  //     const name = localStorage.getItem("username") || "Guest";
+  //     const highscore = localStorage.getItem("highscore") || "0.0";
+  //     ws.send(JSON.stringify({ name, highscore }));
+  //   };
+
+  //   return () => ws.close();
+  // }, []);
 
   return (
     <Stack
@@ -606,6 +687,185 @@ const TypingGamePage: React.FC = () => {
         minHeight: "calc(100vh - 1.5rem)",
         background: "linear-gradient(to right, #283c86, #45a247)",
       }}>
+      <Box sx={{ position: "absolute", top: 10, right: 10 }}>
+        <IconButton
+          onClick={() => setSettingsOpen(true)}
+          sx={{ color: "white" }}>
+          <SettingsIcon />
+        </IconButton>
+      </Box>
+
+      <Modal
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}>
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            bgcolor: "#2e2e2e",
+            color: "white",
+            p: 4,
+            borderRadius: 3,
+            boxShadow: 5,
+            width: 300,
+          }}>
+          <Typography
+            variant='h6'
+            sx={{ mb: 2, textAlign: "center", color: "gold" }}>
+            League
+          </Typography>
+          <RadioGroup
+            value={selectedLeague}
+            onChange={(e) => setSelectedLeague(e.target.value)}
+            sx={{ display: "flex", gap: 1 }}>
+            {["bronze", "silver (coming soon)", "gold (coming soon)", "platinum (coming soon)"].map(
+              (league) => (
+                <FormControlLabel
+                  key={league}
+                  value={league}
+                  control={<Radio sx={{ display: "none" }} />}
+                  label={
+                    <Box
+                      sx={{
+                        textTransform: "capitalize",
+                        border: selectedLeague === league ? "2px solid #ffe135" : "1px solid grey",
+                        borderRadius: 2,
+                        px: 2,
+                        py: 1,
+                        backgroundColor: selectedLeague === league ? "#3D2E00" : "#1c1c1c",
+                        color: "white",
+                        cursor: "pointer",
+                        fontWeight: selectedLeague === league ? "bold" : "normal",
+                        textAlign: "center",
+                        ":hover": {
+                          backgroundColor: "#333",
+                        },
+                      }}>
+                      {league}
+                    </Box>
+                  }
+                  sx={{ m: 0 }}
+                />
+              )
+            )}
+          </RadioGroup>
+
+          <Typography
+            variant='h6'
+            sx={{ mt: 3, mb: 1, textAlign: "center", color: "gold" }}>
+            Difficulties
+          </Typography>
+          <FormGroup>
+            {["casual", "hardcore", "perfection"].map((diff) => (
+              <FormControlLabel
+                key={diff}
+                name={diff}
+                control={
+                  <Checkbox
+                    checked={difficulties[diff]}
+                    onChange={
+                      (e) => handleDifficultiesChange(e)
+                      // (e) => {
+                      //   // setDifficulties((prev) => ({ ...prev, [diff]: e.target.checked }));
+                      //   handleDifficultiesChange(e);
+                      //   return;
+                      // }
+                      // (e) => setDifficulties((prev) => ({ ...prev, [diff]: e.target.checked }))
+                    }
+                    sx={{ color: "white" }}
+                  />
+                }
+                label={
+                  <Typography sx={{ textTransform: "capitalize", color: "white" }}>
+                    {diff}
+                  </Typography>
+                }
+              />
+            ))}
+          </FormGroup>
+        </Box>
+      </Modal>
+
+      {/* <Dialog
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}>
+        <DialogTitle>Settings</DialogTitle>
+        <DialogContent>
+          <FormControl
+            component='fieldset'
+            sx={{ mb: 2 }}>
+            <FormLabel component='legend'>League</FormLabel>
+            <RadioGroup
+              value={selectedLeague}
+              onChange={handleLeagueChange}
+              row>
+              <FormControlLabel
+                value='bronze'
+                control={<Radio />}
+                label='Bronze'
+              />
+              <FormControlLabel
+                value='silver'
+                control={<Radio />}
+                label='Silver'
+              />
+              <FormControlLabel
+                value='gold'
+                control={<Radio />}
+                label='Gold'
+              />
+              <FormControlLabel
+                value='platinum'
+                control={<Radio />}
+                label='Platinum'
+              />
+            </RadioGroup>
+          </FormControl>
+
+          <FormControl component='fieldset'>
+            <FormLabel component='legend'>Difficulties</FormLabel>
+            <Box sx={{ display: "flex", flexDirection: "column" }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={difficulties.casual}
+                    onChange={handleDifficultyChange}
+                    name='casual'
+                  />
+                }
+                label='Casual'
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={difficulties.hardcore}
+                    onChange={handleDifficultyChange}
+                    name='hardcore'
+                  />
+                }
+                label='Hardcore'
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={difficulties.perfection}
+                    onChange={handleDifficultyChange}
+                    name='perfection'
+                  />
+                }
+                label='Perfection'
+              />
+            </Box>
+          </FormControl>
+        </DialogContent>
+      </Dialog> */}
+      {/* {leaderboard.map((entry, i) => (
+        <Typography key={entry.name}>
+          {i + 1}. {entry.name} — {entry.highscore}
+        </Typography>
+      ))} */}
       <Typography
         variant='subtitle1'
         color='gold'
@@ -726,7 +986,9 @@ const TypingGamePage: React.FC = () => {
             </Box>
           </Typography>
 
-          {pausedForInactivity ? (
+          {isCasual ? (
+            <Typography sx={{ color: "lightgreen", fontWeight: "bold" }}>Mode: Casual</Typography>
+          ) : pausedForInactivity ? (
             <Typography
               sx={{ color: "orange", fontWeight: "bold", animation: `${pulse} 1s infinite` }}>
               ⏸ Paused
@@ -866,7 +1128,7 @@ const TypingGamePage: React.FC = () => {
             )}
 
             <Button
-              onClick={resetGame}
+              onClick={() => resetGame()}
               variant='contained'
               sx={{
                 marginTop: 1,
