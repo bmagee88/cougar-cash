@@ -7,17 +7,11 @@ import {
   Button,
   styled,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  FormControl,
-  FormLabel,
   RadioGroup,
   FormControlLabel,
   Radio,
   Checkbox,
   FormGroup,
-  Divider,
 } from "@mui/material";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { words } from "typingProject/resources/staticData";
@@ -134,9 +128,9 @@ const TypingGamePage: React.FC = () => {
     });
   };
 
-  const handleLeagueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedLeague(event.target.value);
-  };
+  // const handleLeagueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   setSelectedLeague(event.target.value);
+  // };
 
   const isCasual = difficulties.casual;
 
