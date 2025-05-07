@@ -127,7 +127,7 @@ import {
   
         if (name === "casual" && prev.casual && !checked) {
           // Reset game only if casual is turned OFF
-          resetGame(true);
+          resetGame(true, false);
         }
   
         return newDifficulties;
@@ -463,7 +463,7 @@ import {
     useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === "Enter") {
-          resetGame(); // Trigger reset game when Enter key is pressed
+          resetGame(false, true); // Trigger reset game when Enter key is pressed
         }
       };
   
@@ -1102,7 +1102,7 @@ import {
   
           <Modal
             open={showModal}
-            onClose={resetGame}
+            onClose={resetGame(false, true)}
             aria-labelledby='modal-title'
             aria-describedby='modal-description'>
             <Box
