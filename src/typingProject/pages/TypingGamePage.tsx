@@ -694,6 +694,7 @@ const TypingGamePage: React.FC = () => {
           direction='row'
           alignItems='center'
           spacing={1}>
+          <Typography>{correctWordCount}/500</Typography>
           <Typography sx={{ color: leagueTrophies[selectedLeague].color, fontWeight: "bold" }}>
             {leagueTrophies[selectedLeague].emoji}
           </Typography>
