@@ -1102,7 +1102,7 @@ import {
   
           <Modal
             open={showModal}
-            onClose={resetGame(false, true)}
+            onClose={()=>resetGame(false, true)}
             aria-labelledby='modal-title'
             aria-describedby='modal-description'>
             <Box
