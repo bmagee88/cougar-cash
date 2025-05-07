@@ -6,6 +6,7 @@ import About from "./pages/About";
 import { Box } from "@mui/material";
 import SheetsTestPage from "./pages/SheetsTestPage";
 import TypingGamePage from "./typingProject/pages/TypingGamePage";
+import SnakeGamePage from "./SnakeGamePage";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
@@ -31,6 +32,9 @@ function App() {
           <Route
             path='/typing'
             element={<TypingGamePage />}></Route>
+              <Route
+            path='/snake'
+            element={<SnakeGamePage />}></Route>
         </Routes>
       </Router>
     </Box>
