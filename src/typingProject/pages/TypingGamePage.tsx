@@ -12,11 +12,18 @@ import {
   Radio,
   Checkbox,
   FormGroup,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  List,
+  ListItem,
+  Snackbar,
+  Alert,
+  Tooltip,
 } from "@mui/material";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { words } from "typingProject/resources/staticData";
+import { collectiblePairs, leagueTrophies, words } from "typingProject/resources/staticData";
 /** @jsxImportSource @emotion/react */
-import { keyframes } from "@emotion/react";
 import Confetti from "typingProject/Confetti";
 import { usePersistedLevel } from "typingProject/hooks/usePersistedLevel";
 import { usePersistedHighscore } from "typingProject/hooks/usePersistedHighscore";
@@ -24,47 +31,9 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import BackpackIcon from "@mui/icons-material/Backpack";
 import Drawer from "@mui/material/Drawer";
 import Badge from "@mui/material/Badge";
-
-const pulseBadge = keyframes`
-  0% { transform: scale(1); }
-  50% { transform: scale(1.4); }
-  100% { transform: scale(1); }
-`;
-
-const glow = keyframes`
-    0% { text-shadow: 0 0 5px #fff, 0 0 10px #ff00ff, 0 0 15px #00ffff; }
-    50% { text-shadow: 0 0 10px #ffff00, 0 0 20px #00ff00, 0 0 30px #ff0000; }
-    100% { text-shadow: 0 0 5px #fff, 0 0 10px #ff00ff, 0 0 15px #00ffff; }
-  `;
-
-const shake = keyframes`
-    0%   { transform: translate(0, 0) rotate(0deg); font-size: 1rem; color: #2980b9; }  /* Blue */
-    10%  { transform: translate(-3px, 2px) rotate(-1deg); font-size: 1.05rem; color: #16a085; }  /* Teal */
-    20%  { transform: translate(4px, -1px) rotate(1deg); font-size: 0.95rem; color: #27ae60; }  /* Green */
-    30%  { transform: translate(-2px, 3px) rotate(0deg); font-size: 1.1rem; color: #f39c12; }  /* Yellow */
-    40%  { transform: translate(3px, -2px) rotate(1deg); font-size: 0.9rem; color: #8e44ad; }  /* Purple */
-    50%  { transform: translate(-4px, 1px) rotate(-1deg); font-size: 1.05rem; color: #e67e22; }  /* Orange */
-    60%  { transform: translate(2px, -3px) rotate(0deg); font-size: 0.97rem; color: #d35400; }  /* Dark Orange */
-    70%  { transform: translate(-1px, 2px) rotate(1deg); font-size: 1.08rem; color: #c0392b; }  /* Red */
-    80%  { transform: translate(3px, -1px) rotate(-1deg); font-size: 0.92rem; color: #f1c40f; }  /* Yellow-Green */
-    90%  { transform: translate(-2px, 1px) rotate(0deg); font-size: 1.03rem; color: #34495e; }  /* Dark Blue */
-    100% { transform: translate(0, 0) rotate(0deg); font-size: 1rem; color: #2980b9; }  /* Back to Blue */
-  `;
-
-const pulse = keyframes`
-    0% {
-      transform: scale(1);
-      color: inherit;
-    }
-    50% {
-      transform: scale(1.5);
-      color: red;
-    }
-    100% {
-      transform: scale(1);
-      color: inherit;
-    }
-  `;
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { glow, pulse, pulseBadge, shake } from "typingProject/keyframes/keyframes";
+import { INACTIVITY_PAUSE_SECONDS, TIMER } from "typingProject/constants/constants";
 
 // const AnimatedTimer = styled(Typography, {
 //   shouldForwardProp: (prop) => prop !== "animate",
@@ -78,8 +47,6 @@ const AnimatedTimer = styled(Typography)(({ theme }) => ({
   transition: "transform 0.5s ease-in-out",
   display: "inline-block",
 }));
-
-const TIMER = 60;
 
 const TypingGamePage: React.FC = () => {
   const getTodayKey = () => new Date().toISOString().split("T")[0];
@@ -105,429 +72,17 @@ const TypingGamePage: React.FC = () => {
 
     return streak;
   };
-  const leagueTrophies = {
-    bronze: { emoji: "🥉", color: "#cd7f32" },
-    silver: { emoji: "🥈", color: "#c0c0c0" },
-    gold: { emoji: "🥇", color: "#ffd700" },
-    platinum: { emoji: "🌟", color: "#e5e4e2" }, // or pick a custom
-  };
 
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  const collectiblePairs = {
-    Social: [
-      "kind heart",
-      "help hand",
-      "warm hug",
-      "soft smile",
-      "open arms",
-      "gentle touch",
-      "bright eyes",
-      "true friend",
-      "peace talk",
-      "safe space",
-      "sweet words",
-      "calm voice",
-      "caring soul",
-      "friendly wave",
-      "hopeful glance",
-      "shared joy",
-      "silent support",
-      "trust earned",
-      // "deep compassion",
-      "love shared",
-      "brave ally",
-      "cheer given",
-      "fair play",
-      "joyful hug",
-      "honest answer",
-      "respect shown",
-      "welcoming grin",
-      "good neighbor",
-      "grateful heart",
-      // "thoughtful gift",
-      "nice gesture",
-      "giving nature",
-      "kindness returned",
-      "shared laugh",
-      "listening ear",
-      "patient friend",
-      "gentle word",
-      "grace offered",
-      "support system",
-      "faith kept",
-      "bond made",
-      "sincere thanks",
-      "sweet gesture",
-      "forgive quickly",
-      "soft heart",
-      "true smile",
-      "thank you",
-      "empathy given",
-      "warm welcome",
-      "comfort offered",
-      "uplifting word",
-      "smiling eyes",
-      "reliable friend",
-      // "neighborly wave",
-      "steady hand",
-      "light touch",
-      "open heart",
-      "pure intent",
-      "compassion offered",
-      "loyal friend",
-      "trusting bond",
-      "support beam",
-      "shared secret",
-      "peace offering",
-      "emotional support",
-      "healing hug",
-      "gentle eyes",
-      "safe feeling",
-      "welcomed warmly",
-      "open door",
-      "quiet listener",
-      "tender care",
-      "shared burden",
-      "mutual respect",
-      "common ground",
-      "family bond",
-      "happy tears",
-      "laugh shared",
-      "comfort zone",
-      "moral support",
-      "healing space",
-      "helpful hand",
-      "kind act",
-      "gentle gesture",
-      "relief given",
-      "true empathy",
-      "good vibes",
-      "group hug",
-      "trusted friend",
-      "shared love",
-      "respect offered",
-      // "lasting friendship",
-      "peace made",
-      "open ears",
-      "steady smile",
-      "cheerful grin",
-      "healing words",
-      "support given",
-      "warmth shared",
-      "gentle help",
-    ],
-    Technology: [
-      "binary code",
-      "server stack",
-      "data stream",
-      "cloud storage",
-      "wifi signal",
-      "usb port",
-      "api call",
-      "network node",
-      "logic gate",
-      "debug tool",
-      "smart device",
-      "web page",
-      "code editor",
-      "system boot",
-      "drive error",
-      "gpu driver",
-      "bit rate",
-      "ping test",
-      "cpu core",
-      "disk space",
-      "cache miss",
-      "router config",
-      "mobile app",
-      "tech stack",
-      "internet browser",
-      "domain name",
-      "protocol switch",
-      // "javascript loop",
-      "file path",
-      "loop function",
-      "error log",
-      "byte stream",
-      "logic error",
-      "html tag",
-      "css grid",
-      "security patch",
-      "device sync",
-      "signal boost",
-      "code base",
-      "stack trace",
-      "packet loss",
-      "dns query",
-      "code branch",
-      "test case",
-      "build error",
-      "terminal command",
-      "debug console",
-      "sql query",
-      "memory leak",
-      "input device",
-      "output port",
-      "mouse click",
-      "keyboard shortcut",
-      "email client",
-      "spam filter",
-      "syntax error",
-      "git repo",
-      "merge conflict",
-      "commit log",
-      "deploy script",
-      "server uptime",
-      "dev tool",
-      "frontend framework",
-      "backend route",
-      // "form validation",
-      "render loop",
-      "viewport width",
-      "media query",
-      // "responsive design",
-      "docker image",
-      "version control",
-      "database table",
-      "login form",
-      "session timeout",
-      "cookie tracker",
-      "firewall rule",
-      "ssl cert",
-      "crypto hash",
-      "function call",
-      // "websocket connection",
-      "user auth",
-      "error handler",
-      "dark mode",
-      "code snippet",
-      "clipboard copy",
-      "cli tool",
-      "terminal shell",
-      "dev mode",
-      "build pipeline",
-      "query param",
-      "api endpoint",
-      "node module",
-      "npm package",
-      "react hook",
-      "redux store",
-      "token auth",
-      "machine code",
-      "boot sequence",
-      "static site",
-      "landing page",
-    ],
-    Success: [
-      "big goal",
-      "clear plan",
-      "daily grind",
-      "small win",
-      "smart move",
-      "bold step",
-      "hard work",
-      "focused mind",
-      "good habit",
-      "next level",
-      "sharp vision",
-      "firm decision",
-      "strong will",
-      "goal achieved",
-      "win streak",
-      "dream job",
-      "clear path",
-      "long run",
-      "high bar",
-      "growth mindset",
-      "task done",
-      "grit shown",
-      "value added",
-      "earn trust",
-      "well done",
-      "bright future",
-      "deep focus",
-      "solid plan",
-      "true grit",
-      // "worthwhile effort",
-      "top form",
-      "goal reached",
-      "sharp mind",
-      "effort shown",
-      "key step",
-      "major win",
-      "long haul",
-      "level up",
-      "great pitch",
-      "work ethic",
-      "lucky break",
-      "clean win",
-      "firm goal",
-      "big picture",
-      "vision board",
-      "grind mode",
-      "steady climb",
-      "team win",
-      "quick win",
-      "bold vision",
-      "daily hustle",
-      "keep going",
-      "push forward",
-      "strong finish",
-      "sharp turn",
-      "right move",
-      "big idea",
-      "deep dive",
-      "new skill",
-      "value earned",
-      "worth fight",
-      "steady growth",
-      "right call",
-      "final push",
-      "team effort",
-      "career move",
-      "action plan",
-      "next step",
-      "smart risk",
-      "new role",
-      "steady pace",
-      "quick pivot",
-      "goal met",
-      "deadline hit",
-      "promotion earned",
-      "plan made",
-      "vision clear",
-      "wise move",
-      "bright path",
-      "calm mind",
-      "bold action",
-      "quick adapt",
-      "timely fix",
-      "major shift",
-      "level gain",
-      "dream reach",
-      "small step",
-      "goal list",
-      "hope held",
-      "top mark",
-      "peak form",
-      "game face",
-      "win goal",
-      "fast lane",
-      "career climb",
-      "lead role",
-      "goal chain",
-      "task beat",
-      "hustle paid",
-      "aim true",
-      "chicken jocky",
-      "locked in",
-    ],
-    Academia: [
-      "study guide",
-      "test day",
-      "quiz score",
-      "pencil case",
-      "note card",
-      "school desk",
-      "open book",
-      "sharp mind",
-      "final exam",
-      "lab coat",
-      "class rules",
-      "group project",
-      "book report",
-      "math test",
-      "lunch break",
-      "pop quiz",
-      "science lab",
-      "chalk board",
-      "pen ink",
-      "college prep",
-      "grade level",
-      "school bell",
-      "study hour",
-      "field trip",
-      "lesson plan",
-      "white board",
-      "text book",
-      "quiz time",
-      "classmate help",
-      "teacher aid",
-      "paper due",
-      "home work",
-      "class note",
-      "book stack",
-      "math quiz",
-      "history test",
-      "reading log",
-      "word list",
-      "science fair",
-      "quiz grade",
-      "test prep",
-      "open notes",
-      "school pride",
-      "honor roll",
-      "desk chair",
-      "subject guide",
-      "brain storm",
-      "chalk dust",
-      "lab sheet",
-      "school zone",
-      "field notes",
-      "desk drawer",
-      "tutor help",
-      "term paper",
-      "reading lamp",
-      "quiz board",
-      "note pad",
-      "math notes",
-      "school play",
-      "extra credit",
-      "study tool",
-      "exam review",
-      "peer review",
-      "project rubric",
-      "final grade",
-      "bell ring",
-      "study break",
-      "daily planner",
-      "grade scale",
-      "exam hall",
-      "study snacks",
-      "learning aid",
-      "class pet",
-      "test anxiety",
-      "quiz app",
-      "lesson test",
-      "extra help",
-      "group study",
-      "exam question",
-      "rubric score",
-      "essay topic",
-      "proof read",
-      "school bus",
-      "academic goal",
-      "notebook paper",
-      "sharpener edge",
-      "tardy slip",
-      "school trip",
-      "teacher lounge",
-      "library pass",
-      "lab notebook",
-      "quiz sheet",
-      "home pass",
-      "lesson guide",
-      "grade boost",
-      "brain work",
-      "exam desk",
-      "teacher note",
-      "extra worksheet",
-      "review sheet",
-    ],
-  };
+  const [collectedWords, setCollectedWords] = useState<string[]>(() => {
+    const stored = localStorage.getItem("collectedWords");
+    return stored ? JSON.parse(stored) : [];
+  });
 
   // const flyRef = useRef<HTMLDivElement>(null);
+
+  const lastWordRef = useRef<string>("");
 
   const [foundNewPair, setFoundNewPair] = useState(false);
   const [newlyCollectedCount, setNewlyCollectedCount] = useState(0);
@@ -568,6 +123,19 @@ const TypingGamePage: React.FC = () => {
 
   const [goalMetFromStorage, setGoalMetFromStorage] = useState(false);
 
+  const [snackbar, setSnackbar] = useState<{
+    message: string;
+    open: boolean;
+    severity?: "success" | "info" | "warning" | "error";
+  }>({ message: "", open: false });
+
+  const showSnackbar = (
+    message: string,
+    severity: "success" | "info" | "warning" | "error" = "info"
+  ) => {
+    setSnackbar({ message, open: true, severity });
+  };
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedLeague, setSelectedLeague] = useState("bronze");
   const [difficulties, setDifficulties] = useState({
@@ -575,6 +143,8 @@ const TypingGamePage: React.FC = () => {
     hardcore: false,
     perfection: false,
   });
+  const isHardcore = difficulties.hardcore;
+
   const [playTime, setPlayTime] = useState(() => {
     const saved = localStorage.getItem("dailies");
     const dailies = saved ? JSON.parse(saved) : {};
@@ -606,6 +176,13 @@ const TypingGamePage: React.FC = () => {
       return newDifficulties;
     });
   };
+
+  useEffect(() => {
+    showSnackbar(
+      "+Hardcore, Perfection and Casual settings now available! +New Single Word collection available!",
+      "info"
+    );
+  }, []);
 
   // const handleLeagueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
   //   setSelectedLeague(event.target.value);
@@ -666,7 +243,7 @@ const TypingGamePage: React.FC = () => {
 
     inactivityRef.current = setTimeout(() => {
       setPausedForInactivity(true);
-    }, 5000);
+    }, INACTIVITY_PAUSE_SECONDS * 1000);
   };
 
   useEffect(() => {
@@ -899,6 +476,7 @@ const TypingGamePage: React.FC = () => {
   useEffect(() => {
     const newWords = getRandomWords(currentLevel);
     setActiveWordList(newWords);
+    lastWordRef.current = newWords[newWords.length - 1]; // ✅ Store last word
     setStatuses(Array(newWords.join(" ").length).fill(null)); // immediate sync
     if (containerRef.current) {
       const widths = calculateLineWidths(containerRef, newWords);
@@ -1013,6 +591,12 @@ const TypingGamePage: React.FC = () => {
       if (lastTypedWord === targetWord) {
         setCorrectWordCount((prev) => prev + 1);
         checkForNewPairs(value.trim());
+
+        if (!collectedWords.includes(targetWord)) {
+          const updatedWords = [...collectedWords, targetWord];
+          setCollectedWords(updatedWords);
+          localStorage.setItem("collectedWords", JSON.stringify(updatedWords));
+        }
       }
     }
 
@@ -1037,10 +621,15 @@ const TypingGamePage: React.FC = () => {
     if (currentIndex >= fullText.length) return; // prevent typing beyond the word list
 
     const newStatuses = [...statuses];
-    if (lastChar === fullText[currentIndex]) {
-      newStatuses[currentIndex] = "correct";
-    } else {
-      newStatuses[currentIndex] = "incorrect";
+    const isCorrect = lastChar === fullText[currentIndex];
+    newStatuses[currentIndex] = isCorrect ? "correct" : "incorrect";
+
+    // 🔥 Perfection mode ends the game immediately on mistake
+    if (difficulties.perfection && !isCorrect) {
+      setStatuses(newStatuses);
+      setGameCompleted(true);
+      setShowModal(true);
+      return;
     }
 
     setStatuses(newStatuses);
@@ -1089,6 +678,7 @@ const TypingGamePage: React.FC = () => {
     // Check if all the letters are correct before timer runs out
     const totalCorrect = newStatuses.filter((s) => s === "correct").length;
     if (totalCorrect === fullText.length) {
+      // collectLastTypedWord(); // ✅ Collect the final word before state resets
       checkForNewPairs(fullText);
       startNextLevel();
     }
@@ -1100,10 +690,20 @@ const TypingGamePage: React.FC = () => {
   };
 
   const handleTimeOut = () => {
+    // collectLastTypedWord();
     setShowModal(true);
   };
 
   const startNextLevel = () => {
+    const typedWords = input.trim().split(" ");
+    const lastTypedWord = typedWords[typedWords.length - 1];
+    const lastWord = lastWordRef.current;
+
+    if (lastTypedWord === lastWord && !collectedWords.includes(lastTypedWord)) {
+      const updated = [...collectedWords, lastTypedWord];
+      setCollectedWords(updated);
+      localStorage.setItem("collectedWords", JSON.stringify(updated));
+    }
     // handleLevelComplete();
     handleWin();
     setGameCompleted(true);
@@ -1148,9 +748,12 @@ const TypingGamePage: React.FC = () => {
     setInput(""); // Reset input field
     setCurrentIndex(0); // Reset index
     //   setCurrentLevel((prev) => { if(shouldResetToLevel1) return 1; return prev> 1? prev - 1: 1})
-    setCurrentLevel((prev) =>
-      prev > 1 ? (fromHighscoreModal ? prev - 1 : offCasual ? 1 : prev - 1) : 1
-    );
+    setCurrentLevel((prev) => {
+      if (offCasual) return 1;
+      if (isHardcore) return 1;
+      if (fromHighscoreModal) return Math.max(1, prev - 1);
+      return Math.max(1, prev - 1);
+    });
     setStatuses(Array(activeWordList.join(" ").length).fill(null)); // Reset statuses
     setTimerStarted(false); // Reset timer start flag
     setActiveWordList(getRandomWords(offCasual ? 1 : currentLevel - 1)); // Start with one word at level 1
@@ -1207,6 +810,38 @@ const TypingGamePage: React.FC = () => {
   //   }, 1000);
   // };
 
+  const totalWordCount = Object.values(words).flat().length;
+  const collectedWordCount = collectedWords.length;
+  const wordCollectionPercent = Math.round((collectedWordCount / totalWordCount) * 100);
+
+  const collectedWordsByLength: { [length: string]: string[] } = {};
+
+  for (const word of collectedWords) {
+    const len = word.length.toString();
+    if (!collectedWordsByLength[len]) {
+      collectedWordsByLength[len] = [];
+    }
+    collectedWordsByLength[len].push(word);
+  }
+
+  // const collectLastTypedWord = () => {
+  //   const fullWords = fullText.split(" ");
+  //   const typedUpTo = fullText.slice(0, currentIndex);
+  //   const typedWords = typedUpTo.trim().split(" ");
+  //   const lastIndex = typedWords.length - 1;
+
+  //   if (lastIndex >= 0 && lastIndex < fullWords.length) {
+  //     const typedWord = typedWords[lastIndex];
+  //     const expectedWord = fullWords[lastIndex];
+
+  //     if (typedWord === expectedWord && !collectedWords.includes(typedWord)) {
+  //       const updated = [...collectedWords, typedWord];
+  //       setCollectedWords(updated);
+  //       localStorage.setItem("collectedWords", JSON.stringify(updated));
+  //     }
+  //   }
+  // };
+
   return (
     <Stack
       sx={{
@@ -1248,34 +883,156 @@ const TypingGamePage: React.FC = () => {
         <Typography
           variant='h5'
           sx={{ mb: 2, color: "marigold", textAlign: "center", fontWeight: "bold" }}>
+          📘 Word Collection
+        </Typography>
+        <Typography
+          variant='h5'
+          sx={{
+            mb: 2,
+            color: "marigold",
+            textAlign: "center",
+            fontWeight: "bold",
+            lineHeight: ".25rem",
+          }}>
+          {" "}
+          ({collectedWordCount} / {totalWordCount}) {wordCollectionPercent}%
+        </Typography>
+
+        <Accordion
+          defaultExpanded={false}
+          sx={{
+            backgroundColor: "#2e2e2e",
+            color: "white",
+            border: "1px solid #555",
+            borderRadius: "8px",
+            mb: 1,
+            "&:before": { display: "none" },
+          }}>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ color: "gold" }} />}
+            sx={{
+              backgroundColor: "#1c1c1c",
+              borderBottom: "1px solid #333",
+              borderRadius: "8px 8px 0 0",
+              "& .MuiTypography-root": {
+                color: "gold",
+                fontWeight: "bold",
+              },
+            }}>
+            <Typography sx={{ color: "gold", mb: 1 }}>Single Words</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            {Object.entries(words)
+              .sort(([a], [b]) => parseInt(a) - parseInt(b))
+              .map(([length, wordList]) => (
+                <Box
+                  key={length}
+                  sx={{ mb: 2 }}>
+                  <Typography sx={{ color: "#aaa", fontWeight: "bold", mb: 1 }}>
+                    Length {length}
+                  </Typography>
+                  <List
+                    dense
+                    sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                    {wordList.sort().map((word) => (
+                      <ListItem
+                        key={word}
+                        sx={{
+                          width: "auto",
+                          p: 0.5,
+                          pl: 1,
+                          pr: 1,
+                          backgroundColor: "#333",
+                          borderRadius: 1,
+                          color: collectedWords.includes(word) ? "white" : "#888",
+                          fontWeight: collectedWords.includes(word) ? "bold" : "normal",
+                          textTransform: "capitalize",
+                        }}>
+                        {word}
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              ))}
+          </AccordionDetails>
+        </Accordion>
+
+        <Typography
+          variant='h5'
+          sx={{ mb: 2, color: "marigold", textAlign: "center", fontWeight: "bold" }}>
           🎒 Word Pair Collection
         </Typography>
 
         {Object.entries(collectiblePairs).map(([theme, pairs]) => {
           const collectedCount = pairs.filter((pair) => collectedPairs.includes(pair)).length;
           return (
-            <Box
+            // <Box
+            //   key={theme}
+            //   sx={{ mb: 3 }}>
+            <Accordion
               key={theme}
-              sx={{ mb: 3 }}>
-              <Typography
-                variant='h6'
-                sx={{ color: "gold", mb: 1 }}>
-                {theme} ({collectedCount} / {pairs.length})
-              </Typography>
-              <Stack spacing={1}>
-                {pairs.map((pair) => (
-                  <Typography
-                    key={pair}
-                    sx={{
-                      color: collectedPairs.includes(pair) ? "marigold" : "#888",
-                      fontWeight: collectedPairs.includes(pair) ? "bold" : "normal",
-                      textTransform: "capitalize",
-                    }}>
-                    {pair}
-                  </Typography>
-                ))}
-              </Stack>
-            </Box>
+              defaultExpanded={false}
+              sx={{
+                backgroundColor: "#2e2e2e",
+                color: "white",
+                border: "1px solid #555",
+                borderRadius: "8px",
+                mb: 1,
+                "&:before": { display: "none" },
+              }}>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon sx={{ color: "gold" }} />}
+                sx={{
+                  backgroundColor: "#1c1c1c",
+                  borderBottom: "1px solid #333",
+                  borderRadius: "8px 8px 0 0",
+                  "& .MuiTypography-root": {
+                    color: "gold",
+                    fontWeight: "bold",
+                  },
+                }}>
+                <Typography>
+                  {theme} ({collectedCount} / {pairs.length})
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails sx={{ backgroundColor: "#1c1c1c" }}>
+                <List dense>
+                  {pairs.map((pair) => (
+                    <Typography
+                      key={pair}
+                      sx={{
+                        color: collectedPairs.includes(pair) ? "marigold" : "#888",
+                        fontWeight: collectedPairs.includes(pair) ? "bold" : "normal",
+                        textTransform: "capitalize",
+                        px: 1,
+                        py: 0.5,
+                      }}>
+                      {pair}
+                    </Typography>
+                  ))}
+                </List>
+              </AccordionDetails>
+            </Accordion>
+
+            // {/* <Typography
+            //   variant='h6'
+            //   sx={{ color: "gold", mb: 1 }}>
+            //   {theme} ({collectedCount} / {pairs.length})
+            // </Typography>
+            // <Stack spacing={1}>
+            //   {pairs.map((pair, index) => (
+            //     <Typography
+            //       key={pair}
+            //       sx={{
+            //         color: collectedPairs.includes(pair) ? "marigold" : "#888",
+            //         fontWeight: collectedPairs.includes(pair) ? "bold" : "normal",
+            //         textTransform: "capitalize",
+            //       }}>
+            //       {pair}
+            //     </Typography>
+            //   ))}
+            // </Stack> */}
+            // </Box>
           );
         })}
       </Drawer>
@@ -1401,7 +1158,6 @@ const TypingGamePage: React.FC = () => {
                       // (e) => setDifficulties((prev) => ({ ...prev, [diff]: e.target.checked }))
                     }
                     sx={{ color: "white" }}
-                    disabled={diff !== "casual"} // ⬅️ Only allow "casual"
                   />
                 }
                 label={
@@ -1513,20 +1269,30 @@ const TypingGamePage: React.FC = () => {
       </Typography>
 
       {!goalMetFromStorage && (
-        <Box
-          sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".3rem" }}>
+        <Tooltip
+          title={`${Math.floor(playTime / 60)}m ${playTime % 60}s / 15m — Play Time Goal`}
+          arrow>
           <Box
             sx={{
-              width: `${
-                playTime / DAILY_GOAL_SECONDS >= 1 ? 100 : (playTime / DAILY_GOAL_SECONDS) * 100
-              }%`,
-              height: "100%",
+              width: "80%",
+              bgcolor: "#2e2e2e",
+              height: 12,
               borderRadius: "12px",
-              bgcolor: correctWordCount >= 75 && currentLevel >= 5 ? "green" : "grey",
-              transition: "width 0.5s ease",
-            }}
-          />
-        </Box>
+              mb: ".3rem",
+            }}>
+            <Box
+              sx={{
+                width: `${
+                  playTime / DAILY_GOAL_SECONDS >= 1 ? 100 : (playTime / DAILY_GOAL_SECONDS) * 100
+                }%`,
+                height: "100%",
+                borderRadius: "12px",
+                bgcolor: correctWordCount >= 75 && currentLevel >= 5 ? "green" : "grey",
+                transition: "width 0.5s ease",
+              }}
+            />
+          </Box>
+        </Tooltip>
       )}
       {/* <Typography
           variant='caption'
@@ -1536,18 +1302,28 @@ const TypingGamePage: React.FC = () => {
           {Math.floor(playTime / 60)}m {playTime % 60}s / 15m
         </Typography> */}
       {!goalMetFromStorage && (
-        <Box
-          sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".3rem" }}>
+        <Tooltip
+          title={`${correctWordCount} / 75 correct words — Word Accuracy Goal`}
+          arrow>
           <Box
             sx={{
-              width: `${correctWordCount >= 75 ? 100 : (correctWordCount / 75) * 100}%`,
-              height: "100%",
+              width: "80%",
+              bgcolor: "#2e2e2e",
+              height: 12,
               borderRadius: "12px",
-              bgcolor: correctWordCount >= 75 ? "green" : "grey",
-              transition: "width 0.5s ease",
-            }}
-          />
-        </Box>
+              mb: ".3rem",
+            }}>
+            <Box
+              sx={{
+                width: `${correctWordCount >= 75 ? 100 : (correctWordCount / 75) * 100}%`,
+                height: "100%",
+                borderRadius: "12px",
+                bgcolor: correctWordCount >= 75 ? "green" : "grey",
+                transition: "width 0.5s ease",
+              }}
+            />
+          </Box>
+        </Tooltip>
       )}
       {/* <Typography
           variant='caption'
@@ -1558,18 +1334,28 @@ const TypingGamePage: React.FC = () => {
         </Typography> */}
 
       {!goalMetFromStorage && (
-        <Box
-          sx={{ width: "80%", bgcolor: "#2e2e2e", height: 12, borderRadius: "12px", mb: ".5rem" }}>
+        <Tooltip
+          title={`Level ${currentLevel} / 5 — Minimum Level Goal`}
+          arrow>
           <Box
             sx={{
-              width: `${currentLevel >= 5 ? 100 : (currentLevel / 5) * 100}%`,
-              height: "100%",
+              width: "80%",
+              bgcolor: "#2e2e2e",
+              height: 12,
               borderRadius: "12px",
-              bgcolor: currentLevel >= 5 ? "green" : "grey",
-              transition: "width 0.5s ease",
-            }}
-          />
-        </Box>
+              mb: ".5rem",
+            }}>
+            <Box
+              sx={{
+                width: `${currentLevel >= 5 ? 100 : (currentLevel / 5) * 100}%`,
+                height: "100%",
+                borderRadius: "12px",
+                bgcolor: currentLevel >= 5 ? "green" : "grey",
+                transition: "width 0.5s ease",
+              }}
+            />
+          </Box>
+        </Tooltip>
       )}
       {/* <Typography
           variant='caption'
@@ -1613,24 +1399,38 @@ const TypingGamePage: React.FC = () => {
             </Box>
           </Typography>
 
-          {isCasual ? (
-            <Typography sx={{ color: "lightgreen", fontWeight: "bold" }}>Mode: Casual</Typography>
-          ) : pausedForInactivity ? (
-            <Typography
-              sx={{ color: "orange", fontWeight: "bold", animation: `${pulse} 1s infinite` }}>
-              ⏸ Paused
-            </Typography>
-          ) : timer <= 5 ? (
-            <AnimatedTimer
-              key={"timer-" + timer}
-              sx={{
-                animation: `${pulse} 0.5s ease-in-out`,
-              }}>
-              Time left: {timer}s
-            </AnimatedTimer>
-          ) : (
-            <Typography>Time left: {timer}s</Typography>
-          )}
+          <Typography
+            sx={{
+              fontWeight: "bold",
+              display: "flex",
+              gap: 1,
+              alignItems: "center",
+              color: "white",
+            }}>
+            <>
+              {difficulties.hardcore && (
+                <span style={{ color: "#ff6347", fontWeight: "bold" }}>HARDCORE</span>
+              )}
+              {difficulties.perfection && (
+                <span style={{ color: "#ff69b4", fontWeight: "bold" }}>PERFECTION</span>
+              )}
+              {difficulties.casual ? (
+                <span style={{ color: "lightgreen", fontWeight: "bold" }}>CASUAL</span>
+              ) : pausedForInactivity ? (
+                <span style={{ color: "orange", animation: `${pulse} 1s infinite` }}>⏸ Paused</span>
+              ) : timer <= INACTIVITY_PAUSE_SECONDS ? (
+                <AnimatedTimer
+                  key={"timer-" + timer}
+                  sx={{
+                    animation: `${pulse} 0.5s ease-in-out`,
+                  }}>
+                  Time left: {timer}s
+                </AnimatedTimer>
+              ) : (
+                <span>Time left: {timer}s</span>
+              )}
+            </>
+          </Typography>
         </Box>
 
         <Box
@@ -1773,6 +1573,18 @@ const TypingGamePage: React.FC = () => {
       </Box>
       {/* Show Confetti when a level is completed */}
       {showConfetti && <Confetti />}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+        <Alert
+          severity={snackbar.severity}
+          onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+          sx={{ width: "100%" }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 };
