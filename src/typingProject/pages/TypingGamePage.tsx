@@ -73,6 +73,16 @@ const TypingGamePage: React.FC = () => {
     return streak;
   };
 
+  const itemIcons: Record<string, string> = {
+    gold: "🪙",
+    ruby: "🔴",
+    emerald: "🟢",
+    sapphire: "🔷",
+    diamond: "💎",
+  };
+
+  const orderedItems = ["gold", "ruby", "emerald", "sapphire", "diamond"];
+
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const [collectedWords, setCollectedWords] = useState<string[]>(() => {
@@ -85,8 +95,10 @@ const TypingGamePage: React.FC = () => {
   const lastWordRef = useRef<string>("");
 
   const [foundNewPair, setFoundNewPair] = useState(false);
-  const [newlyCollectedCount, setNewlyCollectedCount] = useState(0);
-
+  const [newlyCollectedCount, setNewlyCollectedCount] = useState(() => {
+    const stored = localStorage.getItem("newlyCollectedCount");
+    return stored ? parseInt(stored) : 0;
+  });
   const [collectedPairs, setCollectedPairs] = useState<string[]>(() => {
     const stored = localStorage.getItem("collectedPairs");
     return stored ? JSON.parse(stored) : [];
@@ -152,12 +164,28 @@ const TypingGamePage: React.FC = () => {
     return dailies[today]?.playTime || 0;
   });
 
+  const [collectedItemCounts, setCollectedItemCounts] = useState<Record<string, number>>(() => {
+    const stored = localStorage.getItem("collectedItemCounts");
+    return stored ? JSON.parse(stored) : {};
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [collectedPowerupCounts, setCollectedPowerupCounts] = useState<Record<string, number>>(
+    () => {
+      const stored = localStorage.getItem("collectedPowerupCounts");
+      return stored ? JSON.parse(stored) : {};
+    }
+  );
+
   const [correctWordCount, setCorrectWordCount] = useState(() => {
     const saved = localStorage.getItem("dailies");
     const dailies = saved ? JSON.parse(saved) : {};
     const today = getTodayKey();
     return dailies[today]?.correctWordCount || 0;
   });
+
+  const isItem = (word: string) => words.items.includes(word);
+  const isPowerup = (word: string) => words.powerups.includes(word);
 
   const [streak, setStreak] = useState(() => calculateStreak());
 
@@ -195,26 +223,26 @@ const TypingGamePage: React.FC = () => {
 
     for (const pair of allPairs) {
       if (fullText.includes(pair) && !collectedPairs.includes(pair)) {
-        const updated = [...collectedPairs, pair];
-        setCollectedPairs(updated);
-        localStorage.setItem("collectedPairs", JSON.stringify(updated));
-        setNewlyCollectedCount((prev) => prev + 1); // 🔥 Increment new count
+        const updatedPairs = [...collectedPairs, pair];
+        setCollectedPairs(updatedPairs);
+        localStorage.setItem("collectedPairs", JSON.stringify(updatedPairs));
+
+        if (!collectedPairs.includes(pair) && !newPairs.includes(pair)) {
+          setNewPairs((prev) => {
+            const updated = [...prev, pair];
+            localStorage.setItem("newPairs", JSON.stringify(updated));
+            return updated;
+          });
+        }
+
+        setNewlyCollectedCount((prev) => {
+          const updated = prev + 1;
+          localStorage.setItem("newlyCollectedCount", updated.toString());
+          return updated;
+        });
         setFoundNewPair(true);
         setTimeout(() => setFoundNewPair(false), 1000);
-
-        // 🔍 Find the first character span of the matched pair
-        // const pairWords = pair.split(" ");
-        // const pairStart = fullText.indexOf(pair);
-        // const charEls = document.querySelectorAll("#active-word-list-box span");
-
-        // const startEl = charEls[pairStart] as HTMLElement;
-        // const backpackEl = document.getElementById("backpack-icon");
-
-        // if (startEl && backpackEl) {
-        //   animatePairToBackpack(startEl, backpackEl);
-        // }
-
-        break; // animate only one pair per call
+        break;
       }
     }
   };
@@ -473,6 +501,11 @@ const TypingGamePage: React.FC = () => {
   //   setActiveWordList(newRandomWords); // Set active words when level changes or game resets
   // }, [currentLevel]);
 
+  const [newWords, setNewWords] = useState<string[]>(() => {
+    const stored = localStorage.getItem("newWords");
+    return stored ? JSON.parse(stored) : [];
+  });
+
   useEffect(() => {
     const newWords = getRandomWords(currentLevel);
     setActiveWordList(newWords);
@@ -482,6 +515,7 @@ const TypingGamePage: React.FC = () => {
       const widths = calculateLineWidths(containerRef, newWords);
       setLineCharCount(widths);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLevel]);
 
   useEffect(() => {
@@ -554,20 +588,76 @@ const TypingGamePage: React.FC = () => {
   }, [showModal]); // Run this effect when 'showModal' changes
 
   const getRandomWords = (level: number): string[] => {
-    const wordLengths = Object.keys(words); // ["3", "4", "5", ...]
-    const result: string[] = [];
+    const wordLengths = Object.keys(words).filter((key) => !["items", "powerups"].includes(key));
+    const minChars = level * 5 - 20;
+    const maxChars = level * 5 + 20;
+    const orderedItems = ["gold", "ruby", "emerald", "sapphire", "diamond"];
 
-    for (let i = 0; i < level; i++) {
-      const randomLengthKey = wordLengths[Math.floor(Math.random() * wordLengths.length)];
-      const wordList = words[randomLengthKey];
-      const randomWord = wordList[Math.floor(Math.random() * wordList.length)];
-      result.push(randomWord);
+    const attempts = 1000;
+
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const result: string[] = [];
+
+      // Step 1: Generate base words
+      for (let i = 0; i < level; i++) {
+        const key = wordLengths[Math.floor(Math.random() * wordLengths.length)];
+        const wordList = words[key];
+        const word = wordList[Math.floor(Math.random() * wordList.length)];
+        result.push(word);
+      }
+
+      // Step 2: Try inserting an item using cycle logic
+      const selectedItem = getRandomItemWithChance(orderedItems, 0.25);
+      let itemIndex = -1;
+
+      if (selectedItem) {
+        itemIndex = Math.floor(Math.random() * result.length);
+        result[itemIndex] = selectedItem;
+      }
+
+      // Step 3: 10% chance to insert a powerup (avoid overwriting item)
+      if (Math.random() < 0.1 && words.powerups?.length) {
+        const powerup = words.powerups[Math.floor(Math.random() * words.powerups.length)];
+        let powerupIndex = Math.floor(Math.random() * result.length);
+
+        let avoidConflictAttempts = 0;
+        while (powerupIndex === itemIndex && result.length > 1 && avoidConflictAttempts < 5) {
+          powerupIndex = Math.floor(Math.random() * result.length);
+          avoidConflictAttempts++;
+        }
+
+        result[powerupIndex] = powerup;
+      }
+
+      // Step 4: Check character count
+      const totalChars = result.reduce((sum, word) => sum + word.length, 0);
+      if (totalChars >= minChars && totalChars <= maxChars) {
+        // Step 5: Optionally inject collectible pair
+        if (level >= 10) {
+          const allPairs = Object.values(collectiblePairs).flat();
+          const randomPair = allPairs[Math.floor(Math.random() * allPairs.length)];
+          const pairWords = randomPair.split(" ");
+
+          const replaceIndex = Math.floor(Math.random() * (result.length - 1));
+          result.splice(replaceIndex, 2, ...pairWords);
+        }
+
+        return result;
+      }
     }
 
-    return result;
+    // Fallback: basic list
+    return Array.from({ length: level }, () => {
+      const key = wordLengths[Math.floor(Math.random() * wordLengths.length)];
+      const wordList = words[key];
+      return wordList[Math.floor(Math.random() * wordList.length)];
+    });
   };
 
   const fullText = useMemo(() => activeWordList.join(" "), [activeWordList]);
+
+  const [itemCollectedThisLevel, setItemCollectedThisLevel] = useState(false);
+  const [powerupCollectedThisLevel, setPowerupCollectedThisLevel] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -588,6 +678,50 @@ const TypingGamePage: React.FC = () => {
       const fullWords = fullText.split(" ");
       const targetWord = fullWords[typedWords.length - 1];
 
+      // // Check if all characters in the target word were typed correctly
+      // let charStart = 0;
+      // for (let i = 0; i < typedWords.length - 1; i++) {
+      //   charStart += fullWords[i].length + 1; // +1 for space
+      // }
+
+      // Find the character index where the lastTypedWord ends
+      let endCharIndex = 0;
+      for (let i = 0; i < typedWords.length; i++) {
+        endCharIndex += fullWords[i].length + 1; // +1 for space
+      }
+
+      // Check if all characters up to that point are correct
+      const isFullyCorrect = statuses
+        .slice(0, endCharIndex - 1) // -1 to exclude the space that was just typed
+        .every((s) => s === "correct");
+
+      // Only collect if fully correct
+      if (isFullyCorrect) {
+        if (!itemCollectedThisLevel && words.items.includes(targetWord)) {
+          setCollectedItemCounts((prev) => {
+            const updated = {
+              ...prev,
+              [targetWord]: (prev[targetWord] || 0) + 1,
+            };
+            localStorage.setItem("collectedItemCounts", JSON.stringify(updated));
+            return updated;
+          });
+          setItemCollectedThisLevel(true);
+        }
+
+        if (!powerupCollectedThisLevel && words.powerups.includes(targetWord)) {
+          setCollectedPowerupCounts((prev) => {
+            const updated = {
+              ...prev,
+              [targetWord]: (prev[targetWord] || 0) + 1,
+            };
+            localStorage.setItem("collectedPowerupCounts", JSON.stringify(updated));
+            return updated;
+          });
+          setPowerupCollectedThisLevel(true);
+        }
+      }
+
       if (lastTypedWord === targetWord) {
         setCorrectWordCount((prev) => prev + 1);
         checkForNewPairs(value.trim());
@@ -596,6 +730,12 @@ const TypingGamePage: React.FC = () => {
           const updatedWords = [...collectedWords, targetWord];
           setCollectedWords(updatedWords);
           localStorage.setItem("collectedWords", JSON.stringify(updatedWords));
+        }
+        // ✅ mark as new
+        if (!collectedWords.includes(targetWord) && !newWords.includes(targetWord)) {
+          const updatedNew = [...newWords, targetWord];
+          setNewWords(updatedNew);
+          localStorage.setItem("newWords", JSON.stringify(updatedNew));
         }
       }
     }
@@ -699,6 +839,9 @@ const TypingGamePage: React.FC = () => {
     const lastTypedWord = typedWords[typedWords.length - 1];
     const lastWord = lastWordRef.current;
 
+    setItemCollectedThisLevel(false);
+    setPowerupCollectedThisLevel(false);
+
     if (lastTypedWord === lastWord && !collectedWords.includes(lastTypedWord)) {
       const updated = [...collectedWords, lastTypedWord];
       setCollectedWords(updated);
@@ -759,6 +902,20 @@ const TypingGamePage: React.FC = () => {
     setActiveWordList(getRandomWords(offCasual ? 1 : currentLevel - 1)); // Start with one word at level 1
   };
 
+  const totalWordCount = Object.values(words).flat().length;
+  const collectedWordCount = collectedWords.length;
+  const wordCollectionPercent = Math.round((collectedWordCount / totalWordCount) * 100);
+
+  const collectedWordsByLength: { [length: string]: string[] } = {};
+
+  for (const word of collectedWords) {
+    const len = word.length.toString();
+    if (!collectedWordsByLength[len]) {
+      collectedWordsByLength[len] = [];
+    }
+    collectedWordsByLength[len].push(word);
+  }
+
   // const [leaderboard, setLeaderboard] = useState([
   //   { name: "brian", highscore: 12 },
   //   { name: "derp", highscore: 16 },
@@ -810,20 +967,6 @@ const TypingGamePage: React.FC = () => {
   //   }, 1000);
   // };
 
-  const totalWordCount = Object.values(words).flat().length;
-  const collectedWordCount = collectedWords.length;
-  const wordCollectionPercent = Math.round((collectedWordCount / totalWordCount) * 100);
-
-  const collectedWordsByLength: { [length: string]: string[] } = {};
-
-  for (const word of collectedWords) {
-    const len = word.length.toString();
-    if (!collectedWordsByLength[len]) {
-      collectedWordsByLength[len] = [];
-    }
-    collectedWordsByLength[len].push(word);
-  }
-
   // const collectLastTypedWord = () => {
   //   const fullWords = fullText.split(" ");
   //   const typedUpTo = fullText.slice(0, currentIndex);
@@ -841,6 +984,37 @@ const TypingGamePage: React.FC = () => {
   //     }
   //   }
   // };
+
+  const [newPairs, setNewPairs] = useState<string[]>(() => {
+    const stored = localStorage.getItem("newPairs");
+    return stored ? JSON.parse(stored) : [];
+  });
+  useEffect(() => {
+    if (!drawerOpen) {
+      setNewPairs([]); // 👈 Clear "New" flags
+    }
+  }, [drawerOpen]);
+
+  const getCharWordIndex = (index: number, words: string[]) => {
+    let count = 0;
+    for (let i = 0; i < words.length; i++) {
+      count += words[i].length;
+      if (index < count + i) return i; // +i for spaces
+    }
+    return -1;
+  };
+
+  const getRandomItemWithChance = (items: string[], chance = 0.5): string | null => {
+    if (Math.random() < 0.25) {
+      return null;
+    }
+    for (const item of items) {
+      if (Math.random() < chance) {
+        return item;
+      }
+    }
+    return null;
+  };
 
   return (
     <Stack
@@ -870,7 +1044,13 @@ const TypingGamePage: React.FC = () => {
         open={drawerOpen}
         onClose={() => {
           setDrawerOpen(false);
+          setNewWords([]);
+          setNewPairs([]);
           setNewlyCollectedCount(0);
+
+          localStorage.removeItem("newWords");
+          localStorage.removeItem("newPairs");
+          localStorage.setItem("newlyCollectedCount", "0");
         }}
         PaperProps={{
           sx: {
@@ -934,7 +1114,7 @@ const TypingGamePage: React.FC = () => {
                   <List
                     dense
                     sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {wordList.sort().map((word) => (
+                    {wordList.sort().map((word, index) => (
                       <ListItem
                         key={word}
                         sx={{
@@ -947,8 +1127,18 @@ const TypingGamePage: React.FC = () => {
                           color: collectedWords.includes(word) ? "white" : "#888",
                           fontWeight: collectedWords.includes(word) ? "bold" : "normal",
                           textTransform: "capitalize",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
                         }}>
-                        {word}
+                        <span>{word}</span>
+                        {newWords.includes(word) && (
+                          <Typography
+                            component='span'
+                            sx={{ color: "hotpink", fontSize: "0.75rem", fontWeight: "bold" }}>
+                            New
+                          </Typography>
+                        )}
                       </ListItem>
                     ))}
                   </List>
@@ -997,19 +1187,42 @@ const TypingGamePage: React.FC = () => {
               </AccordionSummary>
               <AccordionDetails sx={{ backgroundColor: "#1c1c1c" }}>
                 <List dense>
-                  {pairs.map((pair) => (
-                    <Typography
-                      key={pair}
-                      sx={{
-                        color: collectedPairs.includes(pair) ? "marigold" : "#888",
-                        fontWeight: collectedPairs.includes(pair) ? "bold" : "normal",
-                        textTransform: "capitalize",
-                        px: 1,
-                        py: 0.5,
-                      }}>
-                      {pair}
-                    </Typography>
-                  ))}
+                  {pairs.map((pair, index) => {
+                    // const isCollected = collectedPairs.includes(pair);
+                    // const isNew = newPairs.includes(pair);
+
+                    return (
+                      <Box
+                        key={pair}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          px: 1,
+                          py: 0.5,
+                        }}>
+                        <Typography
+                          sx={{
+                            color: collectedPairs.includes(pair) ? "marigold" : "#888",
+                            fontWeight: collectedPairs.includes(pair) ? "bold" : "normal",
+                            textTransform: "capitalize",
+                          }}>
+                          {pair}
+                        </Typography>
+                        {newPairs.includes(pair) && (
+                          <Typography
+                            sx={{
+                              fontSize: "0.7rem",
+                              color: "hotpink",
+                              fontWeight: "bold",
+                              ml: 1,
+                            }}>
+                            New
+                          </Typography>
+                        )}
+                      </Box>
+                    );
+                  })}
                 </List>
               </AccordionDetails>
             </Accordion>
@@ -1040,42 +1253,67 @@ const TypingGamePage: React.FC = () => {
         direction={"row"}
         sx={{ position: "absolute", top: 10, right: 10 }}>
         <Stack
-          direction='row'
-          alignItems='center'
-          spacing={1}>
-          <Typography>{correctWordCount}/500</Typography>
-          <Typography sx={{ color: leagueTrophies[selectedLeague].color, fontWeight: "bold" }}>
-            {leagueTrophies[selectedLeague].emoji}
-          </Typography>
-          <Typography sx={{ color: "white", fontWeight: "bold", textTransform: "capitalize" }}>
-            {selectedLeague} League
-          </Typography>
-        </Stack>
-        <Stack>
-          <IconButton
-            onClick={() => setSettingsOpen(true)}
-            sx={{ color: "white" }}>
-            <SettingsIcon />
-          </IconButton>
+          spacing={0.5}
+          alignItems='flex-end'>
+          {/* Settings icon slightly to the right */}
+          <Stack direction={"row"}>
+            <Stack
+              direction='row'
+              alignItems='center'
+              spacing={1}>
+              <Typography>{correctWordCount}/500</Typography>
+              <Typography sx={{ color: leagueTrophies[selectedLeague].color, fontWeight: "bold" }}>
+                {leagueTrophies[selectedLeague].emoji}
+              </Typography>
+              <Typography sx={{ color: "white", fontWeight: "bold", textTransform: "capitalize" }}>
+                {selectedLeague} League
+              </Typography>
+            </Stack>
+            <IconButton
+              onClick={() => setSettingsOpen(true)}
+              sx={{ color: "white", pr: 1, alignSelf: "flex-end" }}>
+              <SettingsIcon fontSize='large' />
+            </IconButton>
+          </Stack>
+
+          {/* Backpack icon with dual badges */}
           <Badge
-            badgeContent={newlyCollectedCount}
+            badgeContent={newWords.length}
             color='warning'
-            invisible={newlyCollectedCount === 0}
+            invisible={newWords.length === 0}
+            anchorOrigin={{ vertical: "top", horizontal: "left" }}
             sx={{
               "& .MuiBadge-badge": {
-                animation: foundNewPair ? `${pulseBadge} 0.8s ease` : "",
-                fontSize: "0.75rem",
+                transform: "translate(0%, 5%)",
+                fontSize: "0.9rem",
                 fontWeight: "bold",
                 minWidth: 20,
                 height: 20,
+                padding: "0 4px",
               },
             }}>
-            <IconButton
-              id='backpack-icon'
-              onClick={() => setDrawerOpen(true)}
-              sx={{ color: "white", ml: 2 }}>
-              <BackpackIcon />
-            </IconButton>
+            <Badge
+              badgeContent={newlyCollectedCount}
+              color='info'
+              invisible={newlyCollectedCount === 0}
+              sx={{
+                "& .MuiBadge-badge": {
+                  transform: "translate(30%, -35%)",
+                  animation: foundNewPair ? `${pulseBadge} 0.8s ease` : "",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold",
+                  minWidth: 20,
+                  height: 20,
+                  padding: "0 4px",
+                },
+              }}>
+              <IconButton
+                id='backpack-icon'
+                onClick={() => setDrawerOpen(true)}
+                sx={{ color: "white" }}>
+                <BackpackIcon fontSize='large' />
+              </IconButton>
+            </Badge>
           </Badge>
         </Stack>
       </Stack>
@@ -1365,6 +1603,25 @@ const TypingGamePage: React.FC = () => {
           {currentLevel + "/ 5"}
         </Typography> */}
 
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+        {orderedItems.map((item) => (
+          <Box
+            key={item}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              fontWeight: "bold",
+              color: "gold",
+            }}>
+            <span style={{ fontSize: "1.5rem" }}>{itemIcons[item] || "❔"}</span>
+            <Typography sx={{ fontWeight: "bold", fontSize: "1rem" }}>
+              {collectedItemCounts[item] || 0}
+            </Typography>
+          </Box>
+        ))}
+      </Box>
+
       <Box
         id='box_for_level'
         sx={{
@@ -1455,13 +1712,22 @@ const TypingGamePage: React.FC = () => {
               const isActive = i === currentIndex;
               const status = statuses[i];
 
-              const baseColor = isActive
-                ? "#3D2E00" // Dark yellow font color for current character
+              const wordIndex = getCharWordIndex(i, activeWordList);
+              const word = activeWordList[wordIndex];
+
+              // Base color logic (item/powerup override)
+              let baseColor = isActive
+                ? "#3D2E00"
                 : status === "correct"
                 ? "green"
                 : status === "incorrect"
                 ? "red"
                 : "lightgray";
+
+              if (!isActive && !status) {
+                if (isItem(word)) baseColor = "gold";
+                if (isPowerup(word)) baseColor = "blue";
+              }
 
               const backgroundColor = isActive
                 ? "#ffe135" // Banana yellow background for current character
