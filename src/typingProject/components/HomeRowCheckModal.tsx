@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Box, Modal, Typography } from "@mui/material";
 
-const ALL_KEYS = ["s", "d", "f", "j", "k", "l", " "]; // spacebar is ' '
+const ALL_KEYS = ["s", "d", "f", "j", "k", "l"]; // spacebar is ' '
 
 const getRandomKeys = () => {
   const shuffled = [...ALL_KEYS].sort(() => Math.random() - 0.5);
-  const count = Math.floor(Math.random() * 4) + 4; // 4 to 7
+  const count = Math.floor(Math.random() * 4) + 3; // 4 to 6
   return new Set(shuffled.slice(0, count));
 };
 
@@ -129,12 +129,12 @@ const HomeRowCheckModal: React.FC<HomeRowCheckModalProps> = ({
           mb={2}>
           {ALL_KEYS.slice(0, 6).map(renderKeyBox)}
         </Box>
-
+{/* 
         <Box
           display='flex'
           justifyContent='center'>
           {renderKeyBox(" ")}
-        </Box>
+        </Box> */}
 
         <Typography
           variant='body2'
