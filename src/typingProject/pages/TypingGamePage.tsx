@@ -34,6 +34,7 @@ import Badge from "@mui/material/Badge";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { glow, pulse, pulseBadge, shake } from "typingProject/keyframes/keyframes";
 import { INACTIVITY_PAUSE_SECONDS, TIMER } from "typingProject/constants/constants";
+import HomeRowCheckModal from "typingProject/components/HomeRowCheckModal";
 
 // const AnimatedTimer = styled(Typography, {
 //   shouldForwardProp: (prop) => prop !== "animate",
@@ -89,6 +90,13 @@ const TypingGamePage: React.FC = () => {
     const stored = localStorage.getItem("collectedWords");
     return stored ? JSON.parse(stored) : [];
   });
+  const [currentLevel, setCurrentLevel] = usePersistedLevel();
+
+  const [isHomeRowCheckOpen, setHomeRowCheckOpen] = useState(true);
+
+  // const [homeRowChecksThisLevel, setHomeRowChecksThisLevel] = useState(0);
+
+  // const maxChecksThisLevel = currentLevel >= 30 ? 3 : currentLevel >= 10 ? 2 : 1;
 
   // const flyRef = useRef<HTMLDivElement>(null);
 
@@ -104,7 +112,6 @@ const TypingGamePage: React.FC = () => {
     return stored ? JSON.parse(stored) : [];
   });
 
-  const [currentLevel, setCurrentLevel] = usePersistedLevel();
   const [scrollAnchorLine] = useState(0);
 
   const [shouldShake, setShouldShake] = useState(false);
@@ -558,6 +565,34 @@ const TypingGamePage: React.FC = () => {
       }
     };
   }, [timerStarted, gameCompleted, pausedForInactivity, isCasual]);
+
+  // const handleKeyDownModal = useCallback(
+  //   (e: KeyboardEvent) => {
+  //     if (e.key === " ") {
+  //       if (!isHomeRowCheckOpen && homeRowChecksThisLevel < maxChecksThisLevel) {
+  //         e.preventDefault(); // prevent unwanted space typing
+  //         setHomeRowCheckOpen(true);
+  //         setHomeRowChecksThisLevel((prev) => prev + 1);
+  //       }
+  //     }
+  //   },
+  //   [isHomeRowCheckOpen, homeRowChecksThisLevel, maxChecksThisLevel]
+  // );
+
+  // useEffect(() => {
+  //   window.addEventListener("keydown", handleKeyDownModal);
+  //   return () => window.removeEventListener("keydown", handleKeyDownModal);
+  // }, [handleKeyDownModal]);
+
+  // useEffect(() => {
+  //   // Reset modal count when level changes
+  //   setHomeRowChecksThisLevel(0);
+  // }, [currentLevel]);
+  useEffect(() => {
+    // Reset modal count when level changes
+    setHomeRowCheckOpen(true);
+    setTimerStarted(false);
+  }, [currentLevel]);
 
   useEffect(() => {
     if (gameCompleted) {
@@ -1851,6 +1886,11 @@ const TypingGamePage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      <HomeRowCheckModal
+        open={isHomeRowCheckOpen}
+        onClose={() => setHomeRowCheckOpen(false)}
+        // setTimerStarted={setTimerStarted}
+      />
     </Stack>
   );
 };
