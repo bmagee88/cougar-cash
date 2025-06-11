@@ -35,6 +35,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { glow, pulse, pulseBadge, shake } from "typingProject/keyframes/keyframes";
 import { INACTIVITY_PAUSE_SECONDS, TIMER } from "typingProject/constants/constants";
 import HomeRowCheckModal from "typingProject/components/HomeRowCheckModal";
+import { Link } from "react-router";
 
 // const AnimatedTimer = styled(Typography, {
 //   shouldForwardProp: (prop) => prop !== "animate",
@@ -1441,6 +1442,14 @@ const TypingGamePage: React.FC = () => {
               />
             ))}
           </FormGroup>
+          <Typography
+            variant='h6'
+            sx={{ mt: 3, mb: 1, textAlign: "center", color: "gold" }}>
+            Modes
+          </Typography>
+          <Link to='./marathon'>
+            <Button>Marathon Mode {"->"}</Button>
+          </Link>
         </Box>
       </Modal>
 
