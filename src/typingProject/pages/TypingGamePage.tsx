@@ -214,10 +214,7 @@ const TypingGamePage: React.FC = () => {
   };
 
   useEffect(() => {
-    showSnackbar(
-      "+Hardcore, Perfection and Casual settings now available! +New Single Word collection available!",
-      "info"
-    );
+    showSnackbar("Marathon Mode available in settings.", "info");
   }, []);
 
   // const handleLeagueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
