@@ -8,6 +8,8 @@ import SheetsTestPage from "./pages/SheetsTestPage";
 import TypingGamePage from "./typingProject/pages/TypingGamePage";
 import TypingMarathonMode from "./typingProject/pages/TypingMarathonMode";
 import SnakeGamePage from "./SnakeGamePage";
+import RockhoundingPage from "./rockhoundingProject/RockhoundingPage";
+import RiverPage from "./rockhoundingProject/RiverPage";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
@@ -39,6 +41,12 @@ function App() {
           <Route
             path='/snake'
             element={<SnakeGamePage />}></Route>
+          <Route
+            path='/rock'
+            element={<RockhoundingPage />}></Route>
+          <Route
+            path='/river'
+            element={<RiverPage />}></Route>
         </Routes>
       </Router>
     </Box>
