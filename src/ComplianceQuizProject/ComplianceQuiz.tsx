@@ -58,7 +58,6 @@ interface QAData {
 
 const SortableAnswer = ({
   item,
-  index,
   refMap,
   checkedAnswers,
   setCheckedAnswers,
@@ -69,7 +68,7 @@ const SortableAnswer = ({
   checkedAnswers: Record<string, boolean>;
   setCheckedAnswers: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }) => {
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
+  const { setNodeRef, attributes, listeners, transform, isDragging } = useSortable({
     id: item.id,
   });
 
