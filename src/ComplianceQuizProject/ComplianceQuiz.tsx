@@ -82,6 +82,7 @@ const SortableAnswer = ({
   const isChecked = checkedAnswers[item.id] || false;
 
   const style = {
+    touchAction: "none", // ⛔ prevents native scrolling on drag targets
     transform: CSS.Transform.toString(transform),
     transition: undefined,
     backgroundColor: isChecked ? "#d0f0c0" : isDragging ? "#e3f2fd" : "white",
@@ -127,6 +128,25 @@ const SortableAnswer = ({
 
 const CSVMatchGame: React.FC = () => {
   const debug = true; // Toggle this to false in production
+
+  //   useEffect(() => {
+  //   const handleTouchMove = (e: TouchEvent) => {
+  //     e.preventDefault();
+  //   };
+
+  //   if (isDragging) {
+  //     document.body.style.overflow = 'hidden';
+  //     window.addEventListener('touchmove', handleTouchMove, { passive: false });
+  //   } else {
+  //     document.body.style.overflow = '';
+  //     window.removeEventListener('touchmove', handleTouchMove);
+  //   }
+
+  //   return () => {
+  //     document.body.style.overflow = '';
+  //     window.removeEventListener('touchmove', handleTouchMove);
+  //   };
+  // }, [isDragging]);
 
   const [checkedAnswers, setCheckedAnswers] = useState<Record<string, boolean>>({});
 
