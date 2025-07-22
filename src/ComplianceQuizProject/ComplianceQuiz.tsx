@@ -1,14 +1,10 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
-import { Box, Button, Grid, Paper, Typography } from "@mui/material";
+import { Box, Button, Grid, LinearProgress, Paper, Typography } from "@mui/material";
 import { DndContext, useSensor, useSensors, PointerSensor, DragEndEvent } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { Checkbox } from "@mui/material";
 
 interface QAData {
   id: string;
@@ -16,28 +12,81 @@ interface QAData {
   answers: string;
 }
 
+// const SortableAnswer = ({
+//   item,
+//   index,
+//   refMap,
+// }: {
+//   item: QAData;
+//   index: number;
+//   refMap: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+// }) => {
+//   const { setNodeRef, attributes, listeners, transform, isDragging } = useSortable({
+//     id: item.id,
+//   });
+
+//   const style = {
+//     transform: CSS.Transform.toString(transform),
+//     transition: undefined,
+//     backgroundColor: isDragging ? "#e3f2fd" : "white",
+//     borderRadius: 4,
+//     padding: "8px 12px",
+//     outline: "none",
+//     boxShadow: isDragging ? "0 2px 6px rgba(0,0,0,0.2)" : undefined,
+//     cursor: "grab",
+//     width: "100%",
+//   };
+
+//   const combinedRef = (el: HTMLDivElement | null) => {
+//     setNodeRef(el);
+//     refMap.current[item.id] = el;
+//   };
+
+//   return (
+//     <Paper
+//       ref={combinedRef}
+//       style={style}
+//       {...attributes}
+//       {...listeners}
+//       elevation={2}
+//       tabIndex={0} // allows focusing
+//     >
+//       {item.answers}
+//     </Paper>
+//   );
+// };
+
 const SortableAnswer = ({
   item,
   index,
   refMap,
+  checkedAnswers,
+  setCheckedAnswers,
 }: {
   item: QAData;
   index: number;
   refMap: React.MutableRefObject<Record<string, HTMLDivElement | null>>;
+  checkedAnswers: Record<string, boolean>;
+  setCheckedAnswers: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }) => {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
 
+  const isChecked = checkedAnswers[item.id] || false;
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: undefined,
-    backgroundColor: isDragging ? "#e3f2fd" : "white",
+    backgroundColor: isChecked ? "#d0f0c0" : isDragging ? "#e3f2fd" : "white",
     borderRadius: 4,
     padding: "8px 12px",
     boxShadow: isDragging ? "0 2px 6px rgba(0,0,0,0.2)" : undefined,
     cursor: "grab",
     width: "100%",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
   };
 
   const combinedRef = (el: HTMLDivElement | null) => {
@@ -52,19 +101,89 @@ const SortableAnswer = ({
       {...attributes}
       {...listeners}
       elevation={2}
-      tabIndex={0} // allows focusing
-    >
+      tabIndex={0}>
+      <Checkbox
+        checked={isChecked}
+        color='success'
+        onChange={(e) =>
+          setCheckedAnswers((prev) => ({
+            ...prev,
+            [item.id]: e.target.checked,
+          }))
+        }
+        onPointerDown={(e) => e.stopPropagation()} // ✅ allow click through drag
+      />
+
       {item.answers}
     </Paper>
   );
 };
 
 const CSVMatchGame: React.FC = () => {
-  const [questions, setQuestions] = useState<QAData[]>([]);
-  const [shuffledAnswers, setShuffledAnswers] = useState<QAData[]>([]);
+  const debug = true; // Toggle this to false in production
+
+  const [checkedAnswers, setCheckedAnswers] = useState<Record<string, boolean>>({});
+
+  const [masterQuestions, setMasterQuestions] = useState<(QAData & { isCorrect?: boolean })[]>([]);
+  const [currentQuestions, setCurrentQuestions] = useState<typeof masterQuestions>([]);
+  const [shuffledAnswers, setShuffledAnswers] = useState<typeof masterQuestions>([]);
+  const [scorePercent, setScorePercent] = useState<number | null>(null);
+  const [showSubmit, setShowSubmit] = useState(true);
+
+  //   const [questions, setQuestions] = useState<QAData[]>([]);
 
   const sensors = useSensors(useSensor(PointerSensor));
   const answerRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+
+  const handleSubmit = () => {
+    // let correctCount = 0;
+
+    // Create a lookup to update isCorrect on the correct question
+    const updated = masterQuestions.map((q) => {
+      // Find the index in currentQuestions
+      const i = currentQuestions.findIndex((cq) => cq.id === q.id);
+      if (i === -1) return q;
+
+      const isCorrect = q.answers.trim() === shuffledAnswers[i]?.answers.trim();
+      //   if (isCorrect) correctCount++;
+
+      return { ...q, isCorrect };
+    });
+
+    setMasterQuestions(updated);
+    setScorePercent(Math.round((updated.filter((q) => q.isCorrect).length / updated.length) * 100));
+    setShowSubmit(false);
+  };
+
+  const handleKeepGoing = () => {
+    generateCurrentQuestionSet(masterQuestions);
+    setCheckedAnswers({}); // ✅ clear all checkboxes
+    setShowSubmit(true);
+  };
+
+  const generateCurrentQuestionSet = (allQs: typeof masterQuestions) => {
+    const incorrect = allQs.filter((q) => !q.isCorrect);
+    // console.log("incorrect", incorrect);
+    const correct = allQs.filter((q) => q.isCorrect);
+    // console.log("correct", correct);
+
+    const fillCount = Math.max(0, 10 - incorrect.length);
+    // console.log("fillCount", fillCount);
+    const sampledCorrect = shuffleArray(correct).slice(0, fillCount);
+    // console.log("sampledCorrect", sampledCorrect);
+
+    const mixed = [...incorrect, ...sampledCorrect];
+    // console.log("mixed", mixed);
+    const finalQuestions = shuffleArray(mixed).slice(0, 10); // shuffle Qs
+    // console.log("finalQuestions", finalQuestions);
+    const finalAnswers = shuffleArray([...finalQuestions]); // shuffle just the answers separately
+    // console.log("finalAnswers", finalAnswers);
+
+    setCurrentQuestions(finalQuestions);
+    setShuffledAnswers(finalAnswers);
+    setScorePercent(null);
+    setShowSubmit(true);
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,30 +194,48 @@ const CSVMatchGame: React.FC = () => {
       skipEmptyLines: true,
       complete: (results) => {
         const parsed = results.data;
-        setQuestions(parsed);
-        setShuffledAnswers(shuffleArray(parsed));
+        // setQuestions(parsed);
+        const parsedWithCorrectFlag = parsed.map((q) => ({ ...q, isCorrect: false }));
+        setMasterQuestions(parsedWithCorrectFlag);
+        generateCurrentQuestionSet(parsedWithCorrectFlag);
+
+        // setShuffledAnswers(shuffleArray(parsed));
       },
     });
   };
 
-  const shuffleArray = (arr: QAData[]) => {
-    return [...arr].sort(() => Math.random() - 0.5);
-  };
+  //   const shuffleArray = (arr: QAData[]) => {
+  //     return [...arr].sort(() => Math.random() - 0.5);
+  //   };
+
+  function shuffleArray<T>(array: T[]): T[] {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const oldIndex = shuffledAnswers.findIndex((a) => a.id === active.id);
-    const newIndex = shuffledAnswers.findIndex((a) => a.id === over.id);
+    const oldIndex = shuffledAnswers.findIndex((item) => item.id === active.id);
+    const newIndex = shuffledAnswers.findIndex((item) => item.id === over.id);
 
-    const newOrder = arrayMove(shuffledAnswers, oldIndex, newIndex);
-    setShuffledAnswers(newOrder);
+    if (oldIndex === -1 || newIndex === -1) return;
 
-    // Focus the moved element after reorder
+    const newAnswers = [...shuffledAnswers];
+    // 🔁 Swap the answers
+    [newAnswers[oldIndex], newAnswers[newIndex]] = [newAnswers[newIndex], newAnswers[oldIndex]];
+
+    setShuffledAnswers(newAnswers);
+
+    // Optional: Focus the newly dropped item
     setTimeout(() => {
-      const newActive = newOrder[newIndex];
-      const node = answerRefs.current[newActive.id];
+      const focusedItem = newAnswers[newIndex];
+      const node = answerRefs.current[focusedItem.id];
       node?.focus();
     }, 0);
   };
@@ -117,8 +254,70 @@ const CSVMatchGame: React.FC = () => {
         />
       </Button>
 
-      {questions.length > 0 && (
+      {debug && (
+        <Box mt={4}>
+          <Typography
+            variant='subtitle1'
+            gutterBottom>
+            🔍 Master Question Debug View
+          </Typography>
+          <Paper
+            elevation={1}
+            sx={{ p: 1, display: "flex", flexWrap: "wrap", gap: 1 }}>
+            {masterQuestions.map((q, i) => (
+              <Box
+                key={q.id}
+                sx={{
+                  px: 1,
+                  py: 0.5,
+                  bgcolor: q.isCorrect ? "success.light" : "error.light",
+                  color: "black",
+                  borderRadius: 1,
+                  fontSize: "0.75rem",
+                }}>
+                {i + 1}. {q.isCorrect ? "✔" : "✘"}
+              </Box>
+            ))}
+          </Paper>
+        </Box>
+      )}
+
+      {currentQuestions.length > 0 && (
         <Box mt={3}>
+          <Box mb={2}>
+            {scorePercent !== null && (
+              <>
+                <Typography
+                  variant='body1'
+                  gutterBottom>
+                  Score: {scorePercent}%
+                </Typography>
+                <LinearProgress
+                  variant='determinate'
+                  value={scorePercent}
+                  sx={{ height: 10, borderRadius: 5, mb: 2 }}
+                />
+              </>
+            )}
+          </Box>
+
+          {showSubmit ? (
+            <Button
+              variant='contained'
+              color='primary'
+              onClick={handleSubmit}
+              sx={{ mb: 2 }}>
+              Submit
+            </Button>
+          ) : (
+            <Button
+              variant='contained'
+              color='secondary'
+              onClick={handleKeepGoing}
+              sx={{ mb: 2 }}>
+              Keep Going!
+            </Button>
+          )}
           <Paper
             elevation={3}
             sx={{ p: 2 }}>
@@ -140,29 +339,35 @@ const CSVMatchGame: React.FC = () => {
               <SortableContext
                 items={shuffledAnswers.map((a) => a.id)}
                 strategy={verticalListSortingStrategy}>
-                {questions.map((q, i) => (
-                  <Grid
-                    container
-                    key={q.id}
-                    spacing={2}
-                    alignItems='center'
-                    sx={{ mt: 1 }}>
+                {currentQuestions.map((q, i) => {
+                  const answerItem = shuffledAnswers[i];
+                  return (
                     <Grid
-                      item
-                      xs={6}>
-                      <Typography>{q.questions}</Typography>
+                      container
+                      key={q.id}
+                      spacing={2}
+                      alignItems='center'
+                      sx={{ mt: 1 }}>
+                      <Grid
+                        item
+                        xs={6}>
+                        <Typography>{q.questions}</Typography>
+                      </Grid>
+                      <Grid
+                        item
+                        xs={6}>
+                        <SortableAnswer
+                          key={answerItem.id}
+                          item={answerItem}
+                          index={i}
+                          refMap={answerRefs}
+                          checkedAnswers={checkedAnswers}
+                          setCheckedAnswers={setCheckedAnswers}
+                        />
+                      </Grid>
                     </Grid>
-                    <Grid
-                      item
-                      xs={6}>
-                      <SortableAnswer
-                        item={shuffledAnswers[i]}
-                        index={i}
-                        refMap={answerRefs}
-                      />
-                    </Grid>
-                  </Grid>
-                ))}
+                  );
+                })}
               </SortableContext>
             </DndContext>
           </Paper>
