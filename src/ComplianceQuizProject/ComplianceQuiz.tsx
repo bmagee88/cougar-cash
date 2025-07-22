@@ -1,7 +1,14 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
 import { Box, Button, Grid, LinearProgress, Paper, Typography } from "@mui/material";
-import { DndContext, useSensor, useSensors, PointerSensor, DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  useSensor,
+  useSensors,
+  PointerSensor,
+  DragEndEvent,
+  TouchSensor,
+} from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Checkbox } from "@mui/material";
@@ -131,7 +138,15 @@ const CSVMatchGame: React.FC = () => {
 
   //   const [questions, setQuestions] = useState<QAData[]>([]);
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    })
+  );
   const answerRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
 
   const handleSubmit = () => {
