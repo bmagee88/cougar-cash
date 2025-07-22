@@ -8,6 +8,7 @@ import SheetsTestPage from "./pages/SheetsTestPage";
 import TypingGamePage from "./typingProject/pages/TypingGamePage";
 import TypingMarathonMode from "./typingProject/pages/TypingMarathonMode";
 import SnakeGamePage from "./SnakeGamePage";
+import ComplianceQuizPage from "./ComplianceQuizProject/ComplianceQuizPage";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
@@ -39,6 +40,9 @@ function App() {
           <Route
             path='/snake'
             element={<SnakeGamePage />}></Route>
+          <Route
+            path='/c-quiz'
+            element={<ComplianceQuizPage />}></Route>
         </Routes>
       </Router>
     </Box>
