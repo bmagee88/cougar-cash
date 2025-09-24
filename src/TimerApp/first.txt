@@ -1,0 +1,558 @@
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Box,
+  Button,
+  Chip,
+  Divider,
+  Drawer,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  List,
+  ListItem,
+  ListItemSecondaryAction,
+  ListItemText,
+  MenuItem,
+  OutlinedInput,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+  Switch,
+} from "@mui/material";
+import dayjs from "dayjs";
+import customParseFormat from "dayjs/plugin/customParseFormat";
+import { Add, Delete, Edit, Pause, PlayArrow, Settings } from "@mui/icons-material";
+
+dayjs.extend(customParseFormat);
+
+type Segment = {
+  /** time is an absolute clock time of day in HH:mm */
+  time: string;
+  title: string;
+  color: string; // hex
+};
+
+type TimerDef = {
+  id: string;
+  title: string;
+  /** duration in minutes */
+  duration: number;
+  /** Title/color for the first range (from timer start to first marker) */
+  base?: { title: string; color: string };
+  /** Segment markers within this timer's window using absolute clock times */
+  segments: Segment[];
+};
+
+type Schedule = {
+  startOfDay: string; // HH:mm
+  timers: TimerDef[];
+};
+
+const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
+
+const toClock = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+
+function addMinutes(clockHHmm: string, mins: number): string {
+  const [h, m] = clockHHmm.split(":").map(Number);
+  const base = new Date();
+  base.setHours(h, m, 0, 0);
+  const t = new Date(base.getTime() + mins * 60_000);
+  return toClock(t);
+}
+
+function diffMinutes(fromHHmm: string, toHHmm: string): number {
+  const [fh, fm] = fromHHmm.split(":").map(Number);
+  const [th, tm] = toHHmm.split(":").map(Number);
+  const base = new Date();
+  const a = new Date(base.getFullYear(), base.getMonth(), base.getDate(), fh, fm, 0, 0);
+  const b = new Date(base.getFullYear(), base.getMonth(), base.getDate(), th, tm, 0, 0);
+  return Math.round((b.getTime() - a.getTime()) / 60000);
+}
+
+function nowHHmm(): string {
+  const n = new Date();
+  return `${pad(n.getHours())}:${pad(n.getMinutes())}`;
+}
+
+function clamp(val: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, val));
+}
+
+/**
+ * Build a concrete day schedule with per-timer start/end HH:mm derived from startOfDay and durations
+ */
+function concretize(schedule: Schedule) {
+  let cursor = schedule.startOfDay;
+  const concrete = schedule.timers.map((t) => {
+    const start = cursor;
+    const end = addMinutes(cursor, t.duration);
+    cursor = end;
+    // Ensure segments are within [start, end]
+    const segs = [...t.segments]
+      .filter((s) => diffMinutes(start, s.time) >= 0 && diffMinutes(s.time, end) >= 0)
+      .sort((a, b) => diffMinutes(start, a.time) - diffMinutes(start, b.time));
+    // Build boundaries: start, ...markers, end
+    const boundaries = [
+      { time: start, title: t.base?.title ?? "", color: t.base?.color ?? "#90CAF9" },
+      ...segs,
+      { time: end, title: "", color: "#999999" },
+    ];
+    // segments between boundaries
+    const ranges = boundaries.slice(0, -1).map((b, i) => {
+      const next = boundaries[i + 1];
+      return {
+        from: b.time,
+        to: next.time,
+        minutes: diffMinutes(b.time, next.time),
+        label: b.title,
+        color: b.color,
+      };
+    });
+
+    return { ...t, start, end, ranges };
+  });
+  return concrete as Array<
+    TimerDef & {
+      start: string;
+      end: string;
+      ranges: { from: string; to: string; minutes: number; label: string; color: string }[];
+    }
+  >;
+}
+
+function whichTimer(schedule: Schedule, atHHmm: string) {
+  const concrete = concretize(schedule);
+  for (let i = 0; i < concrete.length; i++) {
+    const t = concrete[i];
+    if (diffMinutes(t.start, atHHmm) >= 0 && diffMinutes(atHHmm, t.end) > 0) {
+      return { index: i, timer: t };
+    }
+  }
+  return null;
+}
+
+function withinTimerProgress(timer: ReturnType<typeof concretize>[number], atHHmm: string) {
+  const elapsed = clamp(diffMinutes(timer.start, atHHmm), 0, timer.duration);
+  const pct = timer.duration === 0 ? 0 : elapsed / timer.duration;
+  // Which range (segment) are we in?
+  let acc = 0;
+  for (const r of timer.ranges) {
+    const nextAcc = acc + r.minutes;
+    if (elapsed < nextAcc || r === timer.ranges[timer.ranges.length - 1]) {
+      return { elapsed, pct, activeRange: r, offsetMinutes: elapsed - acc };
+    }
+    acc = nextAcc;
+  }
+  return { elapsed, pct, activeRange: timer.ranges[timer.ranges.length - 1], offsetMinutes: 0 };
+}
+
+/**
+ * SVG ring segmented by ranges with a sweep hand. 12 o'clock = 0, clockwise.
+ */
+function SegmentedRing({
+  minutesTotal,
+  ranges,
+  progressPct,
+}: {
+  minutesTotal: number;
+  ranges: { minutes: number; label: string; color: string }[];
+  progressPct: number; // 0..1
+}) {
+  const size = 260;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 4;   // outer radius
+  const rotation = -90;     // 12 o’clock
+
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const polar = (angleDeg: number, radius: number) => {
+    const a = toRad(angleDeg);
+    return { x: cx + radius * Math.cos(a), y: cy + radius * Math.sin(a) };
+  };
+
+  // Build wedges from center to edge so segments reach the center
+  let accPct = 0;
+  const wedges = ranges.map((rg, idx) => {
+    const segPct = minutesTotal ? rg.minutes / minutesTotal : 0;
+    const startA = rotation + accPct * 360;
+    const endA = startA + segPct * 360;
+    accPct += segPct;
+
+    // If a segment is 0 minutes, skip it
+    if (segPct <= 0) return null;
+
+    const start = polar(startA, r);
+    const end = polar(endA, r);
+    const largeArc = segPct > 0.5 ? 1 : 0;
+
+    const d = [
+      `M ${cx} ${cy}`,                // from center
+      `L ${start.x} ${start.y}`,      // line to arc start
+      `A ${r} ${r} 0 ${largeArc} 1 ${end.x} ${end.y}`, // arc to end
+      'Z',                            // back to center
+    ].join(' ');
+
+    return <path key={idx} d={d} fill={rg.color} stroke="none" />;
+  });
+
+  // Sweep hand
+  const handAngle = rotation + 360 * progressPct;
+
+  return (
+    <Box position="relative" width={size} height={size}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        {/* Wedges */}
+        {wedges}
+        {/* Outer ring outline */}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="#222" strokeWidth={2} />
+        {/* Sweep hand */}
+        <g transform={`rotate(${handAngle} ${cx} ${cy})`}>
+          <line x1={cx} y1={cy} x2={cx} y2={cy - r} stroke="#111" strokeWidth={3} />
+          <circle cx={cx} cy={cy} r={4} fill="#111" />
+        </g>
+      </svg>
+    </Box>
+  );
+}
+
+           
+
+const defaultSchedule: Schedule = {
+  startOfDay: "08:00",
+  timers: [
+    {
+      id: "t1",
+      title: "Timer 1",
+      duration: 10,
+      base: { title: "Warm-up", color: "#81C784" },
+      segments: [
+        { time: "08:07", title: "Main", color: "#64B5F6" }
+      ],
+    },
+    {
+      id: "t2",
+      title: "Timer 2",
+      duration: 5,
+      base: { title: "Discuss", color: "#FFB74D" },
+      segments: []
+    },
+  ],
+};
+
+export default function SegmentedDayTimers() {
+  const [schedule, setSchedule] = useState<Schedule>(defaultSchedule);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [autoAdvance, setAutoAdvance] = useState(true);
+  const [now, setNow] = useState<string>(nowHHmm());
+
+  // Tick once per second to update the hand; show minute precision in labels
+  useEffect(() => {
+    const id = setInterval(() => setNow(nowHHmm()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const concrete = useMemo(() => concretize(schedule), [schedule]);
+  const current = useMemo(() => whichTimer(schedule, now), [schedule, now]);
+
+  const progress = useMemo(() => {
+    if (!current) return null;
+    return withinTimerProgress(current.timer, now);
+  }, [current, now]);
+
+  const rangesForRing = progress?.activeRange
+    ? current!.timer.ranges
+    : current
+    ? current.timer.ranges
+    : [];
+
+  const handleStartChange = (v: string) => {
+    setSchedule((s) => ({ ...s, startOfDay: v }));
+  };
+
+  const updateTimer = (id: string, patch: Partial<TimerDef>) => {
+    setSchedule((s) => ({
+      ...s,
+      timers: s.timers.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+    }));
+  };
+
+  const addTimer = () => {
+    const last = schedule.timers[schedule.timers.length - 1];
+    setSchedule((s) => ({
+      ...s,
+      timers: [
+        ...s.timers,
+        {
+          id: `t${Date.now()}`,
+          title: `Timer ${s.timers.length + 1}`,
+          duration: 5,
+          segments: [],
+        },
+      ],
+    }));
+  };
+
+  const removeTimer = (id: string) => {
+    setSchedule((s) => ({ ...s, timers: s.timers.filter((t) => t.id !== id) }));
+  };
+
+  const addSegment = (timerId: string) => {
+    const concreteTimers = concretize(schedule);
+    const t = concreteTimers.find((x) => x.id === timerId)!;
+    // place a segment at mid-point
+    const mid = addMinutes(t.start, Math.floor(t.duration / 2));
+    const newSeg: Segment = { time: mid, title: "Segment", color: "#90CAF9" };
+    setSchedule((s) => ({
+      ...s,
+      timers: s.timers.map((ti) =>
+        ti.id === timerId ? { ...ti, segments: [...ti.segments, newSeg] } : ti
+      ),
+    }));
+  };
+
+  const removeSegment = (timerId: string, idx: number) => {
+    setSchedule((s) => ({
+      ...s,
+      timers: s.timers.map((ti) =>
+        ti.id === timerId
+          ? { ...ti, segments: ti.segments.filter((_, i) => i !== idx) }
+          : ti
+      ),
+    }));
+  };
+
+  // Ensure user-entered segment times remain inside timer bounds
+  const onSegmentTimeChange = (timerId: string, idx: number, newHHmm: string) => {
+    const concreteTimers = concretize(schedule);
+    const t = concreteTimers.find((x) => x.id === timerId)!;
+    const clamped = (() => {
+      if (diffMinutes(t.start, newHHmm) < 0) return t.start;
+      if (diffMinutes(newHHmm, t.end) < 0) return t.end;
+      return newHHmm;
+    })();
+    setSchedule((s) => ({
+      ...s,
+      timers: s.timers.map((ti) =>
+        ti.id === timerId
+          ? {
+              ...ti,
+              segments: ti.segments.map((sg, i) => (i === idx ? { ...sg, time: clamped } : sg)),
+            }
+          : ti
+      ),
+    }));
+  };
+
+  const totalScheduleMinutes = useMemo(
+    () => schedule.timers.reduce((acc, t) => acc + t.duration, 0),
+    [schedule.timers]
+  );
+
+  // Controls whether the schedule should snap the clock to the schedule window
+  const firstStart = concrete[0]?.start;
+  const lastEnd = concrete[concrete.length - 1]?.end;
+  const inWindow = firstStart && lastEnd && diffMinutes(firstStart, now) >= 0 && diffMinutes(now, lastEnd) > 0;
+
+  return (
+    <Box className="p-6 max-w-5xl mx-auto">
+      <Stack direction={{ xs: "column", md: "row" }} spacing={4} alignItems="center">
+        <Box>
+          <Typography variant="h5" gutterBottom>
+            Segmented Day Timers
+          </Typography>
+          <Typography variant="body2" gutterBottom>
+            Now: <strong>{now}</strong> • Start of Day: <strong>{schedule.startOfDay}</strong>
+          </Typography>
+          {current ? (
+            <Typography variant="subtitle1" gutterBottom>
+              Current Timer: <strong>{current.timer.title}</strong> ({current.timer.start}–{current.timer.end})
+            </Typography>
+          ) : (
+            <Typography variant="subtitle1" color="text.secondary" gutterBottom>
+              Outside of schedule window ({firstStart ?? "—"}–{lastEnd ?? "—"})
+            </Typography>
+          )}
+
+          <SegmentedRing
+            minutesTotal={current?.timer.duration ?? 1}
+            ranges={(current?.timer.ranges ?? []).map((r) => ({ minutes: r.minutes, label: r.label, color: r.color }))}
+            progressPct={progress?.pct ?? 0}
+          />
+
+          {progress && (
+            <Box mt={2}>
+              <Typography>
+                Active Segment: <Chip size="small" label={progress.activeRange.label} /> • Remaining in segment: {Math.max(0, progress.activeRange.minutes - progress.offsetMinutes)}m
+              </Typography>
+            </Box>
+          )}
+
+          <Stack direction="row" spacing={1} mt={2}>
+            <TextField
+              label="Start of Day"
+              type="time"
+              value={schedule.startOfDay}
+              onChange={(e) => handleStartChange(e.target.value)}
+              inputProps={{ step: 60 }}
+              size="small"
+            />
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel id="autoadv">Auto-advance</InputLabel>
+              <Select labelId="autoadv" label="Auto-advance" value={autoAdvance ? "on" : "off"} onChange={(e) => setAutoAdvance(e.target.value === "on")}>
+                <MenuItem value="on">On</MenuItem>
+                <MenuItem value="off">Off</MenuItem>
+              </Select>
+            </FormControl>
+            <Button startIcon={<Settings />} variant="outlined" onClick={() => setDrawerOpen(true)}>
+              Edit Timers
+            </Button>
+          </Stack>
+        </Box>
+
+        {/* Right pane: timers list */}
+        <Box flex={1}>
+          <Typography variant="h6" gutterBottom>
+            Timers Schedule ({totalScheduleMinutes} min total)
+          </Typography>
+          <List dense>
+            {concrete.map((t, idx) => (
+              <React.Fragment key={t.id}>
+                <ListItem>
+                  <ListItemText
+                    primary={`${idx + 1}. ${t.title} — ${t.duration} min`}
+                    secondary={`${t.start} – ${t.end}`}
+                  />
+                  <ListItemSecondaryAction>
+                    <IconButton size="small" onClick={() => updateTimer(t.id, { title: `${t.title}` })}>
+                      <Edit fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => removeTimer(t.id)}>
+                      <Delete fontSize="small" />
+                    </IconButton>
+                  </ListItemSecondaryAction>
+                </ListItem>
+                <Box pl={4} pb={1}>
+                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                    {t.ranges.map((r, i) => (
+                      <Chip key={i} size="small" label={`${r.label}: ${r.from}–${r.to}`} sx={{ bgcolor: r.color, color: "#000", mr: 1, mb: 1 }} />
+                    ))}
+                  </Stack>
+                </Box>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
+          <Button startIcon={<Add />} onClick={addTimer} variant="outlined">
+            Add Timer
+          </Button>
+        </Box>
+      </Stack>
+
+      {/* Drawer for editing timers and segments */}
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        <Box sx={{ width: 440, p: 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Edit Timers
+          </Typography>
+          <List>
+            {schedule.timers.map((t) => {
+              const concreteT = concretize(schedule).find((x) => x.id === t.id)!;
+              return (
+                <Box key={t.id} mb={2} p={1} borderRadius={2} border="1px solid #e0e0e0">
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <TextField
+                      label="Title"
+                      value={t.title}
+                      onChange={(e) => updateTimer(t.id, { title: e.target.value })}
+                      size="small"
+                    />
+                    <TextField
+                      label="Duration (min)"
+                      type="number"
+                      inputProps={{ min: 1 }}
+                      value={t.duration}
+                      onChange={(e) => updateTimer(t.id, { duration: Math.max(1, parseInt(e.target.value || "1", 10)) })}
+                      size="small"
+                      sx={{ width: 140 }}
+                    />
+                    <IconButton onClick={() => removeTimer(t.id)}>
+                      <Delete />
+                    </IconButton>
+                  </Stack>
+
+                  <Box mt={1}>
+                    <Typography variant="subtitle2">Segments (between {concreteT.start} and {concreteT.end})</Typography>
+                    {(t.segments || []).map((s, idx) => (
+                      <Stack key={idx} direction="row" spacing={1} alignItems="center" mt={1}>
+                        <TextField
+                          label="Time"
+                          type="time"
+                          value={s.time}
+                          onChange={(e) => onSegmentTimeChange(t.id, idx, e.target.value)}
+                          inputProps={{ step: 60, min: concreteT.start, max: concreteT.end }}
+                          size="small"
+                          sx={{ width: 140 }}
+                        />
+                        <TextField
+                          label="Title"
+                          value={s.title}
+                          onChange={(e) =>
+                            setSchedule((sc) => ({
+                              ...sc,
+                              timers: sc.timers.map((ti) =>
+                                ti.id === t.id
+                                  ? {
+                                      ...ti,
+                                      segments: ti.segments.map((sg, i) =>
+                                        i === idx ? { ...sg, title: e.target.value } : sg
+                                      ),
+                                    }
+                                  : ti
+                              ),
+                            }))
+                          }
+                          size="small"
+                          sx={{ flex: 1 }}
+                        />
+                        <TextField
+                          label="Color"
+                          type="color"
+                          value={s.color}
+                          onChange={(e) =>
+                            setSchedule((sc) => ({
+                              ...sc,
+                              timers: sc.timers.map((ti) =>
+                                ti.id === t.id
+                                  ? {
+                                      ...ti,
+                                      segments: ti.segments.map((sg, i) =>
+                                        i === idx ? { ...sg, color: e.target.value } : sg
+                                      ),
+                                    }
+                                  : ti
+                              ),
+                            }))
+                          }
+                          size="small"
+                          sx={{ width: 120 }}
+                        />
+                        <IconButton onClick={() => removeSegment(t.id, idx)}>
+                          <Delete />
+                        </IconButton>
+                      </Stack>
+                    ))}
+                    <Button startIcon={<Add />} onClick={() => addSegment(t.id)} sx={{ mt: 1 }}>
+                      Add Segment
+                    </Button>
+                  </Box>
+                </Box>
+              );
+            })}
+          </List>
+        </Box>
+      </Drawer>
+    </Box>
+  );
+}
