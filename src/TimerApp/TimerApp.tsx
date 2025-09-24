@@ -1,9 +1,7 @@
-import * as React from "react";
-import { Button, Stack, Typography } from "@mui/material";
+import { Button, Stack } from "@mui/material";
 import TimerCard from "./components/TimerCard";
 import TimerEditorDrawer from "./components/TimerEditorDrawer";
 import { useTimers } from "./hooks/useTimers";
-import { durationLabel } from "./utils/time"; // optional if you add to TimerCard
 
 export default function TimerApp() {
   const {
