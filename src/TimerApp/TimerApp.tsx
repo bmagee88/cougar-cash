@@ -69,7 +69,9 @@ const defaultTimer = (): Timer => {
     name: "Timer",
     start,
     end,
-    segments: [], // start empty
+    segments: [
+      { id: uid("seg"), title: "Segment 1", color: "#1976d2", end }, // covers start→end
+    ],
   };
 };
 
@@ -135,14 +137,13 @@ export default function TimerApp() {
   // Delete a segment (supports going to zero)
   const removeSegment = (timerId: string, segId: string) => {
     updateTimer(timerId, (t) => {
+      if (t.segments.length <= 1) return t; // 🚫 keep at least one
       const segments = t.segments.filter((s) => s.id !== segId);
-      // keep the new last segment synced with timer end (if any)
-      if (segments.length > 0) {
-        segments[segments.length - 1] = {
-          ...segments[segments.length - 1],
-          end: t.end,
-        };
-      }
+      // keep new last segment synced to timer end
+      segments[segments.length - 1] = {
+        ...segments[segments.length - 1],
+        end: t.end,
+      };
       return { ...t, segments };
     });
   };
@@ -299,7 +300,15 @@ export default function TimerApp() {
       </Stack>
 
       {timers.map((t, idx) => (
-        <Card key={t.id} variant="outlined">
+        <Card
+          key={t.id}
+          variant="outlined"
+          sx={{
+            width: 400, // fixed width
+            maxWidth: "100%", // prevent overflow on small screens
+            mx: "auto", // center horizontally if parent is wider
+          }}
+        >
           <CardHeader
             title={
               <Stack direction="row" spacing={1} alignItems="center">
@@ -351,177 +360,22 @@ export default function TimerApp() {
               spacing={3}
               alignItems="flex-start"
             >
-              {/* Editor */}
-              <Stack spacing={2} sx={{ minWidth: 280, flex: 1 }}>
-                <Stack direction="row" spacing={2}>
-                  <TextField
-                    label="Start"
-                    type="time"
-                    value={t.start}
-                    onChange={(e) => setStart(t.id, e.target.value as HHMM)}
-                    inputProps={{ step: 60 }}
-                    size="small"
-                  />
-                  {/* End moved below segments */}
-                </Stack>
-
-                <Stack spacing={1}>
-                  {t.segments.length === 0 ? (
-                    <Box
-                      sx={{
-                        p: 1.5,
-                        border: "1px dashed",
-                        borderColor: "divider",
-                        borderRadius: 1,
-                        bgcolor: "action.hover",
-                      }}
-                    >
-                      <Typography variant="body2">
-                        No segments — this timer runs from <b>{t.start}</b> to{" "}
-                        <b>{t.end}</b>. Click <b>Add Segment</b> to create one.
-                      </Typography>
-                    </Box>
-                  ) : (
-                    t.segments.map((seg, sIdx) => {
-                      const segStart =
-                        sIdx === 0 ? t.start : t.segments[sIdx - 1].end;
-                      const segEnd = seg.end;
-                      return (
-                        <Stack direction={{ xs: "column" }} spacing={1}>
-                          {/* Title */}
-                          <Box>
-                            <Stack
-                              direction={{ xs: "column", sm: "row" }}
-                              spacing={1}
-                              alignItems="center"
-                            >
-                              {" "}
-                              {/* Color */}
-                              <input
-                                aria-label="segment color"
-                                type="color"
-                                value={seg.color}
-                                onChange={(e) =>
-                                  setSegmentField(
-                                    t.id,
-                                    seg.id,
-                                    "color",
-                                    e.target.value
-                                  )
-                                }
-                                style={{
-                                  width: 40,
-                                  height: 32,
-                                  border: "1px solid rgba(0,0,0,0.23)",
-                                  borderRadius: 4,
-                                  padding: 0,
-                                  background: "transparent",
-                                  cursor: "pointer",
-                                }}
-                              />
-                              <TextField
-                                label="Title"
-                                value={seg.title}
-                                onChange={(e) =>
-                                  setSegmentField(
-                                    t.id,
-                                    seg.id,
-                                    "title",
-                                    e.target.value
-                                  )
-                                }
-                                size="small"
-                                sx={{ minWidth: 180, flex: 1 }}
-                              />
-                              {/* Duration label + Delete */}
-                              <Typography
-                                variant="caption"
-                                sx={{ minWidth: 70, textAlign: "right" }}
-                              >
-                                {durationLabel(
-                                  segStart as HHMM,
-                                  segEnd as HHMM
-                                )}
-                              </Typography>
-                              <IconButton
-                                size="small"
-                                aria-label="remove segment"
-                                onClick={() => removeSegment(t.id, seg.id)}
-                              >
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Stack>
-                          </Box>
-                          {/* Time FIRST */}
-                          <Box>
-                            <TextField
-                              label="Ends At"
-                              type="time"
-                              value={seg.end}
-                              onChange={(e) =>
-                                setSegmentField(
-                                  t.id,
-                                  seg.id,
-                                  "end",
-                                  e.target.value
-                                )
-                              }
-                              inputProps={{ step: 60 }}
-                              size="small"
-                              sx={{ width: 130 }}
-                            />
-                          </Box>
-                        </Stack>
-                      );
-                    })
-                  )}
-
-                  <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                  >
-                    <Button size="small" onClick={() => addSegment(t.id)}>
-                      Add Segment
-                    </Button>
-                  </Stack>
-
-                  <Divider sx={{ my: 1 }} />
-                  <Stack direction="row" spacing={2} alignItems="center">
-                    <TextField
-                      label="End"
-                      type="time"
-                      value={t.end}
-                      onChange={(e) => setEnd(t.id, e.target.value as HHMM)}
-                      inputProps={{ step: 60 }}
-                      size="small"
-                      sx={{ width: 130 }}
-                    />
-                    <Typography variant="caption" color="text.secondary">
-                      {t.segments.length === 0
-                        ? "No segments — end is independent."
-                        : "Syncs with last segment."}
-                    </Typography>
-                  </Stack>
-                </Stack>
-              </Stack>
-
               {/* Column Preview
               <Divider flexItem orientation="vertical" /> */}
 
               <Stack spacing={1} sx={{ minWidth: 220 }}>
-                <Stack direction="row" justifyContent={"space-between"}>
-                  <Typography display="inline-block" variant="subtitle2">
+                {/* <Stack direction="row" justifyContent={"space-between"}> */}
+                {/* <Typography display="inline-block" variant="subtitle2">
                     {t.name || "Timer"}
-                  </Typography>{" "}
-                  <Button
+                  </Typography>{" "} */}
+                {/* <Button
                     variant="contained"
                     onClick={() => openEditor(timers[0]?.id)}
                     disabled={timers.length === 0}
                   >
                     Edit
-                  </Button>
-                </Stack>
+                  </Button> */}
+                {/* </Stack> */}
                 {timerPreview(t)}
               </Stack>
             </Stack>
@@ -533,147 +387,61 @@ export default function TimerApp() {
         anchor="right"
         open={drawerOpen}
         onClose={closeEditor}
-        PaperProps={{
-          sx: { width: { xs: "100%", sm: 420, md: 520 }, p: 2 },
-        }}
+        PaperProps={{ sx: { width: { xs: "100%", sm: 420, md: 720 }, p: 2 } }}
       >
         {editingTimer ? (
-          <Stack spacing={2}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Typography variant="h6">
-                Edit: {editingTimer.name || "Timer"}
-              </Typography>
-              <IconButton onClick={closeEditor} aria-label="close">
-                <svg width="20" height="20" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="m19 6.41l-1.41-1.41L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12z"
-                  />
-                </svg>
-              </IconButton>
+          // Editor
+          <Stack
+            key={editingTimer.id}
+            spacing={2}
+            sx={{ minWidth: 280, flex: 1 }}
+          >
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label="Start"
+                type="time"
+                value={editingTimer.start}
+                onChange={(e) =>
+                  setStart(editingTimer.id, e.target.value as HHMM)
+                }
+                inputProps={{ step: 60 }}
+                size="small"
+              />
             </Stack>
 
-            {/* Name */}
-            <TextField
-              label="Timer Name"
-              value={editingTimer.name}
-              onChange={(e) => setTimerName(editingTimer.id, e.target.value)}
-              size="small"
-            />
-
-            {/* Start */}
-            <TextField
-              label="Start"
-              type="time"
-              value={editingTimer.start}
-              onChange={(e) =>
-                setStart(editingTimer.id, e.target.value as HHMM)
-              }
-              inputProps={{ step: 60 }}
-              size="small"
-            />
-
-            {/* Segments */}
             <Stack spacing={1}>
-              <Stack
-                direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-              >
-                <Typography variant="subtitle2">Segments</Typography>
-                <Button
-                  size="small"
-                  onClick={() => addSegment(editingTimer.id)}
-                >
-                  Add Segment
-                </Button>
-              </Stack>
-
-              {editingTimer.segments.length === 0 ? (
-                <Box
-                  sx={{
-                    p: 1.5,
-                    border: "1px dashed",
-                    borderColor: "divider",
-                    borderRadius: 1,
-                    bgcolor: "action.hover",
-                  }}
-                >
-                  <Typography variant="body2">
-                    No segments — this timer runs from{" "}
-                    <b>{editingTimer.start}</b> to <b>{editingTimer.end}</b>.
-                    Click <b>Add Segment</b> to create one.
-                  </Typography>
-                </Box>
-              ) : (
-                editingTimer.segments.map((seg, sIdx) => {
+              
+                {editingTimer.segments.map((seg, sIdx) => {
                   const segStart =
                     sIdx === 0
                       ? editingTimer.start
                       : editingTimer.segments[sIdx - 1].end;
                   const segEnd = seg.end;
                   return (
-                    <Box
-                      key={seg.id}
-                      sx={{
-                        p: 1,
-                        border: "1px solid",
-                        borderColor: "divider",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <Stack
-                        direction={{ xs: "column", sm: "row" }}
-                        spacing={1}
-                        alignItems="center"
-                      >
-                        {/* Time FIRST */}
-                        <TextField
-                          label="Ends At"
-                          type="time"
-                          value={seg.end}
-                          onChange={(e) =>
-                            setSegmentField(
-                              editingTimer.id,
-                              seg.id,
-                              "end",
-                              e.target.value
-                            )
-                          }
-                          inputProps={{ step: 60 }}
-                          size="small"
-                          sx={{ width: 130 }}
-                        />
-
-                        {/* Title */}
-                        <TextField
-                          label="Title"
-                          value={seg.title}
-                          onChange={(e) =>
-                            setSegmentField(
-                              editingTimer.id,
-                              seg.id,
-                              "title",
-                              e.target.value
-                            )
-                          }
-                          size="small"
-                          sx={{ minWidth: 180, flex: 1 }}
-                        />
-
-                        {/* Color */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                          }}
+                    <Stack key={seg.id} direction="column" spacing={1}>
+                      {/* Title + color + duration + delete */}
+                      <Box>
+                        <Stack
+                          direction={{ xs: "column", sm: "row" }}
+                          spacing={1}
+                          alignItems="center"
                         >
-                          <Typography variant="caption">Color</Typography>
+                          <TextField
+                            label="Ends At"
+                            type="time"
+                            value={seg.end}
+                            onChange={(e) =>
+                              setSegmentField(
+                                editingTimer.id,
+                                seg.id,
+                                "end",
+                                e.target.value
+                              )
+                            }
+                            inputProps={{ step: 60 }}
+                            size="small"
+                            sx={{ width: 130 }}
+                          />
                           <input
                             aria-label="segment color"
                             type="color"
@@ -696,55 +464,95 @@ export default function TimerApp() {
                               cursor: "pointer",
                             }}
                           />
-                        </Box>
+                          <TextField
+                            label="Title"
+                            value={seg.title}
+                            onChange={(e) =>
+                              setSegmentField(
+                                editingTimer.id,
+                                seg.id,
+                                "title",
+                                e.target.value
+                              )
+                            }
+                            size="small"
+                            sx={{ minWidth: 180, flex: 1 }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{ minWidth: 70, textAlign: "right" }}
+                          >
+                            {durationLabel(segStart as HHMM, segEnd as HHMM)}
+                          </Typography>
+                          <IconButton
+                            size="small"
+                            aria-label="remove segment"
+                            onClick={() =>
+                              removeSegment(editingTimer.id, seg.id)
+                            }
+                            disabled={editingTimer.segments.length === 1} // 🚫
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      </Box>
 
-                        {/* Duration + Delete */}
-                        <Typography
-                          variant="caption"
-                          sx={{ minWidth: 70, textAlign: "right" }}
-                        >
-                          {durationLabel(segStart as HHMM, segEnd as HHMM)}
-                        </Typography>
-                        <IconButton
+                      {/* Time FIRST */}
+                      {/* <Box>
+                        <TextField
+                          label="Ends At"
+                          type="time"
+                          value={seg.end}
+                          onChange={(e) =>
+                            setSegmentField(
+                              editingTimer.id,
+                              seg.id,
+                              "end",
+                              e.target.value
+                            )
+                          }
+                          inputProps={{ step: 60 }}
                           size="small"
-                          aria-label="remove segment"
-                          onClick={() => removeSegment(editingTimer.id, seg.id)}
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
-                      </Stack>
-
-                      {/* Caption under duration + trash */}
-                      <Stack spacing={0.5} alignItems="flex-end">
-                        <Typography variant="caption" color="text.secondary">
-                          Covers {segStart} → {segEnd}
-                        </Typography>
-                      </Stack>
-                    </Box>
+                          sx={{ width: 130 }}
+                        />
+                      </Box> */}
+                    </Stack>
                   );
-                })
-              )}
-            </Stack>
-
-            {/* End below segments */}
-            <Divider sx={{ my: 1 }} />
-            <Stack direction="row" spacing={2} alignItems="center">
-              <TextField
-                label="End"
-                type="time"
-                value={editingTimer.end}
-                onChange={(e) =>
-                  setEnd(editingTimer.id, e.target.value as HHMM)
                 }
-                inputProps={{ step: 60 }}
-                size="small"
-                sx={{ width: 130 }}
-              />
-              <Typography variant="caption" color="text.secondary">
-                {editingTimer.segments.length === 0
-                  ? "No segments — end is independent."
-                  : "Syncs with last segment."}
-              </Typography>
+              )}
+
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
+                <Button
+                  size="small"
+                  onClick={() => addSegment(editingTimer.id)}
+                >
+                  Add Segment
+                </Button>
+              </Stack>
+
+              {/* <Divider sx={{ my: 1 }} />
+              <Stack direction="row" spacing={2} alignItems="center">
+                <TextField
+                  label="End"
+                  type="time"
+                  value={editingTimer.end}
+                  onChange={(e) =>
+                    setEnd(editingTimer.id, e.target.value as HHMM)
+                  }
+                  inputProps={{ step: 60 }}
+                  size="small"
+                  sx={{ width: 130 }}
+                /> */}
+                {/* <Typography variant="caption" color="text.secondary">
+                  {editingTimer.segments.length === 0
+                    ? "No segments — end is independent."
+                    : "Syncs with last segment."}
+                </Typography> */}
+              {/* </Stack> */}
             </Stack>
           </Stack>
         ) : (
