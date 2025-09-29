@@ -28,7 +28,7 @@ export default function Demo() {
           </header>
 
           <button className="primary" onClick={() => setShow(true)}>
-            Start
+            Begin
           </button>
         </main>
 
