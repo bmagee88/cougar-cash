@@ -10,6 +10,7 @@ import TypingMarathonMode from "./typingProject/pages/TypingMarathonMode";
 import SnakeGamePage from "./SnakeGamePage";
 import ComplianceQuizPage from "./ComplianceQuizProject/ComplianceQuizPage";
 import TimerApp from "./TimerApp/TimerApp";
+import Demo from "./components/FetchProgressModal/Demo";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import React from "react";
@@ -47,6 +48,9 @@ function App() {
           <Route
             path='/timer'
             element={<TimerApp />}></Route>
+          <Route
+            path='/fpm'
+            element={<Demo />}></Route>
         </Routes>
       </Router>
     </Box>
