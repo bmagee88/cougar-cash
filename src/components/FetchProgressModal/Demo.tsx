@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import FetchProgressModal from "./FetchProgressModal";
+import Bunny from "./creatures/Bunny"; // 🐰 add this
 
 export default function Demo() {
   const [show, setShow] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+
+  // 🐰 bunny control
+  const [bunnyActive, setBunnyActive] = useState(false);
+  const [bunnyKick, setBunnyKick] = useState(0);
 
   useEffect(() => {
     if (!toast) return;
@@ -39,24 +44,30 @@ export default function Demo() {
         )}
       </div>
 
+      {/* 🐰 Bunny sits fixed near the bottom of the screen */}
+      <Bunny active={bunnyActive} kick={bunnyKick} />
+
       {show && (
-  <FetchProgressModal
-    title="Processing…"
-    simulate
-    modeSec={40}
-    maxSec={500}
-    timeoutMs={40000} // or your random timeout wiring
-    onSuccess={() => {
-      setShow(false);
-      setToast({ type: "success", msg: "All set." });
-    }}
-    onError={() => {
-      setShow(false);
-      // green success style + message you requested:
-      setToast({ type: "success", msg: "you made it back" });
-    }}
-  />
-)}
+        <FetchProgressModal
+          title="Processing…"
+          simulate
+          modeSec={40}
+          maxSec={500}
+          timeoutMs={40000}
+          onSuccess={() => {
+            setShow(false);
+            setToast({ type: "success", msg: "All set." });
+            // 🐰 show bunny on first success, hop immediately each success
+            setBunnyActive(true);
+            setBunnyKick((k) => k + 1);
+          }}
+          onError={() => {
+            setShow(false);
+            setToast({ type: "success", msg: "you made it back" });
+            // no hop on failure
+          }}
+        />
+      )}
     </>
   );
 }
@@ -79,7 +90,6 @@ function SereneStyles() {
         --accent2:#4a78ea;
       }
 
-      /* NOTICEABLE background animation */
       @keyframes gradientShift {
         0%   { background-position:   0% 50%; }
         50%  { background-position: 100% 50%; }
@@ -103,21 +113,19 @@ function SereneStyles() {
         overflow:hidden;
         color:var(--ink);
 
-        /* animated gradient */
         background: linear-gradient(120deg, var(--bg1), var(--bg2), var(--bg3));
         background-size: 300% 300%;
         animation: gradientShift 18s ease-in-out infinite;
         will-change: background-position;
       }
 
-      /* ORBS — clearer, above bg, below card */
       .orb{
         position:absolute;
         border-radius:50%;
         filter: blur(64px);
         opacity:0.55;
         pointer-events:none;
-        z-index:1;              /* ensure they are visible */
+        z-index:1;
         animation: drift 22s ease-in-out infinite;
         will-change: transform;
       }
@@ -139,7 +147,7 @@ function SereneStyles() {
 
       .card{
         position:relative;
-        z-index:2;              /* sits above orbs */
+        z-index:2;
         width:min(720px, 92vw);
         text-align: center;
 
@@ -198,4 +206,3 @@ function SereneStyles() {
     `}</style>
   );
 }
-
