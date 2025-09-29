@@ -304,7 +304,6 @@ export default function FetchProgressModal<T = unknown>({
   // Freeze/blackout state
   const [maxFullBlocks, setMaxFullBlocks] = useState<number | null>(null);
   const [blackout, setBlackout] = useState(false);
-  const [closing, setClosing] = useState(false);
   const [fadeMs, setFadeMs] = useState(3500); // randomized on failure/timeout: 3.5s..10s
   const [blackHoldMs, setBlackHoldMs] = useState(3000);
 
