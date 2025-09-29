@@ -500,6 +500,7 @@ export default function FetchProgressModal<T = unknown>({
     timeoutMs,
     onError,
     onSuccess,
+    maxFullBlocks
   ]);
 
   if (!visible) return null;
