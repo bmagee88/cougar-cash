@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import FetchProgressModal from "./FetchProgressModal";
-import Bunny from "./creatures/Bunny"; // 🐰 add this
+import Bunny from "./creatures/Bunny"; // 🐰
 
 export default function Demo() {
   const [show, setShow] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
-  // 🐰 bunny control
-  const [bunnyActive, setBunnyActive] = useState(false);
+  // 🐰 multiple bunnies + global kick
+  const [bunnies, setBunnies] = useState<number[]>([]);
   const [bunnyKick, setBunnyKick] = useState(0);
 
   useEffect(() => {
@@ -44,8 +44,10 @@ export default function Demo() {
         )}
       </div>
 
-      {/* 🐰 Bunny sits fixed near the bottom of the screen */}
-      <Bunny active={bunnyActive} kick={bunnyKick} />
+      {/* 🐰 Render all bunnies */}
+      {bunnies.map((id) => (
+        <Bunny key={id} active kick={bunnyKick} />
+      ))}
 
       {show && (
         <FetchProgressModal
@@ -53,18 +55,27 @@ export default function Demo() {
           simulate
           modeSec={40}
           maxSec={500}
+          // If you turned random timeouts back on, keep those props here as well
+          // timeoutRandom
+          // timeoutMedianSec={40}
+          // timeoutMinSec={3.5}
+          // timeoutMaxSec={500}
           timeoutMs={40000}
           onSuccess={() => {
             setShow(false);
             setToast({ type: "success", msg: "All set." });
-            // 🐰 show bunny on first success, hop immediately each success
-            setBunnyActive(true);
+
+            // 🐰 Add a new bunny for every success
+            setBunnies((prev) => [...prev, Date.now() + Math.random()]);
+
+            // 🐰 Make all existing bunnies hop right now
             setBunnyKick((k) => k + 1);
           }}
           onError={() => {
             setShow(false);
+            // green success style + message you requested:
             setToast({ type: "success", msg: "you made it back" });
-            // no hop on failure
+            // no bunny on failure
           }}
         />
       )}

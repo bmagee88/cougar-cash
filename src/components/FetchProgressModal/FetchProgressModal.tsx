@@ -6,23 +6,93 @@ type Props<T = unknown> = {
   onError?: (err: unknown) => void;
   title?: string;
 
-  // If you want a fixed timeout for now, pass timeoutMs. (Randomization can be wired elsewhere.)
-  timeoutMs?: number;
+  /** Progress simulation */
+  simulate?: boolean;             // if no action is provided, simulate using planned duration
+  plannedDurationMs?: number;     // if provided, progress reaches 100% at this time
+  modeSec?: number;               // most-likely duration (used for sampling when not provided); default 40
+  medianSec?: number;             // deprecated alias for modeSec
+  maxSec?: number;                // long tail cap for sampling; default 500
 
+  /** Timeout modulation (per-run) */
+  timeoutRandom?: boolean;        // enable random per-run timeout (bell curve in log-space). Default: true
+  timeoutMedianSec?: number;      // default 40
+  timeoutMinSec?: number;         // default 3.5
+  timeoutMaxSec?: number;         // default 500
+  timeoutMs?: number;             // used only if timeoutRandom === false
+
+  /** Tooltip override (else we compose one) */
   hoverHint?: string;
-
-  // Progress normalization / simulation
-  plannedDurationMs?: number;
-  simulate?: boolean;
-  modeSec?: number; // default 40 (most likely duration)
-  medianSec?: number; // deprecated alias
-  maxSec?: number; // default 500
 };
 
-const clamp = (v: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, v));
+/* --------------------------------------------------------- */
+/* Calibrated log curve: ~5s from 50→60, ~20s from 80→90     */
+/* --------------------------------------------------------- */
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const K = 30 / Math.log(4);
+const A = (Math.exp(60 / K) - Math.exp(50 / K)) / 5;
 
-/* ====== Sinister Anxiety Styles + dynamic blackout fade ====== */
+function logRawPercent(secondsElapsed: number): number {
+  return K * Math.log(1 + A * Math.max(0, secondsElapsed));
+}
+
+function normalizedPercent(secondsElapsed: number, plannedMs?: number): number {
+  const raw = logRawPercent(secondsElapsed);
+  if (!plannedMs || plannedMs <= 0) return Math.min(raw, 99);
+  const T = plannedMs / 1000;
+  const rawAtT = logRawPercent(T);
+  if (rawAtT <= 0) return Math.min(raw, 99);
+  const scaled = (raw / rawAtT) * 100;
+  return secondsElapsed >= T ? 100 : Math.min(scaled, 99);
+}
+
+/* --------------------------------------------------------- */
+/* Timeout modulation helpers (bell curve in log-space)      */
+/* --------------------------------------------------------- */
+function randn() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function sampleTimeoutSecLogNormal(
+  medianSec = 40,
+  minSec = 3.5,
+  maxSec = 500,
+  sigmaK = 3
+) {
+  const mu = Math.log(medianSec);
+  const sigLeft = (mu - Math.log(minSec)) / sigmaK;
+  const sigRight = (Math.log(maxSec) - mu) / sigmaK;
+  const sigma = (sigLeft + sigRight) / 2;
+  for (let i = 0; i < 8; i++) {
+    const z = randn();
+    const x = Math.exp(mu + sigma * z);
+    if (x >= minSec && x <= maxSec) return x;
+  }
+  const z = randn();
+  const x = Math.exp(mu + sigma * z);
+  return clamp(x, minSec, maxSec);
+}
+
+/** Mirror the failure timeout across 40s to be on the same side as success */
+function remapTimeoutAcross40(
+  failSec: number,
+  successSec: number,
+  minSec: number,
+  maxSec: number
+) {
+  const s = successSec - 40;
+  const f = failSec - 40;
+  if (s === 0 || f === 0 || s * f > 0) return clamp(failSec, minSec, maxSec);
+  const diff = Math.abs(f);
+  const newFail = 40 + Math.sign(s) * diff;
+  return clamp(newFail, minSec, maxSec);
+}
+
+/* --------------------------------------------------------- */
+/* UI Bits: sinister overlay + 10-block bar                  */
+/* --------------------------------------------------------- */
 const AnxietyStyles = () => (
   <style>{`
     :root {
@@ -37,7 +107,6 @@ const AnxietyStyles = () => (
       --anx-red: #e53935;
       --anx-amber: #ffc107;
 
-      /* speeds you can tweak per state below */
       --stripeSpeed: .9s;
       --flickerSpeed: 2.6s;
       --scanSpeed: 3.6s;
@@ -52,7 +121,6 @@ const AnxietyStyles = () => (
     @keyframes textGlitch { 0%{text-shadow:1px 0 #ff3b30,-1px 0 #00e1ff} 50%{text-shadow:0 1px #ff3b30,0 -1px #00e1ff} 100%{text-shadow:-1px 0 #ff3b30,1px 0 #00e1ff} }
     @keyframes scanSweep { 0%{transform:translateY(-110%)} 100%{transform:translateY(110%)} }
 
-    /* OVERLAY — sinister backdrop (stripes + scanlines + vignette + red wash) */
     .anx-overlay {
       position: fixed; inset: 0;
       display: grid; place-items: center;
@@ -60,7 +128,6 @@ const AnxietyStyles = () => (
       overflow: hidden;
 
       background:
-        /* diagonal red stripes */
         repeating-linear-gradient(
           -45deg,
           rgba(255, 59, 48, 0.10) 0px,
@@ -68,19 +135,16 @@ const AnxietyStyles = () => (
           rgba(0,0,0,0.0) 12px,
           rgba(0,0,0,0.0) 24px
         ),
-        /* horizontal scanlines */
         repeating-linear-gradient(
           0deg,
           rgba(255,255,255,.03) 0 1px,
           rgba(0,0,0,0) 1px 3px
         ),
-        /* subtle red wash */
         radial-gradient(
           100% 110% at 70% 30%,
           rgba(255, 50, 50, .08) 0%,
           rgba(255, 50, 50, 0) 60%
         ),
-        /* dark vignette */
         radial-gradient(
           120% 120% at 50% 50%,
           rgba(0,0,0,0) 40%,
@@ -94,8 +158,6 @@ const AnxietyStyles = () => (
       animation-iteration-count: infinite, infinite;
       animation-duration: var(--stripeSpeed), var(--flickerSpeed);
     }
-
-    /* moving scan bar */
     .anx-overlay::before {
       content: "";
       position: absolute; inset: -25% 0 -25% 0;
@@ -104,8 +166,6 @@ const AnxietyStyles = () => (
       animation: scanSweep var(--scanSpeed) linear infinite;
       pointer-events: none;
     }
-
-    /* subtle grain */
     .anx-overlay::after {
       content: "";
       position: absolute; inset: 0;
@@ -116,18 +176,9 @@ const AnxietyStyles = () => (
       opacity: .6;
       animation: flicker 2.8s linear infinite;
     }
+    .anx-overlay.warn { --stripeSpeed: .7s;  --scanSpeed: 3.1s; }
+    .anx-overlay.panic { --stripeSpeed: .55s; --scanSpeed: 2.4s; }
 
-    /* escalate intensity with level */
-    .anx-overlay.warn {
-      --stripeSpeed: .7s;
-      --scanSpeed: 3.1s;
-    }
-    .anx-overlay.panic {
-      --stripeSpeed: .55s;
-      --scanSpeed: 2.4s;
-    }
-
-    /* CARD */
     .anx-card {
       position: relative;
       z-index: 1;
@@ -155,7 +206,6 @@ const AnxietyStyles = () => (
     }
     .anx-subtle { color: var(--anx-muted); font-size: 13px; margin-bottom: 14px; }
 
-    /* 10-block bar + states */
     .bar-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; margin-top: 10px; }
     .bar-cell { height: 22px; border-radius: 6px; border: 1px solid #3a3f46; background: transparent; }
     .bar-cell.filled { background: linear-gradient(180deg, #29b765 0%, #1e8f4f 100%); border-color: rgba(255,255,255,0.06); animation: glowPulse 1.2s ease-in-out infinite; }
@@ -167,7 +217,6 @@ const AnxietyStyles = () => (
     .readout.warn .timer, .readout.warn .percent { color: var(--anx-amber); }
     .readout.panic .timer, .readout.panic .percent { color: var(--anx-red); }
 
-    /* BLACKOUT layer (fade timing set inline) */
     .blackout {
       position: fixed; inset: 0;
       background: #000;
@@ -179,55 +228,6 @@ const AnxietyStyles = () => (
   `}</style>
 );
 
-/* ====== Progress pacing ====== */
-const K = 30 / Math.log(4);
-const A = (Math.exp(60 / K) - Math.exp(50 / K)) / 5;
-function logRawPercent(secondsElapsed: number): number {
-  return K * Math.log(1 + A * Math.max(0, secondsElapsed));
-}
-function normalizedPercent(secondsElapsed: number, plannedMs?: number): number {
-  const raw = logRawPercent(secondsElapsed);
-  if (!plannedMs || plannedMs <= 0) return Math.min(raw, 99);
-  const T = plannedMs / 1000;
-  const rawAtT = logRawPercent(T);
-  if (rawAtT <= 0) return Math.min(raw, 99);
-  const scaled = (raw / rawAtT) * 100;
-  return secondsElapsed >= T ? 100 : Math.min(scaled, 99);
-}
-
-/* ====== Helpers ====== */
-function lastGreenIndex(pct: number) {
-  const full = Math.floor(pct / 10);
-  return Math.max(0, Math.min(9, full - 1)); // current last green
-}
-
-/* ====== 10-block bar (supports freezing fill after red) ====== */
-function TenBlockBar({
-  percent,
-  flashRedIndex,
-  maxFullBlocks,
-}: {
-  percent: number;
-  flashRedIndex?: number | null;
-  maxFullBlocks?: number | null;
-}) {
-  const currentFull = Math.floor(percent / 10);
-  const fullBlocks =
-    maxFullBlocks != null ? Math.min(currentFull, maxFullBlocks) : currentFull;
-
-  return (
-    <div className="bar-grid">
-      {Array.from({ length: 10 }).map((_, i) => {
-        const isFilled = i < fullBlocks;
-        const isRed = flashRedIndex === i;
-        const cls = `bar-cell ${isRed ? "red" : isFilled ? "filled" : ""}`;
-        return <div key={i} className={cls} />;
-      })}
-    </div>
-  );
-}
-
-/* ====== Blocking Modal (now renders sinister orbs) ====== */
 function BlockingModal(props: {
   children: React.ReactNode;
   title?: string;
@@ -235,10 +235,7 @@ function BlockingModal(props: {
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); }
     };
     document.addEventListener("keydown", onKey, true);
     const prev = document.body.style.overflow;
@@ -255,17 +252,11 @@ function BlockingModal(props: {
       aria-modal="true"
       aria-label={props.title || "Loading"}
       className={`anx-overlay ${props.level}`}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
+      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
     >
       <div
         className={`anx-card ${props.level}`}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
       >
         {props.title && <h2 className="anx-title">⚠ {props.title}</h2>}
         {props.children}
@@ -274,18 +265,57 @@ function BlockingModal(props: {
   );
 }
 
+function TenBlockBar({
+  percent,
+  flashRedIndex,
+  maxFullBlocks,
+}: {
+  percent: number;
+  flashRedIndex?: number | null;
+  maxFullBlocks?: number | null; // freeze cap after red
+}) {
+  const currentFull = Math.floor(percent / 10);
+  const fullBlocks = maxFullBlocks != null ? Math.min(currentFull, maxFullBlocks) : currentFull;
+
+  return (
+    <div className="bar-grid">
+      {Array.from({ length: 10 }).map((_, i) => {
+        const isFilled = i < fullBlocks;
+        const isRed = flashRedIndex === i;
+        const cls = `bar-cell ${isRed ? "red" : isFilled ? "filled" : ""}`;
+        return <div key={i} className={cls} />;
+      })}
+    </div>
+  );
+}
+
+function lastGreenIndex(pct: number) {
+  const full = Math.floor(pct / 10);
+  return Math.max(0, Math.min(9, full - 1)); // current last green
+}
+
+/* --------------------------------------------------------- */
+/* Main Component                                            */
+/* --------------------------------------------------------- */
 export default function FetchProgressModal<T = unknown>({
   action,
   onSuccess,
   onError,
   title = "Do not close this window",
-  timeoutMs = 40000,
-  hoverHint,
-  plannedDurationMs,
+
   simulate,
+  plannedDurationMs,
   modeSec,
   medianSec,
   maxSec = 500,
+
+  timeoutRandom = true,
+  timeoutMedianSec = 40,
+  timeoutMinSec = 3.5,
+  timeoutMaxSec = 500,
+  timeoutMs,
+
+  hoverHint,
 }: Props<T>) {
   const [visible, setVisible] = useState(true);
   const [percent, setPercent] = useState(0);
@@ -293,21 +323,16 @@ export default function FetchProgressModal<T = unknown>({
   const [flashRedIndex, setFlashRedIndex] = useState<number | null>(null);
   const [plannedMs, setPlannedMs] = useState<number | undefined>(undefined);
 
-  // per-run modulated warn/panic thresholds (fractions of timeout) in log-space
   const [warnFrac, setWarnFrac] = useState(0.7);
   const [panicFrac, setPanicFrac] = useState(0.9);
 
-  // Effective timeout (ms). If you randomize elsewhere, just pass that value into timeoutMs.
-  const [effectiveTimeoutMs, setEffectiveTimeoutMs] =
-    useState<number>(timeoutMs);
+  const [effectiveTimeoutMs, setEffectiveTimeoutMs] = useState<number>(timeoutMs ?? 40000);
 
-  // Freeze/blackout state
   const [maxFullBlocks, setMaxFullBlocks] = useState<number | null>(null);
   const [blackout, setBlackout] = useState(false);
-  const [fadeMs, setFadeMs] = useState(3500); // randomized on failure/timeout: 3.5s..10s
+  const [fadeMs, setFadeMs] = useState(3500);
   const [blackHoldMs, setBlackHoldMs] = useState(3000);
 
-  // Refs
   const rafRef = useRef<number | null>(null);
   const timeoutRef = useRef<number | null>(null);
   const startRef = useRef<number | null>(null);
@@ -328,40 +353,53 @@ export default function FetchProgressModal<T = unknown>({
 
     const mode = modeSec ?? medianSec ?? 40;
 
-    // Planned success duration (log-triangular around mode/max)
-    const minSec = Math.max(0.5, (mode * mode) / maxSec);
-    const a = Math.log(minSec),
-      b = Math.log(maxSec),
-      c = (a + b) / 2;
+    // Planned success duration: sample in log-space (triangular-like) if not provided
+    const minSec = Math.max(0.5, (mode * mode) / (maxSec || 500));
+    const a = Math.log(minSec), b = Math.log(maxSec || 500), c = (a + b) / 2;
     const u = Math.random();
-    const x =
-      u < 0.5
-        ? a + Math.sqrt(u * (b - a) * (c - a))
-        : b - Math.sqrt((1 - u) * (b - a) * (b - c));
+    const x = u < 0.5
+      ? a + Math.sqrt(u * (b - a) * (c - a))
+      : b - Math.sqrt((1 - u) * (b - a) * (b - c));
     const selPlannedMs =
-      plannedDurationMs && plannedDurationMs > 0
-        ? plannedDurationMs
-        : Math.exp(x) * 1000;
+      plannedDurationMs && plannedDurationMs > 0 ? plannedDurationMs : Math.exp(x) * 1000;
+    setPlannedMs(selPlannedMs);
 
-    // Pre-pick the visual timings so we can show them in the tooltip
+    // Pre-sample visual timings for tooltip and for failure use
     const sampledFade = Math.round(3500 + Math.random() * (10000 - 3500)); // 3.5–10s
     const sampledHold = Math.round(3000 + Math.random() * (10000 - 3000)); // 3–10s
     setFadeMs(sampledFade);
     setBlackHoldMs(sampledHold);
 
-    setPlannedMs(selPlannedMs);
-    setEffectiveTimeoutMs(timeoutMs);
-
-    // Modulate warn/panic in log-space with same proportion (panic/warn ~ 0.9/0.7)
+    // Per-run warn/panic thresholds (fractions of timeout) in log-space, with fixed proportion
     const r = 0.9 / 0.7;
-    const lnBase =
-      Math.log(0.6) + Math.random() * (Math.log(0.8) - Math.log(0.6)); // ~[0.6, 0.8]
+    const lnBase = Math.log(0.6) + Math.random() * (Math.log(0.8) - Math.log(0.6)); // ~[0.6,0.8]
     const wf = Math.exp(lnBase);
     const pf = Math.min(0.96, wf * r);
     setWarnFrac(wf);
     setPanicFrac(pf);
 
-    // Simulate if no action
+    // Compute effective timeout (randomized + mirrored), keep a local copy for this run
+    const pickedTimeoutMs = timeoutRandom
+      ? Math.round(
+          sampleTimeoutSecLogNormal(
+            timeoutMedianSec,
+            timeoutMinSec,
+            timeoutMaxSec
+          ) * 1000
+        )
+      : (timeoutMs ?? 40000);
+
+    const successSec = selPlannedMs / 1000;
+    const adjustedFailSec = remapTimeoutAcross40(
+      pickedTimeoutMs / 1000,
+      successSec,
+      timeoutMinSec,
+      timeoutMaxSec
+    );
+    const pickedEffectiveTimeoutMs = Math.round(adjustedFailSec * 1000);
+    setEffectiveTimeoutMs(pickedEffectiveTimeoutMs);
+
+    // Decide whether to simulate
     const shouldSimulate = simulate ?? !action;
     const runAction: () => Promise<T | void> = shouldSimulate
       ? async () => {
@@ -370,7 +408,7 @@ export default function FetchProgressModal<T = unknown>({
         }
       : (action as () => Promise<T>);
 
-    // RAF loop
+    // RAF: drive elapsed + percent (freeze after red)
     startRef.current = performance.now();
     const tick = () => {
       if (cancelled) return;
@@ -379,16 +417,11 @@ export default function FetchProgressModal<T = unknown>({
       setElapsed(elapsedSec);
 
       if (maxFullBlocks != null) {
-        // frozen after red
         rafRef.current = requestAnimationFrame(tick);
         return;
       }
-
       setPercent((prev) => {
-        const next = Math.max(
-          prev,
-          normalizedPercent(elapsedSec, selPlannedMs)
-        );
+        const next = Math.max(prev, normalizedPercent(elapsedSec, selPlannedMs));
         percentRef.current = next;
         return next;
       });
@@ -396,26 +429,23 @@ export default function FetchProgressModal<T = unknown>({
     };
     rafRef.current = requestAnimationFrame(tick);
 
-    // Timeout handler — last filled green -> red, freeze; fade to black for random 3.5–10s, then close
+    // Timeout path: last green -> red, freeze, fade-to-black, hold, then cleanup
     timeoutRef.current = window.setTimeout(() => {
       timedOutRef.current = true;
 
       const idx = lastGreenIndex(percentRef.current);
       setFlashRedIndex(idx);
-      setMaxFullBlocks(Math.floor(percentRef.current / 10)); // freeze current greens
+      setMaxFullBlocks(Math.floor(percentRef.current / 10));
 
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
 
-      // Timeout handler (inside setTimeout(...)):
-      const fade = sampledFade;
-      const hold = sampledHold;
       setBlackout(true);
       window.setTimeout(() => {
         cleanup();
         onError?.(new Error("timeout"));
-      }, fade + hold);
-    }, timeoutMs /* or timeoutMs, whichever you're using */);
+      }, sampledFade + sampledHold);
+    }, pickedEffectiveTimeoutMs);
 
     // Run (or simulate) the async action
     (async () => {
@@ -423,8 +453,10 @@ export default function FetchProgressModal<T = unknown>({
         const result = await runAction();
         if (cancelled || timedOutRef.current) return;
 
+        if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
         setPercent(100);
         percentRef.current = 100;
+
         setTimeout(() => {
           cleanup();
           onSuccess?.(result as T);
@@ -432,20 +464,20 @@ export default function FetchProgressModal<T = unknown>({
       } catch (err) {
         if (cancelled || timedOutRef.current) return;
 
+        if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
+
         const idx = lastGreenIndex(percentRef.current);
         setFlashRedIndex(idx);
-        setMaxFullBlocks(Math.floor(percentRef.current / 10)); // freeze
+        setMaxFullBlocks(Math.floor(percentRef.current / 10));
 
         if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
 
-        const fade = sampledFade;
-        const hold = sampledHold;
         setBlackout(true);
         window.setTimeout(() => {
           cleanup();
           onError?.(err);
-        }, fade + hold);
+        }, sampledFade + sampledHold);
       }
     })();
 
@@ -454,54 +486,50 @@ export default function FetchProgressModal<T = unknown>({
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     action,
     simulate,
     plannedDurationMs,
-    timeoutMs,
     modeSec,
     medianSec,
     maxSec,
+    timeoutRandom,
+    timeoutMedianSec,
+    timeoutMinSec,
+    timeoutMaxSec,
+    timeoutMs,
     onError,
     onSuccess,
   ]);
 
   if (!visible) return null;
 
-  // Dynamic stress level for UI state using per-run warn/panic thresholds
+  // Stress level → UI level, using per-run warn/panic fractions
   const stress = clamp(elapsed / ((effectiveTimeoutMs || 1) / 1000), 0, 1);
   const level: "calm" | "warn" | "panic" =
     stress >= panicFrac ? "panic" : stress >= warnFrac ? "warn" : "calm";
 
-  const minutes = Math.floor(elapsed / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = Math.floor(elapsed % 60)
-    .toString()
-    .padStart(2, "0");
-
-  // NEW: include yellow/red thresholds in the tooltip
+  // Tooltip
+  const minutes = Math.floor(elapsed / 60).toString().padStart(2, "0");
+  const seconds = Math.floor(elapsed % 60).toString().padStart(2, "0");
   const warnPct = Math.round(warnFrac * 100);
   const panicPct = Math.round(panicFrac * 100);
 
   const computedHint =
     hoverHint ??
     (plannedMs
-      ? `Planned: ${(plannedMs / 1000).toFixed(1)}s • Timeout: ${(
-          effectiveTimeoutMs / 1000
-        ).toFixed(1)}s • Yellow ~${warnPct}% • Red ~${panicPct}% • Fade ${(
-          fadeMs / 1000
-        ).toFixed(1)}s • Black hold ${(blackHoldMs / 1000).toFixed(1)}s`
+      ? `Planned: ${(plannedMs / 1000).toFixed(1)}s • Timeout: ${(effectiveTimeoutMs / 1000).toFixed(
+          1
+        )}s • Yellow ~${warnPct}% • Red ~${panicPct}% • Fade ${(fadeMs / 1000).toFixed(
+          1
+        )}s • Black hold ${(blackHoldMs / 1000).toFixed(1)}s`
       : undefined);
 
   return (
     <>
       <AnxietyStyles />
       <BlockingModal title={title} level={level}>
-        <div className="anx-subtle">
-          System is processing your request. This may take a moment…
-        </div>
+        <div className="anx-subtle">System is processing your request. This may take a moment…</div>
         <TenBlockBar
           percent={percent}
           flashRedIndex={flashRedIndex}
@@ -515,10 +543,10 @@ export default function FetchProgressModal<T = unknown>({
         </div>
       </BlockingModal>
 
-      {/* Fade-to-black layer: transition duration set inline per-run */}
+      {/* Fade-to-black layer: transition uses per-run fadeMs; cleanup happens after fade+hold */}
       <div
         className={`blackout ${blackout ? "active" : ""}`}
-        style={{ transition: `opacity ${fadeMs}ms ease` }} // fade duration
+        style={{ transition: `opacity ${fadeMs}ms ease` }}
       />
     </>
   );
