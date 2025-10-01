@@ -9,7 +9,7 @@ type Props = {
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
 export default function Grass({ dead = false, z = 1, liftPx = 1 }: Props) {
-  const [xvw, setXvw] = useState(() => rand(6, 94));
+  const [xvw] = useState(() => rand(6, 94));
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

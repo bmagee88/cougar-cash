@@ -61,7 +61,7 @@ export default function Fox({
     return () => {
       if (runTimer.current) window.clearTimeout(runTimer.current);
     };
-  }, [active, dead]);
+  }, [active, dead, scheduleNext]);
 
   useEffect(() => {
     if (!active || dead) return;
@@ -70,7 +70,7 @@ export default function Fox({
       run();
       scheduleNext();
     }
-  }, [kick, active, dead]);
+  }, [kick, active, dead, scheduleNext, run]);
 
   const shouldRender = active || dead;
   if (!shouldRender) return null;

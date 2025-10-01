@@ -60,7 +60,7 @@ export default function Wolf({
     return () => {
       if (moveTimer.current) window.clearTimeout(moveTimer.current);
     };
-  }, [active, dead]);
+  }, [active, dead, scheduleNext]);
 
   useEffect(() => {
     if (!active || dead) return;
@@ -69,7 +69,7 @@ export default function Wolf({
       move();
       scheduleNext();
     }
-  }, [kick, active, dead]);
+  }, [kick, active, dead, move, scheduleNext]);
 
   if (!(active || dead)) return null;
 

@@ -75,22 +75,22 @@ export abstract class Entity {
 /* ---- concrete entities ---- */
 export class BunnyEntity extends Entity {
   kind: EntityKind = "bunny";
-  constructor(init: BaseInit) { super(init); }
+//   constructor(init: BaseInit) { super(init); }
 }
 
 export class GrassEntity extends Entity {
   kind: EntityKind = "grass";
-  constructor(init: BaseInit) { super(init); }
+//   constructor(init: BaseInit) { super(init); }
 }
 
 export class FoxEntity extends Entity {
   kind: EntityKind = "fox";
-  constructor(init: BaseInit) { super(init); }
+//   constructor(init: BaseInit) { super(init); }
 }
 
 export class WolfEntity extends Entity {
   kind: EntityKind = "wolf";
-  constructor(init: BaseInit) { super(init); } // <-- was EntityInit / args list
+//   constructor(init: BaseInit) { super(init); } // <-- was EntityInit / args list
 }
 
 /* ---- unions & helpers ---- */

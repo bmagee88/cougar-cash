@@ -1,4 +1,4 @@
-import * as React from "react";
+// import * as React from "react";
 import { useMemo, useState } from "react";
 import {
   Box,
@@ -49,7 +49,7 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 type DieStep = 1 | 2 | 4 | 6 | 8 | 10 | 12;
 const DIE_STEPS: DieStep[] = [1, 2, 4, 6, 8, 10, 12];
-const START_DICE: [DieStep, DieStep] = [8, 10];
+// const START_DICE: [DieStep, DieStep] = [8, 10];
 const MAX_POS = 100; // 0..99 inclusive ring length
 
 type Settings = {
@@ -745,7 +745,7 @@ function Board({ dragon, players }: BoardProps) {
             />
           );
         })}
-        /* labels for 0/25/50/75 */
+        {/* /* labels for 0/25/50/75 */}
         {[0, 25, 50, 75].map((i) => {
           const a = (i / 100) * 2 * Math.PI - Math.PI / 2; // same angle as ticks
           const labelOffset = 20; // tweak 18–24 to taste
