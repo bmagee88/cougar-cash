@@ -1,14 +1,29 @@
 import React, { useEffect, useRef, useState } from "react";
 
 type BunnyProps = {
-  active: boolean;   // start/stop bunny
+  active: boolean;   // start/stop bunny motion
   kick?: number;     // increment to trigger an immediate hop
+  dead?: boolean;    // show a dead bunny (no hop/shadow)
+  z?: number;        // per-entity stacking order
+  liftPx?: number;   // spawn a few px above baseline (row-based)
+
+  // NEW: small hop distance, configurable
+  stepMinVw?: number; // default 3
+  stepMaxVw?: number; // default 6
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
-export default function Bunny({ active, kick = 0 }: BunnyProps) {
+export default function Bunny({
+  active,
+  kick = 0,
+  dead = false,
+  z = 1,
+  liftPx = 0,
+  stepMinVw = 3,   // small default hops
+  stepMaxVw = 6,   // small default hops
+}: BunnyProps) {
   const [xvw, setXvw] = useState(() => rand(15, 85));
   const [facingRight, setFacingRight] = useState(true);
   const [hopping, setHopping] = useState(false);
@@ -21,40 +36,49 @@ export default function Bunny({ active, kick = 0 }: BunnyProps) {
     hopTimer.current = window.setTimeout(() => {
       hop();
       scheduleNext();
-    }, Math.round(rand(5000, 10000)));
+    }, Math.round(rand(5000, 10000))); // hop every 5–10s
   };
 
   const hop = () => {
+    if (dead) return; // no hopping when dead
+
+    // decide direction with edge bias so we stay in frame
     const goRight = xvw < 12 ? true : xvw > 88 ? false : Math.random() < 0.5;
-    const step = rand(8, 16);
+
+    // SMALL step size (configurable)
+    const step = rand(stepMinVw, stepMaxVw);
     const target = clamp(xvw + (goRight ? step : -step), 4, 96);
 
     setFacingRight(target > xvw);
     setHopping(true);
     setXvw(target);
+
+    // end hop animation slightly after CSS finishes
     window.setTimeout(() => setHopping(false), 650);
   };
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || dead) return;
     scheduleNext();
     return () => {
       if (hopTimer.current) window.clearTimeout(hopTimer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, dead]);
 
   useEffect(() => {
-    if (!active) return;
+    if (!active || dead) return;
     if (kick !== lastKick.current) {
       lastKick.current = kick;
       hop();          // instant hop on kick (e.g., success)
       scheduleNext(); // reset cadence
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kick, active]);
+  }, [kick, active, dead]);
 
-  if (!active) return null;
+  // Still render dead bunnies (as bodies), don’t animate them
+  const shouldRender = active || dead;
+  if (!shouldRender) return null;
 
   return (
     <>
@@ -63,11 +87,10 @@ export default function Bunny({ active, kick = 0 }: BunnyProps) {
           position: fixed;
           inset: 0 0 8px 0;
           pointer-events: none;
-          z-index: 2; /* below your toast and well below the modal */
+          z-index: 2; /* modal and toast are higher, but we layer bunnies via per-entity z */
         }
         .bunny{
           position: absolute;
-          bottom: 8px;
           transform: translateX(-50%);
           transition: left 480ms cubic-bezier(.2,.75,.26,1);
         }
@@ -91,32 +114,34 @@ export default function Bunny({ active, kick = 0 }: BunnyProps) {
           transition: transform 600ms, opacity 600ms;
           opacity: .9;
         }
+        /* smaller hop arc to match shorter distance */
         .bunny[data-hop="1"] .bunny-emoji-inner{
           animation: bunnyHop 600ms cubic-bezier(.2,.75,.26,1);
         }
         .bunny[data-hop="1"] .bunny-shadow{
-          transform: scale(.7);
-          opacity: .65;
+          transform: scale(.78);
+          opacity: .7;
         }
         @keyframes bunnyHop{
           0%   { transform: translateY(0) }
-          30%  { transform: translateY(-18px) }
-          60%  { transform: translateY(-4px) }
+          30%  { transform: translateY(-12px) } /* was -18px */
+          60%  { transform: translateY(-3px) }
           100% { transform: translateY(0) }
         }
+        .bunny.dead .bunny-emoji-inner{ filter:none; opacity:.9 }
       `}</style>
 
       <div className="bunny-layer" aria-hidden>
         <div
-          className="bunny"
-          style={{ left: `${xvw}vw` }}
+          className={`bunny ${dead ? "dead" : ""}`}
+          style={{ left: `${xvw}vw`, bottom: `${8 + liftPx}px`, zIndex: z }}
           data-right={facingRight ? "1" : "0"}
           data-hop={hopping ? "1" : "0"}
         >
-          <div className="bunny-emoji">
-            <div className="bunny-emoji-inner">🐰</div>
+          <div className="bunny-emoji" title={`z:${z} row:${liftPx}px`}>
+            <div className="bunny-emoji-inner">{dead ? "💀" : "🐰"}</div>
           </div>
-          <div className="bunny-shadow" />
+          {!dead && <div className="bunny-shadow" />}
         </div>
       </div>
     </>

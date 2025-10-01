@@ -11,9 +11,9 @@ import SnakeGamePage from "./SnakeGamePage";
 import ComplianceQuizPage from "./ComplianceQuizProject/ComplianceQuizPage";
 import TimerApp from "./TimerApp/TimerApp";
 import Demo from "./components/FetchProgressModal/Demo";
+import Oroboros from "./oroboros/Oroboros";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import React from "react";
 
 function App() {
   return (
@@ -51,6 +51,9 @@ function App() {
           <Route
             path='/fpm'
             element={<Demo />}></Route>
+          <Route
+            path='/oroboros'
+            element={<Oroboros />}></Route>
         </Routes>
       </Router>
     </Box>
