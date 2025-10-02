@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 type FoxProps = {
   active: boolean;
@@ -31,36 +31,45 @@ export default function Fox({
   const runTimer = useRef<number | null>(null);
   const lastKick = useRef(kick);
 
-  const scheduleNext = () => {
-    if (runTimer.current) window.clearTimeout(runTimer.current);
+  const clearRunTimer = () => {
+    if (runTimer.current != null) {
+      clearTimeout(runTimer.current);
+      runTimer.current = null;
+    }
+  };
+
+  // Stable runner: uses functional setState to avoid stale captures
+  const run = useCallback(() => {
+    if (!active || dead) return;
+
+    setXvw((prev) => {
+      // bias away from edges using *previous* value
+      const goRight = prev < 10 ? true : prev > 90 ? false : Math.random() < 0.5;
+      const step = rand(stepMinVw, stepMaxVw);
+      const target = clamp(prev + (goRight ? step : -step), 4, 96);
+      setFacingRight(target > prev);
+      return target;
+    });
+
+    setRunning(true);
+    window.setTimeout(() => setRunning(false), 550);
+  }, [active, dead, stepMinVw, stepMaxVw]);
+
+  // Stable scheduler that depends only on stable values
+  const scheduleNext = useCallback(() => {
+    clearRunTimer();
+    if (!active || dead) return;
+
+    const ms = Math.round(rand(3000, 7000)); // run every 3–7s
     runTimer.current = window.setTimeout(() => {
       run();
       scheduleNext();
-    }, Math.round(rand(3000, 7000))); // run every 3–7s
-  };
-
-  const run = () => {
-    if (dead) return;
-
-    // bias away from edges
-    const goRight = xvw < 10 ? true : xvw > 90 ? false : Math.random() < 0.5;
-
-    const step = rand(stepMinVw, stepMaxVw);
-    const target = clamp(xvw + (goRight ? step : -step), 4, 96);
-
-    setFacingRight(target > xvw);
-    setRunning(true);
-    setXvw(target);
-
-    window.setTimeout(() => setRunning(false), 550);
-  };
+    }, ms);
+  }, [active, dead, run]);
 
   useEffect(() => {
-    if (!active || dead) return;
-    scheduleNext();
-    return () => {
-      if (runTimer.current) window.clearTimeout(runTimer.current);
-    };
+    if (active && !dead) scheduleNext();
+    return () => clearRunTimer();
   }, [active, dead, scheduleNext]);
 
   useEffect(() => {
@@ -70,7 +79,7 @@ export default function Fox({
       run();
       scheduleNext();
     }
-  }, [kick, active, dead, scheduleNext, run]);
+  }, [kick, active, dead, run, scheduleNext]);
 
   const shouldRender = active || dead;
   if (!shouldRender) return null;
