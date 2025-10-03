@@ -11,15 +11,12 @@ import {
   SerializedEntity,
   FoxEntity,
   WolfEntity,
-  Entity,
-  EntityKind,
 } from "./entities/Entity";
 import Fox from "./creatures/Fox";
 import Wolf from "./creatures/Wolf";
 import Bear from "./creatures/Bear"; // ← NEW (React component)
 import { BearEntity } from "./entities/Entity"; // ← NEW (class)
 import "./entities/entities.css"; // ← add this (or wherever your CSS lives)
-import { PixelGrassOverlay } from "./extras/PixelGrassOverlay";
 
 
 const DEBUG = false; // flip to false to hide debug buttons
@@ -148,18 +145,6 @@ export default function Demo() {
       liftPx: lift,
     });
     bumpAllTrimThenAppend(bun);
-  };
-
-  const addGrass = () => {
-    const newZ = (currentZ ?? 1) + 1;
-    const lift = rowLiftFromZ(newZ);
-    const g = new GrassEntity({
-      id: Date.now() + Math.random(),
-      dead: false,
-      z: newZ,
-      liftPx: lift,
-    });
-    bumpAllTrimThenAppend(g);
   };
 
   const addWolf = () => {
