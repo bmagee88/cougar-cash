@@ -1,5 +1,5 @@
 // entities/Entity.ts
-export type EntityKind = "bunny" | "grass" | "fox" | "wolf";
+export type EntityKind = "bunny" | "fox" | "wolf" | "bear" | "grass";;
 
 export type SerializedEntity = {
   id: number;
@@ -91,6 +91,14 @@ export class FoxEntity extends Entity {
 export class WolfEntity extends Entity {
   kind: EntityKind = "wolf";
 //   constructor(init: BaseInit) { super(init); } // <-- was EntityInit / args list
+}
+
+// 2) BearEntity class (mirrors your other concrete entities)
+export class BearEntity extends Entity {
+  kind: EntityKind = "bear";
+//   constructor(init: BaseInit) {
+//     super(init);
+//   }
 }
 
 /* ---- unions & helpers ---- */

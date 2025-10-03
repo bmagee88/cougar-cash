@@ -1,15 +1,20 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 type FoxProps = {
+  /** start/stop fox motion */
   active: boolean;
+  /** increment to trigger an immediate step (any change fires once) */
   kick?: number;
+  /** show as dead (no hop, no movement) */
   dead?: boolean;
+  /** stacking order */
   z?: number;
+  /** vertical spawn offset in px (row) */
   liftPx?: number;
 
-  // Fox covers more ground than Bunny
-  stepMinVw?: number; // default 6
-  stepMaxVw?: number; // default 12
+  /** calm defaults (you can override per instance) */
+  stepMinVw?: number; // default 2
+  stepMaxVw?: number; // default 4
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -21,133 +26,105 @@ export default function Fox({
   dead = false,
   z = 1,
   liftPx = 0,
-  stepMinVw = 6,
-  stepMaxVw = 12,
+  stepMinVw = 2,
+  stepMaxVw = 4,
 }: FoxProps) {
+  // horizontal position in vw
   const [xvw, setXvw] = useState(() => rand(10, 90));
   const [facingRight, setFacingRight] = useState(true);
-  const [running, setRunning] = useState(false);
 
-  const runTimer = useRef<number | null>(null);
-  const lastKick = useRef(kick);
+  // true while hop arc plays (CSS listens to data-state)
+  const [hopping, setHopping] = useState(false);
 
-  const clearRunTimer = () => {
-    if (runTimer.current != null) {
-      clearTimeout(runTimer.current);
-      runTimer.current = null;
+  // timers/bookkeeping
+  const timeoutRef = useRef<number | null>(null);
+  const lastKickRef = useRef<number>(kick);
+
+  // --- helpers ---------------------------------------------------------------
+
+  const clearTimer = () => {
+    if (timeoutRef.current != null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
   };
 
-  // Stable runner: uses functional setState to avoid stale captures
-  const run = useCallback(() => {
-    if (!active || dead) return;
+  /** Briefly sets data-state="1" so CSS runs @keyframes entityArc */
+  const hopOnce = (ms = 420) => {
+    setHopping(true);
+    window.setTimeout(() => setHopping(false), ms);
+  };
 
-    setXvw((prev) => {
-      // bias away from edges using *previous* value
-      const goRight = prev < 10 ? true : prev > 90 ? false : Math.random() < 0.5;
-      const step = rand(stepMinVw, stepMaxVw);
-      const target = clamp(prev + (goRight ? step : -step), 4, 96);
-      setFacingRight(target > prev);
-      return target;
-    });
+  /** One step: pick a direction, arc, then slide horizontally */
+  const stepOnce = () => {
+    if (dead) return;
 
-    setRunning(true);
-    window.setTimeout(() => setRunning(false), 550);
-  }, [active, dead, stepMinVw, stepMaxVw]);
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    const step = rand(stepMinVw, stepMaxVw);
+    setFacingRight(dir === 1);
 
-  // Stable scheduler that depends only on stable values
-  const scheduleNext = useCallback(() => {
-    clearRunTimer();
-    if (!active || dead) return;
+    hopOnce(420); // visual arc
+    setXvw((prev) => clamp(prev + step * dir, 5, 95)); // horizontal slide
+  };
 
-    const ms = Math.round(rand(3000, 7000)); // run every 3–7s
-    runTimer.current = window.setTimeout(() => {
-      run();
+  /** Schedule the next step after a fox-like cadence */
+  const scheduleNext = () => {
+    clearTimer();
+    // fox cadence: 5–9s
+    const waitMs = Math.round(rand(5000, 9000));
+    timeoutRef.current = window.setTimeout(() => {
+      stepOnce();
       scheduleNext();
-    }, ms);
-  }, [active, dead, run]);
+    }, waitMs);
+  };
+
+  // --- effects ---------------------------------------------------------------
 
   useEffect(() => {
-    if (active && !dead) scheduleNext();
-    return () => clearRunTimer();
-  }, [active, dead, scheduleNext]);
-
-  useEffect(() => {
-    if (!active || dead) return;
-    if (kick !== lastKick.current) {
-      lastKick.current = kick;
-      run();
+    clearTimer();
+    if (active && !dead) {
       scheduleNext();
     }
-  }, [kick, active, dead, run, scheduleNext]);
+    return clearTimer;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, dead, stepMinVw, stepMaxVw]);
 
-  const shouldRender = active || dead;
-  if (!shouldRender) return null;
+  // Kick: any change to "kick" triggers an immediate hop+step
+  useEffect(() => {
+    if (kick !== lastKickRef.current) {
+      lastKickRef.current = kick;
+      if (active && !dead) {
+        stepOnce();
+        scheduleNext();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kick]);
+
+  // --- render ----------------------------------------------------------------
 
   return (
-    <>
-      <style>{`
-        .fox-layer {
-          position: fixed;
-          inset: 0 0 8px 0;
-          pointer-events: none;
-          z-index: 2;
-        }
-        .fox {
-          position: absolute;
-          transform: translateX(-50%);
-          transition: left 420ms cubic-bezier(.2,.75,.26,1);
-        }
-        .fox-emoji {
-          display: grid; place-items: center;
-          transform-origin: center;
-          transition: transform 200ms;
-        }
-        .fox[data-right="0"] .fox-emoji{ transform: scaleX(-1); }
-
-        .fox-emoji-inner {
-          font-size: 42px;
-          line-height: 1;
-          filter: drop-shadow(0 2px 0 rgba(0,0,0,.15));
-        }
-        .fox-shadow {
-          width: 40px; height: 10px;
-          background: rgba(0,0,0,.28);
-          border-radius: 999px;
-          margin: 4px auto 0;
-          transform: scale(1);
-          transition: transform 600ms, opacity 600ms;
-          opacity: .9;
-        }
-        .fox[data-run="1"] .fox-emoji-inner{
-          animation: foxRun 550ms cubic-bezier(.2,.75,.26,1);
-        }
-        .fox[data-run="1"] .fox-shadow{
-          transform: scale(.7);
-          opacity: .7;
-        }
-        @keyframes foxRun {
-          0%   { transform: translateY(0) }
-          30%  { transform: translateY(-14px) }
-          60%  { transform: translateY(-4px) }
-          100% { transform: translateY(0) }
-        }
-        .fox.dead .fox-emoji-inner{ filter:none; opacity:.9 }
-      `}</style>
-
-      <div className="fox-layer" aria-hidden>
-        <div
-          className={`fox ${dead ? "dead" : ""}`}
-          style={{ left: `${xvw}vw`, bottom: `${8 + liftPx}px`, zIndex: z }}
-          data-right={facingRight ? "1" : "0"}
-          data-run={running ? "1" : "0"}
-        >
-          <div className="fox-emoji" title={`z:${z} row:${liftPx}px`}>
-            <div className="fox-emoji-inner">{dead ? "💀" : "🦊"}</div>
-          </div>
-          {!dead && <div className="fox-shadow" />}
-        </div>
+    <div
+      className={`entity entity--fox ${dead ? "is-dead" : ""}`}
+      style={
+        {
+          left: `${xvw}vw`,
+          bottom: `${8 + liftPx}px`,
+          zIndex: z,
+          // tune speeds without touching CSS:
+          ["--entity-move-ms" as any]: "520ms", // slightly snappier than bunny
+          ["--entity-hop-ms" as any]: "420ms",
+          ["--entity-emoji-size" as any]: "42px",
+        } as React.CSSProperties
+      }
+      data-right={facingRight ? "1" : "0"}
+      data-state={hopping ? "1" : "0"}
+      aria-label="fox"
+    >
+      <div className="entity-emoji">
+        <div className="entity-emoji-inner">{dead ? "💀" : "🦊"}</div>
       </div>
-    </>
+      {!dead && <div className="entity-shadow" />}
+    </div>
   );
 }

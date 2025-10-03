@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { computeRating } from "./entities/math";
 
 type Props<T = unknown> = {
   action?: () => Promise<T>;
@@ -7,18 +8,18 @@ type Props<T = unknown> = {
   title?: string;
 
   /** Progress simulation */
-  simulate?: boolean;             // if no action is provided, simulate using planned duration
-  plannedDurationMs?: number;     // if provided, progress reaches 100% at this time
-  modeSec?: number;               // most-likely duration (used for sampling when not provided); default 40
-  medianSec?: number;             // deprecated alias for modeSec
-  maxSec?: number;                // long tail cap for sampling; default 500
+  simulate?: boolean; // if no action is provided, simulate using planned duration
+  plannedDurationMs?: number; // if provided, progress reaches 100% at this time
+  modeSec?: number; // most-likely duration (used for sampling when not provided); default 40
+  medianSec?: number; // deprecated alias for modeSec
+  maxSec?: number; // long tail cap for sampling; default 500
 
   /** Timeout modulation (per-run) */
-  timeoutRandom?: boolean;        // enable random per-run timeout (bell curve in log-space). Default: true
-  timeoutMedianSec?: number;      // default 40
-  timeoutMinSec?: number;         // default 3.5
-  timeoutMaxSec?: number;         // default 500
-  timeoutMs?: number;             // used only if timeoutRandom === false
+  timeoutRandom?: boolean; // enable random per-run timeout (bell curve in log-space). Default: true
+  timeoutMedianSec?: number; // default 40
+  timeoutMinSec?: number; // default 3.5
+  timeoutMaxSec?: number; // default 500
+  timeoutMs?: number; // used only if timeoutRandom === false
 
   /** Tooltip override (else we compose one) */
   hoverHint?: string;
@@ -27,7 +28,8 @@ type Props<T = unknown> = {
 /* --------------------------------------------------------- */
 /* Calibrated log curve: ~5s from 50→60, ~20s from 80→90     */
 /* --------------------------------------------------------- */
-const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+const clamp = (v: number, min: number, max: number) =>
+  Math.max(min, Math.min(max, v));
 const K = 30 / Math.log(4);
 const A = (Math.exp(60 / K) - Math.exp(50 / K)) / 5;
 
@@ -49,7 +51,8 @@ function normalizedPercent(secondsElapsed: number, plannedMs?: number): number {
 /* Timeout modulation helpers (bell curve in log-space)      */
 /* --------------------------------------------------------- */
 function randn() {
-  let u = 0, v = 0;
+  let u = 0,
+    v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
@@ -235,7 +238,10 @@ function BlockingModal(props: {
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
     document.addEventListener("keydown", onKey, true);
     const prev = document.body.style.overflow;
@@ -252,11 +258,17 @@ function BlockingModal(props: {
       aria-modal="true"
       aria-label={props.title || "Loading"}
       className={`anx-overlay ${props.level}`}
-      onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+      }}
     >
       <div
         className={`anx-card ${props.level}`}
-        onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
         {props.title && <h2 className="anx-title">⚠ {props.title}</h2>}
         {props.children}
@@ -275,7 +287,8 @@ function TenBlockBar({
   maxFullBlocks?: number | null; // freeze cap after red
 }) {
   const currentFull = Math.floor(percent / 10);
-  const fullBlocks = maxFullBlocks != null ? Math.min(currentFull, maxFullBlocks) : currentFull;
+  const fullBlocks =
+    maxFullBlocks != null ? Math.min(currentFull, maxFullBlocks) : currentFull;
 
   return (
     <div className="bar-grid">
@@ -326,7 +339,9 @@ export default function FetchProgressModal<T = unknown>({
   const [warnFrac, setWarnFrac] = useState(0.7);
   const [panicFrac, setPanicFrac] = useState(0.9);
 
-  const [effectiveTimeoutMs, setEffectiveTimeoutMs] = useState<number>(timeoutMs ?? 40000);
+  const [effectiveTimeoutMs, setEffectiveTimeoutMs] = useState<number>(
+    timeoutMs ?? 40000
+  );
 
   const [maxFullBlocks, setMaxFullBlocks] = useState<number | null>(null);
   const [blackout, setBlackout] = useState(false);
@@ -339,6 +354,8 @@ export default function FetchProgressModal<T = unknown>({
   const closedRef = useRef(false);
   const percentRef = useRef(0);
   const timedOutRef = useRef(false);
+
+const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.floor(plannedMs/1000), Math.floor(effectiveTimeoutMs/1000))}, [plannedMs, effectiveTimeoutMs]);
 
   const cleanup = () => {
     if (closedRef.current) return;
@@ -355,13 +372,18 @@ export default function FetchProgressModal<T = unknown>({
 
     // Planned success duration: sample in log-space (triangular-like) if not provided
     const minSec = Math.max(0.5, (mode * mode) / (maxSec || 500));
-    const a = Math.log(minSec), b = Math.log(maxSec || 500), c = (a + b) / 2;
+    const a = Math.log(minSec),
+      b = Math.log(maxSec || 500),
+      c = (a + b) / 2;
     const u = Math.random();
-    const x = u < 0.5
-      ? a + Math.sqrt(u * (b - a) * (c - a))
-      : b - Math.sqrt((1 - u) * (b - a) * (b - c));
+    const x =
+      u < 0.5
+        ? a + Math.sqrt(u * (b - a) * (c - a))
+        : b - Math.sqrt((1 - u) * (b - a) * (b - c));
     const selPlannedMs =
-      plannedDurationMs && plannedDurationMs > 0 ? plannedDurationMs : Math.exp(x) * 1000;
+      plannedDurationMs && plannedDurationMs > 0
+        ? plannedDurationMs
+        : Math.exp(x) * 1000;
     setPlannedMs(selPlannedMs);
 
     // Pre-sample visual timings for tooltip and for failure use
@@ -370,11 +392,23 @@ export default function FetchProgressModal<T = unknown>({
     setFadeMs(sampledFade);
     setBlackHoldMs(sampledHold);
 
-    // Per-run warn/panic thresholds (fractions of timeout) in log-space, with fixed proportion
-    const r = 0.9 / 0.7;
-    const lnBase = Math.log(0.6) + Math.random() * (Math.log(0.8) - Math.log(0.6)); // ~[0.6,0.8]
-    const wf = Math.exp(lnBase);
-    const pf = Math.min(0.96, wf * r);
+    // Per-run warn/panic thresholds (fractions of total time)
+    const minWarn = 0.1;
+    const maxWarn = 0.9;
+
+    // Yellow anywhere from 10% to 90%
+    const wf = minWarn + Math.random() * (maxWarn - minWarn);
+
+    // Midpoint between yellow and 100%
+    const m = 0.5 * (wf + 1.0);
+
+    // 25% variation toward yellow (down) and toward 100% (up)
+    const down = 0.25 * (m - wf); // e.g., 6.25% when wf=50%
+    const up = 0.25 * (1.0 - m); // e.g., 6.25% when wf=50%
+
+    // Red chosen uniformly inside [m - down, m + up]
+    const pf = m - down + Math.random() * (down + up);
+
     setWarnFrac(wf);
     setPanicFrac(pf);
 
@@ -387,7 +421,7 @@ export default function FetchProgressModal<T = unknown>({
             timeoutMaxSec
           ) * 1000
         )
-      : (timeoutMs ?? 40000);
+      : timeoutMs ?? 40000;
 
     const successSec = selPlannedMs / 1000;
     const adjustedFailSec = remapTimeoutAcross40(
@@ -421,7 +455,10 @@ export default function FetchProgressModal<T = unknown>({
         return;
       }
       setPercent((prev) => {
-        const next = Math.max(prev, normalizedPercent(elapsedSec, selPlannedMs));
+        const next = Math.max(
+          prev,
+          normalizedPercent(elapsedSec, selPlannedMs)
+        );
         percentRef.current = next;
         return next;
       });
@@ -500,7 +537,7 @@ export default function FetchProgressModal<T = unknown>({
     timeoutMs,
     onError,
     onSuccess,
-    maxFullBlocks
+    maxFullBlocks,
   ]);
 
   if (!visible) return null;
@@ -511,26 +548,34 @@ export default function FetchProgressModal<T = unknown>({
     stress >= panicFrac ? "panic" : stress >= warnFrac ? "warn" : "calm";
 
   // Tooltip
-  const minutes = Math.floor(elapsed / 60).toString().padStart(2, "0");
-  const seconds = Math.floor(elapsed % 60).toString().padStart(2, "0");
+  const minutes = Math.floor(elapsed / 60)
+    .toString()
+    .padStart(2, "0");
+  const seconds = Math.floor(elapsed % 60)
+    .toString()
+    .padStart(2, "0");
   const warnPct = Math.round(warnFrac * 100);
   const panicPct = Math.round(panicFrac * 100);
 
   const computedHint =
     hoverHint ??
     (plannedMs
-      ? `Planned: ${(plannedMs / 1000).toFixed(1)}s • Timeout: ${(effectiveTimeoutMs / 1000).toFixed(
+      ? `Planned: ${(plannedMs / 1000).toFixed(1)}s • Timeout: ${(
+          effectiveTimeoutMs / 1000
+        ).toFixed(1)}s • Yellow ~${warnPct}% • Red ~${panicPct}% • Fade ${(
+          fadeMs / 1000
+        ).toFixed(1)}s • Black hold ${(blackHoldMs / 1000).toFixed(
           1
-        )}s • Yellow ~${warnPct}% • Red ~${panicPct}% • Fade ${(fadeMs / 1000).toFixed(
-          1
-        )}s • Black hold ${(blackHoldMs / 1000).toFixed(1)}s`
+        )}s • Rating ${rating.toLocaleString()} (×${multiplier.toFixed(2)})`
       : undefined);
 
   return (
     <>
       <AnxietyStyles />
       <BlockingModal title={title} level={level}>
-        <div className="anx-subtle">System is processing your request. This may take a moment…</div>
+        <div className="anx-subtle">
+          System is processing your request. This may take a moment…
+        </div>
         <TenBlockBar
           percent={percent}
           flashRedIndex={flashRedIndex}

@@ -1,38 +1,39 @@
 import React, { useEffect, useRef, useState } from "react";
 
-type WolfProps = {
-  /** start/stop wolf motion */
+type BearProps = {
+  /** start/stop bear motion */
   active: boolean;
-  /** increment to trigger an immediate step (any change fires once) */
+  /** external nudge; any change steps once immediately */
   kick?: number;
-  /** show as dead (no hop, no movement) */
+  /** show as dead (no movement) */
   dead?: boolean;
   /** stacking order */
   z?: number;
   /** vertical spawn offset in px (row) */
   liftPx?: number;
 
-  /** calm defaults (you can override per instance) */
-  stepMinVw?: number; // default 2
-  stepMaxVw?: number; // default 4
+  /** slow, steady walking */
+  stepMinVw?: number; // default 0.6
+  stepMaxVw?: number; // default 1.2
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
-export default function Wolf({
+export default function Bear({
   active,
   kick = 0,
   dead = false,
   z = 1,
   liftPx = 0,
-  stepMinVw = 2,
-  stepMaxVw = 4,
-}: WolfProps) {
-  const [xvw, setXvw] = useState(() => rand(10, 90));
-  const [facingRight, setFacingRight] = useState(true);
-  const [hopping, setHopping] = useState(false);
+  stepMinVw = 0.6,
+  stepMaxVw = 1.2,
+}: BearProps) {
+  // horizontal position & facing
+  const [xvw, setXvw] = useState(() => rand(15, 85));
+  const [facingRight, setFacingRight] = useState(Math.random() < 0.5);
 
+  // timers/bookkeeping
   const timeoutRef = useRef<number | null>(null);
   const lastKickRef = useRef<number>(kick);
 
@@ -45,26 +46,30 @@ export default function Wolf({
     }
   };
 
-  const hopOnce = (ms = 420) => {
-    setHopping(true);
-    window.setTimeout(() => setHopping(false), ms);
-  };
-
+  /** One slow step; reverses at bounds (5vw..95vw) */
   const stepOnce = () => {
     if (dead) return;
 
-    const dir = Math.random() < 0.5 ? -1 : 1;
-    const step = rand(stepMinVw, stepMaxVw);
-    setFacingRight(dir === 1);
+    // gently bias toward current facing; flip if nearing bounds
+    let dir = facingRight ? 1 : -1;
+    if ((facingRight && xvw > 93) || (!facingRight && xvw < 7)) {
+      dir *= -1; // hard flip at edges
+      setFacingRight(dir === 1);
+    } else if (Math.random() < 0.08) {
+      // tiny chance to lazily turn around in open space
+      dir *= -1;
+      setFacingRight(dir === 1);
+    }
 
-    hopOnce(420);
+    const step = rand(stepMinVw, stepMaxVw);
     setXvw((prev) => clamp(prev + step * dir, 5, 95));
   };
 
+  /** Schedule the next slow step (bear cadence) */
   const scheduleNext = () => {
     clearTimer();
-    // wolf cadence: 4–8s (a hair more frequent than fox, but same short steps)
-    const waitMs = Math.round(rand(4000, 8000));
+    // slow walking: every 1.2–2.2s
+    const waitMs = Math.round(rand(1200, 2200));
     timeoutRef.current = window.setTimeout(() => {
       stepOnce();
       scheduleNext();
@@ -80,8 +85,9 @@ export default function Wolf({
     }
     return clearTimer;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, dead, stepMinVw, stepMaxVw]);
+  }, [active, dead, stepMinVw, stepMaxVw, facingRight]);
 
+  // Kick: immediate step without breaking cadence
   useEffect(() => {
     if (kick !== lastKickRef.current) {
       lastKickRef.current = kick;
@@ -94,26 +100,26 @@ export default function Wolf({
   }, [kick]);
 
   // --- render ----------------------------------------------------------------
-
+  // No jumping: we never set data-state="1" (so no hop animation).
   return (
     <div
-      className={`entity entity--wolf ${dead ? "is-dead" : ""}`}
+      className={`entity entity--bear ${dead ? "is-dead" : ""}`}
       style={
         {
           left: `${xvw}vw`,
           bottom: `${8 + liftPx}px`,
           zIndex: z,
-          ["--entity-move-ms" as any]: "560ms",
-          ["--entity-hop-ms" as any]: "420ms",
-          ["--entity-emoji-size" as any]: "44px",
+          // slow, hefty glide
+          ["--entity-move-ms" as any]: "680ms",
+          ["--entity-emoji-size" as any]: "48px",
         } as React.CSSProperties
       }
       data-right={facingRight ? "1" : "0"}
-      data-state={hopping ? "1" : "0"}
-      aria-label="wolf"
+      data-state="0"
+      aria-label="bear"
     >
       <div className="entity-emoji">
-        <div className="entity-emoji-inner">{dead ? "💀" : "🐺"}</div>
+        <div className="entity-emoji-inner">{dead ? "💀" : "🐻"}</div>
       </div>
       {!dead && <div className="entity-shadow" />}
     </div>

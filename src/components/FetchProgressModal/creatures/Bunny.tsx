@@ -1,15 +1,20 @@
 import React, { useEffect, useRef, useState } from "react";
 
 type BunnyProps = {
-  active: boolean;   // start/stop bunny motion
-  kick?: number;     // increment to trigger an immediate hop
-  dead?: boolean;    // show a dead bunny (no hop/shadow)
-  z?: number;        // per-entity stacking order
-  liftPx?: number;   // spawn a few px above baseline (row-based)
+  /** start/stop bunny motion */
+  active: boolean;
+  /** increment to trigger an immediate hop (any change fires once) */
+  kick?: number;
+  /** show as dead (no hop, no movement) */
+  dead?: boolean;
+  /** stacking order */
+  z?: number;
+  /** vertical spawn offset in px (row) */
+  liftPx?: number;
 
-  // NEW: small hop distance, configurable
-  stepMinVw?: number; // default 3
-  stepMaxVw?: number; // default 6
+  /** smaller default steps so things feel calm */
+  stepMinVw?: number; // default 1.2
+  stepMaxVw?: number; // default 2.4
 };
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
@@ -21,129 +26,111 @@ export default function Bunny({
   dead = false,
   z = 1,
   liftPx = 0,
-  stepMinVw = 3,   // small default hops
-  stepMaxVw = 6,   // small default hops
+  stepMinVw = 1.2,
+  stepMaxVw = 2.4,
 }: BunnyProps) {
-  const [xvw, setXvw] = useState(() => rand(15, 85));
+  // horizontal position in vw (viewport width units)
+  const [xvw, setXvw] = useState(() => rand(10, 90));
   const [facingRight, setFacingRight] = useState(true);
+
+  // when true, CSS plays the arc animation for ~--entity-hop-ms
   const [hopping, setHopping] = useState(false);
 
-  const hopTimer = useRef<number | null>(null);
-  const lastKick = useRef(kick);
+  // timers/bookkeeping
+  const timeoutRef = useRef<number | null>(null);
+  const lastKickRef = useRef<number>(kick);
 
-  const scheduleNext = () => {
-    if (hopTimer.current) window.clearTimeout(hopTimer.current);
-    hopTimer.current = window.setTimeout(() => {
-      hop();
-      scheduleNext();
-    }, Math.round(rand(5000, 10000))); // hop every 5–10s
+  // --- helpers ---------------------------------------------------------------
+
+  const clearTimer = () => {
+    if (timeoutRef.current != null) {
+      window.clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
   };
 
-  const hop = () => {
-    if (dead) return; // no hopping when dead
-
-    // decide direction with edge bias so we stay in frame
-    const goRight = xvw < 12 ? true : xvw > 88 ? false : Math.random() < 0.5;
-
-    // SMALL step size (configurable)
-    const step = rand(stepMinVw, stepMaxVw);
-    const target = clamp(xvw + (goRight ? step : -step), 4, 96);
-
-    setFacingRight(target > xvw);
+  /** Briefly sets data-state="1" so CSS runs @keyframes entityArc */
+  const hopOnce = (ms = 420) => {
     setHopping(true);
-    setXvw(target);
-
-    // end hop animation slightly after CSS finishes
-    window.setTimeout(() => setHopping(false), 650);
+    window.setTimeout(() => setHopping(false), ms);
   };
 
-  useEffect(() => {
-    if (!active || dead) return;
-    scheduleNext();
-    return () => {
-      if (hopTimer.current) window.clearTimeout(hopTimer.current);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, dead]);
+  /** One step: pick a direction, arc, then slide horizontally */
+  const stepOnce = () => {
+    if (dead) return;
 
+    // 1) decide step
+    const dir = Math.random() < 0.5 ? -1 : 1;
+    const step = rand(stepMinVw, stepMaxVw);
+    setFacingRight(dir === 1);
+
+    // 2) start hop (visual bounce)
+    hopOnce(420);
+
+    // 3) start slide (CSS handles left transition)
+    setXvw((prev) => clamp(prev + step * dir, 5, 95));
+  };
+
+  /** Schedule the next hop/move after a calm, random delay */
+  const scheduleNext = () => {
+    clearTimer();
+    // gentler cadence for bunnies: 6–12s
+    const waitMs = Math.round(rand(6000, 12000));
+    timeoutRef.current = window.setTimeout(() => {
+      stepOnce();
+      scheduleNext();
+    }, waitMs);
+  };
+
+  // --- effects ---------------------------------------------------------------
+
+  // Start/stop scheduler based on "active" and "dead"
   useEffect(() => {
-    if (!active || dead) return;
-    if (kick !== lastKick.current) {
-      lastKick.current = kick;
-      hop();          // instant hop on kick (e.g., success)
-      scheduleNext(); // reset cadence
+    clearTimer();
+    if (active && !dead) {
+      scheduleNext();
+    }
+    return clearTimer;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, dead, stepMinVw, stepMaxVw]);
+
+  // Kick: any change to "kick" triggers an immediate hop+step (throttle-safe)
+  useEffect(() => {
+    if (kick !== lastKickRef.current) {
+      lastKickRef.current = kick;
+      if (active && !dead) {
+        stepOnce();
+        // reschedule so the cadence remains natural
+        scheduleNext();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kick, active, dead]);
+  }, [kick]);
 
-  // Still render dead bunnies (as bodies), don’t animate them
-  const shouldRender = active || dead;
-  if (!shouldRender) return null;
+  // --- render ----------------------------------------------------------------
 
   return (
-    <>
-      <style>{`
-        .bunny-layer{
-          position: fixed;
-          inset: 0 0 8px 0;
-          pointer-events: none;
-          z-index: 2; /* modal and toast are higher, but we layer bunnies via per-entity z */
-        }
-        .bunny{
-          position: absolute;
-          transform: translateX(-50%);
-          transition: left 480ms cubic-bezier(.2,.75,.26,1);
-        }
-        .bunny-emoji{
-          display: grid; place-items: center;
-          transform-origin: center;
-          transition: transform 200ms;
-        }
-        .bunny[data-right="0"] .bunny-emoji{ transform: scaleX(-1); }
-
-        .bunny-emoji-inner{
-          font-size: 38px; line-height: 1;
-          filter: drop-shadow(0 2px 0 rgba(0,0,0,.12));
-        }
-        .bunny-shadow{
-          width: 34px; height: 8px;
-          background: rgba(0,0,0,.25);
-          border-radius: 999px;
-          margin: 4px auto 0;
-          transform: scale(1);
-          transition: transform 600ms, opacity 600ms;
-          opacity: .9;
-        }
-        /* smaller hop arc to match shorter distance */
-        .bunny[data-hop="1"] .bunny-emoji-inner{
-          animation: bunnyHop 600ms cubic-bezier(.2,.75,.26,1);
-        }
-        .bunny[data-hop="1"] .bunny-shadow{
-          transform: scale(.78);
-          opacity: .7;
-        }
-        @keyframes bunnyHop{
-          0%   { transform: translateY(0) }
-          30%  { transform: translateY(-12px) } /* was -18px */
-          60%  { transform: translateY(-3px) }
-          100% { transform: translateY(0) }
-        }
-        .bunny.dead .bunny-emoji-inner{ filter:none; opacity:.9 }
-      `}</style>
-
-      <div className="bunny-layer" aria-hidden>
-        <div
-          className={`bunny ${dead ? "dead" : ""}`}
-          style={{ left: `${xvw}vw`, bottom: `${8 + liftPx}px`, zIndex: z }}
-          data-right={facingRight ? "1" : "0"}
-          data-hop={hopping ? "1" : "0"}
-        >
-          <div className="bunny-emoji" title={`z:${z} row:${liftPx}px`}>
-            <div className="bunny-emoji-inner">{dead ? "💀" : "🐰"}</div>
-          </div>
-          {!dead && <div className="bunny-shadow" />}
-        </div>
+    <div
+      className={`entity entity--bunny ${dead ? "is-dead" : ""}`}
+      style={
+        {
+          left: `${xvw}vw`,
+          bottom: `${8 + liftPx}px`,
+          zIndex: z,
+          // tune speeds without touching CSS:
+          ["--entity-move-ms" as any]: "560ms",
+          ["--entity-hop-ms" as any]: "420ms",
+          ["--entity-emoji-size" as any]: "38px",
+        } as React.CSSProperties
+      }
+      data-right={facingRight ? "1" : "0"}
+      data-state={hopping ? "1" : "0"}
+      aria-label="bunny"
+    >
+      <div className="entity-emoji">
+        <div className="entity-emoji-inner">{dead ? "💀" : "🐰"}</div>
       </div>
-    </>
+      {!dead && <div className="entity-shadow" />}
+    </div>
   );
 }

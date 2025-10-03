@@ -1,0 +1,124 @@
+/* ===========
+   Shared entity styles
+   =========== */
+
+:root {
+  --entity-move-ms: 560ms;   /* horizontal slide duration */
+  --entity-hop-ms: 420ms;    /* up/down arc duration */
+  --entity-emoji-size: 40px; /* base sprite size */
+  --entity-shadow-size: 0.9; /* 1.0 = same width as emoji */
+}
+
+/* A lightweight wrapper you can place anywhere; mostly for clarity */
+.entity-layer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* entities are decorative */
+}
+
+/* Core positioned sprite */
+.entity {
+  position: absolute;
+  transform: translateZ(0); /* GPU hint */
+  will-change: left, transform;
+  transition:
+    left var(--entity-move-ms) ease-in-out,
+    transform 120ms linear;
+}
+
+/* Flip sprite when facing left */
+.entity[data-right="0"] .entity-emoji-inner {
+  transform: scaleX(-1);
+}
+
+/* Dead entities: freeze and de-emphasize */
+.entity.is-dead {
+  filter: grayscale(0.8) contrast(0.9);
+}
+.entity.is-dead .entity-emoji-inner {
+  animation: none !important;
+}
+.entity.is-dead .entity-shadow {
+  opacity: 0.15;
+}
+
+/* Visual sprite container */
+.entity-emoji {
+  width: var(--entity-emoji-size);
+  height: var(--entity-emoji-size);
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  user-select: none;
+}
+
+.entity-emoji-inner {
+  font-size: calc(var(--entity-emoji-size) * 0.9);
+  transition: transform 120ms linear;
+}
+
+/* Soft oval shadow */
+.entity-shadow {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -4px;
+  width: calc(var(--entity-emoji-size) * var(--entity-shadow-size));
+  height: calc(var(--entity-emoji-size) * 0.28);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+/* Hop arc keyframe (used by all creatures) */
+@keyframes entityArc {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(-12%) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* When data-state="1", play the arc on the inner sprite */
+.entity[data-state="1"] .entity-emoji-inner {
+  animation: entityArc var(--entity-hop-ms) ease-out;
+}
+
+/* ===========
+   Bunny specifics
+   =========== */
+/* 
+.entity--bunny .entity-emoji-inner {
+  // Slightly bubblier hop than default (tiny overshoot already in keyframe) 
+} */
+
+.entity--bunny .entity-shadow {
+  opacity: 0.22;
+}
+
+/* Optional: slightly smaller bunny by default */
+.entity--bunny {
+  --entity-emoji-size: 38px;
+}
+
+/* Bear specifics — slow, hefty walk, no hop */
+.entity--bear .entity-shadow {
+  opacity: 0.26;
+}
+
+/* .entity--bear .entity-emoji-inner {
+  // keep it steady; no hop animation is attached
+} */
+
+/* Grass specifics — no hop, just a little shadow */
+.entity--grass .entity-shadow {
+  opacity: 0.18;
+  --entity-emoji-size: 9px;   /* was ~34px — half size */
+  --entity-shadow-size: 0.8;   /* (optional) slightly smaller shadow */
+}

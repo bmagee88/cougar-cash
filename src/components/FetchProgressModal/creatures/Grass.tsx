@@ -4,63 +4,70 @@ type Props = {
   dead?: boolean;
   z?: number;
   liftPx?: number;
+  /** optional fixed horizontal position in vw; if omitted, pick a random one */
+  xvw?: number;
 };
 
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const rand = (min: number, max: number) => min + Math.random() * (max - min);
 
-export default function Grass({ dead = false, z = 1, liftPx = 1 }: Props) {
-  const [xvw] = useState(() => rand(6, 94));
+export default function Grass({ dead = false, z = 1, liftPx = 1, xvw: xvwProp }: Props) {
+  // Use provided xvw or pick a stable-ish random once
+  const [xvw] = useState(() =>
+    typeof xvwProp === "number" ? clamp(xvwProp, 2, 98) : rand(6, 94)
+  );
+
+  // animate only the emoji container so the position doesn't shift
   const ref = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    // Slight idle sway
     const el = ref.current;
     if (!el) return;
-    el.animate(
+
+    // pivot from the base of the grass
+    el.style.transformOrigin = "50% 100%";
+    el.style.willChange = "transform";
+
+    // gentle side-to-side sway (no translateY)
+    const anim = el.animate(
       [
         { transform: "rotate(0deg)" },
-        { transform: "rotate(1.5deg)" },
-        { transform: "rotate(0deg)" },
-        { transform: "rotate(-1.5deg)" },
+        { transform: "rotate(-3deg)" },
+        { transform: "rotate(2.5deg)" },
+        { transform: "rotate(-2deg)" },
         { transform: "rotate(0deg)" },
       ],
-      { duration: 4500 + Math.random() * 2000, iterations: Infinity }
+      {
+        duration: 5200 + Math.random() * 1800,
+        iterations: Infinity,
+        easing: "ease-in-out",
+        direction: "alternate",
+      }
     );
+
+    return () => anim.cancel();
   }, []);
 
   return (
-    <>
-      <style>{`
-        .grass-layer{
-          position: fixed;
-          inset: 0 0 8px 0;
-          pointer-events: none;
-          z-index: 2;
-        }
-        .grass {
-          position: absolute;
-          transform: translateX(-50%);
-        }
-        .grass-emoji-inner {
-          font-size: 26px; line-height: 1;
-          filter: drop-shadow(0 1px 0 rgba(0,0,0,.10));
-        }
-        .grass.dead .grass-emoji-inner {
-          opacity: .8;
-          filter: none;
-        }
-      `}</style>
-
-      <div className="grass-layer" aria-hidden>
-        <div
-          className={`grass ${dead ? "dead" : ""}`}
-          style={{ left: `${xvw}vw`, bottom: `${8 + (liftPx ?? 0)}px`, zIndex: z }}
-          ref={ref}
-          title={`z:${z} row:${liftPx}px`}
-        >
-          <div className="grass-emoji-inner">{dead ? "🥀" : "🌾"}</div>
-        </div>
+    <div
+      className={`entity entity--grass ${dead ? "is-dead" : ""}`}
+      style={
+        {
+          left: `${xvw}vw`,
+          bottom: `${8 + (liftPx ?? 0)}px`,
+          zIndex: z,
+          ["--entity-emoji-size" as any]: "30px",
+          ["--entity-move-ms" as any]: "520ms",
+        } as React.CSSProperties
+      }
+      data-right="1"
+      data-state="0"
+      aria-label="grass"
+    >
+      <div className="entity-emoji" ref={ref}>
+        <div className="entity-emoji-inner">{dead ? "🥀" : "🌾"}</div>
       </div>
-    </>
+      {!dead && <div className="entity-shadow" />}
+    </div>
   );
 }
