@@ -1,18 +1,40 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Button, Card, CardContent, FormControlLabel, Slider, Stack, Switch, Typography } from "@mui/material";
+import {
+  Button,
+  Card,
+  CardContent,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControlLabel,
+  Slider,
+  Stack,
+  Switch,
+  Typography,
+} from "@mui/material";
 
 /**
- * Perfect 2D Maze in React + TypeScript + MUI
- * - Grid of cells with per-side walls {N,S,E,W}
- * - Adjustable size (rows/cols)
- * - Generator uses randomized DFS (recursive backtracker) -> guarantees a perfect maze (unique path between any two cells)
- * - verifySolution(path) to validate a user-provided solution path from entrance to exit
- * - shortestPathFrom(r,c) returns the fastest path to the exit from any cell
- * - findHighDegreeCells() returns cells with >2 open sides (i.e., junctions)
- * - Each cell has greedyDirection: the side that gets you closest to the exit, computed from a BFS distance map
+ * Perfect 2D Maze + Quiz (React + TypeScript + MUI)
+ * - Grid of cells; each cell has walls {N,S,E,W}
+ * - Adjustable rows/cols, regenerate
+ * - Unique paths (recursive backtracker generator => perfect maze)
+ * - verifySolution(path)
+ * - shortestPathFrom(r,c)
+ * - findHighDegreeCells()
+ * - greedyDirection per cell (toward exit via BFS distance map)
+ * - Quiz system:
+ *    • Default sample quiz loads on start
+ *    • Upload CSV with columns: id,question,correct answer,false answer,false answer,false answer
+ *    • A quiz question attaches to each JUNCTION (>2 openings) cell.
+ *    • The correct answer is placed on the side equal to `greedyDirection` for that cell.
+ *    • Other open sides display false answers.
+ * - Player avatar moves with WASD or Arrow keys; respects walls/bounds.
+ * - Right panel shows the current cell's quiz (answers laid out N/E/S/W around center question).
+ * - Reaching exit pops a modal with only “Play Again” (regenerates + resets board).
  */
 
-// Cardinal directions & helpers
+// ---------- Types ----------
 export type Dir = "N" | "S" | "E" | "W";
 const DIRS: Dir[] = ["N", "S", "E", "W"];
 const OPP: Record<Dir, Dir> = { N: "S", S: "N", E: "W", W: "E" } as const;
@@ -23,26 +45,35 @@ const DELTA: Record<Dir, { dr: number; dc: number }> = {
   W: { dr: 0, dc: -1 },
 };
 
-// Cell definition
+export interface QuizQuestion {
+  id: string;
+  question: string;
+  correct: string;
+  false1: string;
+  false2: string;
+  false3: string;
+}
+
 export interface Cell {
   r: number;
   c: number;
-  // walls: true means wall exists on that edge
-  walls: Record<Dir, boolean>;
-  // derived metadata
-  openings: number; // how many sides are open (no wall)
-  greedyDirection: Dir | null; // side that most directly leads toward the exit (by distance map)
+  walls: Record<Dir, boolean>; // true => wall exists
+  openings: number; // count of open sides
+  greedyDirection: Dir | null; // best move toward exit by BFS
+  // Quiz attachments for junctions
+  quiz?: QuizQuestion;
+  answerMap?: Partial<Record<Dir, string>>; // text per open direction; correct is on greedyDirection
 }
 
 export interface Maze {
   rows: number;
   cols: number;
-  cells: Cell[][]; // cells[r][c]
+  cells: Cell[][];
   entrance: { r: number; c: number };
   exit: { r: number; c: number };
 }
 
-// Utility: create an empty maze with all walls present
+// ---------- Maze construction ----------
 function makeGrid(rows: number, cols: number): Maze {
   const cells: Cell[][] = Array.from({ length: rows }, (_, r) =>
     Array.from({ length: cols }, (_, c) => ({
@@ -53,16 +84,9 @@ function makeGrid(rows: number, cols: number): Maze {
       greedyDirection: null,
     }))
   );
-  return {
-    rows,
-    cols,
-    cells,
-    entrance: { r: 0, c: 0 },
-    exit: { r: rows - 1, c: cols - 1 },
-  };
+  return { rows, cols, cells, entrance: { r: 0, c: 0 }, exit: { r: rows - 1, c: cols - 1 } };
 }
 
-// Randomized DFS (recursive backtracker) to carve a perfect maze
 function generatePerfectMaze(rows: number, cols: number, rng: () => number = Math.random): Maze {
   const maze = makeGrid(rows, cols);
   const visited: boolean[][] = Array.from({ length: rows }, () => Array(cols).fill(false));
@@ -86,7 +110,6 @@ function generatePerfectMaze(rows: number, cols: number, rng: () => number = Mat
       const nr = r + DELTA[d].dr;
       const nc = c + DELTA[d].dc;
       if (!inBounds(nr, nc) || visited[nr][nc]) continue;
-      // Remove the wall between (r,c) and (nr,nc)
       maze.cells[r][c].walls[d] = false;
       maze.cells[nr][nc].walls[OPP[d]] = false;
       carve(nr, nc);
@@ -95,19 +118,11 @@ function generatePerfectMaze(rows: number, cols: number, rng: () => number = Mat
 
   carve(0, 0);
 
-  // compute openings and greedyDirection placeholders; greedy filled later
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const cell = maze.cells[r][c];
-      cell.openings = DIRS.reduce((acc, d) => acc + (cell.walls[d] ? 0 : 1), 0);
-    }
-  }
+  // aesthetics: openings at outer border for entrance/exit
+  maze.cells[maze.entrance.r][maze.entrance.c].walls.W = false;
+  maze.cells[maze.exit.r][maze.exit.c].walls.E = false;
 
-  // (Optional) Ensure explicit openings at entrance/exit outer walls for aesthetics
-  maze.cells[maze.entrance.r][maze.entrance.c].walls.W = false; // open west outside
-  maze.cells[maze.exit.r][maze.exit.c].walls.E = false; // open east outside
-
-  // Update openings after tweaking borders
+  // openings count
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       const cell = maze.cells[r][c];
@@ -118,22 +133,18 @@ function generatePerfectMaze(rows: number, cols: number, rng: () => number = Mat
   return maze;
 }
 
-// Build adjacency list given carved walls
 function neighbors(maze: Maze, r: number, c: number): { r: number; c: number; dir: Dir }[] {
   const out: { r: number; c: number; dir: Dir }[] = [];
   for (const d of DIRS) {
     if (!maze.cells[r][c].walls[d]) {
       const nr = r + DELTA[d].dr;
       const nc = c + DELTA[d].dc;
-      if (nr >= 0 && nc >= 0 && nr < maze.rows && nc < maze.cols) {
-        out.push({ r: nr, c: nc, dir: d });
-      }
+      if (nr >= 0 && nc >= 0 && nr < maze.rows && nc < maze.cols) out.push({ r: nr, c: nc, dir: d });
     }
   }
   return out;
 }
 
-// BFS distance map from every cell to the exit (shortest path in steps)
 function distanceMapToExit(maze: Maze): number[][] {
   const dist = Array.from({ length: maze.rows }, () => Array(maze.cols).fill(Infinity));
   const q: Array<{ r: number; c: number }> = [];
@@ -152,7 +163,6 @@ function distanceMapToExit(maze: Maze): number[][] {
   return dist;
 }
 
-// Compute greedyDirection for each cell based on the distance map
 function assignGreedyDirections(maze: Maze) {
   const dist = distanceMapToExit(maze);
   for (let r = 0; r < maze.rows; r++) {
@@ -168,11 +178,10 @@ function assignGreedyDirections(maze: Maze) {
   }
 }
 
-// Shortest path from (r,c) to exit using BFS (fastest way out)
 export function shortestPathFrom(maze: Maze, start: { r: number; c: number }): { r: number; c: number }[] {
   const prev = Array.from({ length: maze.rows }, () => Array(maze.cols).fill(null) as (null | { r: number; c: number })[]);
-  const q: Array<{ r: number; c: number }> = [];
   const seen = Array.from({ length: maze.rows }, () => Array(maze.cols).fill(false));
+  const q: Array<{ r: number; c: number }> = [];
   q.push(start);
   seen[start.r][start.c] = true;
   while (q.length) {
@@ -186,7 +195,6 @@ export function shortestPathFrom(maze: Maze, start: { r: number; c: number }): {
       }
     }
   }
-  // Reconstruct
   const path: { r: number; c: number }[] = [];
   let cur: { r: number; c: number } | null = { r: maze.exit.r, c: maze.exit.c };
   while (cur) {
@@ -195,13 +203,10 @@ export function shortestPathFrom(maze: Maze, start: { r: number; c: number }): {
     cur = p as any;
   }
   path.reverse();
-  // If start isn't the first element, there was no path (shouldn't happen in a perfect maze)
-  if (!(path[0].r === start.r && path[0].c === start.c)) return [];
+  if (!(path[0]?.r === start.r && path[0]?.c === start.c)) return [];
   return path;
 }
 
-// Verify a supplied path from entrance to exit
-// Rules: starts at entrance, ends at exit, adjacent steps only through openings, no illegal jumps
 export function verifySolution(maze: Maze, path: { r: number; c: number }[]): boolean {
   if (!path.length) return false;
   const startOK = path[0].r === maze.entrance.r && path[0].c === maze.entrance.c;
@@ -212,21 +217,18 @@ export function verifySolution(maze: Maze, path: { r: number; c: number }[]): bo
     const b = path[i];
     const dr = b.r - a.r;
     const dc = b.c - a.c;
-    let stepDir: Dir | null = null;
-    if (dr === -1 && dc === 0) stepDir = "N";
-    else if (dr === 1 && dc === 0) stepDir = "S";
-    else if (dr === 0 && dc === 1) stepDir = "E";
-    else if (dr === 0 && dc === -1) stepDir = "W";
-    else return false; // non-adjacent move
-    if (maze.cells[a.r][a.c].walls[stepDir]) return false; // wall blocks
+    let dir: Dir | null = null;
+    if (dr === -1 && dc === 0) dir = "N";
+    else if (dr === 1 && dc === 0) dir = "S";
+    else if (dr === 0 && dc === 1) dir = "E";
+    else if (dr === 0 && dc === -1) dir = "W";
+    else return false;
+    if (maze.cells[a.r][a.c].walls[dir]) return false;
   }
-  // Optional: In a perfect maze, any valid path from entrance to exit must be the unique shortest path.
-  // We could enforce minimality by comparing to BFS length.
   const shortest = shortestPathFrom(maze, maze.entrance);
   return path.length === shortest.length;
 }
 
-// Find cells with more than 2 open sides (junctions)
 export function findHighDegreeCells(maze: Maze): { r: number; c: number; openings: number }[] {
   const out: { r: number; c: number; openings: number }[] = [];
   for (let r = 0; r < maze.rows; r++) {
@@ -238,46 +240,153 @@ export function findHighDegreeCells(maze: Maze): { r: number; c: number; opening
   return out;
 }
 
-// ---------- UI COMPONENT ----------
+// ---------- Quiz helpers ----------
+const SAMPLE_QUIZ: QuizQuestion[] = [
+  { id: "1", question: "Which way points to the exit?", correct: "The greedy side", false1: "The longest loop", false2: "Random backtrack", false3: "Dead end" },
+  { id: "2", question: "Pick the shortest path step.", correct: "Toward lower distance", false1: "Toward higher distance", false2: "Into a wall", false3: "Out of bounds" },
+  { id: "3", question: "BFS finds?", correct: "Shortest path", false1: "Random path", false2: "Longest path", false3: "No path" },
+  { id: "4", question: "Perfect maze means…", correct: "One unique path", false1: "Two exits only", false2: "All loops", false3: "No walls" },
+  { id: "5", question: "Opposite of North?", correct: "South", false1: "East", false2: "West", false3: "Up" },
+];
+
+function parseCSV(text: string): QuizQuestion[] {
+  // Very lightweight CSV parser (no escaped commas inside quotes beyond basic handling)
+const lines = text.split(/\r?\n/).filter(Boolean);
+  const out: QuizQuestion[] = [];
+  for (const line of lines) {
+    // handle quoted segments
+    const cells: string[] = [];
+    let cur = "";
+    let inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQ && line[i + 1] === '"') {
+          cur += '"'; i++; // escaped quote
+        } else {
+          inQ = !inQ;
+        }
+      } else if (ch === "," && !inQ) {
+        cells.push(cur.trim()); cur = "";
+      } else {
+        cur += ch;
+      }
+    }
+    cells.push(cur.trim());
+    if (cells.length < 6) continue;
+    const [id, question, correct, f1, f2, f3] = cells;
+    out.push({ id, question, correct, false1: f1, false2: f2, false3: f3 });
+  }
+  return out;
+}
+
+function attachQuestionsToJunctions(maze: Maze, pool: QuizQuestion[]) {
+  // Clear existing
+  for (let r = 0; r < maze.rows; r++) for (let c = 0; c < maze.cols; c++) { delete maze.cells[r][c].quiz; delete maze.cells[r][c].answerMap; }
+  const junctions = findHighDegreeCells(maze);
+  if (!junctions.length || !pool.length) return;
+  let qi = 0;
+  for (const j of junctions) {
+    const cell = maze.cells[j.r][j.c];
+    const q = pool[qi % pool.length];
+    qi++;
+    cell.quiz = q;
+    const openDirs = DIRS.filter(d => !cell.walls[d]);
+    const map: Partial<Record<Dir, string>> = {};
+    const greedy = cell.greedyDirection && openDirs.includes(cell.greedyDirection) ? cell.greedyDirection : openDirs[0];
+    map[greedy] = q.correct;
+    const wrongs = [q.false1, q.false2, q.false3].filter(Boolean);
+    let wi = 0;
+    for (const d of openDirs) {
+      if (d === greedy) continue;
+      map[d] = wrongs[wi % wrongs.length];
+      wi++;
+    }
+    cell.answerMap = map;
+  }
+}
+
+// ---------- UI ----------
 
 type GridPoint = { r: number; c: number };
+const cellPx = 28;
 
-const cellPx = 28; // size of a cell in pixels
-
-export default function MazeApp() {
+export default function MazeQuizApp() {
   const [rows, setRows] = useState(15);
   const [cols, setCols] = useState(25);
   const [showGreedy, setShowGreedy] = useState(true);
+  const [quizPool, setQuizPool] = useState<QuizQuestion[]>(SAMPLE_QUIZ);
   const [maze, setMaze] = useState<Maze>(() => {
     const m = generatePerfectMaze(15, 25);
     assignGreedyDirections(m);
+    attachQuestionsToJunctions(m, SAMPLE_QUIZ);
     return m;
   });
-  const [highlightPath, setHighlightPath] = useState<GridPoint[]>([]);
+
+  const [player, setPlayer] = useState<GridPoint>({ r: 0, c: 0 });
+  const [pathHighlight, setPathHighlight] = useState<GridPoint[]>([]);
+  const [winOpen, setWinOpen] = useState(false);
+
+  const highDegree = useMemo(() => findHighDegreeCells(maze), [maze]);
 
   const regenerate = useCallback(() => {
     const m = generatePerfectMaze(rows, cols);
     assignGreedyDirections(m);
+    attachQuestionsToJunctions(m, quizPool);
     setMaze(m);
-    setHighlightPath([]);
-  }, [rows, cols]);
-
-  const highDegree = useMemo(() => findHighDegreeCells(maze), [maze]);
+    setPlayer({ r: m.entrance.r, c: m.entrance.c });
+    setPathHighlight([]);
+    setWinOpen(false);
+  }, [rows, cols, quizPool]);
 
   useEffect(() => {
-    // when size changes via sliders, regen immediately for responsiveness
     const m = generatePerfectMaze(rows, cols);
     assignGreedyDirections(m);
+    attachQuestionsToJunctions(m, quizPool);
     setMaze(m);
-    setHighlightPath([]);
-  }, [rows, cols]);
+    setPlayer({ r: m.entrance.r, c: m.entrance.c });
+    setPathHighlight([]);
+    setWinOpen(false);
+  }, [rows, cols, quizPool]);
 
   const onCellClick = (r: number, c: number) => {
-    const p = shortestPathFrom(maze, { r, c });
-    setHighlightPath(p);
+    setPathHighlight(shortestPathFrom(maze, { r, c }));
   };
 
-  // Helpers for styling borders based on walls
+  // Movement logic
+  const attemptMove = useCallback((dir: Dir) => {
+    const { r, c } = player;
+    if (maze.cells[r][c].walls[dir]) return; // blocked by wall
+    const nr = r + DELTA[dir].dr;
+    const nc = c + DELTA[dir].dc;
+    if (nr < 0 || nc < 0 || nr >= maze.rows || nc >= maze.cols) return; // out of bounds
+    const next = { r: nr, c: nc };
+    setPlayer(next);
+    if (next.r === maze.exit.r && next.c === maze.exit.c) setWinOpen(true);
+  }, [player, maze]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const k = e.key.toLowerCase();
+      if (["w", "arrowup"].includes(k)) { e.preventDefault(); attemptMove("N"); }
+      else if (["s", "arrowdown"].includes(k)) { e.preventDefault(); attemptMove("S"); }
+      else if (["a", "arrowleft"].includes(k)) { e.preventDefault(); attemptMove("W"); }
+      else if (["d", "arrowright"].includes(k)) { e.preventDefault(); attemptMove("E"); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [attemptMove]);
+
+  // CSV upload
+  const onCsvUpload = async (file: File) => {
+    const text = await file.text();
+    const parsed = parseCSV(text);
+    if (parsed.length) setQuizPool(parsed);
+  };
+
+  const currentCell = maze.cells[player.r][player.c];
+  const inHighlight = (r: number, c: number) => pathHighlight.some(p => p.r === r && p.c === c);
+
   const borderStyle = (cell: Cell) => ({
     borderTop: cell.walls.N ? "2px solid #111" : "2px solid transparent",
     borderBottom: cell.walls.S ? "2px solid #111" : "2px solid transparent",
@@ -285,12 +394,11 @@ export default function MazeApp() {
     borderRight: cell.walls.E ? "2px solid #111" : "2px solid transparent",
   });
 
-  const inHighlight = (r: number, c: number) => highlightPath.some(p => p.r === r && p.c === c);
-
   return (
     <Stack spacing={2} sx={{ p: 2 }}>
-      <Typography variant="h5">Perfect Maze Builder (2D)</Typography>
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+      <Typography variant="h5">Perfect Maze + Junction Quiz</Typography>
+
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ xs: "stretch", md: "center" }}>
         <Stack sx={{ minWidth: 220 }}>
           <Typography gutterBottom>Rows: {rows}</Typography>
           <Slider min={5} max={50} value={rows} onChange={(_, v) => setRows(v as number)} />
@@ -299,88 +407,166 @@ export default function MazeApp() {
           <Typography gutterBottom>Cols: {cols}</Typography>
           <Slider min={5} max={70} value={cols} onChange={(_, v) => setCols(v as number)} />
         </Stack>
-        <FormControlLabel
-          control={<Switch checked={showGreedy} onChange={e => setShowGreedy(e.target.checked)} />}
-          label="Show greedy arrow"
-        />
+        <FormControlLabel control={<Switch checked={showGreedy} onChange={e => setShowGreedy(e.target.checked)} />} label="Show greedy arrow" />
         <Button variant="contained" onClick={regenerate}>Regenerate</Button>
+        <label>
+          <input type="file" accept=".csv" style={{ display: "none" }} onChange={e => e.target.files && onCsvUpload(e.target.files[0])} />
+          <Button variant="outlined" component="span">Upload CSV</Button>
+        </label>
       </Stack>
 
-      <Card variant="outlined">
-        <CardContent>
-          <Typography variant="subtitle1" gutterBottom>
-            Click any cell to highlight the fastest path to the exit (bottom-right). Entrance is top-left.
-          </Typography>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: `repeat(${maze.cols}, ${cellPx}px)`,
-              gridAutoRows: `${cellPx}px`,
-              gap: 0,
-              userSelect: "none",
-              width: maze.cols * cellPx,
-              maxWidth: "100%",
-              overflow: "auto",
-            }}
-          >
-            {maze.cells.map((row, r) =>
-              row.map((cell, c) => {
-                const hl = inHighlight(r, c);
-                const isEntrance = r === maze.entrance.r && c === maze.entrance.c;
-                const isExit = r === maze.exit.r && c === maze.exit.c;
-                const deg = cell.openings;
-                const bg = hl ? "#a5d6a7" : isEntrance ? "#bbdefb" : isExit ? "#ffcdd2" : deg > 2 ? "#fff9c4" : "#fafafa";
-                return (
-                  <div
-                    key={`${r}-${c}`}
-                    onClick={() => onCellClick(r, c)}
-                    title={`(${r},${c}) openings:${deg}`}
-                    style={{
-                      width: cellPx,
-                      height: cellPx,
-                      boxSizing: "border-box",
-                      ...borderStyle(cell),
-                      background: bg,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 12,
-                      position: "relative",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {showGreedy && cell.greedyDirection && (
-                      <span style={{ opacity: 0.7 }}>
-                        {cell.greedyDirection === "N" && "↑"}
-                        {cell.greedyDirection === "S" && "↓"}
-                        {cell.greedyDirection === "E" && "→"}
-                        {cell.greedyDirection === "W" && "←"}
-                      </span>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      <Stack direction={{ xs: "column", lg: "row" }} spacing={2} alignItems="flex-start">
+        {/* Maze board */}
+        <Card variant="outlined" sx={{ overflow: "auto" }}>
+          <CardContent>
+            <Typography variant="subtitle1" gutterBottom>
+              Move with WASD / Arrow Keys. Click any cell to highlight its fastest path to the exit.
+            </Typography>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${maze.cols}, ${cellPx}px)`,
+                gridAutoRows: `${cellPx}px`,
+                gap: 0,
+                userSelect: "none",
+                width: maze.cols * cellPx,
+                maxWidth: "100%",
+              }}
+            >
+              {maze.cells.map((row, r) =>
+                row.map((cell, c) => {
+                  const hl = inHighlight(r, c);
+                  const isEntrance = r === maze.entrance.r && c === maze.entrance.c;
+                  const isExit = r === maze.exit.r && c === maze.exit.c;
+                  const isPlayer = player.r === r && player.c === c;
+                  const deg = cell.openings;
+                  const bg = isPlayer
+                    ? "#90caf9"
+                    : hl
+                    ? "#a5d6a7"
+                    : isEntrance
+                    ? "#bbdefb"
+                    : isExit
+                    ? "#ffcdd2"
+                    : deg > 2
+                    ? "#fff9c4"
+                    : "#fafafa";
+                  return (
+                    <div
+                      key={`${r}-${c}`}
+                      onClick={() => onCellClick(r, c)}
+                      title={`(${r},${c}) openings:${deg}`}
+                      style={{
+                        width: cellPx,
+                        height: cellPx,
+                        boxSizing: "border-box",
+                        ...borderStyle(cell),
+                        background: bg,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        position: "relative",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {showGreedy && cell.greedyDirection && (
+                        <span style={{ opacity: 0.7 }}>
+                          {cell.greedyDirection === "N" && "↑"}
+                          {cell.greedyDirection === "S" && "↓"}
+                          {cell.greedyDirection === "E" && "→"}
+                          {cell.greedyDirection === "W" && "←"}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* Right-side Quiz Panel */}
+        <Card variant="outlined" sx={{ minWidth: 320, flex: 1 }}>
+          <CardContent>
+            <Typography variant="h6" gutterBottom>Junction Quiz</Typography>
+            {currentCell.quiz && currentCell.answerMap ? (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gridTemplateRows: "repeat(3, auto)", gap: 8 }}>
+                <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2", textAlign: "center" }}>
+                  {/* North */}
+                  {currentCell.answerMap.N && (
+                    <Button fullWidth variant="outlined">↑ {currentCell.answerMap.N}</Button>
+                  )}
+                </div>
+                <div style={{ gridColumn: "1 / 2", gridRow: "2 / 3", textAlign: "left" }}>
+                  {/* West */}
+                  {currentCell.answerMap.W && (
+                    <Button fullWidth variant="outlined">← {currentCell.answerMap.W}</Button>
+                  )}
+                </div>
+                <div style={{ gridColumn: "2 / 3", gridRow: "2 / 3", textAlign: "center" }}>
+                  {/* Center question */}
+                  <Typography variant="subtitle1" sx={{ p: 1, borderRadius: 1, bgcolor: "#f5f5f5" }}>
+                    {currentCell.quiz.question}
+                  </Typography>
+                </div>
+                <div style={{ gridColumn: "3 / 4", gridRow: "2 / 3", textAlign: "right" }}>
+                  {/* East */}
+                  {currentCell.answerMap.E && (
+                    <Button fullWidth variant="outlined">{currentCell.answerMap.E} →</Button>
+                  )}
+                </div>
+                <div style={{ gridColumn: "2 / 3", gridRow: "3 / 4", textAlign: "center" }}>
+                  {/* South */}
+                  {currentCell.answerMap.S && (
+                    <Button fullWidth variant="outlined">↓ {currentCell.answerMap.S}</Button>
+                  )}
+                </div>
+                <Typography variant="caption" sx={{ gridColumn: "1 / 4", opacity: 0.7 }}>
+                  Tip: the correct answer is placed on the side that leads toward the exit.
+                </Typography>
+              </div>
+            ) : (
+              <Typography color="text.secondary">No quiz here — find a junction (yellow cell)!</Typography>
+            )}
+
+            <Stack spacing={1} sx={{ mt: 2 }}>
+              <Typography variant="body2">Player: ({player.r},{player.c})</Typography>
+              <Typography variant="body2">Exit: ({maze.exit.r},{maze.exit.c})</Typography>
+              <Typography variant="body2">Junctions: {highDegree.length}</Typography>
+              <Button size="small" onClick={() => setPathHighlight(shortestPathFrom(maze, player))}>Highlight Fastest Path from Here</Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
+
+      {/* Win Modal */}
+      <Dialog open={winOpen} onClose={() => {}} disableEscapeKeyDown>
+        <DialogTitle>🏁 You reached the exit!</DialogTitle>
+        <DialogContent>
+          <Typography>Nice! Want to play again?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="contained" onClick={regenerate}>Play Again</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dev API helper */}
       <Card variant="outlined">
         <CardContent>
-          <Typography variant="h6">Developer API (copy/paste as needed)</Typography>
+          <Typography variant="h6">Developer API (copy/paste)</Typography>
           <pre style={{ whiteSpace: "pre-wrap", fontSize: 12 }}>
-{`// Regenerate a perfect maze (unique solution between any two cells)
-const m = generatePerfectMaze(${"rows"}, ${"cols"});
-assignGreedyDirections(m); // fills cell.greedyDirection based on BFS-to-exit
+{`// Attach a custom quiz pool (after upload)
+attachQuestionsToJunctions(maze, quizPool);
 
 // Verify a path
-const ok = verifySolution(m, [ { r: 0, c: 0 }, /* ... */ { r: m.exit.r, c: m.exit.c } ]);
+autoValid = verifySolution(maze, [ { r: 0, c: 0 }, /*...*/ { r: maze.exit.r, c: maze.exit.c } ]);
 
-// Fastest way out from arbitrary cell
-const path = shortestPathFrom(m, { r: 3, c: 7 });
+// From any cell -> exit
+const p = shortestPathFrom(maze, { r: 3, c: 7 });
 
-// Cells with >2 open sides (junctions)
-const junctions = findHighDegreeCells(m);`}
+// Junctions (>2 openings)
+const jx = findHighDegreeCells(maze);`}
           </pre>
         </CardContent>
       </Card>
