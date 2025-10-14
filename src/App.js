@@ -12,6 +12,7 @@ import ComplianceQuizPage from "./ComplianceQuizProject/ComplianceQuizPage";
 import TimerApp from "./TimerApp/TimerApp";
 import Demo from "./components/FetchProgressModal/Demo";
 import Oroboros from "./oroboros/Oroboros";
+import MazeQuiz from "./MazeQuiz/MazeQuiz";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -54,6 +55,9 @@ function App() {
           <Route
             path='/oroboros'
             element={<Oroboros />}></Route>
+          <Route
+            path='/maze-quiz'
+            element={<MazeQuiz />}></Route>
         </Routes>
       </Router>
     </Box>
