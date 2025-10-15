@@ -565,7 +565,7 @@ export default function MazeQuizApp() {
     if (parsed.length) setQuizPool(parsed);
   };
 
-  const currentCell = maze.cells[player.r][player.c];
+//   const currentCell = maze.cells[player.r][player.c];
   const inHighlight = (r: number, c: number) =>
     pathHighlight.some((p) => p.r === r && p.c === c);
 
