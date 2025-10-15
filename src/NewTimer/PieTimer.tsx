@@ -31,6 +31,32 @@ import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
  * - Live clock + SVG pie timer for active period and segments
  */
 
+// Small confirm dialog to avoid `confirm` (ESLint no-restricted-globals)
+function ConfirmDialog({
+  open,
+  message,
+  onCancel,
+  onConfirm,
+}: {
+  open: boolean;
+  message: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <Dialog open={open} onClose={onCancel}>
+      <DialogTitle>Confirm</DialogTitle>
+      <DialogContent>
+        <Typography sx={{ mt: 1 }}>{message}</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={onConfirm} variant="contained" color="error">Delete</Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 // ------------------ Types ------------------
 
 type HHMM = `${number}${number}:${number}${number}`; // 24h time string, e.g. "11:05"
@@ -510,31 +536,37 @@ export default function DailyScheduleApp() {
   };
 
   const removeActiveDaySchedule = () => {
-    const key = String(weekday);
-    const name = effectiveDayName;
-    if (!name) return;
-    if (!confirm(`Delete day schedule "${name}" for ${weekdayName(weekday)}?`)) return;
+  const key = String(weekday);
+  const name = effectiveDayName;
+  if (!name) return;
 
-    const store = loadJSON<DaySchedulesStore>(LS_KEYS.DAY_SCHEDULES, {});
-    if (!store[key]) return;
-    delete store[key][name];
-    saveJSON(LS_KEYS.DAY_SCHEDULES, store);
+  setConfirm({
+    open: true,
+    message: `Delete day schedule "${name}" for ${weekdayName(weekday)}?`,
+    onConfirm: () => {
+      const store = loadJSON<DaySchedulesStore>(LS_KEYS.DAY_SCHEDULES, {});
+      if (!store[key]) return closeConfirm();
+      delete store[key][name];
+      saveJSON(LS_KEYS.DAY_SCHEDULES, store);
 
-    // Update active selection
-    const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
-    const remaining = Object.keys(store[key] || {});
-    act[key] = remaining[0] || "";
-    saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
+      // Update active selection
+      const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
+      const remaining = Object.keys(store[key] || {});
+      act[key] = remaining[0] || "";
+      saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
 
-    // Also scrub any week schedules that referenced this deleted day schedule
-    const wks = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-    Object.values(wks).forEach((w) => {
-      if (w.mapping[weekday] === name) delete w.mapping[weekday];
-    });
-    saveJSON(LS_KEYS.WEEK_SCHEDULES, wks);
+      // Scrub week schedules that referenced this day schedule
+      const wks = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+      Object.values(wks).forEach((w) => {
+        if (w.mapping[weekday] === name) delete w.mapping[weekday];
+      });
+      saveJSON(LS_KEYS.WEEK_SCHEDULES, wks);
 
-    setTick((t) => t + 1);
-  };
+      closeConfirm();
+      setTick((t) => t + 1);
+    },
+  });
+};
 
   const createWeekSchedule = () => {
     const name = prompt("New week schedule name?", `Week-${Object.keys(weekStore).length + 1}`)?.trim();
@@ -552,17 +584,24 @@ export default function DailyScheduleApp() {
   };
 
   const removeActiveWeekSchedule = () => {
-    const name = activeWeekName;
-    if (!name) return;
-    if (!confirm(`Delete week schedule "${name}"?`)) return;
-    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-    delete store[name];
-    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
+  const name = activeWeekName;
+  if (!name) return;
 
-    const fallback = Object.keys(store)[0] || "";
-    setActiveWeekName(fallback);
-    setTick((t) => t + 1);
-  };
+  setConfirm({
+    open: true,
+    message: `Delete week schedule "${name}"?`,
+    onConfirm: () => {
+      const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+      delete store[name];
+      saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
+
+      const fallback = Object.keys(store)[0] || "";
+      setActiveWeekName(fallback);
+      closeConfirm();
+      setTick((t) => t + 1);
+    },
+  });
+};
 
   const assignWeekScheduleToDay = (weekName: string, wd: number, dayName: string) => {
     const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
@@ -575,6 +614,14 @@ export default function DailyScheduleApp() {
 
   const [dayEditorOpen, setDayEditorOpen] = useState(false);
   const [editInitial, setEditInitial] = useState<DaySchedule | undefined>(undefined);
+
+  // simple confirm state (callback-based)
+  const [confirm, setConfirm] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
+    open: false,
+    message: "",
+    onConfirm: () => {},
+  });
+  const closeConfirm = () => setConfirm((c) => ({ ...c, open: false }));
 
   const openCreateDay = () => {
     setEditInitial(undefined);
@@ -730,6 +777,14 @@ export default function DailyScheduleApp() {
         onClose={() => setDayEditorOpen(false)}
         initial={editInitial}
         onSave={saveDaySchedule}
+      />
+
+      {/* Reusable confirm dialog */}
+      <ConfirmDialog
+        open={confirm.open}
+        message={confirm.message}
+        onCancel={closeConfirm}
+        onConfirm={confirm.onConfirm}
       />
     </Box>
   );
