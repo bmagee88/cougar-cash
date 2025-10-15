@@ -489,10 +489,10 @@ export default function DailyScheduleApp() {
     return () => clearInterval(id);
   }, []);
 
-  const dayStore = useMemo<DaySchedulesStore>(() => loadJSON(LS_KEYS.DAY_SCHEDULES, {}), [tick]);
-  const weekStore = useMemo<WeekSchedulesStore>(() => loadJSON(LS_KEYS.WEEK_SCHEDULES, {}), [tick]);
-  const activeDaySelections = useMemo<ActiveDaySelections>(() => loadJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, {}), [tick]);
-  const activeWeekName = useMemo(() => localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE) ?? "DefaultWeek", [tick]);
+  const dayStore = useMemo<DaySchedulesStore>(() => loadJSON(LS_KEYS.DAY_SCHEDULES, {}), []);
+  const weekStore = useMemo<WeekSchedulesStore>(() => loadJSON(LS_KEYS.WEEK_SCHEDULES, {}), []);
+  const activeDaySelections = useMemo<ActiveDaySelections>(() => loadJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, {}), []);
+  const activeWeekName = useMemo(() => localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE) ?? "DefaultWeek", []);
 
   const setActiveWeekName = (name: string) => localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, name);
 
