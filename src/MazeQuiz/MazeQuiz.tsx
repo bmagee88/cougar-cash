@@ -31,19 +31,13 @@ import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import { SAMPLE_QUIZ } from "./quizHelpers";
 
 /**
- * Maze + Quiz (Full-Width + Mobile)
- * - Perfect maze generation (unique paths)
- * - Player movement: WASD/Arrows, tap/click, mobile swipe, mobile D-pad
- * - Quiz attaches to junctions; correct answer is on the greedy (toward-exit) side
- * - Right-side floating quiz (desktop) aligned with player’s row and clamped vertically
- * - Quiz stacks UNDER the maze on mobile for full-width usage
- * - CSV upload (id, question, correct, false1, false2, false3)
- * - Visibility modes:
- *     "god" — see all
- *     "blind_memory" — see straightaways + remember all seen
- *     "blind_now" — see only current straightaways (no memory)
- *     "absolute_blind" — see only current cell + immediate neighbors (no memory)
- * - Click any cell to highlight its shortest path to the exit; Esc/Clear to unhighlight
+ * Maze + Junction Quiz (Full-Width + Mobile + Junction Lock + Scoring)
+ * - Perfect maze generation, unique path, greedy hints
+ * - Movement: WASD/Arrows, swipe, D-pad (mobile)
+ * - CSV upload for quiz. CSV split: text.split(/\r?\n/).filter(Boolean)
+ * - Visibility modes: god / blind_memory / blind_now / absolute_blind
+ * - Junction lock: at junctions (>2 openings) movement is disabled until an answer is chosen.
+ * - Wrong answer counter, timer, scoring (shown on finish).
  */
 
 // ---------- Types ----------
@@ -71,7 +65,7 @@ export interface QuizQuestion {
 export interface Cell {
   r: number;
   c: number;
-  walls: Record<Dir, boolean>; // true => wall exists
+  walls: Record<Dir, boolean>;
   openings: number;
   greedyDirection: Dir | null;
   quiz?: QuizQuestion;
@@ -143,7 +137,7 @@ function generatePerfectMaze(
 
   carve(0, 0);
 
-  // Entr/Exit openings
+  // Entrance/Exit openings
   maze.cells[maze.entrance.r][maze.entrance.c].walls.W = false;
   maze.cells[maze.exit.r][maze.exit.c].walls.E = false;
 
@@ -215,8 +209,9 @@ export function shortestPathFrom(
   maze: Maze,
   start: { r: number; c: number }
 ): { r: number; c: number }[] {
-  const prev = Array.from({ length: maze.rows }, () =>
-    Array(maze.cols).fill(null) as (null | { r: number; c: number })[]
+  const prev = Array.from(
+    { length: maze.rows },
+    () => Array(maze.cols).fill(null) as (null | { r: number; c: number })[]
   );
   const seen = Array.from({ length: maze.rows }, () =>
     Array(maze.cols).fill(false)
@@ -236,10 +231,7 @@ export function shortestPathFrom(
     }
   }
   const path: { r: number; c: number }[] = [];
-  let cur: { r: number; c: number } | null = {
-    r: maze.exit.r,
-    c: maze.exit.c,
-  };
+  let cur: { r: number; c: number } | null = { r: maze.exit.r, c: maze.exit.c };
   while (cur) {
     path.push(cur);
     const p = prev[cur.r][cur.c];
@@ -258,7 +250,8 @@ export function verifySolution(
   const startOK =
     path[0].r === maze.entrance.r && path[0].c === maze.entrance.c;
   const endOK =
-    path[path.length - 1].r === maze.exit.r && path[path.length - 1].c === maze.exit.c;
+    path[path.length - 1].r === maze.exit.r &&
+    path[path.length - 1].c === maze.exit.c;
   if (!startOK || !endOK) return false;
   for (let i = 1; i < path.length; i++) {
     const a = path[i - 1];
@@ -277,11 +270,9 @@ export function verifySolution(
   return path.length === shortest.length;
 }
 
-export function findHighDegreeCells(maze: Maze): {
-  r: number;
-  c: number;
-  openings: number;
-}[] {
+export function findHighDegreeCells(
+  maze: Maze
+): { r: number; c: number; openings: number }[] {
   const out: { r: number; c: number; openings: number }[] = [];
   for (let r = 0; r < maze.rows; r++) {
     for (let c = 0; c < maze.cols; c++) {
@@ -292,10 +283,8 @@ export function findHighDegreeCells(maze: Maze): {
   return out;
 }
 
-
 function parseCSV(text: string): QuizQuestion[] {
-  // Lightweight CSV parser (handles basic quoted fields)
-  const lines = text.split(/\r?\n/).filter(Boolean);
+  const lines = text.split(/\r?\n/).filter(Boolean); // <-- as requested
   const out: QuizQuestion[] = [];
   for (const line of lines) {
     const cells: string[] = [];
@@ -361,13 +350,13 @@ function attachQuestionsToJunctions(maze: Maze, pool: QuizQuestion[]) {
 
 type GridPoint = { r: number; c: number };
 const cellPx = 28;
-const PANEL_WIDTH = 360;
+const PANEL_WIDTH = 460;
 const PANEL_GAP = 32;
 
 export default function MazeQuizApp() {
   const [rows, setRows] = useState(15);
   const [cols, setCols] = useState(25);
-  const [showGreedy, setShowGreedy] = useState(true);
+  const [showGreedy, setShowGreedy] = useState(false);
   const [quizPool, setQuizPool] = useState<QuizQuestion[]>(SAMPLE_QUIZ);
   const [maze, setMaze] = useState<Maze>(() => {
     const m = generatePerfectMaze(15, 25);
@@ -385,6 +374,17 @@ export default function MazeQuizApp() {
   const [explored, setExplored] = useState<Set<string>>(new Set());
   const key = (r: number, c: number) => `${r},${c}`;
 
+  // Scoring/timer state
+  const [wrongMoves, setWrongMoves] = useState(0);
+  const [questionIdsSeen, setQuestionIdsSeen] = useState<Set<string>>(
+    new Set()
+  );
+  const [hasStarted, setHasStarted] = useState(false);
+  const [startTs, setStartTs] = useState<number | null>(null);
+  const [nowTs, setNowTs] = useState<number>(Date.now());
+  const [endTs, setEndTs] = useState<number | null>(null); // <-- NEW
+
+
   // Layout & mobile
   const isMobile = useMediaQuery("(max-width:900px)");
 
@@ -394,7 +394,7 @@ export default function MazeQuizApp() {
 
   const highDegree = useMemo(() => findHighDegreeCells(maze), [maze]);
 
-  // Visibility computations
+  // --- Visibility helpers ---
   const computeVisibleRays = useCallback((m: Maze, pos: GridPoint) => {
     const s = new Set<string>();
     s.add(key(pos.r, pos.c));
@@ -419,7 +419,8 @@ export default function MazeQuizApp() {
       if (!m.cells[pos.r][pos.c].walls[d]) {
         const nr = pos.r + DELTA[d].dr;
         const nc = pos.c + DELTA[d].dc;
-        if (nr >= 0 && nc >= 0 && nr < m.rows && nc < m.cols) s.add(key(nr, nc));
+        if (nr >= 0 && nc >= 0 && nr < m.rows && nc < m.cols)
+          s.add(key(nr, nc));
       }
     }
     return s;
@@ -465,7 +466,32 @@ export default function MazeQuizApp() {
     return explored.has(id) || currentRays.has(id);
   };
 
-  // Generate / reset
+  // Determine if we're currently at a junction (locks movement)
+  const currentCell = maze.cells[player.r][player.c];
+  const atJunction = currentCell.openings > 2;
+
+  // Track unique questions encountered (when entering a junction)
+  useEffect(() => {
+    if (atJunction && currentCell.quiz?.id) {
+      setQuestionIdsSeen((prev) => {
+        if (prev.has(currentCell.quiz!.id)) return prev;
+        const next = new Set(prev);
+        next.add(currentCell.quiz!.id);
+        return next;
+      });
+    }
+  }, [atJunction, currentCell.quiz?.id]);
+
+  // Timer: start on first move/answer; tick every 250ms
+  useEffect(() => {
+    const id = setInterval(() => setNowTs(Date.now()), 250);
+    return () => clearInterval(id);
+  }, []);
+const endOrNow = endTs ?? nowTs;
+const elapsedMs = hasStarted && startTs ? Math.max(0, endOrNow - startTs) : 0;
+  const timeStr = new Date(elapsedMs).toISOString().substring(14, 19); // mm:ss
+
+  // Reset / regenerate
   const regenerate = useCallback(() => {
     const m = generatePerfectMaze(rows, cols);
     assignGreedyDirections(m);
@@ -475,6 +501,11 @@ export default function MazeQuizApp() {
     setPlayer(start);
     setPathHighlight([]);
     setWinOpen(false);
+    setWrongMoves(0);
+    setQuestionIdsSeen(new Set());
+    setHasStarted(false);
+    setStartTs(null);
+    setEndTs(null);
     if (vizMode === "blind_memory") {
       setExplored(computeVisibleRays(m, start));
     } else {
@@ -483,13 +514,16 @@ export default function MazeQuizApp() {
   }, [rows, cols, quizPool, vizMode, computeVisibleRays]);
 
   // Click-to-highlight
+  const inHighlight = (r: number, c: number) =>
+    pathHighlight.some((p) => p.r === r && p.c === c);
   const onCellClick = (r: number, c: number) => {
     setPathHighlight(shortestPathFrom(maze, { r, c }));
   };
 
-  // Movement
-  const attemptMove = useCallback(
-    (dir: Dir) => {
+  // Core movement (respects junction lock unless force is true)
+  const move = useCallback(
+    (dir: Dir, force = false) => {
+      if (!force && atJunction) return; // locked at junction
       const { r, c } = player;
       if (maze.cells[r][c].walls[dir]) return;
       const nr = r + DELTA[dir].dr;
@@ -498,6 +532,10 @@ export default function MazeQuizApp() {
       const next = { r: nr, c: nc };
       setPlayer(next);
       setPathHighlight([]);
+      if (!hasStarted) {
+        setHasStarted(true);
+        setStartTs(Date.now());
+      }
       if (vizMode === "blind_memory") {
         const vis = computeVisibleRays(maze, next);
         setExplored((prev) => {
@@ -507,27 +545,31 @@ export default function MazeQuizApp() {
           return merged;
         });
       }
-      if (next.r === maze.exit.r && next.c === maze.exit.c) setWinOpen(true);
+      if (next.r === maze.exit.r && next.c === maze.exit.c) {
+  setEndTs(Date.now());       // <-- stop the timer
+  setWinOpen(true);
+}
     },
-    [player, maze, vizMode, computeVisibleRays]
+    [player, maze, vizMode, computeVisibleRays, atJunction, hasStarted]
   );
 
-  // Keyboard
+  // Keyboard handler (blocked at junction)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (atJunction) return; // locked; ignore keyboard
       const k = e.key.toLowerCase();
       if (["w", "arrowup"].includes(k)) {
         e.preventDefault();
-        attemptMove("N");
+        move("N");
       } else if (["s", "arrowdown"].includes(k)) {
         e.preventDefault();
-        attemptMove("S");
+        move("S");
       } else if (["a", "arrowleft"].includes(k)) {
         e.preventDefault();
-        attemptMove("W");
+        move("W");
       } else if (["d", "arrowright"].includes(k)) {
         e.preventDefault();
-        attemptMove("E");
+        move("E");
       } else if (k === "escape") {
         e.preventDefault();
         setPathHighlight([]);
@@ -535,27 +577,26 @@ export default function MazeQuizApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [attemptMove]);
+  }, [move, atJunction]);
 
-  // Touch swipe on the grid
+  // Touch swipe on the grid (blocked at junction)
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const onTouchStart = (e: React.TouchEvent) => {
+    if (atJunction) return;
     const t = e.touches[0];
     touchStart.current = { x: t.clientX, y: t.clientY };
   };
   const onTouchEnd = (e: React.TouchEvent) => {
+    if (atJunction) return;
     if (!touchStart.current) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
     const dy = t.clientY - touchStart.current.y;
     touchStart.current = null;
-    const TH = 24; // swipe threshold px
+    const TH = 24;
     if (Math.abs(dx) < TH && Math.abs(dy) < TH) return;
-    if (Math.abs(dx) > Math.abs(dy)) {
-      attemptMove(dx > 0 ? "E" : "W");
-    } else {
-      attemptMove(dy > 0 ? "S" : "N");
-    }
+    if (Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? "E" : "W");
+    else move(dy > 0 ? "S" : "N");
   };
 
   // CSV upload
@@ -565,23 +606,44 @@ export default function MazeQuizApp() {
     if (parsed.length) setQuizPool(parsed);
   };
 
-//   const currentCell = maze.cells[player.r][player.c];
-  const inHighlight = (r: number, c: number) =>
-    pathHighlight.some((p) => p.r === r && p.c === c);
+  // Answer from quiz (forces movement even at junction)
+  const onAnswer = (dir: Dir) => {
+    const correctDir = currentCell.greedyDirection;
+    const isCorrect = correctDir === dir;
+    if (!isCorrect) setWrongMoves((x) => x + 1);
+    move(dir, true); // force movement from junction via answer
+  };
 
-  const borderStyle = (cell: Cell) => ({
-    borderTop: cell.walls.N ? "2px solid #111" : "2px solid transparent",
-    borderBottom: cell.walls.S ? "2px solid #111" : "2px solid transparent",
-    borderLeft: cell.walls.W ? "2px solid #111" : "2px solid transparent",
-    borderRight: cell.walls.E ? "2px solid #111" : "2px solid transparent",
-  });
+  // Live score (optional display); final score computed on win
+  const timeSec = Math.round(elapsedMs / 1000);
+  const uniqueQ = questionIdsSeen.size;
+  const liveScore = Math.max(
+    0,
+    1000 + uniqueQ * 20 - wrongMoves * 50 - timeSec * 2
+  );
+
+  // Compute final score on win (shown in modal)
+  const finalScore = liveScore;
 
   // ------- RENDER -------
   return (
     <Stack spacing={2} sx={{ p: { xs: 1, md: 2 }, width: "100%" }}>
-      <Typography variant="h5">Perfect Maze + Junction Quiz</Typography>
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{ width: "100%" }}
+      >
+        <Typography variant="h5">Perfect Maze + Junction Quiz</Typography>
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Typography variant="body2">⏱ {timeStr}</Typography>
+          <Typography variant="body2">❌ {wrongMoves}</Typography>
+          <Typography variant="body2">🧩 {uniqueQ}</Typography>
+          <Typography variant="body2">🏆 {liveScore}</Typography>
+        </Stack>
+      </Stack>
 
-      {/* Top controls (full-width) */}
+      {/* Top controls */}
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
@@ -590,11 +652,21 @@ export default function MazeQuizApp() {
       >
         <Stack sx={{ minWidth: 180, flex: 1 }}>
           <Typography gutterBottom>Rows: {rows}</Typography>
-          <Slider min={5} max={50} value={rows} onChange={(_, v) => setRows(v as number)} />
+          <Slider
+            min={5}
+            max={50}
+            value={rows}
+            onChange={(_, v) => setRows(v as number)}
+          />
         </Stack>
         <Stack sx={{ minWidth: 180, flex: 1 }}>
           <Typography gutterBottom>Cols: {cols}</Typography>
-          <Slider min={5} max={70} value={cols} onChange={(_, v) => setCols(v as number)} />
+          <Slider
+            min={5}
+            max={70}
+            value={cols}
+            onChange={(_, v) => setCols(v as number)}
+          />
         </Stack>
         <FormControlLabel
           control={
@@ -647,11 +719,15 @@ export default function MazeQuizApp() {
         {/* Maze board */}
         <Card variant="outlined" sx={{ width: "max-content" }}>
           <CardContent>
-            <Typography variant="subtitle1" gutterBottom sx={{ whiteSpace: 'pre-line' }}>
-  {isMobile
-    ? "Swipe over the maze or use the D-pad to move. Tap a cell to show its fastest path."
-    : "Move with WASD / Arrow Keys. Click any cell to highlight its fastest path to the exit.\nPress Esc or click Clear Highlight to unhighlight."}
-</Typography>
+            <Typography
+              variant="subtitle1"
+              gutterBottom
+              sx={{ whiteSpace: "pre-line" }}
+            >
+              {isMobile
+                ? "Swipe over the maze or use the D-pad to move. Tap a cell to show its fastest path."
+                : "Move with WASD / Arrow Keys. Click any cell to highlight its fastest path to the exit.\nPress Esc or click Clear Highlight to unhighlight."}
+            </Typography>
 
             <div
               onTouchStart={onTouchStart}
@@ -698,7 +774,22 @@ export default function MazeQuizApp() {
                         width: cellPx,
                         height: cellPx,
                         boxSizing: "border-box",
-                        ...(visible ? borderStyle(cell) : { border: "2px solid #111" }),
+                        ...(visible
+                          ? {
+                              borderTop: cell.walls.N
+                                ? "2px solid #111"
+                                : "2px solid transparent",
+                              borderBottom: cell.walls.S
+                                ? "2px solid #111"
+                                : "2px solid transparent",
+                              borderLeft: cell.walls.W
+                                ? "2px solid #111"
+                                : "2px solid transparent",
+                              borderRight: cell.walls.E
+                                ? "2px solid #111"
+                                : "2px solid transparent",
+                            }
+                          : { border: "2px solid #111" }),
                         background: visible ? baseBg : "#111",
                         color: visible ? undefined : "transparent",
                         display: "flex",
@@ -728,34 +819,24 @@ export default function MazeQuizApp() {
         {/* QUIZ PANEL */}
         {isMobile ? (
           // Mobile: stack quiz under the maze (full width)
-          <Card
-            variant="outlined"
-            sx={{ mt: 2, width: "100%", maxWidth: 600 }}
-          >
+          <Card variant="outlined" sx={{ mt: 2, width: "100%", maxWidth: 600 }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Junction Quiz
               </Typography>
-              <QuizView currentCell={maze.cells[player.r][player.c]} />
-              <Stack spacing={1} sx={{ mt: 1 }}>
-                <Typography variant="body2">
-                  Player: ({player.r},{player.c})
-                </Typography>
-                <Typography variant="body2">
-                  Exit: ({maze.exit.r},{maze.exit.c})
-                </Typography>
-                <Typography variant="body2">
-                  Junctions: {highDegree.length}
-                </Typography>
-                <Button
-                  size="small"
-                  onClick={() =>
-                    setPathHighlight(shortestPathFrom(maze, player))
-                  }
-                >
-                  Highlight Fastest Path from Here
-                </Button>
-              </Stack>
+              <QuizView
+                currentCell={currentCell}
+                atJunction={atJunction}
+                onAnswer={onAnswer}
+              />
+              <StatsBlock
+                player={player}
+                maze={maze}
+                highDegreeCount={highDegree.length}
+                onHighlight={() =>
+                  setPathHighlight(shortestPathFrom(maze, player))
+                }
+              />
             </CardContent>
           </Card>
         ) : (
@@ -775,33 +856,26 @@ export default function MazeQuizApp() {
                 <Typography variant="h6" gutterBottom>
                   Junction Quiz
                 </Typography>
-                <QuizView currentCell={maze.cells[player.r][player.c]} />
-                <Stack spacing={1} sx={{ mt: 1 }}>
-                  <Typography variant="body2">
-                    Player: ({player.r},{player.c})
-                  </Typography>
-                  <Typography variant="body2">
-                    Exit: ({maze.exit.r},{maze.exit.c})
-                  </Typography>
-                  <Typography variant="body2">
-                    Junctions: {highDegree.length}
-                  </Typography>
-                  <Button
-                    size="small"
-                    onClick={() =>
-                      setPathHighlight(shortestPathFrom(maze, player))
-                    }
-                  >
-                    Highlight Fastest Path from Here
-                  </Button>
-                </Stack>
+                <QuizView
+                  currentCell={currentCell}
+                  atJunction={atJunction}
+                  onAnswer={onAnswer}
+                />
+                <StatsBlock
+                  player={player}
+                  maze={maze}
+                  highDegreeCount={highDegree.length}
+                  onHighlight={() =>
+                    setPathHighlight(shortestPathFrom(maze, player))
+                  }
+                />
               </CardContent>
             </Card>
           </div>
         )}
       </div>
 
-      {/* Mobile D-pad */}
+      {/* Mobile D-pad (disabled while at junction) */}
       {isMobile && (
         <div
           style={{
@@ -816,30 +890,55 @@ export default function MazeQuizApp() {
           }}
         >
           <div />
-          <Fab color="primary" size="small" onClick={() => attemptMove("N")}>
+          <Fab
+            color="primary"
+            size="small"
+            onClick={() => move("N")}
+            disabled={atJunction}
+          >
             <ArrowUpwardIcon />
           </Fab>
           <div />
-          <Fab color="primary" size="small" onClick={() => attemptMove("W")}>
+          <Fab
+            color="primary"
+            size="small"
+            onClick={() => move("W")}
+            disabled={atJunction}
+          >
             <ArrowBackIcon />
           </Fab>
           <div />
-          <Fab color="primary" size="small" onClick={() => attemptMove("E")}>
+          <Fab
+            color="primary"
+            size="small"
+            onClick={() => move("E")}
+            disabled={atJunction}
+          >
             <ArrowForwardIcon />
           </Fab>
           <div />
-          <Fab color="primary" size="small" onClick={() => attemptMove("S")}>
+          <Fab
+            color="primary"
+            size="small"
+            onClick={() => move("S")}
+            disabled={atJunction}
+          >
             <ArrowDownwardIcon />
           </Fab>
           <div />
         </div>
       )}
 
-      {/* Win Modal */}
+      {/* Win Modal with final score */}
       <Dialog open={winOpen} onClose={() => {}} disableEscapeKeyDown>
         <DialogTitle>🏁 You reached the exit!</DialogTitle>
         <DialogContent>
-          <Typography>Nice! Want to play again?</Typography>
+          <Stack spacing={1}>
+            <Typography>⏱ Time: {timeStr}</Typography>
+            <Typography>❌ Wrong answers: {wrongMoves}</Typography>
+            <Typography>🧩 Unique questions: {uniqueQ}</Typography>
+            <Typography variant="h6">🏆 Score: {finalScore}</Typography>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button variant="contained" onClick={regenerate}>
@@ -851,8 +950,60 @@ export default function MazeQuizApp() {
   );
 }
 
-/** Quiz panel content (shared by mobile + desktop) */
-function QuizView({ currentCell }: { currentCell: Cell }) {
+/** Shared small blocks */
+function StatsBlock({
+  player,
+  maze,
+  highDegreeCount,
+  onHighlight,
+}: {
+  player: { r: number; c: number };
+  maze: Maze;
+  highDegreeCount: number;
+  onHighlight: () => void;
+}) {
+  return (
+    <Stack spacing={1} sx={{ mt: 1 }}>
+      <Typography variant="body2">
+        Player: ({player.r},{player.c})
+      </Typography>
+      <Typography variant="body2">
+        Exit: ({maze.exit.r},{maze.exit.c})
+      </Typography>
+      <Typography variant="body2">Junctions: {highDegreeCount}</Typography>
+      <Button size="small" onClick={onHighlight}>
+        Highlight Fastest Path from Here
+      </Button>
+    </Stack>
+  );
+}
+
+/** Quiz panel content with junction lock + answer movement */
+function QuizView({
+  currentCell,
+  atJunction,
+  onAnswer,
+}: {
+  currentCell: Cell;
+  atJunction: boolean;
+  onAnswer: (dir: Dir) => void;
+}) {
+  const btn = (dir: Dir, label?: string) =>
+    label ? (
+      <Button
+        fullWidth
+        variant={atJunction ? "contained" : "outlined"}
+        onClick={() => onAnswer(dir)}
+        disabled={!atJunction}
+      >
+        {dir === "N" && "↑ "}
+        {dir === "W" && "← "}
+        {dir === "S" && "↓ "}
+        {dir === "E" && "→ "}
+        {label}
+      </Button>
+    ) : null;
+
   if (!currentCell.quiz || !currentCell.answerMap) {
     return (
       <Typography color="text.secondary">
@@ -860,6 +1011,7 @@ function QuizView({ currentCell }: { currentCell: Cell }) {
       </Typography>
     );
   }
+
   return (
     <div
       style={{
@@ -869,36 +1021,44 @@ function QuizView({ currentCell }: { currentCell: Cell }) {
         gap: 8,
       }}
     >
-      <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2", textAlign: "center" }}>
-        {currentCell.answerMap.N && (
-          <Button fullWidth variant="outlined">
-            ↑ {currentCell.answerMap.N}
-          </Button>
-        )}
+      <div
+        style={{ gridColumn: "2 / 3", gridRow: "1 / 2", textAlign: "center" }}
+      >
+        {btn("N", currentCell.answerMap.N)}
       </div>
       <div style={{ gridColumn: "1 / 2", gridRow: "2 / 3", textAlign: "left" }}>
-        {currentCell.answerMap.W && (
-          <Button fullWidth variant="outlined">← {currentCell.answerMap.W}</Button>
-        )}
+        {btn("W", currentCell.answerMap.W)}
       </div>
-      <div style={{ gridColumn: "2 / 3", gridRow: "2 / 3", textAlign: "center" }}>
-        <Typography variant="subtitle1" sx={{ p: 1, borderRadius: 1, bgcolor: "#f5f5f5" }}>
+      <div
+        style={{ gridColumn: "2 / 3", gridRow: "2 / 3", textAlign: "center" }}
+      >
+        <Typography
+          variant="subtitle1"
+          sx={{ p: 1, borderRadius: 1, bgcolor: "#f5f5f5" }}
+        >
           {currentCell.quiz.question}
         </Typography>
-      </div>
-      <div style={{ gridColumn: "3 / 4", gridRow: "2 / 3", textAlign: "right" }}>
-        {currentCell.answerMap.E && (
-          <Button fullWidth variant="outlined">{currentCell.answerMap.E} →</Button>
+        {!atJunction && (
+          <Typography variant="caption" color="text.secondary">
+            (Not a junction — move freely)
+          </Typography>
+        )}
+        {atJunction && (
+          <Typography variant="caption" color="text.secondary">
+            Choose an answer to move.
+          </Typography>
         )}
       </div>
-      <div style={{ gridColumn: "2 / 3", gridRow: "3 / 4", textAlign: "center" }}>
-        {currentCell.answerMap.S && (
-          <Button fullWidth variant="outlined">↓ {currentCell.answerMap.S}</Button>
-        )}
+      <div
+        style={{ gridColumn: "3 / 4", gridRow: "2 / 3", textAlign: "right" }}
+      >
+        {btn("E", currentCell.answerMap.E)}
       </div>
-      <Typography variant="caption" sx={{ gridColumn: "1 / 4", opacity: 0.7 }}>
-        Tip: the correct answer is placed on the side that leads toward the exit.
-      </Typography>
+      <div
+        style={{ gridColumn: "2 / 3", gridRow: "3 / 4", textAlign: "center" }}
+      >
+        {btn("S", currentCell.answerMap.S)}
+      </div>
     </div>
   );
 }
