@@ -475,7 +475,7 @@ function DayScheduleEditor({ open, onClose, initial, onSave }: DayScheduleEditor
 
 export default function DailyScheduleApp() {
   const now = new Date();
-  const [tick, setTick] = useState(0);
+  const [_, setTick] = useState(0);
   const [weekday, setWeekday] = useState(now.getDay());
 
   // seed data once
