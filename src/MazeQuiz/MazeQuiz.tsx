@@ -494,15 +494,6 @@ function worldToScreenDir(world: Dir, facing: Dir): Dir {
   return ({ W: "N", N: "E", E: "S", S: "W" } as Record<Dir, Dir>)[world];
 }
 
-function screenToWorldDir(screen: Dir, facing: Dir): Dir {
-  if (facing === "N") return screen;
-  if (facing === "E")
-    return ({ N: "E", E: "S", S: "W", W: "N" } as Record<Dir, Dir>)[screen];
-  if (facing === "S")
-    return ({ N: "S", E: "W", S: "N", W: "E" } as Record<Dir, Dir>)[screen];
-  return ({ N: "W", E: "N", S: "E", W: "S" } as Record<Dir, Dir>)[screen];
-}
-
 function rotateOffsetToWorld(
   drS: number,
   dcS: number,
@@ -531,6 +522,43 @@ type GridPoint = { r: number; c: number };
 const cellPx = 56; // bigger tiles for visibility
 const PANEL_WIDTH = 460;
 const PANEL_GAP = 32;
+
+  const keyRC = (r: number, c: number) => `${r},${c}`;
+
+function computeRayVisible(maze: Maze, at: { r: number; c: number }): Set<string> {
+  const vis = new Set<string>();
+  const here = maze.cells[at.r][at.c];
+  vis.add(keyRC(at.r, at.c));
+  for (const d of DIRS) {
+    if (here.walls[d]) continue;
+    let r = at.r, c = at.c;
+    while (true) {
+      const nr = r + DELTA[d].dr;
+      const nc = c + DELTA[d].dc;
+      if (nr < 0 || nc < 0 || nr >= maze.rows || nc >= maze.cols) break;
+      const curCell = maze.cells[r][c];
+      if (curCell.walls[d]) break; // wall blocks the ray
+      r = nr; c = nc;
+      vis.add(keyRC(r, c));
+      // stop if the next step would be blocked
+      if (maze.cells[r][c].walls[d]) break;
+    }
+  }
+  return vis;
+}
+
+
+function computeAbsoluteBlind(maze: Maze, at: { r: number; c: number }, facing: Dir): Set<string> {
+  const vis = new Set<string>();
+  vis.add(keyRC(at.r, at.c));
+  const cell = maze.cells[at.r][at.c];
+  if (!cell.walls[facing]) {
+    const nr = at.r + DELTA[facing].dr;
+    const nc = at.c + DELTA[facing].dc;
+    if (nr >= 0 && nc >= 0 && nr < maze.rows && nc < maze.cols) vis.add(keyRC(nr, nc));
+  }
+  return vis;
+}
 
 export default function MazeQuizApp() {
   const [rows, setRows] = useState(15);
@@ -590,7 +618,7 @@ export default function MazeQuizApp() {
         return next;
       });
     }
-  }, [currentCell.quiz?.id, currentCell.openings]);
+  }, [currentCell]);
 
   // Timer tick + elapsed
   useEffect(() => {
@@ -695,7 +723,7 @@ const moveForwardWorld = useCallback((dir: Dir) => {
     setEndTs(Date.now());
     setWinOpen(true);
   }
-}, [player, maze, hasStarted]);
+}, [player, maze, hasStarted, vizMode]);
 
 
   // Keyboard: Up -> forward; Left/Right/Down -> rotate (no move).
@@ -736,45 +764,12 @@ const moveForwardWorld = useCallback((dir: Dir) => {
     return () => window.removeEventListener("keydown", onKey);
   }, [moveForwardWorld, facing]);
 
-  const keyRC = (r: number, c: number) => `${r},${c}`;
 
-function computeRayVisible(maze: Maze, at: { r: number; c: number }): Set<string> {
-  const vis = new Set<string>();
-  const here = maze.cells[at.r][at.c];
-  vis.add(keyRC(at.r, at.c));
-  for (const d of DIRS) {
-    if (here.walls[d]) continue;
-    let r = at.r, c = at.c;
-    while (true) {
-      const nr = r + DELTA[d].dr;
-      const nc = c + DELTA[d].dc;
-      if (nr < 0 || nc < 0 || nr >= maze.rows || nc >= maze.cols) break;
-      const curCell = maze.cells[r][c];
-      if (curCell.walls[d]) break; // wall blocks the ray
-      r = nr; c = nc;
-      vis.add(keyRC(r, c));
-      // stop if the next step would be blocked
-      if (maze.cells[r][c].walls[d]) break;
-    }
-  }
-  return vis;
-}
 
 const nowRays = useMemo(() => computeRayVisible(maze, player), [maze, player]);
 const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, player, facing]);
 
 
-function computeAbsoluteBlind(maze: Maze, at: { r: number; c: number }, facing: Dir): Set<string> {
-  const vis = new Set<string>();
-  vis.add(keyRC(at.r, at.c));
-  const cell = maze.cells[at.r][at.c];
-  if (!cell.walls[facing]) {
-    const nr = at.r + DELTA[facing].dr;
-    const nc = at.c + DELTA[facing].dc;
-    if (nr >= 0 && nc >= 0 && nr < maze.rows && nc < maze.cols) vis.add(keyRC(nr, nc));
-  }
-  return vis;
-}
 
 
   // Swipe: Up -> forward; Right/Left/Down -> rotate.
@@ -806,9 +801,6 @@ function computeAbsoluteBlind(maze: Maze, at: { r: number; c: number }, facing: 
     const parsed = parseCSV(text);
     if (parsed.length) setQuizPool(parsed);
   };
-
-  const inHighlight = (r: number, c: number) =>
-    pathHighlight.some((p) => p.r === r && p.c === c);
 
   // ------- RENDER -------
   const windowSize = 2 * viewRadius + 1;
