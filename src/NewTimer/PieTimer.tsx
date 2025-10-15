@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Typography,
@@ -22,15 +22,13 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 
 /**
- * Daily Schedule with Pie Timer
- * Brian-friendly scaffolding: React + TypeScript + MUI, no external chart libs.
- * - Store multiple DaySchedules per weekday in localStorage
- * - Store multiple WeekSchedules that map weekdays -> a chosen DaySchedule name
- * - Live clock; pie timer shows the active period and its segments + current progress
- *
- * You can drop this into a project created with CRA/Vite/Next (client side) and ensure @mui/* is installed.
+ * Daily Schedule with Pie Timer — FULL FILE
+ * - Create/Edit/Delete Segments, Periods, Day Schedules, Week Schedules
+ * - LocalStorage persistence
+ * - Live clock + SVG pie timer for active period and segments
  */
 
 // ------------------ Types ------------------
@@ -140,36 +138,27 @@ function ensureDefaults() {
   const weekStore = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
   const activeDays = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
 
-  // Seed Monday FullDay if empty
+  // Seed Monday FullDay/HalfDay if empty
   if (Object.keys(dayStore).length === 0) {
-    const monday = 1;
-    dayStore[String(monday)] = {
-      FullDay: makeDefaultDay(monday, "FullDay"),
-      HalfDay: makeDefaultDay(monday, "HalfDay"),
-    };
-
-    // Copy templates to other weekdays for convenience
     for (let d = 0; d < 7; d++) {
-      if (!dayStore[String(d)]) dayStore[String(d)] = {};
-      if (!dayStore[String(d)]["FullDay"]) {
-        dayStore[String(d)]["FullDay"] = { ...makeDefaultDay(d, "FullDay") };
-      }
-      if (!dayStore[String(d)]["HalfDay"]) {
-        const base = makeDefaultDay(d, "HalfDay");
-        // Shorten half day example: single 30-min segment 11:00-11:30
-        base.periods = [
-          {
-            name: "Period 3 (Half)",
-            start: "11:00",
-            end: "11:30",
-            segments: [
-              { title: "Seg 1", color: "#ce93d8", start: "11:00", end: "11:15" },
-              { title: "Seg 2", color: "#ffab91", start: "11:15", end: "11:30" },
-            ],
-          },
-        ];
-        dayStore[String(d)]["HalfDay"] = base;
-      }
+      dayStore[String(d)] = {
+        FullDay: makeDefaultDay(d, "FullDay"),
+        HalfDay: (() => {
+          const base = makeDefaultDay(d, "HalfDay");
+          base.periods = [
+            {
+              name: "Period 3 (Half)",
+              start: "11:00",
+              end: "11:30",
+              segments: [
+                { title: "Seg 1", color: "#ce93d8", start: "11:00", end: "11:15" },
+                { title: "Seg 2", color: "#ffab91", start: "11:15", end: "11:30" },
+              ],
+            },
+          ];
+          return base;
+        })(),
+      };
     }
     saveJSON(LS_KEYS.DAY_SCHEDULES, dayStore);
   }
@@ -177,13 +166,7 @@ function ensureDefaults() {
   if (Object.keys(weekStore).length === 0) {
     const defaultWeek: WeekSchedule = {
       name: "DefaultWeek",
-      mapping: {
-        1: "FullDay",
-        2: "FullDay",
-        3: "FullDay",
-        4: "FullDay",
-        5: "HalfDay", // Friday half day example
-      },
+      mapping: { 1: "FullDay", 2: "FullDay", 3: "FullDay", 4: "FullDay", 5: "HalfDay" },
     };
     weekStore[defaultWeek.name] = defaultWeek;
     saveJSON(LS_KEYS.WEEK_SCHEDULES, weekStore);
@@ -200,7 +183,7 @@ function ensureDefaults() {
 
 type PieTimerProps = {
   period?: Period | null;
-  nowMinutes: number; // minutes since midnight
+  nowMinutes: number; // minutes since midnight (+ seconds for smooth needle)
 };
 
 function PieTimer({ period, nowMinutes }: PieTimerProps) {
@@ -223,58 +206,43 @@ function PieTimer({ period, nowMinutes }: PieTimerProps) {
   const pEnd = toMinutes(period.end);
   const pDur = Math.max(1, pEnd - pStart);
 
-  // Convert a minute offset within period to angle in degrees [0, 360)
+  // minute offset within period -> angle in degrees [0, 360)
   const toAngle = (m: number) => (m / pDur) * 360;
 
-  // Arc helper
   const polar = (angleDeg: number) => {
     const rad = (Math.PI * (angleDeg - 90)) / 180;
     return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
   };
 
   const arcPath = (startDeg: number, endDeg: number) => {
-    // normalize
     const a0 = startDeg % 360;
     const a1 = endDeg % 360;
-    const largeArc = (a1 - a0 + 360) % 360 > 180 ? 1 : 0;
+    const sweep = (a1 - a0 + 360) % 360;
+    const largeArc = sweep > 180 ? 1 : 0;
     const p0 = polar(a0);
     const p1 = polar(a1);
     return `M ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 1 ${p1.x} ${p1.y}`;
   };
 
-  // Build segment arcs
   const segArcs = period.segments.map((seg, i) => {
     const s = clamp(toMinutes(seg.start), pStart, pEnd) - pStart;
     const e = clamp(toMinutes(seg.end), pStart, pEnd) - pStart;
     const a0 = toAngle(s);
     const a1 = toAngle(e);
-    return (
-      <g key={i}>
-        <path d={arcPath(a0, a1)} stroke={seg.color} strokeWidth={18} fill="none" />
-      </g>
-    );
+    return <path key={i} d={arcPath(a0, a1)} stroke={seg.color} strokeWidth={18} fill="none" />;
   });
 
-  // Current progress needle within the period
   const progressAngle = toAngle(clamp(nowMinutes, pStart, pEnd) - pStart);
   const pEndPt = polar(progressAngle);
 
-  // Find current segment
   const currentSeg = period.segments.find((s) => within(nowMinutes, toMinutes(s.start), toMinutes(s.end)));
 
   return (
     <Box>
       <svg width={size} height={size}>
-        {/* Base circle */}
         <circle cx={cx} cy={cy} r={r} fill="#f5f5f5" stroke="#ccc" strokeWidth={1} />
-
-        {/* Segments */}
         {segArcs}
-
-        {/* Progress needle */}
         <line x1={cx} y1={cy} x2={pEndPt.x} y2={pEndPt.y} stroke="#000" strokeWidth={2} />
-
-        {/* Center dot */}
         <circle cx={cx} cy={cy} r={3} fill="#000" />
       </svg>
 
@@ -302,7 +270,7 @@ function PieTimer({ period, nowMinutes }: PieTimerProps) {
   );
 }
 
-// ------------------ Editors ------------------
+// ------------------ Day Schedule Editor ------------------
 
 type DayScheduleEditorProps = {
   open: boolean;
@@ -337,6 +305,10 @@ function DayScheduleEditor({ open, onClose, initial, onSave }: DayScheduleEditor
     setPeriods((ps) => [...ps, p]);
   };
 
+  const removePeriod = (idx: number) => {
+    setPeriods((ps) => ps.filter((_, i) => i !== idx));
+  };
+
   const updatePeriod = (idx: number, patch: Partial<Period>) => {
     setPeriods((ps) => ps.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
   };
@@ -359,6 +331,16 @@ function DayScheduleEditor({ open, onClose, initial, onSave }: DayScheduleEditor
         const proposedEnd = fromMinutes(Math.min(toMinutes(p.end), toMinutes(lastEnd) + 10));
         const newSeg: Segment = { title: `Seg ${p.segments.length + 1}`, color: "#c5e1a5", start: lastEnd, end: proposedEnd };
         return { ...p, segments: [...p.segments, newSeg] };
+      })
+    );
+  };
+
+  const removeSegment = (pIdx: number, sIdx: number) => {
+    setPeriods((ps) =>
+      ps.map((p, i) => {
+        if (i !== pIdx) return p;
+        const segs = p.segments.filter((_, j) => j !== sIdx);
+        return { ...p, segments: segs };
       })
     );
   };
@@ -424,6 +406,11 @@ function DayScheduleEditor({ open, onClose, initial, onSave }: DayScheduleEditor
                   <TextField label="Period Name" value={p.name} onChange={(e) => updatePeriod(idx, { name: e.target.value })} sx={{ minWidth: 200 }} />
                   <TextField label="Start (HH:MM)" value={p.start} onChange={(e) => updatePeriod(idx, { start: e.target.value as HHMM })} sx={{ width: 140 }} />
                   <TextField label="End (HH:MM)" value={p.end} onChange={(e) => updatePeriod(idx, { end: e.target.value as HHMM })} sx={{ width: 140 }} />
+                  <Tooltip title="Remove period">
+                    <IconButton onClick={() => removePeriod(idx)} color="error">
+                      <DeleteOutlineIcon />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Add segment">
                     <Button onClick={() => addSegment(idx)}>+ Segment</Button>
                   </Tooltip>
@@ -435,6 +422,11 @@ function DayScheduleEditor({ open, onClose, initial, onSave }: DayScheduleEditor
                       <TextField label="Color" value={s.color} onChange={(e) => updateSegment(idx, sIdx, { color: e.target.value })} sx={{ width: 140 }} />
                       <TextField label="Start" value={s.start} onChange={(e) => updateSegment(idx, sIdx, { start: e.target.value as HHMM })} sx={{ width: 120 }} />
                       <TextField label="End" value={s.end} onChange={(e) => updateSegment(idx, sIdx, { end: e.target.value as HHMM })} sx={{ width: 120 }} />
+                      <Tooltip title="Remove segment">
+                        <IconButton onClick={() => removeSegment(idx, sIdx)} size="small" color="error">
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                      </Tooltip>
                     </Stack>
                   ))}
                 </Stack>
@@ -460,12 +452,12 @@ export default function DailyScheduleApp() {
   const [tick, setTick] = useState(0);
   const [weekday, setWeekday] = useState(now.getDay());
 
-  // Ensure seed data once
+  // seed data once
   useEffect(() => {
     ensureDefaults();
   }, []);
 
-  // Live clock
+  // live clock
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
@@ -480,19 +472,15 @@ export default function DailyScheduleApp() {
 
   const daySchedulesForWeekday = dayStore[String(weekday)] ?? {};
   const availableDayNames = Object.keys(daySchedulesForWeekday);
-  const activeDayName = (activeDaySelections[String(weekday)] ?? availableDayNames[0] ?? "");
+  const activeDayName = activeDaySelections[String(weekday)] ?? availableDayNames[0] ?? "";
 
   const activeWeek = weekStore[activeWeekName];
-
-  // If a week schedule is selected and provides a mapping for today, prefer it
   const mappedDayName = activeWeek?.mapping?.[weekday];
   const effectiveDayName = mappedDayName ?? activeDayName;
   const activeDay = daySchedulesForWeekday[effectiveDayName];
 
-  // Current time in minutes since midnight
-  const minutesNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60; // seconds for smoother needle
+  const minutesNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
 
-  // Find active period
   const activePeriod = useMemo(() => {
     if (!activeDay) return null;
     const nowMinInt = Math.floor(minutesNow);
@@ -507,7 +495,7 @@ export default function DailyScheduleApp() {
     store[key][sched.name] = sched;
     saveJSON(LS_KEYS.DAY_SCHEDULES, store);
 
-    // If saving the currently viewed weekday, set it active
+    // set active
     const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
     act[key] = sched.name;
     saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
@@ -518,6 +506,70 @@ export default function DailyScheduleApp() {
     const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
     act[String(wd)] = name;
     saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
+    setTick((t) => t + 1);
+  };
+
+  const removeActiveDaySchedule = () => {
+    const key = String(weekday);
+    const name = effectiveDayName;
+    if (!name) return;
+    if (!confirm(`Delete day schedule "${name}" for ${weekdayName(weekday)}?`)) return;
+
+    const store = loadJSON<DaySchedulesStore>(LS_KEYS.DAY_SCHEDULES, {});
+    if (!store[key]) return;
+    delete store[key][name];
+    saveJSON(LS_KEYS.DAY_SCHEDULES, store);
+
+    // Update active selection
+    const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
+    const remaining = Object.keys(store[key] || {});
+    act[key] = remaining[0] || "";
+    saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
+
+    // Also scrub any week schedules that referenced this deleted day schedule
+    const wks = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+    Object.values(wks).forEach((w) => {
+      if (w.mapping[weekday] === name) delete w.mapping[weekday];
+    });
+    saveJSON(LS_KEYS.WEEK_SCHEDULES, wks);
+
+    setTick((t) => t + 1);
+  };
+
+  const createWeekSchedule = () => {
+    const name = prompt("New week schedule name?", `Week-${Object.keys(weekStore).length + 1}`)?.trim();
+    if (!name) return;
+    const mapping: Partial<Record<number, string>> = {};
+    for (let d = 0; d < 7; d++) {
+      const sel = activeDaySelections[String(d)] ?? "FullDay";
+      mapping[d] = sel;
+    }
+    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+    store[name] = { name, mapping };
+    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
+    setActiveWeekName(name);
+    setTick((t) => t + 1);
+  };
+
+  const removeActiveWeekSchedule = () => {
+    const name = activeWeekName;
+    if (!name) return;
+    if (!confirm(`Delete week schedule "${name}"?`)) return;
+    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+    delete store[name];
+    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
+
+    const fallback = Object.keys(store)[0] || "";
+    setActiveWeekName(fallback);
+    setTick((t) => t + 1);
+  };
+
+  const assignWeekScheduleToDay = (weekName: string, wd: number, dayName: string) => {
+    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+    const wk = store[weekName];
+    if (!wk) return;
+    wk.mapping[wd] = dayName;
+    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
     setTick((t) => t + 1);
   };
 
@@ -535,49 +587,20 @@ export default function DailyScheduleApp() {
     }
   };
 
-  // Week schedule creation (simple mapper)
-  const createWeekSchedule = () => {
-    const name = prompt("New week schedule name?", `Week-${Object.keys(weekStore).length + 1}`)?.trim();
-    if (!name) return;
-    const mapping: Partial<Record<number, string>> = {};
-    for (let d = 0; d < 7; d++) {
-      const sel = activeDaySelections[String(d)] ?? "FullDay";
-      mapping[d] = sel;
-    }
-    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-    store[name] = { name, mapping };
-    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
-    setActiveWeekName(name);
-    setTick((t) => t + 1);
-  };
-
-  const assignWeekScheduleToDay = (weekName: string, wd: number, dayName: string) => {
-    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-    const wk = store[weekName];
-    if (!wk) return;
-    wk.mapping[wd] = dayName;
-    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
-    setTick((t) => t + 1);
-  };
-
   const nowFmt = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   return (
-    <Box sx={{ p: 2, maxWidth: 1100, mx: "auto" }}>
+    <Box sx={{ p: 2, maxWidth: 1200, mx: "auto" }}>
       <Typography variant="h5" gutterBottom>
         Daily Schedule & Pie Timer
       </Typography>
 
       <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems={{ md: "center" }}>
-        <Stack direction="row" spacing={2} alignItems="center">
+        {/* Day controls */}
+        <Stack direction="row" spacing={1.5} alignItems="center">
           <FormControl sx={{ minWidth: 160 }}>
             <InputLabel id="weekday-select">Weekday</InputLabel>
-            <Select
-              labelId="weekday-select"
-              label="Weekday"
-              value={weekday}
-              onChange={(e) => setWeekday(Number(e.target.value))}
-            >
+            <Select labelId="weekday-select" label="Weekday" value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
               {Array.from({ length: 7 }, (_, d) => (
                 <MenuItem key={d} value={d}>
                   {weekdayName(d)}
@@ -586,7 +609,7 @@ export default function DailyScheduleApp() {
             </Select>
           </FormControl>
 
-          <FormControl sx={{ minWidth: 200 }}>
+          <FormControl sx={{ minWidth: 220 }}>
             <InputLabel id="day-sched-select">Day Schedule</InputLabel>
             <Select
               labelId="day-sched-select"
@@ -607,7 +630,6 @@ export default function DailyScheduleApp() {
               <AddIcon />
             </IconButton>
           </Tooltip>
-
           <Tooltip title="Edit current day schedule">
             <span>
               <IconButton onClick={openEditDay} disabled={!activeDay}>
@@ -615,12 +637,20 @@ export default function DailyScheduleApp() {
               </IconButton>
             </span>
           </Tooltip>
+          <Tooltip title="Delete current day schedule">
+            <span>
+              <IconButton onClick={removeActiveDaySchedule} disabled={!effectiveDayName} color="error">
+                <DeleteOutlineIcon />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Stack>
 
         <Divider flexItem orientation="vertical" sx={{ display: { xs: "none", md: "block" } }} />
 
-        <Stack direction="row" spacing={2} alignItems="center">
-          <FormControl sx={{ minWidth: 200 }}>
+        {/* Week controls */}
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <FormControl sx={{ minWidth: 220 }}>
             <InputLabel id="week-sched-select">Week Schedule</InputLabel>
             <Select
               labelId="week-sched-select"
@@ -628,7 +658,7 @@ export default function DailyScheduleApp() {
               value={activeWeekName}
               onChange={(e) => {
                 const val = String(e.target.value);
-                setActiveWeekName(val);
+                localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, val);
                 setTick((t) => t + 1);
               }}
             >
@@ -643,6 +673,13 @@ export default function DailyScheduleApp() {
             <IconButton onClick={createWeekSchedule} color="primary">
               <AddIcon />
             </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete current week schedule">
+            <span>
+              <IconButton onClick={removeActiveWeekSchedule} disabled={!activeWeekName} color="error">
+                <DeleteOutlineIcon />
+              </IconButton>
+            </span>
           </Tooltip>
         </Stack>
       </Stack>
