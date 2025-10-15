@@ -12,26 +12,18 @@ import {
   Stack,
   Switch,
   Typography,
+  ToggleButton,
+  ToggleButtonGroup,
 } from "@mui/material";
 
 /**
- * Perfect 2D Maze + Quiz (React + TypeScript + MUI)
- * - Grid of cells; each cell has walls {N,S,E,W}
- * - Adjustable rows/cols, regenerate
- * - Unique paths (recursive backtracker generator => perfect maze)
- * - verifySolution(path)
- * - shortestPathFrom(r,c)
- * - findHighDegreeCells()
- * - greedyDirection per cell (toward exit via BFS distance map)
- * - Quiz system:
- *    • Default sample quiz loads on start
- *    • Upload CSV with columns: id,question,correct answer,false answer,false answer,false answer
- *    • A quiz question attaches to each JUNCTION (>2 openings) cell.
- *    • The correct answer is placed on the side equal to `greedyDirection` for that cell.
- *    • Other open sides display false answers.
- * - Player avatar moves with WASD or Arrow keys; respects walls/bounds.
- * - Right panel shows the current cell's quiz (answers laid out N/E/S/W around center question).
- * - Reaching exit pops a modal with only “Play Again” (regenerates + resets board).
+ * Maze + Quiz with Visibility Modes
+ * - Perfect maze generation (unique paths)
+ * - Player movement (WASD / arrows)
+ * - Path highlight from any cell (click)
+ * - Quiz attached to junctions; answers positioned N/E/S/W
+ * - Floating quiz panel aligned to player's row
+ * - Visibility modes: "God", "Blind + Memory", "Blind (No Memory)"
  */
 
 // ---------- Types ----------
@@ -44,6 +36,7 @@ const DELTA: Record<Dir, { dr: number; dc: number }> = {
   E: { dr: 0, dc: 1 },
   W: { dr: 0, dc: -1 },
 };
+type VizMode = "god" | "blind_memory" | "blind_now";
 
 export interface QuizQuestion {
   id: string;
@@ -320,8 +313,8 @@ const SAMPLE_QUIZ: QuizQuestion[] = [
 ];
 
 function parseCSV(text: string): QuizQuestion[] {
-  // Very lightweight CSV parser (handles basic quoted fields)
-  const lines = text.split(/\r?\n/).filter(Boolean);
+  // Lightweight CSV parser (handles basic quoted fields)
+  const lines = text.split(/\r?\n/).filter(Boolean); // ✅ per your preference
   const out: QuizQuestion[] = [];
   for (const line of lines) {
     const cells: string[] = [];
@@ -388,6 +381,8 @@ function attachQuestionsToJunctions(maze: Maze, pool: QuizQuestion[]) {
 
 type GridPoint = { r: number; c: number };
 const cellPx = 28;
+const PANEL_WIDTH = 340;
+const PANEL_GAP = 16;
 
 export default function MazeQuizApp() {
   const [rows, setRows] = useState(15);
@@ -405,17 +400,60 @@ export default function MazeQuizApp() {
   const [pathHighlight, setPathHighlight] = useState<GridPoint[]>([]);
   const [winOpen, setWinOpen] = useState(false);
 
+  // --- Visibility state ---
+  const [vizMode, setVizMode] = useState<VizMode>("god");
+  const [explored, setExplored] = useState<Set<string>>(new Set());
+  const key = (r: number, c: number) => `${r},${c}`;
+
   const highDegree = useMemo(() => findHighDegreeCells(maze), [maze]);
+
+  const computeVisibleCells = useCallback((m: Maze, pos: GridPoint) => {
+    const s = new Set<string>();
+    s.add(key(pos.r, pos.c)); // current cell always visible
+    for (const d of DIRS) {
+      let cr = pos.r;
+      let cc = pos.c;
+      while (!m.cells[cr][cc].walls[d]) {
+        cr += DELTA[d].dr;
+        cc += DELTA[d].dc;
+        if (cr < 0 || cc < 0 || cr >= m.rows || cc >= m.cols) break;
+        s.add(key(cr, cc));
+        if (m.cells[cr][cc].walls[d]) break; // next step would be blocked
+      }
+    }
+    return s;
+  }, []);
+
+  const currentVisible = useMemo(
+    () => computeVisibleCells(maze, player),
+    [maze, player, computeVisibleCells]
+  );
+
+  useEffect(() => {
+    // Reset explored cache when mode toggles
+    if (vizMode === "blind_memory") setExplored(currentVisible);
+    else setExplored(new Set());
+  }, [vizMode, currentVisible]);
+
+  const isCellVisible = (r: number, c: number) => {
+    if (vizMode === "god") return true;
+    if (vizMode === "blind_now") return currentVisible.has(key(r, c));
+    return explored.has(key(r, c)); // blind_memory
+  };
 
   const regenerate = useCallback(() => {
     const m = generatePerfectMaze(rows, cols);
     assignGreedyDirections(m);
     attachQuestionsToJunctions(m, quizPool);
     setMaze(m);
-    setPlayer({ r: m.entrance.r, c: m.entrance.c });
+    const start = { r: m.entrance.r, c: m.entrance.c };
+    setPlayer(start);
     setPathHighlight([]);
     setWinOpen(false);
-  }, [rows, cols, quizPool]);
+    setExplored(
+      vizMode === "blind_memory" ? computeVisibleCells(m, start) : new Set()
+    );
+  }, [rows, cols, quizPool, vizMode, computeVisibleCells]);
 
   // click-to-highlight shortest path from any cell
   const onCellClick = (r: number, c: number) => {
@@ -433,9 +471,18 @@ export default function MazeQuizApp() {
       const next = { r: nr, c: nc };
       setPlayer(next);
       setPathHighlight([]); // auto-clear highlight on move
+      if (vizMode === "blind_memory") {
+        const vis = computeVisibleCells(maze, next);
+        setExplored((prev) => {
+          const next = new Set<string>();
+          prev.forEach((v) => next.add(v));
+          vis.forEach((v) => next.add(v));
+          return next;
+        });
+      }
       if (next.r === maze.exit.r && next.c === maze.exit.c) setWinOpen(true);
     },
-    [player, maze]
+    [player, maze, vizMode, computeVisibleCells]
   );
 
   useEffect(() => {
@@ -516,6 +563,16 @@ export default function MazeQuizApp() {
           }
           label="Show greedy arrow"
         />
+        <ToggleButtonGroup
+          exclusive
+          size="small"
+          value={vizMode}
+          onChange={(_, v) => v && setVizMode(v)}
+        >
+          <ToggleButton value="god">God</ToggleButton>
+          <ToggleButton value="blind_memory">Blind + Memory</ToggleButton>
+          <ToggleButton value="blind_now">Blind (No Memory)</ToggleButton>
+        </ToggleButtonGroup>
         <Button variant="contained" onClick={regenerate}>
           Regenerate
         </Button>
@@ -535,13 +592,18 @@ export default function MazeQuizApp() {
         </label>
       </Stack>
 
-      <Stack
-        direction={{ xs: "column", lg: "row" }}
-        spacing={2}
-        alignItems="flex-start"
+      <div
+        style={{
+          position: "relative",
+          width: Math.min(
+            maze.cols * cellPx + PANEL_WIDTH + PANEL_GAP,
+            (typeof window !== "undefined" ? window.innerWidth : 1200) - 64
+          ),
+          overflow: "auto",
+        }}
       >
         {/* Maze board */}
-        <Card variant="outlined" sx={{ overflow: "auto" }}>
+        <Card variant="outlined" sx={{ overflow: "hidden" }}>
           <CardContent>
             <Typography variant="subtitle1" gutterBottom>
               Move with WASD / Arrow Keys. Click any cell to highlight its
@@ -550,13 +612,13 @@ export default function MazeQuizApp() {
             </Typography>
             <div
               style={{
+                position: "relative",
                 display: "grid",
                 gridTemplateColumns: `repeat(${maze.cols}, ${cellPx}px)`,
                 gridAutoRows: `${cellPx}px`,
                 gap: 0,
                 userSelect: "none",
                 width: maze.cols * cellPx,
-                maxWidth: "100%",
               }}
             >
               {maze.cells.map((row, r) =>
@@ -567,7 +629,8 @@ export default function MazeQuizApp() {
                   const isExit = r === maze.exit.r && c === maze.exit.c;
                   const isPlayer = player.r === r && player.c === c;
                   const deg = cell.openings;
-                  const bg = isPlayer
+
+                  const baseBg = isPlayer
                     ? "#90caf9"
                     : hl
                     ? "#a5d6a7"
@@ -578,6 +641,9 @@ export default function MazeQuizApp() {
                     : deg > 2
                     ? "#fff9c4"
                     : "#fafafa";
+
+                  const visible = isCellVisible(r, c);
+
                   return (
                     <div
                       key={`${r}-${c}`}
@@ -587,8 +653,11 @@ export default function MazeQuizApp() {
                         width: cellPx,
                         height: cellPx,
                         boxSizing: "border-box",
-                        ...borderStyle(cell),
-                        background: bg,
+                        ...(visible
+                          ? borderStyle(cell)
+                          : { border: "2px solid #111" }),
+                        background: visible ? baseBg : "#111",
+                        color: visible ? undefined : "transparent",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
@@ -598,7 +667,7 @@ export default function MazeQuizApp() {
                       }}
                     >
                       {showGreedy && cell.greedyDirection && (
-                        <span style={{ opacity: 0.7 }}>
+                        <span style={{ opacity: visible ? 0.7 : 0 }}>
                           {cell.greedyDirection === "N" && "↑"}
                           {cell.greedyDirection === "S" && "↓"}
                           {cell.greedyDirection === "E" && "→"}
@@ -613,126 +682,139 @@ export default function MazeQuizApp() {
           </CardContent>
         </Card>
 
-        {/* Right-side Quiz Panel */}
-        <Card variant="outlined" sx={{ minWidth: 320, flex: 1 }}>
-          <CardContent>
-            <Typography variant="h6" gutterBottom>
-              Junction Quiz
-            </Typography>
-            {currentCell.quiz && currentCell.answerMap ? (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 1fr)",
-                  gridTemplateRows: "repeat(3, auto)",
-                  gap: 8,
-                }}
-              >
+        {/* Floating Quiz Panel aligned to player's row */}
+        <div
+          style={{
+            position: "absolute",
+            left: maze.cols * cellPx + PANEL_GAP,
+            top: player.r * cellPx + cellPx / 2,
+            transform: "translateY(-50%)",
+            width: PANEL_WIDTH,
+            pointerEvents: "auto",
+          }}
+        >
+          <Card variant="outlined">
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Junction Quiz
+              </Typography>
+              {currentCell.quiz && currentCell.answerMap ? (
                 <div
                   style={{
-                    gridColumn: "2 / 3",
-                    gridRow: "1 / 2",
-                    textAlign: "center",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(3, 1fr)",
+                    gridTemplateRows: "repeat(3, auto)",
+                    gap: 8,
                   }}
                 >
-                  {/* North */}
-                  {currentCell.answerMap.N && (
-                    <Button fullWidth variant="outlined">
-                      ↑ {currentCell.answerMap.N}
-                    </Button>
-                  )}
-                </div>
-                <div
-                  style={{
-                    gridColumn: "1 / 2",
-                    gridRow: "2 / 3",
-                    textAlign: "left",
-                  }}
-                >
-                  {/* West */}
-                  {currentCell.answerMap.W && (
-                    <Button fullWidth variant="outlined">
-                      ← {currentCell.answerMap.W}
-                    </Button>
-                  )}
-                </div>
-                <div
-                  style={{
-                    gridColumn: "2 / 3",
-                    gridRow: "2 / 3",
-                    textAlign: "center",
-                  }}
-                >
-                  {/* Center question */}
-                  <Typography
-                    variant="subtitle1"
-                    sx={{ p: 1, borderRadius: 1, bgcolor: "#f5f5f5" }}
+                  <div
+                    style={{
+                      gridColumn: "2 / 3",
+                      gridRow: "1 / 2",
+                      textAlign: "center",
+                    }}
                   >
-                    {currentCell.quiz.question}
+                    {/* North */}
+                    {currentCell.answerMap.N && (
+                      <Button fullWidth variant="outlined">
+                        ↑ {currentCell.answerMap.N}
+                      </Button>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      gridColumn: "1 / 2",
+                      gridRow: "2 / 3",
+                      textAlign: "left",
+                    }}
+                  >
+                    {/* West */}
+                    {currentCell.answerMap.W && (
+                      <Button fullWidth variant="outlined">
+                        ← {currentCell.answerMap.W}
+                      </Button>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      gridColumn: "2 / 3",
+                      gridRow: "2 / 3",
+                      textAlign: "center",
+                    }}
+                  >
+                    {/* Center question */}
+                    <Typography
+                      variant="subtitle1"
+                      sx={{ p: 1, borderRadius: 1, bgcolor: "#f5f5f5" }}
+                    >
+                      {currentCell.quiz.question}
+                    </Typography>
+                  </div>
+                  <div
+                    style={{
+                      gridColumn: "3 / 4",
+                      gridRow: "2 / 3",
+                      textAlign: "right",
+                    }}
+                  >
+                    {/* East */}
+                    {currentCell.answerMap.E && (
+                      <Button fullWidth variant="outlined">
+                        {currentCell.answerMap.E} →
+                      </Button>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      gridColumn: "2 / 3",
+                      gridRow: "3 / 4",
+                      textAlign: "center",
+                    }}
+                  >
+                    {/* South */}
+                    {currentCell.answerMap.S && (
+                      <Button fullWidth variant="outlined">
+                        ↓ {currentCell.answerMap.S}
+                      </Button>
+                    )}
+                  </div>
+                  <Typography
+                    variant="caption"
+                    sx={{ gridColumn: "1 / 4", opacity: 0.7 }}
+                  >
+                    Tip: the correct answer is placed on the side that leads
+                    toward the exit.
                   </Typography>
-                </div>
-                <div
-                  style={{
-                    gridColumn: "3 / 4",
-                    gridRow: "2 / 3",
-                    textAlign: "right",
-                  }}
-                >
-                  {/* East */}
-                  {currentCell.answerMap.E && (
-                    <Button fullWidth variant="outlined">
-                      {currentCell.answerMap.E} →
-                    </Button>
-                  )}
-                </div>
-                <div
-                  style={{
-                    gridColumn: "2 / 3",
-                    gridRow: "3 / 4",
-                    textAlign: "center",
-                  }}
-                >
-                  {/* South */}
-                  {currentCell.answerMap.S && (
-                    <Button fullWidth variant="outlined">
-                      ↓ {currentCell.answerMap.S}
-                    </Button>
-                  )}
-                </div>
-                <Typography
-                  variant="caption"
-                  sx={{ gridColumn: "1 / 4", opacity: 0.7 }}
-                >
-                  Tip: the correct answer is placed on the side that leads
-                  toward the exit.
-                </Typography>
-              </div>
-            ) : (
-              <Typography color="text.secondary">
-                No quiz here — find a junction (yellow cell)!
-              </Typography>
-            )}
 
-            <Stack spacing={1} sx={{ mt: 2 }}>
-              <Typography variant="body2">
-                Player: ({player.r},{player.c})
-              </Typography>
-              <Typography variant="body2">
-                Exit: ({maze.exit.r},{maze.exit.c})
-              </Typography>
-              <Typography variant="body2">
-                Junctions: {highDegree.length}
-              </Typography>
-              <Button
-                size="small"
-                onClick={() => setPathHighlight(shortestPathFrom(maze, player))}
-              >
-                Highlight Fastest Path from Here
-              </Button>
-            </Stack>
-          </CardContent>
-        </Card>
-      </Stack>
+                  <Stack spacing={1} sx={{ mt: 1 }}>
+                    <Typography variant="body2">
+                      Player: ({player.r},{player.c})
+                    </Typography>
+                    <Typography variant="body2">
+                      Exit: ({maze.exit.r},{maze.exit.c})
+                    </Typography>
+                    <Typography variant="body2">
+                      Junctions: {highDegree.length}
+                    </Typography>
+                    <Button
+                      size="small"
+                      onClick={() =>
+                        setPathHighlight(shortestPathFrom(maze, player))
+                      }
+                    >
+                      Highlight Fastest Path from Here
+                    </Button>
+                  </Stack>
+                </div>
+              ) : (
+                <Typography color="text.secondary">
+                  No quiz here — find a junction (yellow cell)!
+                </Typography>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
       {/* Win Modal */}
       <Dialog open={winOpen} onClose={() => {}} disableEscapeKeyDown>
@@ -748,7 +830,6 @@ export default function MazeQuizApp() {
       </Dialog>
 
       {/* Dev API helper */}
-
       <Card variant="outlined">
         <CardContent>
           <Typography variant="h6">Developer API (copy/paste)</Typography>
