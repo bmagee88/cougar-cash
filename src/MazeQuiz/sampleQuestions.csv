@@ -1,0 +1,21 @@
+id,question,correct answer,false answer,false answer,false answer
+1,"What does CPU stand for?","Central Processing Unit","Computer Primary Utility","Control Program Unit","Central Peripheral Unit"
+2,"Which number system is base-2?",Binary,Decimal,Hexadecimal,Octal
+3,"What does RAM provide for a computer?","Temporary working memory","Permanent storage","Graphics rendering","Network connectivity"
+4,"Which algorithm has average O(n log n) time?","Merge sort","Bubble sort","Linear search","Selection sort"
+5,"What is the purpose of an if-statement?","Make a decision based on a condition","Repeat code a fixed number of times","Store multiple values","Convert data types"
+6,"Which data structure uses FIFO order?",Queue,Stack,Tree,"Hash map"
+7,"Which Boolean operator returns true only if both inputs are true?",AND,OR,XOR,NOT
+8,"What does HTML stand for?","HyperText Markup Language","High Tech Machine Language","Hyperlink Transfer Method","Home Tool Markup List"
+9,"Which device stores data even when powered off?",SSD,RAM,Cache,Register
+10,"Which protocol secures HTTP traffic?",TLS,FTP,SMTP,UDP
+11,"What is a variable in programming?","A named storage location for data","An always-true condition","A compiler directive","A random number generator"
+12,"Which loop continues while a condition is true?","while loop","for-each loop always once","do-nothing loop","until-never loop"
+13,"What does 'OOP' stand for?","Object-Oriented Programming","Open Operating Process","Optimal Output Protocol","Ordered Object Pooling"
+14,"Which keyword typically defines a reusable block of code?",function,return,break,case
+15,"What is recursion?","A function calling itself","A loop with a counter","A random shuffle","An error that crashes code"
+16,"Which file extension is most likely a plain text source code file?",.py,.jpg,.mp3,.exe
+17,"Which is a benefit of using functions?","Code reuse and organization","Slower execution","More syntax errors guaranteed","Removes need for testing"
+18,"Which statement about arrays is true?","They store elements in contiguous memory","They always grow automatically","They store key-value pairs by default","They are unordered by design"
+19,"What does a compiler do?","Translates source code to machine code","Executes machine code directly","Manages hardware power states","Sends packets across networks"
+20,"Which practice improves cybersecurity?","Using strong unique passwords","Sharing logins for convenience","Clicking unknown links","Disabling updates permanently"
