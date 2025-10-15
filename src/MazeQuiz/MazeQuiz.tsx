@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 
 /**
- * Maze + Quiz with Visibility Modes (God / Blind+Memory / Blind-Now)
+ * Maze + Quiz with Visibility Modes (God / Blind+Memory / Blind-Now / Absolute Blind)
  * - Perfect maze generation (unique paths)
  * - Player movement (WASD / Arrow keys), wall and bounds checks
  * - Click any cell to highlight shortest path to exit; Esc/Clear to unhighlight
@@ -38,7 +38,7 @@ const DELTA: Record<Dir, { dr: number; dc: number }> = {
   W: { dr: 0, dc: -1 },
 };
 
-type VizMode = "god" | "blind_memory" | "blind_now";
+type VizMode = "god" | "blind_memory" | "blind_now" | "absolute_blind";
 
 export interface QuizQuestion {
   id: string;
@@ -331,7 +331,8 @@ export default function MazeQuizApp() {
 
   const highDegree = useMemo(() => findHighDegreeCells(maze), [maze]);
 
-  const computeVisibleCells = useCallback((m: Maze, pos: GridPoint) => {
+  // Straightaway rays from position
+  const computeVisibleRays = useCallback((m: Maze, pos: GridPoint) => {
     const s = new Set<string>();
     s.add(key(pos.r, pos.c)); // current cell always visible
     for (const d of DIRS) {
@@ -348,23 +349,43 @@ export default function MazeQuizApp() {
     return s;
   }, []);
 
-  const currentVisible = useMemo(
-    () => computeVisibleCells(maze, player),
-    [maze, player, computeVisibleCells]
+  // Only immediate adjacent cells (no rays)
+  const computeAdjacentVisible = useCallback((m: Maze, pos: GridPoint) => {
+    const s = new Set<string>();
+    s.add(key(pos.r, pos.c));
+    for (const d of DIRS) {
+      if (!m.cells[pos.r][pos.c].walls[d]) {
+        const nr = pos.r + DELTA[d].dr;
+        const nc = pos.c + DELTA[d].dc;
+        if (nr >= 0 && nc >= 0 && nr < m.rows && nc < m.cols) {
+          s.add(key(nr, nc));
+        }
+      }
+    }
+    return s;
+  }, []);
+
+  const currentRays = useMemo(
+    () => computeVisibleRays(maze, player),
+    [maze, player, computeVisibleRays]
   );
 
-  // When switching *into* blind_memory, merge the current visibility into memory.
+  const currentAdjacent = useMemo(
+    () => computeAdjacentVisible(maze, player),
+    [maze, player, computeAdjacentVisible]
+  );
+
+  // When switching *into* blind_memory, merge current rays into memory; memory persists across other mode toggles.
   useEffect(() => {
     if (vizMode === "blind_memory") {
       setExplored(prev => {
         const merged = new Set<string>();
         prev.forEach(v => merged.add(v));
-        currentVisible.forEach(v => merged.add(v));
+        currentRays.forEach(v => merged.add(v));
         return merged;
       });
     }
-    // NOTE: We don't clear memory when leaving blind_memory — it persists.
-  }, [vizMode, currentVisible]);
+  }, [vizMode, currentRays]);
 
   // Clamp floating quiz panel within grid vertical bounds
   useLayoutEffect(() => {
@@ -373,14 +394,15 @@ export default function MazeQuizApp() {
     const desired = player.r * cellPx + cellPx / 2 - ph / 2; // center on player row
     const clamped = Math.max(0, Math.min(desired, gridH - ph));
     setPanelTop(clamped);
-  }, [player.r, maze.rows, currentVisible]); // recalc when row or content changes
+  }, [player.r, maze.rows, currentRays, currentAdjacent]);
 
   const isCellVisible = (r: number, c: number) => {
     if (vizMode === "god") return true;
-    const keyRC = key(r, c);
-    if (vizMode === "blind_now") return currentVisible.has(keyRC);
-    // blind_memory => show union of explored and current rays
-    return explored.has(keyRC) || currentVisible.has(keyRC);
+    const id = key(r, c);
+    if (vizMode === "blind_now") return currentRays.has(id);
+    if (vizMode === "absolute_blind") return currentAdjacent.has(id);
+    // blind_memory => union of explored and current rays
+    return explored.has(id) || currentRays.has(id);
   };
 
   const regenerate = useCallback(() => {
@@ -393,13 +415,13 @@ export default function MazeQuizApp() {
     setPathHighlight([]);
     setWinOpen(false);
     // Reset memory on a new maze
-    const vis = computeVisibleCells(m, start);
     if (vizMode === "blind_memory") {
+      const vis = computeVisibleRays(m, start);
       setExplored(vis);
     } else {
       setExplored(new Set());
     }
-  }, [rows, cols, quizPool, vizMode, computeVisibleCells]);
+  }, [rows, cols, quizPool, vizMode, computeVisibleRays]);
 
   // click-to-highlight shortest path from any cell
   const onCellClick = (r: number, c: number) => {
@@ -417,7 +439,7 @@ export default function MazeQuizApp() {
     setPlayer(next);
     setPathHighlight([]); // auto-clear highlight on move
     if (vizMode === "blind_memory") {
-      const vis = computeVisibleCells(maze, next);
+      const vis = computeVisibleRays(maze, next);
       setExplored(prev => {
         const merged = new Set<string>();
         prev.forEach(v => merged.add(v));
@@ -426,7 +448,7 @@ export default function MazeQuizApp() {
       });
     }
     if (next.r === maze.exit.r && next.c === maze.exit.c) setWinOpen(true);
-  }, [player, maze, vizMode, computeVisibleCells]);
+  }, [player, maze, vizMode, computeVisibleRays]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -481,6 +503,7 @@ export default function MazeQuizApp() {
           <ToggleButton value="god">God</ToggleButton>
           <ToggleButton value="blind_memory">Blind + Memory</ToggleButton>
           <ToggleButton value="blind_now">Blind (No Memory)</ToggleButton>
+          <ToggleButton value="absolute_blind">Absolute Blind</ToggleButton>
         </ToggleButtonGroup>
         <Button variant="contained" onClick={regenerate}>Regenerate</Button>
         <Button variant="outlined" onClick={() => setPathHighlight([])}>Clear Highlight</Button>
