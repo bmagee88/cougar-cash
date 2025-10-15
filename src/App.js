@@ -13,6 +13,7 @@ import TimerApp from "./TimerApp/TimerApp";
 import Demo from "./components/FetchProgressModal/Demo";
 import Oroboros from "./oroboros/Oroboros";
 import MazeQuiz from "./MazeQuiz/MazeQuiz";
+import PieTimer from "./NewTimer/PieTimer";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -58,6 +59,9 @@ function App() {
           <Route
             path='/maze-quiz'
             element={<MazeQuiz />}></Route>
+          <Route
+            path='/pie-timer'
+            element={<PieTimer />}></Route>
         </Routes>
       </Router>
     </Box>
