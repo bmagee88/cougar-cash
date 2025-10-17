@@ -18,89 +18,62 @@ import {
   Divider,
   Tooltip,
   Paper,
+  Alert,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
-import SaveIcon from "@mui/icons-material/Save";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import CloseIcon from "@mui/icons-material/Close";
 
 /**
- * Daily Schedule with Pie Timer — FULL FILE
- * - Create/Edit/Delete Segments, Periods, Day Schedules, Week Schedules
- * - LocalStorage persistence
- * - Live clock + SVG pie timer for active period and segments
+ * Daily Schedule with Pie Timer — Add Day Schedule modal (no library dropdown)
+ * - Left: Now + today’s weekday + today’s schedule, Pie timer, Today’s periods
+ * - Right: Week mapping panel (week select/rename/add/delete, per-DOW mapping, Add Day Schedule modal, Edit Day Schedules library editor)
+ * - Day Schedules are a global library (no weekday field)
+ * - LocalStorage mirrored in React state
  */
 
-// Small confirm dialog to avoid `confirm` (ESLint no-restricted-globals)
-function ConfirmDialog({
-  open,
-  message,
-  onCancel,
-  onConfirm,
-}: {
-  open: boolean;
-  message: string;
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
-  return (
-    <Dialog open={open} onClose={onCancel}>
-      <DialogTitle>Confirm</DialogTitle>
-      <DialogContent>
-        <Typography sx={{ mt: 1 }}>{message}</Typography>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button onClick={onConfirm} variant="contained" color="error">Delete</Button>
-      </DialogActions>
-    </Dialog>
-  );
-}
+/* ------------------ Types ------------------ */
 
-// ------------------ Types ------------------
-
-type HHMM = `${number}${number}:${number}${number}`; // 24h time string, e.g. "11:05"
+type HHMM = `${number}${number}:${number}${number}`;
 
 type Segment = {
   title: string;
-  color: string; // any valid CSS color
-  start: HHMM; // inclusive
-  end: HHMM; // exclusive
+  color: string;
+  start: HHMM;
+  end: HHMM;
 };
 
 type Period = {
   name: string;
-  start: HHMM; // inclusive
-  end: HHMM; // exclusive
-  segments: Segment[]; // non-overlapping, fully covering [start,end)
+  start: HHMM;
+  end: HHMM;
+  segments: Segment[];
 };
 
 type DaySchedule = {
-  name: string;
-  weekday: number; // 0=Sun..6=Sat
-  periods: Period[]; // non-overlapping
+  name: string; // unique in library
+  periods: Period[];
 };
 
 type WeekSchedule = {
-  name: string;
-  // map weekday -> day schedule name to load
-  mapping: Partial<Record<number, string>>; // e.g., {1: "FullDay", 5: "HalfDay"}
+  name: string; // unique
+  mapping: Partial<Record<number, string>>; // weekday -> day schedule name
 };
 
-// ------------------ Local Storage Helpers ------------------
+/* ------------------ LS keys + helpers ------------------ */
 
 const LS_KEYS = {
-  DAY_SCHEDULES: "scheduler:daySchedules", // Record<string weekday, Record<string scheduleName, DaySchedule>>
-  WEEK_SCHEDULES: "scheduler:weekSchedules", // Record<string weekScheduleName, WeekSchedule>
-  ACTIVE_WEEK_SCHEDULE: "scheduler:activeWeekSchedule", // selected week schedule name
-  ACTIVE_DAY_SELECTIONS: "scheduler:activeDaySelections", // Record<string weekday, string dayScheduleName>
+  DAY_SCHEDULES: "scheduler:libraryDaySchedules",
+  WEEK_SCHEDULES: "scheduler:weekSchedules",
+  ACTIVE_WEEK_SCHEDULE: "scheduler:activeWeekSchedule",
+  // legacy (auto-migrated if present)
+  LEGACY_DAY_SCHEDULES: "scheduler:daySchedules",
+  LEGACY_ACTIVE_DAY_SELECTIONS: "scheduler:activeDaySelections",
 } as const;
 
-type DaySchedulesStore = Record<string, Record<string, DaySchedule>>; // {"1": {"FullDay": DaySchedule, ...}, ...}
-
+type DayScheduleLibrary = Record<string, DaySchedule>;
 type WeekSchedulesStore = Record<string, WeekSchedule>;
-
-type ActiveDaySelections = Record<string, string>; // {"1":"FullDay","5":"HalfDay"}
 
 function loadJSON<T>(key: string, fallback: T): T {
   try {
@@ -111,108 +84,128 @@ function loadJSON<T>(key: string, fallback: T): T {
     return fallback;
   }
 }
-
 function saveJSON<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
-// ------------------ Time Utils ------------------
+/* ------------------ Time utils ------------------ */
 
 function toMinutes(t: HHMM): number {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + m;
 }
-
 function fromMinutes(mins: number): HHMM {
   const h = Math.floor(mins / 60) % 24;
   const m = mins % 60;
   const pad = (n: number) => (n < 10 ? `0${n}` : `${n}`);
   return `${pad(h)}:${pad(m)}` as HHMM;
 }
-
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n));
 }
-
 function within(now: number, start: number, end: number) {
   return now >= start && now < end;
 }
-
 function weekdayName(i: number) {
   return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i];
 }
 
-// ------------------ Defaults ------------------
+/* ------------------ Defaults + Migration ------------------ */
 
-function makeDefaultDay(weekday: number, name: string): DaySchedule {
-  // Example: Period 3 with three 20-minute segments 11:00-12:00
-  const p3Start: HHMM = "11:00";
-  const p3End: HHMM = "12:00";
-  const segs: Segment[] = [
-    { title: "Seg 1", color: "#90caf9", start: "11:00", end: "11:20" },
-    { title: "Seg 2", color: "#ffcc80", start: "11:20", end: "11:40" },
-    { title: "Seg 3", color: "#a5d6a7", start: "11:40", end: "12:00" },
-  ];
-  const periods: Period[] = [
-    { name: "Period 3", start: p3Start, end: p3End, segments: segs },
-  ];
-  return { name, weekday, periods };
+function makeDefaultSchedule(name: string): DaySchedule {
+  return {
+    name,
+    periods: [
+      {
+        name: "Period 3",
+        start: "11:00",
+        end: "12:00",
+        segments: [
+          { title: "Seg 1", color: "#90caf9", start: "11:00", end: "11:20" },
+          { title: "Seg 2", color: "#ffcc80", start: "11:20", end: "11:40" },
+          { title: "Seg 3", color: "#a5d6a7", start: "11:40", end: "12:00" },
+        ],
+      },
+    ],
+  };
 }
 
-function ensureDefaults() {
-  const dayStore = loadJSON<DaySchedulesStore>(LS_KEYS.DAY_SCHEDULES, {});
-  const weekStore = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-  const activeDays = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
+function seedIfEmpty() {
+  let lib = loadJSON<DayScheduleLibrary>(LS_KEYS.DAY_SCHEDULES, {});
+  let weeks = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+  const activeWeek = localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE);
 
-  // Seed Monday FullDay/HalfDay if empty
-  if (Object.keys(dayStore).length === 0) {
-    for (let d = 0; d < 7; d++) {
-      dayStore[String(d)] = {
-        FullDay: makeDefaultDay(d, "FullDay"),
-        HalfDay: (() => {
-          const base = makeDefaultDay(d, "HalfDay");
-          base.periods = [
-            {
-              name: "Period 3 (Half)",
-              start: "11:00",
-              end: "11:30",
-              segments: [
-                { title: "Seg 1", color: "#ce93d8", start: "11:00", end: "11:15" },
-                { title: "Seg 2", color: "#ffab91", start: "11:15", end: "11:30" },
-              ],
-            },
-          ];
-          return base;
-        })(),
-      };
-    }
-    saveJSON(LS_KEYS.DAY_SCHEDULES, dayStore);
+  // migrate legacy per-weekday store into library if present
+  const legacy = loadJSON<Record<string, Record<string, any>>>(LS_KEYS.LEGACY_DAY_SCHEDULES, {});
+  if (Object.keys(lib).length === 0 && Object.keys(legacy).some((k) => /^\d$/.test(k))) {
+    const collected: DayScheduleLibrary = {};
+    Object.values(legacy).forEach((byName) => {
+      Object.values(byName).forEach((sched: any) => {
+        const name = sched?.name ?? "Imported";
+        if (!collected[name]) {
+          collected[name] = {
+            name,
+            periods: (sched.periods ?? []).map((p: any) => ({
+              name: p.name,
+              start: p.start,
+              end: p.end,
+              segments: (p.segments ?? []).map((s: any) => ({
+                title: s.title,
+                color: s.color,
+                start: s.start,
+                end: s.end,
+              })),
+            })),
+          };
+        }
+      });
+    });
+    lib = collected;
+    saveJSON(LS_KEYS.DAY_SCHEDULES, lib);
   }
 
-  if (Object.keys(weekStore).length === 0) {
-    const defaultWeek: WeekSchedule = {
-      name: "DefaultWeek",
-      mapping: { 1: "FullDay", 2: "FullDay", 3: "FullDay", 4: "FullDay", 5: "HalfDay" },
+  if (Object.keys(lib).length === 0) {
+    lib = {
+      FullDay: makeDefaultSchedule("FullDay"),
+      HalfDay: {
+        name: "HalfDay",
+        periods: [
+          {
+            name: "Period 3 (Half)",
+            start: "11:00",
+            end: "11:30",
+            segments: [
+              { title: "Seg 1", color: "#ce93d8", start: "11:00", end: "11:15" },
+              { title: "Seg 2", color: "#ffab91", start: "11:15", end: "11:30" },
+            ],
+          },
+        ],
+      },
     };
-    weekStore[defaultWeek.name] = defaultWeek;
-    saveJSON(LS_KEYS.WEEK_SCHEDULES, weekStore);
+    saveJSON(LS_KEYS.DAY_SCHEDULES, lib);
   }
 
-  if (Object.keys(activeDays).length === 0) {
-    const mapping: ActiveDaySelections = {};
-    for (let d = 0; d < 7; d++) mapping[String(d)] = "FullDay";
-    saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, mapping);
+  if (Object.keys(weeks).length === 0) {
+    weeks = {
+      DefaultWeek: {
+        name: "DefaultWeek",
+        mapping: { 1: "FullDay", 2: "FullDay", 3: "FullDay", 4: "FullDay", 5: "HalfDay" },
+      },
+    };
+    saveJSON(LS_KEYS.WEEK_SCHEDULES, weeks);
   }
+
+  if (!activeWeek) {
+    localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, "DefaultWeek");
+  }
+
+  // clean up legacy selections
+  localStorage.removeItem(LS_KEYS.LEGACY_ACTIVE_DAY_SELECTIONS);
 }
 
-// ------------------ Pie Timer (SVG) ------------------
+/* ------------------ Pie Timer (SVG) ------------------ */
 
-type PieTimerProps = {
-  period?: Period | null;
-  nowMinutes: number; // minutes since midnight (+ seconds for smooth needle)
-};
-
-function PieTimer({ period, nowMinutes }: PieTimerProps) {
+function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: number }) {
   const size = 260;
   const r = size / 2 - 8;
   const cx = size / 2;
@@ -231,15 +224,12 @@ function PieTimer({ period, nowMinutes }: PieTimerProps) {
   const pStart = toMinutes(period.start);
   const pEnd = toMinutes(period.end);
   const pDur = Math.max(1, pEnd - pStart);
-
-  // minute offset within period -> angle in degrees [0, 360)
   const toAngle = (m: number) => (m / pDur) * 360;
 
   const polar = (angleDeg: number) => {
     const rad = (Math.PI * (angleDeg - 90)) / 180;
     return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
   };
-
   const arcPath = (startDeg: number, endDeg: number) => {
     const a0 = startDeg % 360;
     const a1 = endDeg % 360;
@@ -260,7 +250,6 @@ function PieTimer({ period, nowMinutes }: PieTimerProps) {
 
   const progressAngle = toAngle(clamp(nowMinutes, pStart, pEnd) - pStart);
   const pEndPt = polar(progressAngle);
-
   const currentSeg = period.segments.find((s) => within(nowMinutes, toMinutes(s.start), toMinutes(s.end)));
 
   return (
@@ -296,160 +285,607 @@ function PieTimer({ period, nowMinutes }: PieTimerProps) {
   );
 }
 
-// ------------------ Day Schedule Editor ------------------
+/* ------------------ Library Editor (existing schedules) ------------------ */
 
-type DayScheduleEditorProps = {
+function LibraryEditor({
+  open,
+  onClose,
+  lib,
+  selectedName,
+  onSaveLib,
+  onDeleteSchedule,
+}: {
   open: boolean;
   onClose: () => void;
-  initial?: DaySchedule;
-  onSave: (schedule: DaySchedule) => void;
+  lib: DayScheduleLibrary;
+  selectedName?: string;
+  onSaveLib: (updated: DayScheduleLibrary) => void;
+  onDeleteSchedule: (name: string) => void;
+}) {
+  const [selected, setSelected] = useState<string>("");
+  const [working, setWorking] = useState<DayScheduleLibrary>({});
+  const [order, setOrder] = useState<string[]>([]);
+  const [isDirty, setDirty] = useState(false);
+
+  // Rename dialog state
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
+
+  // Discard confirmation
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const requestClose = () => {
+    if (isDirty) setDiscardOpen(true);
+    else onClose();
+  };
+  const confirmDiscard = () => {
+    setDiscardOpen(false);
+    setDirty(false);
+    onClose();
+  };
+
+  // Initialize on open (take a snapshot of lib)
+  useEffect(() => {
+    if (!open) return;
+    const clone = structuredClone(lib);
+    setWorking(clone);
+    const keys = Object.keys(lib);
+    setOrder(keys);
+    const initial =
+      (selectedName && lib[selectedName] && selectedName) ||
+      keys[0] ||
+      "";
+    setSelected(initial);
+    setDirty(false);
+  }, [open]); // only when opened
+
+  // If parent changes lib while editor is open, merge in a non-destructive way
+  useEffect(() => {
+    if (!open) return;
+    // Only merge additions/removals if user hasn't edited (avoid stomping work-in-progress)
+    if (!isDirty) {
+      const clone = structuredClone(lib);
+      setWorking(clone);
+      const keys = Object.keys(lib);
+      setOrder((prev) => {
+        const kept = prev.filter((k) => keys.includes(k));
+        const additions = keys.filter((k) => !kept.includes(k));
+        return [...kept, ...additions];
+      });
+      setSelected((prevSel) => (clone[prevSel] ? prevSel : keys[0] || ""));
+    }
+  }, [lib, open, isDirty]);
+
+  const current = selected ? working[selected] : undefined;
+
+  /* ---------- Helpers to mark dirty and update ---------- */
+  const mark = <T,>(updater: (prev: T) => T) =>
+    (prev: T) => {
+      setDirty(true);
+      return updater(prev);
+    };
+
+  /* ---------- Schedule-level actions ---------- */
+  const addSchedule = () => {
+    const base = "NewSchedule";
+    let name = base;
+    let i = 1;
+    while (working[name]) name = `${base}-${i++}`;
+    const nextSched = makeDefaultSchedule(name);
+    setWorking(mark((w) => ({ ...w, [name]: nextSched })));
+    setOrder((prev) => [...prev, name]);
+    setSelected(name);
+  };
+
+  const handleScheduleDelete = (name: string) => {
+    // mark dirty and remove locally; parent will get final copy on Save
+    setWorking(mark((w) => {
+      const copy = { ...w };
+      delete copy[name];
+      return copy;
+    }));
+    setOrder((prev) => prev.filter((n) => n !== name));
+    setSelected((prevSel) => {
+      if (prevSel !== name) return prevSel;
+      const next = order.filter((n) => n !== name)[0];
+      if (next && working[next]) return next;
+      const keys = Object.keys(working).filter((k) => k !== name);
+      return keys[0] || "";
+    });
+    // Note: we DO NOT call onDeleteSchedule now; deletion is finalized on Save
+  };
+
+  const openRename = () => {
+    if (!selected) return;
+    setRenameValue(selected);
+    setRenameOpen(true);
+  };
+  const applyRename = () => {
+    const oldName = selected;
+    const newName = renameValue.trim();
+    setRenameOpen(false);
+    if (!oldName || !newName || oldName === newName || working[newName]) return;
+
+    // Update order in place
+    setOrder((prev) => {
+      const idx = prev.indexOf(oldName);
+      if (idx === -1) return prev;
+      const next = [...prev];
+      next[idx] = newName;
+      return next;
+    });
+
+    // Move map entry
+    setWorking(mark((w) => {
+      const copy = { ...w };
+      copy[newName] = { ...copy[oldName], name: newName };
+      delete copy[oldName];
+      return copy;
+    }));
+
+    setSelected(newName);
+  };
+
+  /* ---------- Period/Segment editing (controlled) ---------- */
+  const setPeriodField = (pIdx: number, field: keyof Period, value: string) => {
+    if (!current) return;
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.map((p, i) => (i === pIdx ? { ...p, [field]: value } : p));
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
+  };
+  const addPeriod = () => {
+    if (!current) return;
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const newP: Period = {
+        name: `Period ${sched.periods.length + 1}`,
+        start: "10:00",
+        end: "11:00",
+        segments: [
+          { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
+          { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
+        ],
+      };
+      return { ...w, [cname]: { ...sched, periods: [...sched.periods, newP] } };
+    }));
+  };
+  const removePeriod = (pIdx: number) => {
+    if (!current) return;
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.filter((_, i) => i !== pIdx);
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
+  };
+
+  const setSegmentField = (pIdx: number, sIdx: number, field: keyof Segment, value: string) => {
+    if (!current) return;
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.map((p, i) =>
+        i === pIdx
+          ? { ...p, segments: p.segments.map((s, j) => (j === sIdx ? { ...s, [field]: value } : s)) }
+          : p
+      );
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
+  };
+  const addSegment = (pIdx: number) => {
+    if (!current) return;
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const p = sched.periods[pIdx];
+      const lastEnd = p.segments[p.segments.length - 1]?.end ?? p.start;
+      const proposedEnd = fromMinutes(Math.min(toMinutes(p.end), toMinutes(lastEnd) + 10));
+      const newSeg: Segment = { title: `Seg ${p.segments.length + 1}`, color: "#c5e1a5", start: lastEnd, end: proposedEnd };
+      const periods = sched.periods.map((pp, i) =>
+        i === pIdx ? { ...pp, segments: [...pp.segments, newSeg] } : pp
+      );
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
+  };
+  const removeSegment = (pIdx: number, sIdx: number) => {
+    if (!current) return;
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.map((pp, i) =>
+        i === pIdx ? { ...pp, segments: pp.segments.filter((_, j) => j !== sIdx) } : pp
+      );
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
+  };
+
+  /* ---------- Save ---------- */
+const handleSave = () => {
+  // Compute which schedules were deleted during this edit session
+  const beforeKeys = Object.keys(lib);                     // string[]
+  const afterSet = new Set(Object.keys(working));          // Set<string>
+  const deleted = beforeKeys.filter((k) => !afterSet.has(k));
+
+  // Scrub week mappings for deleted schedules
+  deleted.forEach((name) => onDeleteSchedule(name));
+
+  onSaveLib(working);
+  setDirty(false);
+  onClose();
 };
 
-function DayScheduleEditor({ open, onClose, initial, onSave }: DayScheduleEditorProps) {
-  const [name, setName] = useState(initial?.name ?? "NewDay");
-  const [weekday, setWeekday] = useState<number>(initial?.weekday ?? new Date().getDay());
-  const [periods, setPeriods] = useState<Period[]>(initial?.periods ?? []);
+
+  /* ---------- Render ---------- */
+  return (
+    <Dialog
+      open={open}
+      onClose={requestClose} // intercept backdrop/Escape
+      fullWidth
+      maxWidth="md"
+    >
+      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        Edit Day Schedules
+        {/* X acts as Cancel with discard prompt */}
+        <IconButton onClick={requestClose} size="small" aria-label="Cancel">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          {/* Top controls: schedule select + rename (icon) + add + delete */}
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+            <FormControl sx={{ minWidth: 240 }}>
+              <InputLabel id="lib-select-label">Schedule</InputLabel>
+              <Select
+                labelId="lib-select-label"
+                label="Schedule"
+                value={selected || ""}
+                onChange={(e) => setSelected(String(e.target.value))}
+              >
+                {order.map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Rename via dialog (pencil) */}
+            <Tooltip title="Rename schedule">
+              <span>
+                <IconButton onClick={openRename} disabled={!selected}>
+                  <EditIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+
+            <Tooltip title="New schedule">
+              <IconButton onClick={addSchedule}>
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
+
+            <Tooltip title="Delete selected schedule">
+              <span>
+                <IconButton
+                  color="error"
+                  disabled={!selected}
+                  onClick={() => selected && handleScheduleDelete(selected)}
+                >
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
+
+          {!current ? (
+            <Alert severity="info">Select or create a schedule to edit.</Alert>
+          ) : (
+            <>
+              <Divider textAlign="left">Periods</Divider>
+              <Stack spacing={2}>
+                {current.periods.map((p, pIdx) => (
+                  <Paper key={pIdx} variant="outlined" sx={{ p: 2 }}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                      <TextField
+                        label="Period Name"
+                        value={p.name}
+                        onChange={(e) => setPeriodField(pIdx, "name", e.target.value)}
+                        sx={{ minWidth: 180 }}
+                      />
+                      <TextField
+                        label="Start (HH:MM)"
+                        value={p.start}
+                        onChange={(e) => setPeriodField(pIdx, "start", e.target.value as HHMM)}
+                        sx={{ width: 130 }}
+                      />
+                      <TextField
+                        label="End (HH:MM)"
+                        value={p.end}
+                        onChange={(e) => setPeriodField(pIdx, "end", e.target.value as HHMM)}
+                        sx={{ width: 130 }}
+                      />
+                      <Tooltip title="Delete period">
+                        <IconButton color="error" onClick={() => removePeriod(pIdx)}>
+                          <DeleteOutlineIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Button onClick={() => addSegment(pIdx)}>+ Segment</Button>
+                    </Stack>
+
+                    <Stack spacing={1} sx={{ mt: 1 }}>
+                      {p.segments.map((s, sIdx) => (
+                        <Stack key={sIdx} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                          <TextField
+                            label="Title"
+                            value={s.title}
+                            onChange={(e) => setSegmentField(pIdx, sIdx, "title", e.target.value)}
+                            sx={{ minWidth: 160 }}
+                          />
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <input
+                              type="color"
+                              value={s.color}
+                              onChange={(e) => setSegmentField(pIdx, sIdx, "color", e.target.value)}
+                              style={{ width: 40, height: 40, border: "none", background: "transparent" }}
+                              aria-label="Segment color"
+                            />
+                            <TextField
+                              label="Color (hex)"
+                              value={s.color}
+                              onChange={(e) => setSegmentField(pIdx, sIdx, "color", e.target.value)}
+                              sx={{ width: 140 }}
+                            />
+                          </Box>
+                          <TextField
+                            label="Start"
+                            value={s.start}
+                            onChange={(e) => setSegmentField(pIdx, sIdx, "start", e.target.value as HHMM)}
+                            sx={{ width: 120 }}
+                          />
+                          <TextField
+                            label="End"
+                            value={s.end}
+                            onChange={(e) => setSegmentField(pIdx, sIdx, "end", e.target.value as HHMM)}
+                            sx={{ width: 120 }}
+                          />
+                          <Tooltip title="Delete segment">
+                            <IconButton color="error" size="small" onClick={() => removeSegment(pIdx, sIdx)}>
+                              <DeleteOutlineIcon />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      ))}
+                    </Stack>
+                  </Paper>
+                ))}
+              </Stack>
+
+              <Button onClick={addPeriod} startIcon={<AddIcon />} sx={{ mt: 1 }}>
+                Add Period
+              </Button>
+            </>
+          )}
+        </Stack>
+      </DialogContent>
+
+      {/* Rename dialog */}
+      <Dialog open={renameOpen} onClose={() => setRenameOpen(false)}>
+        <DialogTitle>Rename Schedule</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Schedule name"
+            fullWidth
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRenameOpen(false)}>Cancel</Button>
+          <Button variant="contained" onClick={applyRename}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Discard changes confirm */}
+      <Dialog open={discardOpen} onClose={() => setDiscardOpen(false)}>
+        <DialogTitle>Discard changes?</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>
+            You have unsaved changes. Do you want to discard them?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDiscardOpen(false)}>Keep editing</Button>
+          <Button variant="contained" color="error" onClick={confirmDiscard}>
+            Discard
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Footer: Save only (Close is now Save) */}
+      <DialogActions>
+        <Button variant="contained" onClick={handleSave}>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+
+
+
+
+
+/* ------------------ Add Day Schedule Modal (NEW, no library dropdown) ------------------ */
+
+function AddScheduleModal({
+  open,
+  onClose,
+  onCreate,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCreate: (schedule: DaySchedule) => void;
+}) {
+  const [schedule, setSchedule] = useState<DaySchedule>(() => makeDefaultSchedule("NewSchedule"));
 
   useEffect(() => {
-    if (open) {
-      setName(initial?.name ?? "NewDay");
-      setWeekday(initial?.weekday ?? new Date().getDay());
-      setPeriods(initial?.periods ?? []);
-    }
-  }, [open, initial]);
+    if (open) setSchedule(makeDefaultSchedule("NewSchedule"));
+  }, [open]);
 
-  const addPeriod = () => {
-    const p: Period = {
-      name: `Period ${periods.length + 1}`,
-      start: "10:00",
-      end: "11:00",
-      segments: [
-        { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
-        { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
+  const setName = (name: string) => setSchedule((s) => ({ ...s, name }));
+  const setPeriodField = (idx: number, field: keyof Period, value: string) =>
+    setSchedule((s) => ({
+      ...s,
+      periods: s.periods.map((p, i) => (i === idx ? { ...p, [field]: value } : p)),
+    }));
+  const addPeriod = () =>
+    setSchedule((s) => ({
+      ...s,
+      periods: [
+        ...s.periods,
+        {
+          name: `Period ${s.periods.length + 1}`,
+          start: "10:00",
+          end: "11:00",
+          segments: [
+            { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
+            { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
+          ],
+        },
       ],
-    };
-    setPeriods((ps) => [...ps, p]);
-  };
+    }));
+  const removePeriod = (idx: number) =>
+    setSchedule((s) => ({ ...s, periods: s.periods.filter((_, i) => i !== idx) }));
 
-  const removePeriod = (idx: number) => {
-    setPeriods((ps) => ps.filter((_, i) => i !== idx));
-  };
+  const addSegment = (pIdx: number) =>
+    setSchedule((s) => {
+      const p = s.periods[pIdx];
+      const lastEnd = p.segments[p.segments.length - 1]?.end ?? p.start;
+      const proposedEnd = fromMinutes(Math.min(toMinutes(p.end), toMinutes(lastEnd) + 10));
+      const newSeg: Segment = { title: `Seg ${p.segments.length + 1}`, color: "#c5e1a5", start: lastEnd, end: proposedEnd };
+      return {
+        ...s,
+        periods: s.periods.map((pp, i) => (i === pIdx ? { ...pp, segments: [...pp.segments, newSeg] } : pp)),
+      };
+    });
 
-  const updatePeriod = (idx: number, patch: Partial<Period>) => {
-    setPeriods((ps) => ps.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
-  };
+  const setSegmentField = (pIdx: number, sIdx: number, field: keyof Segment, value: string) =>
+    setSchedule((s) => ({
+      ...s,
+      periods: s.periods.map((p, i) =>
+        i === pIdx ? { ...p, segments: p.segments.map((seg, j) => (j === sIdx ? { ...seg, [field]: value } : seg)) } : p
+      ),
+    }));
+  const removeSegment = (pIdx: number, sIdx: number) =>
+    setSchedule((s) => ({
+      ...s,
+      periods: s.periods.map((p, i) =>
+        i === pIdx ? { ...p, segments: p.segments.filter((_, j) => j !== sIdx) } : p
+      ),
+    }));
 
-  const updateSegment = (pIdx: number, sIdx: number, patch: Partial<Segment>) => {
-    setPeriods((ps) =>
-      ps.map((p, i) => {
-        if (i !== pIdx) return p;
-        const segs = p.segments.map((s, j) => (j === sIdx ? { ...s, ...patch } : s));
-        return { ...p, segments: segs };
-      })
-    );
-  };
-
-  const addSegment = (pIdx: number) => {
-    setPeriods((ps) =>
-      ps.map((p, i) => {
-        if (i !== pIdx) return p;
-        const lastEnd = p.segments[p.segments.length - 1]?.end ?? p.start;
-        const proposedEnd = fromMinutes(Math.min(toMinutes(p.end), toMinutes(lastEnd) + 10));
-        const newSeg: Segment = { title: `Seg ${p.segments.length + 1}`, color: "#c5e1a5", start: lastEnd, end: proposedEnd };
-        return { ...p, segments: [...p.segments, newSeg] };
-      })
-    );
-  };
-
-  const removeSegment = (pIdx: number, sIdx: number) => {
-    setPeriods((ps) =>
-      ps.map((p, i) => {
-        if (i !== pIdx) return p;
-        const segs = p.segments.filter((_, j) => j !== sIdx);
-        return { ...p, segments: segs };
-      })
-    );
-  };
-
-  const validate = (): string | null => {
-    if (!name.trim()) return "Name is required";
-    for (const p of periods) {
-      if (toMinutes(p.end) <= toMinutes(p.start)) return `Period ${p.name} has end <= start`;
-      // Validate segments cover the period and are non-overlapping & ordered
-      const segs = [...p.segments].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
-      let cur = toMinutes(p.start);
-      for (const s of segs) {
-        if (toMinutes(s.start) !== cur) return `${p.name}: segment ${s.title} must start at ${fromMinutes(cur)}`;
-        if (toMinutes(s.end) <= toMinutes(s.start)) return `${p.name}: segment ${s.title} end <= start`;
-        cur = toMinutes(s.end);
-      }
-      if (cur !== toMinutes(p.end)) return `${p.name}: segments must end at ${p.end}`;
-    }
-    // Period overlaps
-    const sorted = [...periods].sort((a, b) => toMinutes(a.start) - toMinutes(b.start));
-    for (let i = 1; i < sorted.length; i++) {
-      if (toMinutes(sorted[i].start) < toMinutes(sorted[i - 1].end)) {
-        return `Periods ${sorted[i - 1].name} and ${sorted[i].name} overlap`;
-      }
-    }
-    return null;
-  };
-
-  const handleSave = () => {
-    const err = validate();
-    if (err) {
-      alert(err);
-      return;
-    }
-    onSave({ name: name.trim(), weekday, periods });
+  const handleCreate = () => {
+    const trimmed = schedule.name.trim() || "NewSchedule";
+    onCreate({ ...schedule, name: trimmed });
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>{initial ? "Edit Day Schedule" : "New Day Schedule"}</DialogTitle>
-      <DialogContent>
-        <Stack spacing={2} sx={{ mt: 1 }}>
-          <Stack direction="row" spacing={2}>
-            <TextField label="Name" value={name} onChange={(e) => setName(e.target.value)} fullWidth />
-            <FormControl sx={{ minWidth: 160 }}>
-              <InputLabel id="weekday-label">Weekday</InputLabel>
-              <Select labelId="weekday-label" value={weekday} label="Weekday" onChange={(e) => setWeekday(Number(e.target.value))}>
-                {Array.from({ length: 7 }, (_, d) => (
-                  <MenuItem key={d} value={d}>
-                    {weekdayName(d)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Stack>
+      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        Add Day Schedule
+        <IconButton onClick={onClose} size="small">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <TextField
+            label="Schedule name"
+            value={schedule.name}
+            onChange={(e) => setName(e.target.value)}
+            fullWidth
+          />
 
           <Divider textAlign="left">Periods</Divider>
           <Stack spacing={2}>
-            {periods.map((p, idx) => (
-              <Paper key={idx} sx={{ p: 2 }} variant="outlined">
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
-                  <TextField label="Period Name" value={p.name} onChange={(e) => updatePeriod(idx, { name: e.target.value })} sx={{ minWidth: 200 }} />
-                  <TextField label="Start (HH:MM)" value={p.start} onChange={(e) => updatePeriod(idx, { start: e.target.value as HHMM })} sx={{ width: 140 }} />
-                  <TextField label="End (HH:MM)" value={p.end} onChange={(e) => updatePeriod(idx, { end: e.target.value as HHMM })} sx={{ width: 140 }} />
-                  <Tooltip title="Remove period">
-                    <IconButton onClick={() => removePeriod(idx)} color="error">
+            {schedule.periods.map((p, pIdx) => (
+              <Paper key={pIdx} variant="outlined" sx={{ p: 2 }}>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                  <TextField
+                    label="Period Name"
+                    value={p.name}
+                    onChange={(e) => setPeriodField(pIdx, "name", e.target.value)}
+                    sx={{ minWidth: 180 }}
+                  />
+                  <TextField
+                    label="Start (HH:MM)"
+                    value={p.start}
+                    onChange={(e) => setPeriodField(pIdx, "start", e.target.value as HHMM)}
+                    sx={{ width: 130 }}
+                  />
+                  <TextField
+                    label="End (HH:MM)"
+                    value={p.end}
+                    onChange={(e) => setPeriodField(pIdx, "end", e.target.value as HHMM)}
+                    sx={{ width: 130 }}
+                  />
+                  <Tooltip title="Delete period">
+                    <IconButton color="error" onClick={() => removePeriod(pIdx)}>
                       <DeleteOutlineIcon />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="Add segment">
-                    <Button onClick={() => addSegment(idx)}>+ Segment</Button>
-                  </Tooltip>
+                  <Button onClick={() => addSegment(pIdx)}>+ Segment</Button>
                 </Stack>
+
                 <Stack spacing={1} sx={{ mt: 1 }}>
                   {p.segments.map((s, sIdx) => (
-                    <Stack key={sIdx} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems="center">
-                      <TextField label="Title" value={s.title} onChange={(e) => updateSegment(idx, sIdx, { title: e.target.value })} sx={{ minWidth: 160 }} />
-                      <TextField label="Color" value={s.color} onChange={(e) => updateSegment(idx, sIdx, { color: e.target.value })} sx={{ width: 140 }} />
-                      <TextField label="Start" value={s.start} onChange={(e) => updateSegment(idx, sIdx, { start: e.target.value as HHMM })} sx={{ width: 120 }} />
-                      <TextField label="End" value={s.end} onChange={(e) => updateSegment(idx, sIdx, { end: e.target.value as HHMM })} sx={{ width: 120 }} />
-                      <Tooltip title="Remove segment">
-                        <IconButton onClick={() => removeSegment(idx, sIdx)} size="small" color="error">
+                    <Stack key={sIdx} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                      <TextField
+                        label="Title"
+                        value={s.title}
+                        onChange={(e) => setSegmentField(pIdx, sIdx, "title", e.target.value)}
+                        sx={{ minWidth: 160 }}
+                      />
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <input
+                          type="color"
+                          value={s.color}
+                          onChange={(e) => setSegmentField(pIdx, sIdx, "color", e.target.value)}
+                          style={{ width: 40, height: 40, border: "none", background: "transparent" }}
+                          aria-label="Segment color"
+                        />
+                        <TextField
+                          label="Color (hex)"
+                          value={s.color}
+                          onChange={(e) => setSegmentField(pIdx, sIdx, "color", e.target.value)}
+                          sx={{ width: 140 }}
+                        />
+                      </Box>
+                      <TextField
+                        label="Start"
+                        value={s.start}
+                        onChange={(e) => setSegmentField(pIdx, sIdx, "start", e.target.value as HHMM)}
+                        sx={{ width: 120 }}
+                      />
+                      <TextField
+                        label="End"
+                        value={s.end}
+                        onChange={(e) => setSegmentField(pIdx, sIdx, "end", e.target.value as HHMM)}
+                        sx={{ width: 120 }}
+                      />
+                      <Tooltip title="Delete segment">
+                        <IconButton color="error" size="small" onClick={() => removeSegment(pIdx, sIdx)}>
                           <DeleteOutlineIcon />
                         </IconButton>
                       </Tooltip>
@@ -460,181 +896,309 @@ function DayScheduleEditor({ open, onClose, initial, onSave }: DayScheduleEditor
             ))}
           </Stack>
 
-          <Button onClick={addPeriod} startIcon={<AddIcon />}>Add Period</Button>
+          <Button onClick={addPeriod} startIcon={<AddIcon />} sx={{ mt: 1 }}>
+            Add Period
+          </Button>
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" startIcon={<SaveIcon />}>Save</Button>
+        <Button variant="contained" onClick={handleCreate}>
+          Save
+        </Button>
       </DialogActions>
     </Dialog>
   );
 }
 
-// ------------------ Main App ------------------
+/* ------------------ Week Panel (right) ------------------ */
+
+function WeekPanel({
+  weekStore,
+  lib,
+  activeWeekName,
+  onChangeActiveWeek,
+  onAssign,
+  onOpenAddSchedule,  // opens AddScheduleModal
+  onOpenLibrary,      // opens LibraryEditor
+  onRenameWeek,
+  onDeleteWeek,
+  onAddWeek,
+}: {
+  weekStore: Record<string, WeekSchedule>;
+  lib: DayScheduleLibrary;
+  activeWeekName: string;
+  onChangeActiveWeek: (name: string) => void;
+  onAssign: (weekName: string, weekday: number, dayName: string) => void;
+  onOpenAddSchedule: () => void;
+  onOpenLibrary: () => void;
+  onRenameWeek: (newName: string) => void;
+  onDeleteWeek: () => void;
+  onAddWeek: () => void;
+}) {
+  const activeWeek = weekStore[activeWeekName];
+  const libNames = Object.keys(lib);
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState(activeWeekName);
+  useEffect(() => setRenameValue(activeWeekName), [activeWeekName]);
+
+  return (
+    <Paper variant="outlined" sx={{ p: 2 }}>
+      <Typography variant="subtitle1" gutterBottom>
+        Week Mapping
+      </Typography>
+
+      {/* Top row: week select + rename + add week + delete */}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
+        <FormControl sx={{ minWidth: 220, flex: 1 }}>
+          <InputLabel id="week-panel-select">Week</InputLabel>
+          <Select
+            labelId="week-panel-select"
+            label="Week"
+            value={activeWeekName}
+            onChange={(e) => onChangeActiveWeek(String(e.target.value))}
+          >
+            {Object.keys(weekStore).map((n) => (
+              <MenuItem key={n} value={n}>
+                {n}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Tooltip title="Rename week">
+          <IconButton onClick={() => setRenameOpen(true)}>
+            <EditIcon />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="New week">
+          <IconButton onClick={onAddWeek}>
+            <AddIcon />
+          </IconButton>
+        </Tooltip>
+
+        <Tooltip title="Delete week">
+          <IconButton color="error" onClick={onDeleteWeek}>
+            <DeleteOutlineIcon />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+
+      {/* Second row: Add Day Schedule (new modal), Edit Library (existing schedules) */}
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
+        <Button variant="contained" onClick={onOpenAddSchedule} startIcon={<AddIcon />}>
+          Add Day Schedule
+        </Button>
+        <Button variant="outlined" onClick={onOpenLibrary}>
+          Edit Day Schedules
+        </Button>
+      </Stack>
+
+      {/* Mapping table */}
+      <Stack spacing={1.25}>
+        {Array.from({ length: 7 }, (_, d) => {
+          const dayLabel = weekdayName(d);
+          const mapped = activeWeek?.mapping?.[d] ?? "";
+          return (
+            <Stack key={d} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+              <Box sx={{ minWidth: 100 }}>
+                <Typography>{dayLabel}</Typography>
+              </Box>
+              <FormControl sx={{ minWidth: 200, flex: 1 }}>
+                <InputLabel id={`day-row-${d}`}>Day schedule</InputLabel>
+                <Select
+                  labelId={`day-row-${d}`}
+                  label="Day schedule"
+                  value={mapped || ""}
+                  onChange={(e) => onAssign(activeWeekName, d, String(e.target.value))}
+                >
+                  {libNames.length ? (
+                    libNames.map((n) => (
+                      <MenuItem key={n} value={n}>
+                        {n}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem value="" disabled>
+                      No schedules saved
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+            </Stack>
+          );
+        })}
+      </Stack>
+
+      {/* Rename dialog */}
+      <Dialog open={renameOpen} onClose={() => setRenameOpen(false)}>
+        <DialogTitle>Rename Week</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Week name"
+            fullWidth
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRenameOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              const trimmed = renameValue.trim();
+              if (trimmed && trimmed !== activeWeekName) onRenameWeek(trimmed);
+              setRenameOpen(false);
+            }}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Paper>
+  );
+}
+
+/* ------------------ Main App ------------------ */
 
 export default function DailyScheduleApp() {
-  const now = new Date();
-const [, setTick] = useState(0);
-  const [weekday, setWeekday] = useState(now.getDay());
-
-  // seed data once
+  // Live clock (rerender every second)
+  const [, setTimeTick] = useState(0);
   useEffect(() => {
-    ensureDefaults();
-  }, []);
-
-  // live clock
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
+    const id = setInterval(() => setTimeTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
-  const dayStore = useMemo<DaySchedulesStore>(() => loadJSON(LS_KEYS.DAY_SCHEDULES, {}), []);
-  const weekStore = useMemo<WeekSchedulesStore>(() => loadJSON(LS_KEYS.WEEK_SCHEDULES, {}), []);
-  const activeDaySelections = useMemo<ActiveDaySelections>(() => loadJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, {}), []);
-  const activeWeekName = useMemo(() => localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE) ?? "DefaultWeek", []);
+  // Core state mirrored with localStorage
+  const [lib, setLib] = useState<DayScheduleLibrary>({});
+  const [weeks, setWeeks] = useState<WeekSchedulesStore>({});
+  const [activeWeekName, setActiveWeekName] = useState<string>("DefaultWeek");
 
-  const setActiveWeekName = (name: string) => localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, name);
+  // seed + load
+  useEffect(() => {
+    seedIfEmpty();
+    setLib(loadJSON(LS_KEYS.DAY_SCHEDULES, {}));
+    setWeeks(loadJSON(LS_KEYS.WEEK_SCHEDULES, {}));
+    setActiveWeekName(localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE) ?? "DefaultWeek");
+  }, []);
 
-  const daySchedulesForWeekday = dayStore[String(weekday)] ?? {};
-  const availableDayNames = Object.keys(daySchedulesForWeekday);
-  const activeDayName = activeDaySelections[String(weekday)] ?? availableDayNames[0] ?? "";
+  // Derived: today
+  const now = new Date();
+  const todayWeekday = now.getDay();
+  const activeWeek = weeks[activeWeekName];
+  const todaysScheduleName = activeWeek?.mapping?.[todayWeekday] ?? "";
+  const todaysSchedule = todaysScheduleName ? lib[todaysScheduleName] : undefined;
 
-  const activeWeek = weekStore[activeWeekName];
-  const mappedDayName = activeWeek?.mapping?.[weekday];
-  const effectiveDayName = mappedDayName ?? activeDayName;
-  const activeDay = daySchedulesForWeekday[effectiveDayName];
-
+  // Active period for pie timer (today's schedule only)
   const minutesNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
-
   const activePeriod = useMemo(() => {
-    if (!activeDay) return null;
-    const nowMinInt = Math.floor(minutesNow);
-    return activeDay.periods.find((p) => within(nowMinInt, toMinutes(p.start), toMinutes(p.end))) ?? null;
-  }, [activeDay, minutesNow]);
-
-  // Save handlers
-  const saveDaySchedule = (sched: DaySchedule) => {
-    const store = loadJSON<DaySchedulesStore>(LS_KEYS.DAY_SCHEDULES, {});
-    const key = String(sched.weekday);
-    if (!store[key]) store[key] = {};
-    store[key][sched.name] = sched;
-    saveJSON(LS_KEYS.DAY_SCHEDULES, store);
-
-    // set active
-    const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
-    act[key] = sched.name;
-    saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
-    setTick((t) => t + 1);
-  };
-
-  const setActiveDayForWeekday = (wd: number, name: string) => {
-    const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
-    act[String(wd)] = name;
-    saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
-    setTick((t) => t + 1);
-  };
-
-  const removeActiveDaySchedule = () => {
-  const key = String(weekday);
-  const name = effectiveDayName;
-  if (!name) return;
-
-  setConfirm({
-    open: true,
-    message: `Delete day schedule "${name}" for ${weekdayName(weekday)}?`,
-    onConfirm: () => {
-      const store = loadJSON<DaySchedulesStore>(LS_KEYS.DAY_SCHEDULES, {});
-      if (!store[key]) return closeConfirm();
-      delete store[key][name];
-      saveJSON(LS_KEYS.DAY_SCHEDULES, store);
-
-      // Update active selection
-      const act = loadJSON<ActiveDaySelections>(LS_KEYS.ACTIVE_DAY_SELECTIONS, {});
-      const remaining = Object.keys(store[key] || {});
-      act[key] = remaining[0] || "";
-      saveJSON(LS_KEYS.ACTIVE_DAY_SELECTIONS, act);
-
-      // Scrub week schedules that referenced this day schedule
-      const wks = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-      Object.values(wks).forEach((w) => {
-        if (w.mapping[weekday] === name) delete w.mapping[weekday];
-      });
-      saveJSON(LS_KEYS.WEEK_SCHEDULES, wks);
-
-      closeConfirm();
-      setTick((t) => t + 1);
-    },
-  });
-};
-
-  const createWeekSchedule = () => {
-    const name = prompt("New week schedule name?", `Week-${Object.keys(weekStore).length + 1}`)?.trim();
-    if (!name) return;
-    const mapping: Partial<Record<number, string>> = {};
-    for (let d = 0; d < 7; d++) {
-      const sel = activeDaySelections[String(d)] ?? "FullDay";
-      mapping[d] = sel;
-    }
-    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-    store[name] = { name, mapping };
-    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
-    setActiveWeekName(name);
-    setTick((t) => t + 1);
-  };
-
-  const removeActiveWeekSchedule = () => {
-  const name = activeWeekName;
-  if (!name) return;
-
-  setConfirm({
-    open: true,
-    message: `Delete week schedule "${name}"?`,
-    onConfirm: () => {
-      const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-      delete store[name];
-      saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
-
-      const fallback = Object.keys(store)[0] || "";
-      setActiveWeekName(fallback);
-      closeConfirm();
-      setTick((t) => t + 1);
-    },
-  });
-};
-
-  const assignWeekScheduleToDay = (weekName: string, wd: number, dayName: string) => {
-    const store = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
-    const wk = store[weekName];
-    if (!wk) return;
-    wk.mapping[wd] = dayName;
-    saveJSON(LS_KEYS.WEEK_SCHEDULES, store);
-    setTick((t) => t + 1);
-  };
-
-  const [dayEditorOpen, setDayEditorOpen] = useState(false);
-  const [editInitial, setEditInitial] = useState<DaySchedule | undefined>(undefined);
-
-  // simple confirm state (callback-based)
-  const [confirm, setConfirm] = useState<{ open: boolean; message: string; onConfirm: () => void }>({
-    open: false,
-    message: "",
-    onConfirm: () => {},
-  });
-  const closeConfirm = () => setConfirm((c) => ({ ...c, open: false }));
-
-  const openCreateDay = () => {
-    setEditInitial(undefined);
-    setDayEditorOpen(true);
-  };
-  const openEditDay = () => {
-    if (activeDay) {
-      setEditInitial(activeDay);
-      setDayEditorOpen(true);
-    }
-  };
-
+    const p = todaysSchedule?.periods ?? [];
+    const nowMin = Math.floor(minutesNow);
+    return p.find((pp) => within(nowMin, toMinutes(pp.start), toMinutes(pp.end))) ?? null;
+  }, [todaysSchedule, minutesNow]);
   const nowFmt = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
+  /* ---------- Persistence helpers ---------- */
+
+  const saveLib = (updated: DayScheduleLibrary) => {
+    setLib(updated);
+    saveJSON(LS_KEYS.DAY_SCHEDULES, updated);
+  };
+  const saveWeeks = (updated: WeekSchedulesStore, nextActive?: string) => {
+    setWeeks(updated);
+    saveJSON(LS_KEYS.WEEK_SCHEDULES, updated);
+    if (nextActive !== undefined) {
+      setActiveWeekName(nextActive);
+      localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, nextActive);
+    }
+  };
+
+  /* ---------- Week actions ---------- */
+
+  const updateActiveWeekName = (newName: string) => {
+    setActiveWeekName(newName);
+    localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, newName);
+  };
+  const assignWeekScheduleToDay = (weekName: string, wd: number, dayName: string) => {
+    const ws = { ...weeks };
+    const wk = { ...(ws[weekName] ?? { name: weekName, mapping: {} }) };
+    wk.mapping = { ...wk.mapping, [wd]: dayName };
+    ws[weekName] = wk;
+    saveWeeks(ws);
+  };
+  const createWeekSchedule = () => {
+    const base = "Week";
+    let name = `${base}-${Object.keys(weeks).length + 1}`;
+    while (weeks[name]) name = `${base}-${Math.floor(Math.random() * 1000)}`;
+    const ws = { ...weeks, [name]: { name, mapping: {} } };
+    saveWeeks(ws, name);
+  };
+  const deleteActiveWeek = () => {
+    const name = activeWeekName;
+    if (!name) return;
+    const ws = { ...weeks };
+    delete ws[name];
+    const fallback = Object.keys(ws)[0] || "";
+    saveWeeks(ws, fallback);
+  };
+  const renameActiveWeek = (newName: string) => {
+    if (!newName || weeks[newName]) return;
+    const old = activeWeekName;
+    const wk = weeks[old];
+    if (!wk) return;
+    const ws: WeekSchedulesStore = { ...weeks };
+    delete ws[old];
+    ws[newName] = { ...wk, name: newName };
+    saveWeeks(ws, newName);
+  };
+
+  /* ---------- Library actions & modals ---------- */
+
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [librarySelectedOnOpen, setLibrarySelectedOnOpen] = useState<string | undefined>(undefined);
+
+  // Add Schedule modal
+  const [addOpen, setAddOpen] = useState(false);
+
+  const openAddSchedule = () => setAddOpen(true);
+  const createSchedule = (sched: DaySchedule) => {
+    // ensure unique name
+    let name = sched.name.trim() || "NewSchedule";
+    let i = 1;
+    while (lib[name]) {
+      name = `${sched.name}-${i++}`;
+    }
+    const updated = { ...lib, [name]: { ...sched, name } };
+    saveLib(updated);
+  };
+
+  const openLibrary = () => {
+    setLibrarySelectedOnOpen(undefined);
+    setLibraryOpen(true);
+  };
+
+  const deleteScheduleFromLibrary = (name: string) => {
+    // scrub week mappings
+    const ws = { ...weeks };
+    Object.values(ws).forEach((w) => {
+      Object.entries(w.mapping).forEach(([wd, sched]) => {
+        if (sched === name) {
+          const nm = { ...w.mapping };
+          delete nm[Number(wd)];
+          w.mapping = nm;
+        }
+      });
+    });
+    saveWeeks(ws);
+
+    const copy = { ...lib };
+    delete copy[name];
+    saveLib(copy);
+  };
 
   return (
     <Box sx={{ p: 2, maxWidth: 1200, mx: "auto" }}>
@@ -642,149 +1206,70 @@ const [, setTick] = useState(0);
         Daily Schedule & Pie Timer
       </Typography>
 
-      <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems={{ md: "center" }}>
-        {/* Day controls */}
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <FormControl sx={{ minWidth: 160 }}>
-            <InputLabel id="weekday-select">Weekday</InputLabel>
-            <Select labelId="weekday-select" label="Weekday" value={weekday} onChange={(e) => setWeekday(Number(e.target.value))}>
-              {Array.from({ length: 7 }, (_, d) => (
-                <MenuItem key={d} value={d}>
-                  {weekdayName(d)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl sx={{ minWidth: 220 }}>
-            <InputLabel id="day-sched-select">Day Schedule</InputLabel>
-            <Select
-              labelId="day-sched-select"
-              label="Day Schedule"
-              value={effectiveDayName || ""}
-              onChange={(e) => setActiveDayForWeekday(weekday, String(e.target.value))}
-            >
-              {availableDayNames.map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <Tooltip title="Create a new day schedule for this weekday">
-            <IconButton color="primary" onClick={openCreateDay}>
-              <AddIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Edit current day schedule">
-            <span>
-              <IconButton onClick={openEditDay} disabled={!activeDay}>
-                <EditIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="Delete current day schedule">
-            <span>
-              <IconButton onClick={removeActiveDaySchedule} disabled={!effectiveDayName} color="error">
-                <DeleteOutlineIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Stack>
-
-        <Divider flexItem orientation="vertical" sx={{ display: { xs: "none", md: "block" } }} />
-
-        {/* Week controls */}
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <FormControl sx={{ minWidth: 220 }}>
-            <InputLabel id="week-sched-select">Week Schedule</InputLabel>
-            <Select
-              labelId="week-sched-select"
-              label="Week Schedule"
-              value={activeWeekName}
-              onChange={(e) => {
-                const val = String(e.target.value);
-                localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, val);
-                setTick((t) => t + 1);
-              }}
-            >
-              {Object.keys(weekStore).map((n) => (
-                <MenuItem key={n} value={n}>
-                  {n}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Tooltip title="Create a new week schedule from current day selections">
-            <IconButton onClick={createWeekSchedule} color="primary">
-              <AddIcon />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Delete current week schedule">
-            <span>
-              <IconButton onClick={removeActiveWeekSchedule} disabled={!activeWeekName} color="error">
-                <DeleteOutlineIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Stack>
-      </Stack>
-
-      <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ mt: 3 }}>
-        <Box>
+      {/* Main content */}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ mt: 2 }}>
+        {/* Left: Now + today's schedule, pie, periods */}
+        <Box sx={{ flex: 1 }}>
           <Typography variant="overline">Now</Typography>
           <Typography variant="h3">{nowFmt}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {weekdayName(weekday)} · {effectiveDayName || "(none)"}
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+            {weekdayName(now.getDay())} · {activeWeek?.mapping?.[now.getDay()] || "(no schedule set)"}
           </Typography>
 
           <Box sx={{ mt: 2 }}>
             <PieTimer period={activePeriod ?? undefined} nowMinutes={minutesNow} />
           </Box>
+
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="overline">Today’s Periods</Typography>
+            <Stack spacing={1} sx={{ mt: 1 }}>
+              {todaysSchedule?.periods?.length ? (
+                todaysSchedule.periods.map((p, i) => (
+                  <Paper key={i} variant="outlined" sx={{ p: 1.5 }}>
+                    <Typography variant="subtitle1">
+                      {p.name} — {p.start} to {p.end}
+                    </Typography>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 0.5 }}>
+                      {p.segments.map((s, j) => (
+                        <Chip key={j} size="small" label={`${s.title}: ${s.start}–${s.end}`} sx={{ background: s.color }} />
+                      ))}
+                    </Stack>
+                  </Paper>
+                ))
+              ) : (
+                <Typography color="text.secondary">No periods defined for today’s schedule.</Typography>
+              )}
+            </Stack>
+          </Box>
         </Box>
 
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="overline">Today's Periods</Typography>
-          <Stack spacing={1} sx={{ mt: 1 }}>
-            {activeDay?.periods?.length ? (
-              activeDay.periods.map((p, i) => (
-                <Paper key={i} variant="outlined" sx={{ p: 1.5 }}>
-                  <Typography variant="subtitle1">
-                    {p.name} — {p.start} to {p.end}
-                  </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 0.5 }}>
-                    {p.segments.map((s, j) => (
-                      <Chip key={j} size="small" label={`${s.title}: ${s.start}–${s.end}`} sx={{ background: s.color }} />
-                    ))}
-                  </Stack>
-                  <Box sx={{ mt: 1 }}>
-                    <Button size="small" onClick={() => activeWeekName && assignWeekScheduleToDay(activeWeekName, weekday, activeDay.name)}>
-                      Use this day in week “{activeWeekName}”
-                    </Button>
-                  </Box>
-                </Paper>
-              ))
-            ) : (
-              <Typography color="text.secondary">No periods defined for this day schedule.</Typography>
-            )}
-          </Stack>
+        {/* Right: Week panel */}
+        <Box sx={{ width: { md: 480 }, flexShrink: 0 }}>
+          <WeekPanel
+            weekStore={weeks}
+            lib={lib}
+            activeWeekName={activeWeekName}
+            onChangeActiveWeek={updateActiveWeekName}
+            onAssign={assignWeekScheduleToDay}
+            onOpenAddSchedule={openAddSchedule}
+            onOpenLibrary={openLibrary}
+            onRenameWeek={renameActiveWeek}
+            onDeleteWeek={deleteActiveWeek}
+            onAddWeek={createWeekSchedule}
+          />
         </Box>
       </Stack>
 
-      <DayScheduleEditor
-        open={dayEditorOpen}
-        onClose={() => setDayEditorOpen(false)}
-        initial={editInitial}
-        onSave={saveDaySchedule}
-      />
+      {/* Modals */}
+      <AddScheduleModal open={addOpen} onClose={() => setAddOpen(false)} onCreate={createSchedule} />
 
-      {/* Reusable confirm dialog */}
-      <ConfirmDialog
-        open={confirm.open}
-        message={confirm.message}
-        onCancel={closeConfirm}
-        onConfirm={confirm.onConfirm}
+      <LibraryEditor
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        lib={lib}
+        selectedName={librarySelectedOnOpen}
+        onSaveLib={saveLib}
+        onDeleteSchedule={deleteScheduleFromLibrary}
       />
     </Box>
   );
