@@ -305,191 +305,235 @@ function LibraryEditor({
   const [selected, setSelected] = useState<string>("");
   const [working, setWorking] = useState<DayScheduleLibrary>({});
   const [order, setOrder] = useState<string[]>([]);
+  const [isDirty, setDirty] = useState(false);
 
   // Rename dialog state
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
 
-  // Initialize when opening
+  // Discard confirmation
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const requestClose = () => {
+    if (isDirty) setDiscardOpen(true);
+    else onClose();
+  };
+  const confirmDiscard = () => {
+    setDiscardOpen(false);
+    setDirty(false);
+    onClose();
+  };
+
+  // Initialize on open (take a snapshot of lib)
   useEffect(() => {
     if (!open) return;
     const clone = structuredClone(lib);
     setWorking(clone);
-
-    const libKeys = Object.keys(lib);
-    // If we already had an order (re-open quickly), keep it; else start from lib keys
-    setOrder((prev) => (prev.length ? prev.filter((k) => libKeys.includes(k)) : libKeys));
-
-    const initialSel =
+    const keys = Object.keys(lib);
+    setOrder(keys);
+    const initial =
       (selectedName && lib[selectedName] && selectedName) ||
-      (selected && lib[selected] && selected) ||
-      libKeys[0] ||
+      keys[0] ||
       "";
-    setSelected(initialSel);
-  }, [open]); // only when dialog opens
+    setSelected(initial);
+    setDirty(false);
+  }, [open]); // only when opened
 
-  // When `lib` changes WHILE open (parent saved), merge without losing our local order
+  // If parent changes lib while editor is open, merge in a non-destructive way
   useEffect(() => {
     if (!open) return;
-
-    const clone = structuredClone(lib);
-    setWorking(clone);
-
-    const libKeys = Object.keys(lib);
-    setOrder((prev) => {
-      // 1) keep existing keys that still exist (preserve their position)
-      const kept = prev.filter((k) => libKeys.includes(k));
-      // 2) append any NEW keys from lib (e.g., added elsewhere)
-      const additions = libKeys.filter((k) => !kept.includes(k));
-      return [...kept, ...additions];
-    });
-
-    // Ensure selection points to an existing item
-    setSelected((prevSel) => (clone[prevSel] ? prevSel : (selectedName && clone[selectedName]) ? selectedName : libKeys[0] || ""));
-  }, [lib]); // react to parent saves while open
+    // Only merge additions/removals if user hasn't edited (avoid stomping work-in-progress)
+    if (!isDirty) {
+      const clone = structuredClone(lib);
+      setWorking(clone);
+      const keys = Object.keys(lib);
+      setOrder((prev) => {
+        const kept = prev.filter((k) => keys.includes(k));
+        const additions = keys.filter((k) => !kept.includes(k));
+        return [...kept, ...additions];
+      });
+      setSelected((prevSel) => (clone[prevSel] ? prevSel : keys[0] || ""));
+    }
+  }, [lib, open, isDirty]);
 
   const current = selected ? working[selected] : undefined;
 
-  const renameSchedule = (oldName: string, newName: string) => {
-    const trimmed = newName.trim();
-    if (!trimmed || trimmed === oldName || working[trimmed]) return;
+  /* ---------- Helpers to mark dirty and update ---------- */
+  const mark = <T,>(updater: (prev: T) => T) =>
+    (prev: T) => {
+      setDirty(true);
+      return updater(prev);
+    };
 
-    // Move in-place in the order list
-    setOrder((prev) => {
-      const idx = prev.indexOf(oldName);
-      if (idx === -1) return prev;
-      const next = [...prev];
-      next[idx] = trimmed;
-      return next;
-    });
-
-    // Update the working map
-    const copy = { ...working };
-    copy[trimmed] = { ...copy[oldName], name: trimmed };
-    delete copy[oldName];
-    setWorking(copy);
-
-    setSelected(trimmed);
-    onSaveLib(copy);
-  };
-
+  /* ---------- Schedule-level actions ---------- */
   const addSchedule = () => {
     const base = "NewSchedule";
     let name = base;
     let i = 1;
     while (working[name]) name = `${base}-${i++}`;
-
-    const copy = { ...working, [name]: makeDefaultSchedule(name) };
-    setWorking(copy);
-    setOrder((prev) => [...prev, name]); // append at end
+    const nextSched = makeDefaultSchedule(name);
+    setWorking(mark((w) => ({ ...w, [name]: nextSched })));
+    setOrder((prev) => [...prev, name]);
     setSelected(name);
-    onSaveLib(copy);
   };
 
   const handleScheduleDelete = (name: string) => {
-    onDeleteSchedule(name); // parent scrubs week mappings too
-
-    const copy = { ...working };
-    delete copy[name];
-    setWorking(copy);
-
+    // mark dirty and remove locally; parent will get final copy on Save
+    setWorking(mark((w) => {
+      const copy = { ...w };
+      delete copy[name];
+      return copy;
+    }));
     setOrder((prev) => prev.filter((n) => n !== name));
-
     setSelected((prevSel) => {
-      if (prevSel !== name) return prevSel; // keep current selection if not the deleted one
-      // choose next selection using updated order first, then fallback
-      const nextFromOrder = order.filter((n) => n !== name)[0];
-      if (nextFromOrder && copy[nextFromOrder]) return nextFromOrder;
-      const keys = Object.keys(copy);
+      if (prevSel !== name) return prevSel;
+      const next = order.filter((n) => n !== name)[0];
+      if (next && working[next]) return next;
+      const keys = Object.keys(working).filter((k) => k !== name);
       return keys[0] || "";
     });
-
-    onSaveLib(copy);
+    // Note: we DO NOT call onDeleteSchedule now; deletion is finalized on Save
   };
 
-  const updatePeriodField = (pIdx: number, field: keyof Period, value: string) => {
+  const openRename = () => {
+    if (!selected) return;
+    setRenameValue(selected);
+    setRenameOpen(true);
+  };
+  const applyRename = () => {
+    const oldName = selected;
+    const newName = renameValue.trim();
+    setRenameOpen(false);
+    if (!oldName || !newName || oldName === newName || working[newName]) return;
+
+    // Update order in place
+    setOrder((prev) => {
+      const idx = prev.indexOf(oldName);
+      if (idx === -1) return prev;
+      const next = [...prev];
+      next[idx] = newName;
+      return next;
+    });
+
+    // Move map entry
+    setWorking(mark((w) => {
+      const copy = { ...w };
+      copy[newName] = { ...copy[oldName], name: newName };
+      delete copy[oldName];
+      return copy;
+    }));
+
+    setSelected(newName);
+  };
+
+  /* ---------- Period/Segment editing (controlled) ---------- */
+  const setPeriodField = (pIdx: number, field: keyof Period, value: string) => {
     if (!current) return;
-    const updated = { ...current, periods: current.periods.map((p, i) => (i === pIdx ? { ...p, [field]: value } : p)) };
-    const copy = { ...working, [current.name]: updated };
-    setWorking(copy);
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.map((p, i) => (i === pIdx ? { ...p, [field]: value } : p));
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
   };
-
-  const updateSegmentField = (pIdx: number, sIdx: number, field: keyof Segment, value: string) => {
-    if (!current) return;
-    const updated = {
-      ...current,
-      periods: current.periods.map((p, i) =>
-        i === pIdx ? { ...p, segments: p.segments.map((s, j) => (j === sIdx ? { ...s, [field]: value } : s)) } : p
-      ),
-    };
-    const copy = { ...working, [current.name]: updated };
-    setWorking(copy);
-  };
-
   const addPeriod = () => {
     if (!current) return;
-    const newP: Period = {
-      name: `Period ${current.periods.length + 1}`,
-      start: "10:00",
-      end: "11:00",
-      segments: [
-        { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
-        { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
-      ],
-    };
-    const updated = { ...current, periods: [...current.periods, newP] };
-    const copy = { ...working, [current.name]: updated };
-    setWorking(copy);
-    onSaveLib(copy);
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const newP: Period = {
+        name: `Period ${sched.periods.length + 1}`,
+        start: "10:00",
+        end: "11:00",
+        segments: [
+          { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
+          { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
+        ],
+      };
+      return { ...w, [cname]: { ...sched, periods: [...sched.periods, newP] } };
+    }));
   };
-
-  const removePeriod = (idx: number) => {
+  const removePeriod = (pIdx: number) => {
     if (!current) return;
-    const updated = { ...current, periods: current.periods.filter((_, i) => i !== idx) };
-    const copy = { ...working, [current.name]: updated };
-    setWorking(copy);
-    onSaveLib(copy);
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.filter((_, i) => i !== pIdx);
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
   };
 
+  const setSegmentField = (pIdx: number, sIdx: number, field: keyof Segment, value: string) => {
+    if (!current) return;
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.map((p, i) =>
+        i === pIdx
+          ? { ...p, segments: p.segments.map((s, j) => (j === sIdx ? { ...s, [field]: value } : s)) }
+          : p
+      );
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
+  };
   const addSegment = (pIdx: number) => {
     if (!current) return;
-    const p = current.periods[pIdx];
-    const lastEnd = p.segments[p.segments.length - 1]?.end ?? p.start;
-    const proposedEnd = fromMinutes(Math.min(toMinutes(p.end), toMinutes(lastEnd) + 10));
-    const newSeg: Segment = { title: `Seg ${p.segments.length + 1}`, color: "#c5e1a5", start: lastEnd, end: proposedEnd };
-    const updated = {
-      ...current,
-      periods: current.periods.map((pp, i) => (i === pIdx ? { ...pp, segments: [...pp.segments, newSeg] } : pp)),
-    };
-    const copy = { ...working, [current.name]: updated };
-    setWorking(copy);
-    onSaveLib(copy);
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const p = sched.periods[pIdx];
+      const lastEnd = p.segments[p.segments.length - 1]?.end ?? p.start;
+      const proposedEnd = fromMinutes(Math.min(toMinutes(p.end), toMinutes(lastEnd) + 10));
+      const newSeg: Segment = { title: `Seg ${p.segments.length + 1}`, color: "#c5e1a5", start: lastEnd, end: proposedEnd };
+      const periods = sched.periods.map((pp, i) =>
+        i === pIdx ? { ...pp, segments: [...pp.segments, newSeg] } : pp
+      );
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
   };
-
   const removeSegment = (pIdx: number, sIdx: number) => {
     if (!current) return;
-    const updated = {
-      ...current,
-      periods: current.periods.map((pp, i) =>
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      const periods = sched.periods.map((pp, i) =>
         i === pIdx ? { ...pp, segments: pp.segments.filter((_, j) => j !== sIdx) } : pp
-      ),
-    };
-    const copy = { ...working, [current.name]: updated };
-    setWorking(copy);
-    onSaveLib(copy);
+      );
+      return { ...w, [cname]: { ...sched, periods } };
+    }));
   };
 
-  const onPeriodBlur = () => onSaveLib(working);
-  const onSegmentBlur = () => onSaveLib(working);
+  /* ---------- Save ---------- */
+const handleSave = () => {
+  // Compute which schedules were deleted during this edit session
+  const beforeKeys = Object.keys(lib);                     // string[]
+  const afterSet = new Set(Object.keys(working));          // Set<string>
+  const deleted = beforeKeys.filter((k) => !afterSet.has(k));
 
+  // Scrub week mappings for deleted schedules
+  deleted.forEach((name) => onDeleteSchedule(name));
+
+  onSaveLib(working);
+  setDirty(false);
+  onClose();
+};
+
+
+  /* ---------- Render ---------- */
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+    <Dialog
+      open={open}
+      onClose={requestClose} // intercept backdrop/Escape
+      fullWidth
+      maxWidth="md"
+    >
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         Edit Day Schedules
-        <IconButton onClick={onClose} size="small">
+        {/* X acts as Cancel with discard prompt */}
+        <IconButton onClick={requestClose} size="small" aria-label="Cancel">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
+
       <DialogContent dividers>
         <Stack spacing={2}>
           {/* Top controls: schedule select + rename (icon) + add + delete */}
@@ -510,17 +554,10 @@ function LibraryEditor({
               </Select>
             </FormControl>
 
-            {/* Rename via dialog */}
+            {/* Rename via dialog (pencil) */}
             <Tooltip title="Rename schedule">
               <span>
-                <IconButton
-                  onClick={() => {
-                    if (!selected) return;
-                    setRenameValue(selected);
-                    setRenameOpen(true);
-                  }}
-                  disabled={!selected}
-                >
+                <IconButton onClick={openRename} disabled={!selected}>
                   <EditIcon />
                 </IconButton>
               </span>
@@ -556,29 +593,20 @@ function LibraryEditor({
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
                       <TextField
                         label="Period Name"
-                        defaultValue={p.name}
-                        onBlur={(e) => {
-                          updatePeriodField(pIdx, "name", e.target.value);
-                          onPeriodBlur();
-                        }}
+                        value={p.name}
+                        onChange={(e) => setPeriodField(pIdx, "name", e.target.value)}
                         sx={{ minWidth: 180 }}
                       />
                       <TextField
                         label="Start (HH:MM)"
-                        defaultValue={p.start}
-                        onBlur={(e) => {
-                          updatePeriodField(pIdx, "start", e.target.value as HHMM);
-                          onPeriodBlur();
-                        }}
+                        value={p.start}
+                        onChange={(e) => setPeriodField(pIdx, "start", e.target.value as HHMM)}
                         sx={{ width: 130 }}
                       />
                       <TextField
                         label="End (HH:MM)"
-                        defaultValue={p.end}
-                        onBlur={(e) => {
-                          updatePeriodField(pIdx, "end", e.target.value as HHMM);
-                          onPeriodBlur();
-                        }}
+                        value={p.end}
+                        onChange={(e) => setPeriodField(pIdx, "end", e.target.value as HHMM)}
                         sx={{ width: 130 }}
                       />
                       <Tooltip title="Delete period">
@@ -594,50 +622,35 @@ function LibraryEditor({
                         <Stack key={sIdx} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
                           <TextField
                             label="Title"
-                            defaultValue={s.title}
-                            onBlur={(e) => {
-                              updateSegmentField(pIdx, sIdx, "title", e.target.value);
-                              onSegmentBlur();
-                            }}
+                            value={s.title}
+                            onChange={(e) => setSegmentField(pIdx, sIdx, "title", e.target.value)}
                             sx={{ minWidth: 160 }}
                           />
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <input
                               type="color"
                               value={s.color}
-                              onChange={(e) => {
-                                updateSegmentField(pIdx, sIdx, "color", e.target.value);
-                                onSegmentBlur();
-                              }}
+                              onChange={(e) => setSegmentField(pIdx, sIdx, "color", e.target.value)}
                               style={{ width: 40, height: 40, border: "none", background: "transparent" }}
                               aria-label="Segment color"
                             />
                             <TextField
                               label="Color (hex)"
-                              defaultValue={s.color}
-                              onBlur={(e) => {
-                                updateSegmentField(pIdx, sIdx, "color", e.target.value);
-                                onSegmentBlur();
-                              }}
+                              value={s.color}
+                              onChange={(e) => setSegmentField(pIdx, sIdx, "color", e.target.value)}
                               sx={{ width: 140 }}
                             />
                           </Box>
                           <TextField
                             label="Start"
-                            defaultValue={s.start}
-                            onBlur={(e) => {
-                              updateSegmentField(pIdx, sIdx, "start", e.target.value as HHMM);
-                              onSegmentBlur();
-                            }}
+                            value={s.start}
+                            onChange={(e) => setSegmentField(pIdx, sIdx, "start", e.target.value as HHMM)}
                             sx={{ width: 120 }}
                           />
                           <TextField
                             label="End"
-                            defaultValue={s.end}
-                            onBlur={(e) => {
-                              updateSegmentField(pIdx, sIdx, "end", e.target.value as HHMM);
-                              onSegmentBlur();
-                            }}
+                            value={s.end}
+                            onChange={(e) => setSegmentField(pIdx, sIdx, "end", e.target.value as HHMM)}
                             sx={{ width: 120 }}
                           />
                           <Tooltip title="Delete segment">
@@ -675,26 +688,38 @@ function LibraryEditor({
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setRenameOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              if (selected && renameValue.trim()) renameSchedule(selected, renameValue);
-              setRenameOpen(false);
-            }}
-          >
+          <Button variant="contained" onClick={applyRename}>
             Save
           </Button>
         </DialogActions>
       </Dialog>
 
+      {/* Discard changes confirm */}
+      <Dialog open={discardOpen} onClose={() => setDiscardOpen(false)}>
+        <DialogTitle>Discard changes?</DialogTitle>
+        <DialogContent>
+          <Typography sx={{ mt: 1 }}>
+            You have unsaved changes. Do you want to discard them?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDiscardOpen(false)}>Keep editing</Button>
+          <Button variant="contained" color="error" onClick={confirmDiscard}>
+            Discard
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Footer: Save only (Close is now Save) */}
       <DialogActions>
-        <Button onClick={onClose} startIcon={<CloseIcon />}>
-          Close
+        <Button variant="contained" onClick={handleSave}>
+          Save
         </Button>
       </DialogActions>
     </Dialog>
   );
 }
+
 
 
 
