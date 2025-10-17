@@ -240,6 +240,9 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
     return `M ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 1 ${p1.x} ${p1.y}`;
   };
 
+  // NEW: detect single segment
+  const singleSeg = period.segments.length === 1 ? period.segments[0] : null; // <--
+
   const segArcs = period.segments.map((seg, i) => {
     const s = clamp(toMinutes(seg.start), pStart, pEnd) - pStart;
     const e = clamp(toMinutes(seg.end), pStart, pEnd) - pStart;
@@ -255,8 +258,17 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
   return (
     <Box>
       <svg width={size} height={size}>
-        <circle cx={cx} cy={cy} r={r} fill="#f5f5f5" stroke="#ccc" strokeWidth={1} />
-        {segArcs}
+        {/* Fill whole pie with the single segment color when only one exists */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={r}
+          fill={singleSeg ? singleSeg.color : "#f5f5f5"}   // <--
+          stroke="#ccc"
+          strokeWidth={1}
+        />
+        {!singleSeg && segArcs /* skip arcs if single segment */}  {/* <--- */}
+
         <line x1={cx} y1={cy} x2={pEndPt.x} y2={pEndPt.y} stroke="#000" strokeWidth={2} />
         <circle cx={cx} cy={cy} r={3} fill="#000" />
       </svg>
@@ -284,6 +296,7 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
     </Box>
   );
 }
+
 
 /* ------------------ Library Editor (existing schedules) ------------------ */
 
