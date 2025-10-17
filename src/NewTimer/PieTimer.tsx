@@ -336,7 +336,7 @@ function LibraryEditor({
       "";
     setSelected(initial);
     setDirty(false);
-  }, [open]); // only when opened
+  }, [open, lib, selectedName]); // only when opened
 
   // If parent changes lib while editor is open, merge in a non-destructive way
   useEffect(() => {
