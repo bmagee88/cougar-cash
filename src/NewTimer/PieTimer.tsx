@@ -19,19 +19,13 @@ import {
   Tooltip,
   Paper,
   Alert,
+  useMediaQuery,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CloseIcon from "@mui/icons-material/Close";
-
-/**
- * Daily Schedule with Pie Timer — Add Day Schedule modal (no library dropdown)
- * - Left: Now + today’s weekday + today’s schedule, Pie timer, Today’s periods
- * - Right: Week mapping panel (week select/rename/add/delete, per-DOW mapping, Add Day Schedule modal, Edit Day Schedules library editor)
- * - Day Schedules are a global library (no weekday field)
- * - LocalStorage mirrored in React state
- */
 
 /* ------------------ Types ------------------ */
 
@@ -52,13 +46,18 @@ type Period = {
 };
 
 type DaySchedule = {
-  name: string; // unique in library
+  name: string; // unique
   periods: Period[];
 };
 
 type WeekSchedule = {
   name: string; // unique
-  mapping: Partial<Record<number, string>>; // weekday -> day schedule name
+  mapping: Partial<Record<number, string>>; // 0..6 => schedule name ("" or undefined means None)
+};
+
+type PeriodTemplate = {
+  name: string; // unique
+  period: Period;
 };
 
 /* ------------------ LS keys + helpers ------------------ */
@@ -67,6 +66,7 @@ const LS_KEYS = {
   DAY_SCHEDULES: "scheduler:libraryDaySchedules",
   WEEK_SCHEDULES: "scheduler:weekSchedules",
   ACTIVE_WEEK_SCHEDULE: "scheduler:activeWeekSchedule",
+  PERIOD_TEMPLATES: "scheduler:periodTemplates",
   // legacy (auto-migrated if present)
   LEGACY_DAY_SCHEDULES: "scheduler:daySchedules",
   LEGACY_ACTIVE_DAY_SELECTIONS: "scheduler:activeDaySelections",
@@ -74,6 +74,7 @@ const LS_KEYS = {
 
 type DayScheduleLibrary = Record<string, DaySchedule>;
 type WeekSchedulesStore = Record<string, WeekSchedule>;
+type PeriodTemplatesStore = Record<string, PeriodTemplate>;
 
 function loadJSON<T>(key: string, fallback: T): T {
   try {
@@ -112,6 +113,17 @@ function weekdayName(i: number) {
 
 /* ------------------ Defaults + Migration ------------------ */
 
+function makeDefaultPeriod(name = "Period 1"): Period {
+  return {
+    name,
+    start: "10:00",
+    end: "11:00",
+    segments: [
+      { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
+      { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
+    ],
+  };
+}
 function makeDefaultSchedule(name: string): DaySchedule {
   return {
     name,
@@ -133,9 +145,10 @@ function makeDefaultSchedule(name: string): DaySchedule {
 function seedIfEmpty() {
   let lib = loadJSON<DayScheduleLibrary>(LS_KEYS.DAY_SCHEDULES, {});
   let weeks = loadJSON<WeekSchedulesStore>(LS_KEYS.WEEK_SCHEDULES, {});
+  let templates = loadJSON<PeriodTemplatesStore>(LS_KEYS.PERIOD_TEMPLATES, {});
   const activeWeek = localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE);
 
-  // migrate legacy per-weekday store into library if present
+  // migrate legacy
   const legacy = loadJSON<Record<string, Record<string, any>>>(LS_KEYS.LEGACY_DAY_SCHEDULES, {});
   if (Object.keys(lib).length === 0 && Object.keys(legacy).some((k) => /^\d$/.test(k))) {
     const collected: DayScheduleLibrary = {};
@@ -195,12 +208,49 @@ function seedIfEmpty() {
     saveJSON(LS_KEYS.WEEK_SCHEDULES, weeks);
   }
 
-  if (!activeWeek) {
-    localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, "DefaultWeek");
+  if (!activeWeek) localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, "DefaultWeek");
+
+  if (Object.keys(templates).length === 0) {
+    templates = {
+      "Std 10-11": { name: "Std 10-11", period: makeDefaultPeriod("Std Period") },
+    };
+    saveJSON(LS_KEYS.PERIOD_TEMPLATES, templates);
   }
 
-  // clean up legacy selections
   localStorage.removeItem(LS_KEYS.LEGACY_ACTIVE_DAY_SELECTIONS);
+}
+
+/* ------------------ Confirm dialog ------------------ */
+
+function ConfirmDialog({
+  open,
+  message,
+  onCancel,
+  onConfirm,
+  confirmText = "Delete",
+  danger = true,
+}: {
+  open: boolean;
+  message: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  confirmText?: string;
+  danger?: boolean;
+}) {
+  return (
+    <Dialog open={open} onClose={onCancel}>
+      <DialogTitle>Confirm</DialogTitle>
+      <DialogContent>
+        <Typography sx={{ mt: 1 }}>{message}</Typography>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel}>Cancel</Button>
+        <Button onClick={onConfirm} variant="contained" color={danger ? "error" : "primary"}>
+          {confirmText}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
 }
 
 /* ------------------ Pie Timer (SVG) ------------------ */
@@ -240,8 +290,7 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
     return `M ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 1 ${p1.x} ${p1.y}`;
   };
 
-  // NEW: detect single segment
-  const singleSeg = period.segments.length === 1 ? period.segments[0] : null; // <--
+  const singleSeg = period.segments.length === 1 ? period.segments[0] : null;
 
   const segArcs = period.segments.map((seg, i) => {
     const s = clamp(toMinutes(seg.start), pStart, pEnd) - pStart;
@@ -258,17 +307,8 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
   return (
     <Box>
       <svg width={size} height={size}>
-        {/* Fill whole pie with the single segment color when only one exists */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={r}
-          fill={singleSeg ? singleSeg.color : "#f5f5f5"}   // <--
-          stroke="#ccc"
-          strokeWidth={1}
-        />
-        {!singleSeg && segArcs /* skip arcs if single segment */}  {/* <--- */}
-
+        <circle cx={cx} cy={cy} r={r} fill={singleSeg ? singleSeg.color : "#f5f5f5"} stroke="#ccc" strokeWidth={1} />
+        {!singleSeg && segArcs}
         <line x1={cx} y1={cy} x2={pEndPt.x} y2={pEndPt.y} stroke="#000" strokeWidth={2} />
         <circle cx={cx} cy={cy} r={3} fill="#000" />
       </svg>
@@ -297,9 +337,241 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
   );
 }
 
+/* ------------------ Saved Periods Manager ------------------ */
+
+function PeriodTemplatesModal({
+  open,
+  onClose,
+  templates,
+  onSaveTemplates,
+}: {
+  open: boolean;
+  onClose: () => void;
+  templates: PeriodTemplatesStore;
+  onSaveTemplates: (t: PeriodTemplatesStore) => void;
+}) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const [working, setWorking] = useState<PeriodTemplatesStore>({});
+  const [selected, setSelected] = useState<string>("");
+
+  useEffect(() => {
+    if (open) {
+      setWorking(structuredClone(templates));
+      setSelected(Object.keys(templates)[0] || "");
+    }
+  }, [open, templates]);
+
+  const current = selected ? working[selected] : undefined;
+
+  const addTemplate = () => {
+    const base = "New Template";
+    let name = base;
+    let i = 1;
+    while (working[name]) name = `${base} ${i++}`;
+    const copy = { ...working, [name]: { name, period: makeDefaultPeriod(name) } };
+    setWorking(copy);
+    setSelected(name);
+  };
+  const deleteTemplate = (name: string) => {
+    const copy = { ...working };
+    delete copy[name];
+    setWorking(copy);
+    const next = Object.keys(copy)[0] || "";
+    setSelected(next);
+  };
+  const renameTemplate = (newName: string) => {
+    const old = selected;
+    const trimmed = newName.trim();
+    if (!old || !trimmed || working[trimmed]) return;
+    const copy = { ...working };
+    copy[trimmed] = { ...copy[old], name: trimmed };
+    delete copy[old];
+    setWorking(copy);
+    setSelected(trimmed);
+  };
+
+  const setPeriodField = (field: keyof Period, value: string) => {
+    if (!current) return;
+    setWorking((w) => ({
+      ...w,
+      [current.name]: { ...current, period: { ...current.period, [field]: value } },
+    }));
+  };
+  const setSegmentField = (sIdx: number, field: keyof Segment, value: string) => {
+    if (!current) return;
+    const p = current.period;
+    const segs = p.segments.map((s, i) => (i === sIdx ? { ...s, [field]: value } : s));
+    setWorking((w) => ({
+      ...w,
+      [current.name]: { ...current, period: { ...p, segments: segs } },
+    }));
+  };
+  const addSegment = () => {
+    if (!current) return;
+    const p = current.period;
+    const lastEnd = p.segments[p.segments.length - 1]?.end ?? p.start;
+    const proposedEnd = fromMinutes(Math.min(toMinutes(p.end), toMinutes(lastEnd) + 10));
+    const seg: Segment = { title: `Seg ${p.segments.length + 1}`, color: "#c5e1a5", start: lastEnd, end: proposedEnd };
+    setWorking((w) => ({
+      ...w,
+      [current.name]: { ...current, period: { ...p, segments: [...p.segments, seg] } },
+    }));
+  };
+  const removeSegment = (sIdx: number) => {
+    if (!current) return;
+    const p = current.period;
+    setWorking((w) => ({
+      ...w,
+      [current.name]: { ...current, period: { ...p, segments: p.segments.filter((_, i) => i !== sIdx) } },
+    }));
+  };
+
+  const handleSave = () => {
+    onSaveTemplates(working);
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" fullScreen={fullScreen}>
+      <DialogTitle>Saved Periods</DialogTitle>
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+            <FormControl fullWidth>
+              <InputLabel id="tpl-select">Template</InputLabel>
+              <Select
+                labelId="tpl-select"
+                label="Template"
+                value={selected || ""}
+                onChange={(e) => setSelected(String(e.target.value))}
+              >
+                {Object.keys(working).map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField
+              fullWidth
+              label="Rename"
+              value={selected}
+              onChange={(e) => setSelected(e.target.value)}
+              onBlur={(e) => renameTemplate(e.target.value)}
+            />
+            <Tooltip title="New template">
+              <IconButton onClick={addTemplate}>
+                <AddIcon />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete template">
+              <span>
+                <IconButton
+                  color="error"
+                  disabled={!selected}
+                  onClick={() => selected && deleteTemplate(selected)}
+                >
+                  <DeleteOutlineIcon />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
+
+          {!current ? (
+            <Alert severity="info">Create a template to edit.</Alert>
+          ) : (
+            <>
+              <Divider textAlign="left">Period</Divider>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+                <TextField
+                  fullWidth
+                  label="Name"
+                  value={current.period.name}
+                  onChange={(e) => setPeriodField("name", e.target.value)}
+                />
+                <TextField
+                  label="Start (HH:MM)"
+                  value={current.period.start}
+                  onChange={(e) => setPeriodField("start", e.target.value as HHMM)}
+                  sx={{ width: { xs: "100%", sm: 160 } }}
+                />
+                <TextField
+                  label="End (HH:MM)"
+                  value={current.period.end}
+                  onChange={(e) => setPeriodField("end", e.target.value as HHMM)}
+                  sx={{ width: { xs: "100%", sm: 160 } }}
+                />
+              </Stack>
+
+              <Stack spacing={1} sx={{ mt: 1 }}>
+                {current.period.segments.map((s, i) => (
+                  <Stack key={i} direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+                    <TextField
+                      label="Title"
+                      value={s.title}
+                      onChange={(e) => setSegmentField(i, "title", e.target.value)}
+                      sx={{ minWidth: 160, flex: 1 }}
+                    />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <input
+                        type="color"
+                        value={s.color}
+                        onChange={(e) => setSegmentField(i, "color", e.target.value)}
+                        style={{ width: 40, height: 40, border: "none", background: "transparent" }}
+                        aria-label="Segment color"
+                      />
+                      <TextField
+                        label="Color (hex)"
+                        value={s.color}
+                        onChange={(e) => setSegmentField(i, "color", e.target.value)}
+                        sx={{ width: 140 }}
+                      />
+                    </Box>
+                    <TextField
+                      label="Start"
+                      value={s.start}
+                      onChange={(e) => setSegmentField(i, "start", e.target.value as HHMM)}
+                      sx={{ width: 120 }}
+                    />
+                    <TextField
+                      label="End"
+                      value={s.end}
+                      onChange={(e) => setSegmentField(i, "end", e.target.value as HHMM)}
+                      sx={{ width: 120 }}
+                    />
+                    <Tooltip title="Delete segment">
+                      <IconButton color="error" size="small" onClick={() => removeSegment(i)}>
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                ))}
+              </Stack>
+
+              <Button onClick={addSegment} startIcon={<AddIcon />} sx={{ mt: 1 }}>
+                Add Segment
+              </Button>
+            </>
+          )}
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button variant="contained" onClick={handleSave}>
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
 
 /* ------------------ Library Editor (existing schedules) ------------------ */
-
+/*  - Controlled fields, Save/Cancel with discard confirm (kept from your last version)
+    - Insert Saved Period into current schedule
+    - Keeps stable order during rename/add/delete while open
+*/
 function LibraryEditor({
   open,
   onClose,
@@ -307,6 +579,8 @@ function LibraryEditor({
   selectedName,
   onSaveLib,
   onDeleteSchedule,
+  onManageTemplates,
+  templates,
 }: {
   open: boolean;
   onClose: () => void;
@@ -314,18 +588,21 @@ function LibraryEditor({
   selectedName?: string;
   onSaveLib: (updated: DayScheduleLibrary) => void;
   onDeleteSchedule: (name: string) => void;
+  onManageTemplates: () => void;
+  templates: PeriodTemplatesStore;
 }) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [selected, setSelected] = useState<string>("");
   const [working, setWorking] = useState<DayScheduleLibrary>({});
   const [order, setOrder] = useState<string[]>([]);
   const [isDirty, setDirty] = useState(false);
 
-  // Rename dialog state
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameValue, setRenameValue] = useState("");
-
-  // Discard confirmation
   const [discardOpen, setDiscardOpen] = useState(false);
+
   const requestClose = () => {
     if (isDirty) setDiscardOpen(true);
     else onClose();
@@ -336,7 +613,6 @@ function LibraryEditor({
     onClose();
   };
 
-  // Initialize on open (take a snapshot of lib)
   useEffect(() => {
     if (!open) return;
     const clone = structuredClone(lib);
@@ -344,17 +620,13 @@ function LibraryEditor({
     const keys = Object.keys(lib);
     setOrder(keys);
     const initial =
-      (selectedName && lib[selectedName] && selectedName) ||
-      keys[0] ||
-      "";
+      (selectedName && lib[selectedName] && selectedName) || keys[0] || "";
     setSelected(initial);
     setDirty(false);
-  }, [open, lib, selectedName]); // only when opened
+  }, [open]); // only when opened
 
-  // If parent changes lib while editor is open, merge in a non-destructive way
   useEffect(() => {
     if (!open) return;
-    // Only merge additions/removals if user hasn't edited (avoid stomping work-in-progress)
     if (!isDirty) {
       const clone = structuredClone(lib);
       setWorking(clone);
@@ -370,14 +642,12 @@ function LibraryEditor({
 
   const current = selected ? working[selected] : undefined;
 
-  /* ---------- Helpers to mark dirty and update ---------- */
   const mark = <T,>(updater: (prev: T) => T) =>
     (prev: T) => {
       setDirty(true);
       return updater(prev);
     };
 
-  /* ---------- Schedule-level actions ---------- */
   const addSchedule = () => {
     const base = "NewSchedule";
     let name = base;
@@ -390,7 +660,6 @@ function LibraryEditor({
   };
 
   const handleScheduleDelete = (name: string) => {
-    // mark dirty and remove locally; parent will get final copy on Save
     setWorking(mark((w) => {
       const copy = { ...w };
       delete copy[name];
@@ -399,12 +668,11 @@ function LibraryEditor({
     setOrder((prev) => prev.filter((n) => n !== name));
     setSelected((prevSel) => {
       if (prevSel !== name) return prevSel;
-      const next = order.filter((n) => n !== name)[0];
-      if (next && working[next]) return next;
+      const nextOrder = order.filter((n) => n !== name);
+      if (nextOrder[0] && working[nextOrder[0]]) return nextOrder[0];
       const keys = Object.keys(working).filter((k) => k !== name);
       return keys[0] || "";
     });
-    // Note: we DO NOT call onDeleteSchedule now; deletion is finalized on Save
   };
 
   const openRename = () => {
@@ -418,7 +686,6 @@ function LibraryEditor({
     setRenameOpen(false);
     if (!oldName || !newName || oldName === newName || working[newName]) return;
 
-    // Update order in place
     setOrder((prev) => {
       const idx = prev.indexOf(oldName);
       if (idx === -1) return prev;
@@ -427,7 +694,6 @@ function LibraryEditor({
       return next;
     });
 
-    // Move map entry
     setWorking(mark((w) => {
       const copy = { ...w };
       copy[newName] = { ...copy[oldName], name: newName };
@@ -438,7 +704,6 @@ function LibraryEditor({
     setSelected(newName);
   };
 
-  /* ---------- Period/Segment editing (controlled) ---------- */
   const setPeriodField = (pIdx: number, field: keyof Period, value: string) => {
     if (!current) return;
     const cname = current.name;
@@ -453,15 +718,7 @@ function LibraryEditor({
     const cname = current.name;
     setWorking(mark((w) => {
       const sched = w[cname];
-      const newP: Period = {
-        name: `Period ${sched.periods.length + 1}`,
-        start: "10:00",
-        end: "11:00",
-        segments: [
-          { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
-          { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
-        ],
-      };
+      const newP = makeDefaultPeriod(`Period ${sched.periods.length + 1}`);
       return { ...w, [cname]: { ...sched, periods: [...sched.periods, newP] } };
     }));
   };
@@ -515,33 +772,40 @@ function LibraryEditor({
     }));
   };
 
-  /* ---------- Save ---------- */
-const handleSave = () => {
-  // Compute which schedules were deleted during this edit session
-  const beforeKeys = Object.keys(lib);                     // string[]
-  const afterSet = new Set(Object.keys(working));          // Set<string>
-  const deleted = beforeKeys.filter((k) => !afterSet.has(k));
+  // Insert a Saved Period template into current schedule
+  const [tplChoice, setTplChoice] = useState<string>("");
+  const insertTemplate = () => {
+    if (!current || !tplChoice || !templates[tplChoice]) return;
+    const tpl = templates[tplChoice].period;
+    const clone: Period = JSON.parse(JSON.stringify(tpl));
+    const cname = current.name;
+    setWorking(mark((w) => {
+      const sched = w[cname];
+      return { ...w, [cname]: { ...sched, periods: [...sched.periods, clone] } };
+    }));
+  };
 
-  // Scrub week mappings for deleted schedules
-  deleted.forEach((name) => onDeleteSchedule(name));
+  const handleSave = () => {
+    const beforeKeys = Object.keys(lib);
+    const afterSet = new Set(Object.keys(working));
+    const deleted = beforeKeys.filter((k) => !afterSet.has(k));
+    deleted.forEach((name) => onDeleteSchedule(name));
 
-  onSaveLib(working);
-  setDirty(false);
-  onClose();
-};
+    onSaveLib(working);
+    setDirty(false);
+    onClose();
+  };
 
-
-  /* ---------- Render ---------- */
   return (
     <Dialog
       open={open}
-      onClose={requestClose} // intercept backdrop/Escape
+      onClose={requestClose}
       fullWidth
       maxWidth="md"
+      fullScreen={fullScreen}
     >
       <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         Edit Day Schedules
-        {/* X acts as Cancel with discard prompt */}
         <IconButton onClick={requestClose} size="small" aria-label="Cancel">
           <CloseIcon />
         </IconButton>
@@ -549,9 +813,9 @@ const handleSave = () => {
 
       <DialogContent dividers>
         <Stack spacing={2}>
-          {/* Top controls: schedule select + rename (icon) + add + delete */}
+          {/* Top controls */}
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
-            <FormControl sx={{ minWidth: 240 }}>
+            <FormControl sx={{ minWidth: 240 }} fullWidth>
               <InputLabel id="lib-select-label">Schedule</InputLabel>
               <Select
                 labelId="lib-select-label"
@@ -567,7 +831,6 @@ const handleSave = () => {
               </Select>
             </FormControl>
 
-            {/* Rename via dialog (pencil) */}
             <Tooltip title="Rename schedule">
               <span>
                 <IconButton onClick={openRename} disabled={!selected}>
@@ -595,6 +858,39 @@ const handleSave = () => {
             </Tooltip>
           </Stack>
 
+          {/* Insert Saved Period row */}
+          <Paper variant="outlined" sx={{ p: 1.5 }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+              <FormControl sx={{ minWidth: 220 }} fullWidth>
+                <InputLabel id="tpl-choose">Saved period</InputLabel>
+                <Select
+                  labelId="tpl-choose"
+                  label="Saved period"
+                  value={tplChoice}
+                  onChange={(e) => setTplChoice(String(e.target.value))}
+                >
+                  {Object.keys(templates).length ? (
+                    Object.keys(templates).map((n) => (
+                      <MenuItem key={n} value={n}>
+                        {n}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem value="" disabled>
+                      No saved periods
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+              <Button variant="contained" onClick={insertTemplate} disabled={!tplChoice || !current}>
+                Insert into schedule
+              </Button>
+              <Button variant="outlined" onClick={onManageTemplates}>
+                Manage Saved Periods
+              </Button>
+            </Stack>
+          </Paper>
+
           {!current ? (
             <Alert severity="info">Select or create a schedule to edit.</Alert>
           ) : (
@@ -608,19 +904,19 @@ const handleSave = () => {
                         label="Period Name"
                         value={p.name}
                         onChange={(e) => setPeriodField(pIdx, "name", e.target.value)}
-                        sx={{ minWidth: 180 }}
+                        sx={{ minWidth: 180, flex: 1 }}
                       />
                       <TextField
                         label="Start (HH:MM)"
                         value={p.start}
                         onChange={(e) => setPeriodField(pIdx, "start", e.target.value as HHMM)}
-                        sx={{ width: 130 }}
+                        sx={{ width: { xs: "100%", sm: 140 } }}
                       />
                       <TextField
                         label="End (HH:MM)"
                         value={p.end}
                         onChange={(e) => setPeriodField(pIdx, "end", e.target.value as HHMM)}
-                        sx={{ width: 130 }}
+                        sx={{ width: { xs: "100%", sm: 140 } }}
                       />
                       <Tooltip title="Delete period">
                         <IconButton color="error" onClick={() => removePeriod(pIdx)}>
@@ -637,7 +933,7 @@ const handleSave = () => {
                             label="Title"
                             value={s.title}
                             onChange={(e) => setSegmentField(pIdx, sIdx, "title", e.target.value)}
-                            sx={{ minWidth: 160 }}
+                            sx={{ minWidth: 160, flex: 1 }}
                           />
                           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <input
@@ -711,9 +1007,7 @@ const handleSave = () => {
       <Dialog open={discardOpen} onClose={() => setDiscardOpen(false)}>
         <DialogTitle>Discard changes?</DialogTitle>
         <DialogContent>
-          <Typography sx={{ mt: 1 }}>
-            You have unsaved changes. Do you want to discard them?
-          </Typography>
+          <Typography sx={{ mt: 1 }}>You have unsaved changes. Discard them?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDiscardOpen(false)}>Keep editing</Button>
@@ -723,9 +1017,8 @@ const handleSave = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Footer: Save only (Close is now Save) */}
-      <DialogActions>
-        <Button variant="contained" onClick={handleSave}>
+      <DialogActions sx={{ p: 2 }}>
+        <Button fullWidth={fullScreen} variant="contained" onClick={handleSave}>
           Save
         </Button>
       </DialogActions>
@@ -733,26 +1026,32 @@ const handleSave = () => {
   );
 }
 
-
-
-
-
-
-/* ------------------ Add Day Schedule Modal (NEW, no library dropdown) ------------------ */
+/* ------------------ Add Day Schedule Modal (focused creator) ------------------ */
 
 function AddScheduleModal({
   open,
   onClose,
   onCreate,
+  onManageTemplates,
+  templates,
 }: {
   open: boolean;
   onClose: () => void;
   onCreate: (schedule: DaySchedule) => void;
+  onManageTemplates: () => void;
+  templates: PeriodTemplatesStore;
 }) {
+  const theme = useTheme();
+  const fullScreen = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [schedule, setSchedule] = useState<DaySchedule>(() => makeDefaultSchedule("NewSchedule"));
+  const [tplChoice, setTplChoice] = useState<string>("");
 
   useEffect(() => {
-    if (open) setSchedule(makeDefaultSchedule("NewSchedule"));
+    if (open) {
+      setSchedule(makeDefaultSchedule("NewSchedule"));
+      setTplChoice("");
+    }
   }, [open]);
 
   const setName = (name: string) => setSchedule((s) => ({ ...s, name }));
@@ -762,21 +1061,7 @@ function AddScheduleModal({
       periods: s.periods.map((p, i) => (i === idx ? { ...p, [field]: value } : p)),
     }));
   const addPeriod = () =>
-    setSchedule((s) => ({
-      ...s,
-      periods: [
-        ...s.periods,
-        {
-          name: `Period ${s.periods.length + 1}`,
-          start: "10:00",
-          end: "11:00",
-          segments: [
-            { title: "Seg 1", color: "#90caf9", start: "10:00", end: "10:20" },
-            { title: "Seg 2", color: "#ffcc80", start: "10:20", end: "11:00" },
-          ],
-        },
-      ],
-    }));
+    setSchedule((s) => ({ ...s, periods: [...s.periods, makeDefaultPeriod(`Period ${s.periods.length + 1}`)] }));
   const removePeriod = (idx: number) =>
     setSchedule((s) => ({ ...s, periods: s.periods.filter((_, i) => i !== idx) }));
 
@@ -807,6 +1092,13 @@ function AddScheduleModal({
       ),
     }));
 
+  const insertTemplate = () => {
+    if (!tplChoice || !templates[tplChoice]) return;
+    const tpl = templates[tplChoice].period;
+    const clone: Period = JSON.parse(JSON.stringify(tpl));
+    setSchedule((s) => ({ ...s, periods: [...s.periods, clone] }));
+  };
+
   const handleCreate = () => {
     const trimmed = schedule.name.trim() || "NewSchedule";
     onCreate({ ...schedule, name: trimmed });
@@ -814,21 +1106,44 @@ function AddScheduleModal({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        Add Day Schedule
-        <IconButton onClick={onClose} size="small">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" fullScreen={fullScreen}>
+      <DialogTitle>Add Day Schedule</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          <TextField
-            label="Schedule name"
-            value={schedule.name}
-            onChange={(e) => setName(e.target.value)}
-            fullWidth
-          />
+          <TextField label="Schedule name" value={schedule.name} onChange={(e) => setName(e.target.value)} fullWidth />
+
+          {/* Insert Saved Period */}
+          <Paper variant="outlined" sx={{ p: 1.5 }}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
+              <FormControl sx={{ minWidth: 220 }} fullWidth>
+                <InputLabel id="add-tpl-choose">Saved period</InputLabel>
+                <Select
+                  labelId="add-tpl-choose"
+                  label="Saved period"
+                  value={tplChoice}
+                  onChange={(e) => setTplChoice(String(e.target.value))}
+                >
+                  {Object.keys(templates).length ? (
+                    Object.keys(templates).map((n) => (
+                      <MenuItem key={n} value={n}>
+                        {n}
+                      </MenuItem>
+                    ))
+                  ) : (
+                    <MenuItem value="" disabled>
+                      No saved periods
+                    </MenuItem>
+                  )}
+                </Select>
+              </FormControl>
+              <Button variant="contained" onClick={insertTemplate} disabled={!tplChoice}>
+                Insert into schedule
+              </Button>
+              <Button variant="outlined" onClick={onManageTemplates}>
+                Manage Saved Periods
+              </Button>
+            </Stack>
+          </Paper>
 
           <Divider textAlign="left">Periods</Divider>
           <Stack spacing={2}>
@@ -839,19 +1154,19 @@ function AddScheduleModal({
                     label="Period Name"
                     value={p.name}
                     onChange={(e) => setPeriodField(pIdx, "name", e.target.value)}
-                    sx={{ minWidth: 180 }}
+                    sx={{ minWidth: 180, flex: 1 }}
                   />
                   <TextField
                     label="Start (HH:MM)"
                     value={p.start}
                     onChange={(e) => setPeriodField(pIdx, "start", e.target.value as HHMM)}
-                    sx={{ width: 130 }}
+                    sx={{ width: { xs: "100%", sm: 140 } }}
                   />
                   <TextField
                     label="End (HH:MM)"
                     value={p.end}
                     onChange={(e) => setPeriodField(pIdx, "end", e.target.value as HHMM)}
-                    sx={{ width: 130 }}
+                    sx={{ width: { xs: "100%", sm: 140 } }}
                   />
                   <Tooltip title="Delete period">
                     <IconButton color="error" onClick={() => removePeriod(pIdx)}>
@@ -868,7 +1183,7 @@ function AddScheduleModal({
                         label="Title"
                         value={s.title}
                         onChange={(e) => setSegmentField(pIdx, sIdx, "title", e.target.value)}
-                        sx={{ minWidth: 160 }}
+                        sx={{ minWidth: 160, flex: 1 }}
                       />
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <input
@@ -949,6 +1264,9 @@ function WeekPanel({
   onDeleteWeek: () => void;
   onAddWeek: () => void;
 }) {
+  const theme = useTheme();
+  const isSm = useMediaQuery(theme.breakpoints.down("sm"));
+
   const activeWeek = weekStore[activeWeekName];
   const libNames = Object.keys(lib);
 
@@ -957,14 +1275,14 @@ function WeekPanel({
   useEffect(() => setRenameValue(activeWeekName), [activeWeekName]);
 
   return (
-    <Paper variant="outlined" sx={{ p: 2 }}>
+    <Paper variant="outlined" sx={{ p: { xs: 1.5, sm: 2 } }}>
       <Typography variant="subtitle1" gutterBottom>
         Week Mapping
       </Typography>
 
       {/* Top row: week select + rename + add week + delete */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
-        <FormControl sx={{ minWidth: 220, flex: 1 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ mb: 1 }}>
+        <FormControl sx={{ minWidth: 220, flex: 1 }} fullWidth={isSm}>
           <InputLabel id="week-panel-select">Week</InputLabel>
           <Select
             labelId="week-panel-select"
@@ -980,36 +1298,36 @@ function WeekPanel({
           </Select>
         </FormControl>
 
-        <Tooltip title="Rename week">
-          <IconButton onClick={() => setRenameOpen(true)}>
-            <EditIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="New week">
-          <IconButton onClick={onAddWeek}>
-            <AddIcon />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Delete week">
-          <IconButton color="error" onClick={onDeleteWeek}>
-            <DeleteOutlineIcon />
-          </IconButton>
-        </Tooltip>
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="Rename week">
+            <IconButton onClick={() => setRenameOpen(true)}>
+              <EditIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="New week">
+            <IconButton onClick={onAddWeek}>
+              <AddIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete week">
+            <IconButton color="error" onClick={onDeleteWeek}>
+              <DeleteOutlineIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
 
       {/* Second row: Add Day Schedule (new modal), Edit Library (existing schedules) */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 2 }}>
-        <Button variant="contained" onClick={onOpenAddSchedule} startIcon={<AddIcon />}>
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }} sx={{ mb: 2 }}>
+        <Button fullWidth={isSm} variant="contained" onClick={onOpenAddSchedule} startIcon={<AddIcon />}>
           Add Day Schedule
         </Button>
-        <Button variant="outlined" onClick={onOpenLibrary}>
+        <Button fullWidth={isSm} variant="outlined" onClick={onOpenLibrary}>
           Edit Day Schedules
         </Button>
       </Stack>
 
-      {/* Mapping table */}
+      {/* Mapping table, with "None" option */}
       <Stack spacing={1.25}>
         {Array.from({ length: 7 }, (_, d) => {
           const dayLabel = weekdayName(d);
@@ -1019,7 +1337,7 @@ function WeekPanel({
               <Box sx={{ minWidth: 100 }}>
                 <Typography>{dayLabel}</Typography>
               </Box>
-              <FormControl sx={{ minWidth: 200, flex: 1 }}>
+              <FormControl sx={{ minWidth: 200, flex: 1 }} fullWidth={isSm}>
                 <InputLabel id={`day-row-${d}`}>Day schedule</InputLabel>
                 <Select
                   labelId={`day-row-${d}`}
@@ -1027,17 +1345,12 @@ function WeekPanel({
                   value={mapped || ""}
                   onChange={(e) => onAssign(activeWeekName, d, String(e.target.value))}
                 >
-                  {libNames.length ? (
-                    libNames.map((n) => (
-                      <MenuItem key={n} value={n}>
-                        {n}
-                      </MenuItem>
-                    ))
-                  ) : (
-                    <MenuItem value="" disabled>
-                      No schedules saved
+                  <MenuItem value="">None</MenuItem>
+                  {libNames.map((n) => (
+                    <MenuItem key={n} value={n}>
+                      {n}
                     </MenuItem>
-                  )}
+                  ))}
                 </Select>
               </FormControl>
             </Stack>
@@ -1079,34 +1392,39 @@ function WeekPanel({
 /* ------------------ Main App ------------------ */
 
 export default function DailyScheduleApp() {
-  // Live clock (rerender every second)
+  const theme = useTheme();
+  const isSm = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Live clock (rerender each second)
   const [, setTimeTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTimeTick((t) => t + 1), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // Core state mirrored with localStorage
+  // Core state + LS
   const [lib, setLib] = useState<DayScheduleLibrary>({});
   const [weeks, setWeeks] = useState<WeekSchedulesStore>({});
   const [activeWeekName, setActiveWeekName] = useState<string>("DefaultWeek");
+  const [templates, setTemplates] = useState<PeriodTemplatesStore>({});
 
   // seed + load
   useEffect(() => {
     seedIfEmpty();
     setLib(loadJSON(LS_KEYS.DAY_SCHEDULES, {}));
     setWeeks(loadJSON(LS_KEYS.WEEK_SCHEDULES, {}));
+    setTemplates(loadJSON(LS_KEYS.PERIOD_TEMPLATES, {}));
     setActiveWeekName(localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE) ?? "DefaultWeek");
   }, []);
 
-  // Derived: today
+  // Today
   const now = new Date();
   const todayWeekday = now.getDay();
   const activeWeek = weeks[activeWeekName];
-  const todaysScheduleName = activeWeek?.mapping?.[todayWeekday] ?? "";
+  const todaysScheduleName = activeWeek?.mapping?.[todayWeekday] || "";
   const todaysSchedule = todaysScheduleName ? lib[todaysScheduleName] : undefined;
 
-  // Active period for pie timer (today's schedule only)
+  // Active period
   const minutesNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
   const activePeriod = useMemo(() => {
     const p = todaysSchedule?.periods ?? [];
@@ -1129,6 +1447,10 @@ export default function DailyScheduleApp() {
       localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, nextActive);
     }
   };
+  const saveTemplates = (updated: PeriodTemplatesStore) => {
+    setTemplates(updated);
+    saveJSON(LS_KEYS.PERIOD_TEMPLATES, updated);
+  };
 
   /* ---------- Week actions ---------- */
 
@@ -1139,7 +1461,14 @@ export default function DailyScheduleApp() {
   const assignWeekScheduleToDay = (weekName: string, wd: number, dayName: string) => {
     const ws = { ...weeks };
     const wk = { ...(ws[weekName] ?? { name: weekName, mapping: {} }) };
-    wk.mapping = { ...wk.mapping, [wd]: dayName };
+    // interpret empty string as None (delete mapping key)
+    if (!dayName) {
+      const nm = { ...wk.mapping };
+      delete nm[wd];
+      wk.mapping = nm;
+    } else {
+      wk.mapping = { ...wk.mapping, [wd]: dayName };
+    }
     ws[weekName] = wk;
     saveWeeks(ws);
   };
@@ -1169,76 +1498,38 @@ export default function DailyScheduleApp() {
     saveWeeks(ws, newName);
   };
 
-  /* ---------- Library actions & modals ---------- */
+  /* ---------- Modals ---------- */
 
   const [libraryOpen, setLibraryOpen] = useState(false);
-  const [librarySelectedOnOpen, setLibrarySelectedOnOpen] = useState<string | undefined>(undefined);
-
-  // Add Schedule modal
   const [addOpen, setAddOpen] = useState(false);
-
-  const openAddSchedule = () => setAddOpen(true);
-  const createSchedule = (sched: DaySchedule) => {
-    // ensure unique name
-    let name = sched.name.trim() || "NewSchedule";
-    let i = 1;
-    while (lib[name]) {
-      name = `${sched.name}-${i++}`;
-    }
-    const updated = { ...lib, [name]: { ...sched, name } };
-    saveLib(updated);
-  };
-
-  const openLibrary = () => {
-    setLibrarySelectedOnOpen(undefined);
-    setLibraryOpen(true);
-  };
-
-  const deleteScheduleFromLibrary = (name: string) => {
-    // scrub week mappings
-    const ws = { ...weeks };
-    Object.values(ws).forEach((w) => {
-      Object.entries(w.mapping).forEach(([wd, sched]) => {
-        if (sched === name) {
-          const nm = { ...w.mapping };
-          delete nm[Number(wd)];
-          w.mapping = nm;
-        }
-      });
-    });
-    saveWeeks(ws);
-
-    const copy = { ...lib };
-    delete copy[name];
-    saveLib(copy);
-  };
+  const [tplOpen, setTplOpen] = useState(false);
 
   return (
-    <Box sx={{ p: 2, maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h5" gutterBottom>
+    <Box sx={{ p: { xs: 1.5, sm: 2 }, maxWidth: 1200, mx: "auto" }}>
+      <Typography variant={isSm ? "h6" : "h5"} gutterBottom>
         Daily Schedule & Pie Timer
       </Typography>
 
       {/* Main content */}
-      <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ mt: 2 }}>
-        {/* Left: Now + today's schedule, pie, periods */}
+      <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 1 }}>
+        {/* Left */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="overline">Now</Typography>
-          <Typography variant="h3">{nowFmt}</Typography>
+          <Typography variant={isSm ? "h4" : "h3"}>{nowFmt}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {weekdayName(now.getDay())} · {activeWeek?.mapping?.[now.getDay()] || "(no schedule set)"}
           </Typography>
 
-          <Box sx={{ mt: 2 }}>
+          <Box sx={{ mt: 2, display: "flex", justifyContent: { xs: "center", md: "flex-start" } }}>
             <PieTimer period={activePeriod ?? undefined} nowMinutes={minutesNow} />
           </Box>
 
-          <Box sx={{ mt: 3 }}>
+          <Box sx={{ mt: 2 }}>
             <Typography variant="overline">Today’s Periods</Typography>
             <Stack spacing={1} sx={{ mt: 1 }}>
               {todaysSchedule?.periods?.length ? (
                 todaysSchedule.periods.map((p, i) => (
-                  <Paper key={i} variant="outlined" sx={{ p: 1.5 }}>
+                  <Paper key={i} variant="outlined" sx={{ p: { xs: 1, sm: 1.5 } }}>
                     <Typography variant="subtitle1">
                       {p.name} — {p.start} to {p.end}
                     </Typography>
@@ -1256,7 +1547,7 @@ export default function DailyScheduleApp() {
           </Box>
         </Box>
 
-        {/* Right: Week panel */}
+        {/* Right */}
         <Box sx={{ width: { md: 480 }, flexShrink: 0 }}>
           <WeekPanel
             weekStore={weeks}
@@ -1264,25 +1555,66 @@ export default function DailyScheduleApp() {
             activeWeekName={activeWeekName}
             onChangeActiveWeek={updateActiveWeekName}
             onAssign={assignWeekScheduleToDay}
-            onOpenAddSchedule={openAddSchedule}
-            onOpenLibrary={openLibrary}
+            onOpenAddSchedule={() => setAddOpen(true)}
+            onOpenLibrary={() => setLibraryOpen(true)}
             onRenameWeek={renameActiveWeek}
             onDeleteWeek={deleteActiveWeek}
             onAddWeek={createWeekSchedule}
           />
+
+          {/* Quick access to Saved Periods */}
+          <Box sx={{ mt: 2, textAlign: "right" }}>
+            <Button size="small" variant="outlined" onClick={() => setTplOpen(true)}>
+              Manage Saved Periods
+            </Button>
+          </Box>
         </Box>
       </Stack>
 
       {/* Modals */}
-      <AddScheduleModal open={addOpen} onClose={() => setAddOpen(false)} onCreate={createSchedule} />
+      <AddScheduleModal
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onCreate={(sched) => {
+          let name = sched.name.trim() || "NewSchedule";
+          let i = 1;
+          while (lib[name]) name = `${sched.name}-${i++}`;
+          const updated = { ...lib, [name]: { ...sched, name } };
+          saveLib(updated);
+        }}
+        onManageTemplates={() => setTplOpen(true)}
+        templates={templates}
+      />
 
       <LibraryEditor
         open={libraryOpen}
         onClose={() => setLibraryOpen(false)}
         lib={lib}
-        selectedName={librarySelectedOnOpen}
+        selectedName={undefined}
         onSaveLib={saveLib}
-        onDeleteSchedule={deleteScheduleFromLibrary}
+        onDeleteSchedule={(name) => {
+          // scrub week mappings that use this schedule
+          const ws = { ...weeks };
+          Object.values(ws).forEach((w) => {
+            Object.entries(w.mapping).forEach(([wd, sched]) => {
+              if (sched === name) {
+                const nm = { ...w.mapping };
+                delete nm[Number(wd)];
+                w.mapping = nm;
+              }
+            });
+          });
+          saveWeeks(ws);
+        }}
+        onManageTemplates={() => setTplOpen(true)}
+        templates={templates}
+      />
+
+      <PeriodTemplatesModal
+        open={tplOpen}
+        onClose={() => setTplOpen(false)}
+        templates={templates}
+        onSaveTemplates={saveTemplates}
       />
     </Box>
   );
