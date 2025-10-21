@@ -35,10 +35,11 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 /**
  * Perfect Maze + Junction Quiz
- * - Bump (wall-hit) animation with input lockout (time waste only; no score or error penalty).
+ * - Wall bumps: animation + lockout (time only).
+ * - Junctions: choose wrong exit => errors+1; choose correct exit => award points (once per question id).
  * - Must see ALL unique questions to win (optional). If not complete at exit, loads a new maze and continues.
- * - All options live in a top Accordion.
- * - Junction cells darken to yellow-orange once their question ID has been seen anywhere.
+ * - Options live in a top Accordion.
+ * - Junction cells darken when their question id has been seen anywhere.
  * - CSV upload auto-regenerates a fresh maze and resets the run with the new pool.
  */
 
@@ -172,7 +173,6 @@ function neighbors(
   return out;
 }
 
-// Minor fix for distanceMapToExit
 function distanceMapToExitFixed(maze: Maze): number[][] {
   const dist = Array.from({ length: maze.rows }, () =>
     Array(maze.cols).fill(Infinity)
@@ -423,6 +423,7 @@ export default function MazeQuizApp() {
   const [pathLenWeight, setPathLenWeight] = useState<number>(10);
   const [wrongMovePenalty, setWrongMovePenalty] = useState<number>(50);
   const [timePenaltyPerSec, setTimePenaltyPerSec] = useState<number>(5); // default time penalty = 5/sec
+  const [correctReward, setCorrectReward] = useState<number>(25); // NEW: per-correct question reward
   const [clampScoreAtZero, setClampScoreAtZero] = useState<boolean>(true);
 
   // ===== Collision animation config =====
@@ -446,14 +447,17 @@ export default function MazeQuizApp() {
   const [winOpen, setWinOpen] = useState(false);
 
   // Timer & scoring tracking
-  // NOTE: questionIdsSeen persists across multiple mazes until you win or hit "Reset Run".
+  // questionIdsSeen persists across mazes until win or reset
   const [questionIdsSeen, setQuestionIdsSeen] = useState<Set<string>>(new Set());
+  // NEW: unique questions correctly answered (credited once per question id)
+  const [correctQuestionIds, setCorrectQuestionIds] = useState<Set<string>>(new Set());
+
   const [hasStarted, setHasStarted] = useState(false);
   const [startTs, setStartTs] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState<number>(Date.now());
   const [endTs, setEndTs] = useState<number | null>(null);
   const [shortestLenFromStart, setShortestLenFromStart] = useState<number>(0);
-  const [wrongMoves, setWrongMoves] = useState(0); // stays 0 on wall bump now
+  const [wrongMoves, setWrongMoves] = useState(0); // only increments on wrong junction choice
   const [mazeCount, setMazeCount] = useState(1);
 
   const [explored, setExplored] = useState<Set<string>>(() => new Set());
@@ -473,7 +477,7 @@ export default function MazeQuizApp() {
     setExplored(computeRayVisible(maze, start));
   }, [maze]);
 
-  // Unique questions encountered (persist across mazes)
+  // Mark question seen when standing on a junction that holds a question
   useEffect(() => {
     if (currentCell.openings > 2 && currentCell.quiz?.id) {
       setQuestionIdsSeen((prev) => {
@@ -495,6 +499,7 @@ export default function MazeQuizApp() {
   const timeStr = new Date(elapsedMs).toISOString().substring(14, 19);
   const timeSec = Math.round(elapsedMs / 1000);
   const uniqueQ = questionIdsSeen.size;
+  const correctUniqueQ = correctQuestionIds.size;
 
   // INITIAL shortest path from the start (of the current maze)
   useEffect(() => {
@@ -503,12 +508,13 @@ export default function MazeQuizApp() {
     setShortestLenFromStart(sp.length);
   }, [maze]);
 
-  // Score with customizable weights
+  // Score with customizable weights + correct reward
   const rawScore =
     baseScore +
     uniqueQ * uniqueQWeight +
-    shortestLenFromStart * pathLenWeight -
-    wrongMoves * wrongMovePenalty - // wrongMoves will not change from wall bumps
+    shortestLenFromStart * pathLenWeight +
+    correctUniqueQ * correctReward - // NEW: reward for unique correct answers
+    wrongMoves * wrongMovePenalty -
     timeSec * timePenaltyPerSec;
 
   const liveScore = clampScoreAtZero ? Math.max(0, rawScore) : rawScore;
@@ -526,6 +532,7 @@ export default function MazeQuizApp() {
     setPathHighlight([]);
     setWinOpen(false);
     setQuestionIdsSeen(new Set());
+    setCorrectQuestionIds(new Set());
     setHasStarted(false);
     setStartTs(null);
     setEndTs(null);
@@ -605,12 +612,30 @@ export default function MazeQuizApp() {
       const { r, c } = player;
       const here = maze.cells[r][c];
 
-      // COLLISION: bump if wall blocks the move
+      // COLLISION: bump if wall blocks the move (no error added)
       if (here.walls[dir]) {
-        // WASTE TIME ONLY: do not increment wrongMoves or affect score
         const screenDir = worldToScreenDir(dir, facing);
         setBump({ start: performance.now(), screenDir });
         return;
+      }
+
+      // Determine junction correctness BEFORE moving
+      if (here.openings > 2 && here.quiz && here.answerMap) {
+        const ansLabel = here.answerMap[dir];
+        if (typeof ansLabel === "string") {
+          if (ansLabel === here.quiz.correct) {
+            // correct: award once per question id
+            setCorrectQuestionIds((prev) => {
+              if (prev.has(here.quiz!.id)) return prev;
+              const next = new Set(prev);
+              next.add(here.quiz!.id);
+              return next;
+            });
+          } else {
+            // wrong: increment errors
+            setWrongMoves((x) => x + 1);
+          }
+        }
       }
 
       // Normal movement
@@ -749,6 +774,7 @@ export default function MazeQuizApp() {
     setPathHighlight([]);
     setWinOpen(false);
     setQuestionIdsSeen(new Set());
+    setCorrectQuestionIds(new Set());
     setHasStarted(false);
     setStartTs(null);
     setEndTs(null);
@@ -821,6 +847,7 @@ export default function MazeQuizApp() {
           <Typography variant="body2">⏱ {timeStr}</Typography>
           <Typography variant="body2">❌ {wrongMoves}</Typography>
           <Typography variant="body2">🧩 {questionIdsSeen.size}/{totalUniqueQuestions}</Typography>
+          <Typography variant="body2">✅ {correctQuestionIds.size}</Typography>
           <Typography variant="body2">🧭 Mazes: {mazeCount}</Typography>
           <Typography variant="body2">📏 Shortest (this maze): {shortestLenFromStart}</Typography>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -865,6 +892,10 @@ export default function MazeQuizApp() {
                     <Typography gutterBottom>Time Penalty / sec: {timePenaltyPerSec}</Typography>
                     <Slider min={0} max={10} step={0.5} value={timePenaltyPerSec} onChange={(_, v) => setTimePenaltyPerSec(v as number)} />
                   </Stack>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Points per correct question: {correctReward}</Typography>
+                    <Slider min={0} max={200} step={1} value={correctReward} onChange={(_, v) => setCorrectReward(v as number)} />
+                  </Stack>
                   <Stack sx={{ minWidth: 220, justifyContent: "center" }}>
                     <FormControlLabel
                       control={<Switch checked={clampScoreAtZero} onChange={(e) => setClampScoreAtZero(e.target.checked)} />}
@@ -878,7 +909,8 @@ export default function MazeQuizApp() {
                         setUniqueQWeight(20);
                         setPathLenWeight(10);
                         setWrongMovePenalty(50);
-                        setTimePenaltyPerSec(5); // keep default
+                        setTimePenaltyPerSec(5);
+                        setCorrectReward(25);
                         setClampScoreAtZero(true);
                       }}
                       sx={{ mt: 1 }}
@@ -1216,7 +1248,8 @@ export default function MazeQuizApp() {
           <Stack spacing={1}>
             <Typography>⏱ Time: {timeStr}</Typography>
             <Typography>❌ Wrong moves: {wrongMoves}</Typography>
-            <Typography>🧩 Unique questions: {questionIdsSeen.size} / {totalUniqueQuestions}</Typography>
+            <Typography>🧩 Unique questions seen: {questionIdsSeen.size} / {totalUniqueQuestions}</Typography>
+            <Typography>✅ Unique questions correct: {correctQuestionIds.size}</Typography>
             <Typography>🧭 Mazes completed: {mazeCount}</Typography>
             <Typography>
               📏 Shortest path length (current maze): {shortestLenFromStart}
