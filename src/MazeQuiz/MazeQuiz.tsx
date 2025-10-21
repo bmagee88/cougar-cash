@@ -22,22 +22,24 @@ import {
   ToggleButtonGroup,
   useMediaQuery,
   Fab,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Divider,
 } from "@mui/material";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 /**
- * Maze + Junction Quiz (Free movement, Rotating View, Zoom radius)
- * - Free movement: Up moves forward; Left/Right/Down rotate in place.
- * - View shows a (2R+1)x(2R+1) window around the player; R controlled by slider.
- * - Player always "faces up" (screen-N). Walls/arrows rotate to screen space.
- * - Quiz panel is read-only; no junction lock or answer clicks required.
- * - Tracks unique questions visited, timer (stops on goal), score.
- * - Score factors: unique questions (+), time (−), shortest path length from start (+).
- * - CSV upload for questions. CSV split: text.split(/\r?\n/).filter(Boolean)
- * - PANEL_GAP=32; PANEL_WIDTH=460; greedy arrow default OFF.
+ * Perfect Maze + Junction Quiz
+ * - Bump (wall-hit) animation with input lockout (time waste only; no score or error penalty).
+ * - Must see ALL unique questions to win (optional). If not complete at exit, loads a new maze and continues.
+ * - All options live in a top Accordion.
+ * - Junction cells darken to yellow-orange once their question ID has been seen anywhere.
+ * - CSV upload auto-regenerates a fresh maze and resets the run with the new pool.
  */
 
 // ---------- Types ----------
@@ -65,11 +67,11 @@ export interface QuizQuestion {
 export interface Cell {
   r: number;
   c: number;
-  walls: Record<Dir, boolean>; // true => wall exists
+  walls: Record<Dir, boolean>;
   openings: number;
   greedyDirection: Dir | null;
   quiz?: QuizQuestion;
-  answerMap?: Partial<Record<Dir, string>>; // world-dir -> label
+  answerMap?: Partial<Record<Dir, string>>;
 }
 
 export interface Maze {
@@ -170,7 +172,8 @@ function neighbors(
   return out;
 }
 
-function distanceMapToExit(maze: Maze): number[][] {
+// Minor fix for distanceMapToExit
+function distanceMapToExitFixed(maze: Maze): number[][] {
   const dist = Array.from({ length: maze.rows }, () =>
     Array(maze.cols).fill(Infinity)
   );
@@ -191,7 +194,7 @@ function distanceMapToExit(maze: Maze): number[][] {
 }
 
 function assignGreedyDirections(maze: Maze) {
-  const dist = distanceMapToExit(maze);
+  const dist = distanceMapToExitFixed(maze);
   for (let r = 0; r < maze.rows; r++) {
     for (let c = 0; c < maze.cols; c++) {
       let best: { dir: Dir; val: number } | null = null;
@@ -257,168 +260,16 @@ export function findHighDegreeCells(
 
 // ---------- Quiz helpers ----------
 const SAMPLE_QUIZ: QuizQuestion[] = [
-  {
-    id: "1",
-    question: "What does CPU stand for?",
-    correct: "Central Processing Unit",
-    false1: "Computer Primary Utility",
-    false2: "Control Program Unit",
-    false3: "Central Peripheral Unit",
-  },
-  {
-    id: "2",
-    question: "Which number system is base-2?",
-    correct: "Binary",
-    false1: "Decimal",
-    false2: "Hexadecimal",
-    false3: "Octal",
-  },
-  {
-    id: "3",
-    question: "What does RAM provide for a computer?",
-    correct: "Temporary working memory",
-    false1: "Permanent storage",
-    false2: "Graphics rendering",
-    false3: "Network connectivity",
-  },
-  {
-    id: "4",
-    question: "Which algorithm has average O(n log n) time?",
-    correct: "Merge sort",
-    false1: "Bubble sort",
-    false2: "Linear search",
-    false3: "Selection sort",
-  },
-  {
-    id: "5",
-    question: "What is the purpose of an if-statement?",
-    correct: "Make a decision based on a condition",
-    false1: "Repeat code a fixed number of times",
-    false2: "Store multiple values",
-    false3: "Convert data types",
-  },
-  {
-    id: "6",
-    question: "Which data structure uses FIFO order?",
-    correct: "Queue",
-    false1: "Stack",
-    false2: "Tree",
-    false3: "Hash map",
-  },
-  {
-    id: "7",
-    question:
-      "Which Boolean operator returns true only if both inputs are true?",
-    correct: "AND",
-    false1: "OR",
-    false2: "XOR",
-    false3: "NOT",
-  },
-  {
-    id: "8",
-    question: "What does HTML stand for?",
-    correct: "HyperText Markup Language",
-    false1: "High Tech Machine Language",
-    false2: "Hyperlink Transfer Method",
-    false3: "Home Tool Markup List",
-  },
-  {
-    id: "9",
-    question: "Which device stores data even when powered off?",
-    correct: "SSD",
-    false1: "RAM",
-    false2: "Cache",
-    false3: "Register",
-  },
-  {
-    id: "10",
-    question: "Which protocol secures HTTP traffic?",
-    correct: "TLS",
-    false1: "FTP",
-    false2: "SMTP",
-    false3: "UDP",
-  },
-  {
-    id: "11",
-    question: "What is a variable in programming?",
-    correct: "A named storage location for data",
-    false1: "An always-true condition",
-    false2: "A compiler directive",
-    false3: "A random number generator",
-  },
-  {
-    id: "12",
-    question: "Which loop continues while a condition is true?",
-    correct: "while loop",
-    false1: "for-each loop always once",
-    false2: "do-nothing loop",
-    false3: "until-never loop",
-  },
-  {
-    id: "13",
-    question: "What does ‘OOP’ stand for?",
-    correct: "Object-Oriented Programming",
-    false1: "Open Operating Process",
-    false2: "Optimal Output Protocol",
-    false3: "Ordered Object Pooling",
-  },
-  {
-    id: "14",
-    question: "Which keyword typically defines a reusable block of code?",
-    correct: "function",
-    false1: "return",
-    false2: "break",
-    false3: "case",
-  },
-  {
-    id: "15",
-    question: "What is recursion?",
-    correct: "A function calling itself",
-    false1: "A loop with a counter",
-    false2: "A random shuffle",
-    false3: "An error that crashes code",
-  },
-  {
-    id: "16",
-    question:
-      "Which file extension is most likely a plain text source code file?",
-    correct: ".py",
-    false1: ".jpg",
-    false2: ".mp3",
-    false3: ".exe",
-  },
-  {
-    id: "17",
-    question: "Which is a benefit of using functions?",
-    correct: "Code reuse and organization",
-    false1: "Slower execution",
-    false2: "More syntax errors guaranteed",
-    false3: "Removes need for testing",
-  },
-  {
-    id: "18",
-    question: "Which statement about arrays is true?",
-    correct: "They store elements in contiguous memory",
-    false1: "They always grow automatically",
-    false2: "They store key-value pairs by default",
-    false3: "They are unordered by design",
-  },
-  {
-    id: "19",
-    question: "What does a compiler do?",
-    correct: "Translates source code to machine code",
-    false1: "Executes machine code directly",
-    false2: "Manages hardware power states",
-    false3: "Sends packets across networks",
-  },
-  {
-    id: "20",
-    question: "Which practice improves cybersecurity?",
-    correct: "Using strong unique passwords",
-    false1: "Sharing logins for convenience",
-    false2: "Clicking unknown links",
-    false3: "Disabling updates permanently",
-  },
+  { id: "1", question: "What does CPU stand for?", correct: "Central Processing Unit", false1: "Computer Primary Utility", false2: "Control Program Unit", false3: "Central Peripheral Unit" },
+  { id: "2", question: "Which number system is base-2?", correct: "Binary", false1: "Decimal", false2: "Hexadecimal", false3: "Octal" },
+  { id: "3", question: "What does RAM provide for a computer?", correct: "Temporary working memory", false1: "Permanent storage", false2: "Graphics rendering", false3: "Network connectivity" },
+  { id: "4", question: "Which algorithm has average O(n log n) time?", correct: "Merge sort", false1: "Bubble sort", false2: "Linear search", false3: "Selection sort" },
+  { id: "5", question: "What is the purpose of an if-statement?", correct: "Make a decision based on a condition", false1: "Repeat code a fixed number of times", false2: "Store multiple values", false3: "Convert data types" },
+  { id: "6", question: "Which data structure uses FIFO order?", correct: "Queue", false1: "Stack", false2: "Tree", false3: "Hash map" },
+  { id: "7", question: "Which Boolean operator returns true only if both inputs are true?", correct: "AND", false1: "OR", false2: "XOR", false3: "NOT" },
+  { id: "8", question: "What does HTML stand for?", correct: "HyperText Markup Language", false1: "High Tech Machine Language", false2: "Hyperlink Transfer Method", false3: "Home Tool Markup List" },
+  { id: "9", question: "Which device stores data even when powered off?", correct: "SSD", false1: "RAM", false2: "Cache", false3: "Register" },
+  { id: "10", question: "Which protocol secures HTTP traffic?", correct: "TLS", false1: "FTP", false2: "SMTP", false3: "UDP" },
 ];
 
 function parseCSV(text: string): QuizQuestion[] {
@@ -480,11 +331,11 @@ function attachQuestionsToJunctions(maze: Maze, pool: QuizQuestion[]) {
       map[d] = wrongs[wi % wrongs.length];
       wi++;
     }
-    cell.answerMap = map; // world-dir keyed
+    cell.answerMap = map;
   }
 }
 
-// ---------- Rotation helpers (player always "faces up") ----------
+// ---------- Rotation helpers ----------
 function worldToScreenDir(world: Dir, facing: Dir): Dir {
   if (facing === "N") return world;
   if (facing === "E")
@@ -500,9 +351,9 @@ function rotateOffsetToWorld(
   facing: Dir
 ): { dr: number; dc: number } {
   if (facing === "N") return { dr: drS, dc: dcS };
-  if (facing === "E") return { dr: dcS, dc: -drS }; // 90 CW
-  if (facing === "S") return { dr: -drS, dc: -dcS }; // 180
-  return { dr: -dcS, dc: drS }; // 270 CW
+  if (facing === "E") return { dr: dcS, dc: -drS };
+  if (facing === "S") return { dr: -drS, dc: -dcS };
+  return { dr: -dcS, dc: drS };
 }
 
 function rotateWallsToScreen(
@@ -519,11 +370,11 @@ function rotateWallsToScreen(
 
 // ---------- UI ----------
 type GridPoint = { r: number; c: number };
-const cellPx = 56; // bigger tiles for visibility
+const cellPx = 56;
 const PANEL_WIDTH = 460;
 const PANEL_GAP = 32;
 
-  const keyRC = (r: number, c: number) => `${r},${c}`;
+const keyRC = (r: number, c: number) => `${r},${c}`;
 
 function computeRayVisible(maze: Maze, at: { r: number; c: number }): Set<string> {
   const vis = new Set<string>();
@@ -537,16 +388,14 @@ function computeRayVisible(maze: Maze, at: { r: number; c: number }): Set<string
       const nc = c + DELTA[d].dc;
       if (nr < 0 || nc < 0 || nr >= maze.rows || nc >= maze.cols) break;
       const curCell = maze.cells[r][c];
-      if (curCell.walls[d]) break; // wall blocks the ray
+      if (curCell.walls[d]) break;
       r = nr; c = nc;
       vis.add(keyRC(r, c));
-      // stop if the next step would be blocked
       if (maze.cells[r][c].walls[d]) break;
     }
   }
   return vis;
 }
-
 
 function computeAbsoluteBlind(maze: Maze, at: { r: number; c: number }, facing: Dir): Set<string> {
   const vis = new Set<string>();
@@ -561,9 +410,28 @@ function computeAbsoluteBlind(maze: Maze, at: { r: number; c: number }, facing: 
 }
 
 export default function MazeQuizApp() {
+  // ===== Maze & UI state =====
   const [rows, setRows] = useState(15);
   const [cols, setCols] = useState(25);
-  const [showGreedy, setShowGreedy] = useState(false); // default OFF
+  const [showGreedy, setShowGreedy] = useState(false);
+  const [vizMode, setVizMode] = useState<VizMode>("god");
+  const [viewRadius, setViewRadius] = useState<number>(1); // default zoom = 1
+
+  // ===== Scoring variables =====
+  const [baseScore, setBaseScore] = useState<number>(1000);
+  const [uniqueQWeight, setUniqueQWeight] = useState<number>(20);
+  const [pathLenWeight, setPathLenWeight] = useState<number>(10);
+  const [wrongMovePenalty, setWrongMovePenalty] = useState<number>(50);
+  const [timePenaltyPerSec, setTimePenaltyPerSec] = useState<number>(5); // default time penalty = 5/sec
+  const [clampScoreAtZero, setClampScoreAtZero] = useState<boolean>(true);
+
+  // ===== Collision animation config =====
+  const [wallPenaltyMs, setWallPenaltyMs] = useState<number>(1000);
+
+  // ===== Progression option: must see all questions to win =====
+  const [requireAllQuestions, setRequireAllQuestions] = useState<boolean>(true);
+
+  // ===== Maze model =====
   const [quizPool, setQuizPool] = useState<QuizQuestion[]>(SAMPLE_QUIZ);
   const [maze, setMaze] = useState<Maze>(() => {
     const m = generatePerfectMaze(15, 25);
@@ -572,43 +440,40 @@ export default function MazeQuizApp() {
     return m;
   });
 
-  useEffect(() => {
-  const start = { r: maze.entrance.r, c: maze.entrance.c };
-  setExplored(computeRayVisible(maze, start));
-}, [maze]);
-
   const [player, setPlayer] = useState<GridPoint>({ r: 0, c: 0 });
-  const [facing, setFacing] = useState<Dir>("N"); // camera orientation
+  const [facing, setFacing] = useState<Dir>("N");
   const [pathHighlight, setPathHighlight] = useState<GridPoint[]>([]);
   const [winOpen, setWinOpen] = useState(false);
 
-  // Scoring/timer state
-  const [questionIdsSeen, setQuestionIdsSeen] = useState<Set<string>>(
-    new Set()
-  );
+  // Timer & scoring tracking
+  // NOTE: questionIdsSeen persists across multiple mazes until you win or hit "Reset Run".
+  const [questionIdsSeen, setQuestionIdsSeen] = useState<Set<string>>(new Set());
   const [hasStarted, setHasStarted] = useState(false);
   const [startTs, setStartTs] = useState<number | null>(null);
   const [nowTs, setNowTs] = useState<number>(Date.now());
   const [endTs, setEndTs] = useState<number | null>(null);
   const [shortestLenFromStart, setShortestLenFromStart] = useState<number>(0);
+  const [wrongMoves, setWrongMoves] = useState(0); // stays 0 on wall bump now
+  const [mazeCount, setMazeCount] = useState(1);
 
   const [explored, setExplored] = useState<Set<string>>(() => new Set());
-
-
-  // Visibility mode kept for completeness (not applied to cropped render)
-  const [vizMode, setVizMode] = useState<VizMode>("god");
-
-  // NEW: zoom (view radius) state
-  const [viewRadius, setViewRadius] = useState<number>(3); // shows (2R+1)x(2R+1)
-  const [wrongMoves, setWrongMoves] = useState(0);
-
   const isMobile = useMediaQuery("(max-width:900px)");
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-
   const highDegree = useMemo(() => findHighDegreeCells(maze), [maze]);
   const currentCell = maze.cells[player.r][player.c];
 
-  // Unique questions encountered (when entering a junction)
+  const totalUniqueQuestions = useMemo(
+    () => new Set(quizPool.map((q) => q.id)).size,
+    [quizPool]
+  );
+
+  // Initialize explored on maze set
+  useEffect(() => {
+    const start = { r: maze.entrance.r, c: maze.entrance.c };
+    setExplored(computeRayVisible(maze, start));
+  }, [maze]);
+
+  // Unique questions encountered (persist across mazes)
   useEffect(() => {
     if (currentCell.openings > 2 && currentCell.quiz?.id) {
       setQuestionIdsSeen((prev) => {
@@ -627,38 +492,36 @@ export default function MazeQuizApp() {
   }, []);
   const endOrNow = endTs ?? nowTs;
   const elapsedMs = hasStarted && startTs ? Math.max(0, endOrNow - startTs) : 0;
-  const timeStr = new Date(elapsedMs).toISOString().substring(14, 19); // mm:ss
+  const timeStr = new Date(elapsedMs).toISOString().substring(14, 19);
   const timeSec = Math.round(elapsedMs / 1000);
   const uniqueQ = questionIdsSeen.size;
 
-  // INITIAL shortest path from the start (and on regenerate)
+  // INITIAL shortest path from the start (of the current maze)
   useEffect(() => {
     const start = { r: maze.entrance.r, c: maze.entrance.c };
     const sp = shortestPathFrom(maze, start);
     setShortestLenFromStart(sp.length);
   }, [maze]);
 
-  // Score: factor in uniqueQ (+), shortest length (+), time (−)
-  const liveScore = Math.max(
-    0,
-    1000 +
-      uniqueQ * 20 +
-      shortestLenFromStart * 10 -
-      wrongMoves * 50 - // <-- back in
-      timeSec * 2
-  );
+  // Score with customizable weights
+  const rawScore =
+    baseScore +
+    uniqueQ * uniqueQWeight +
+    shortestLenFromStart * pathLenWeight -
+    wrongMoves * wrongMovePenalty - // wrongMoves will not change from wall bumps
+    timeSec * timePenaltyPerSec;
+
+  const liveScore = clampScoreAtZero ? Math.max(0, rawScore) : rawScore;
   const finalScore = liveScore;
 
-  // Generate / reset
-  const regenerate = useCallback(() => {
+  // Helpers to start a brand-new run or just advance to another maze
+  const hardResetRun = useCallback(() => {
     const m = generatePerfectMaze(rows, cols);
     assignGreedyDirections(m);
     attachQuestionsToJunctions(m, quizPool);
     setMaze(m);
-    const startVis = computeRayVisible(m, { r: m.entrance.r, c: m.entrance.c });
-setExplored(startVis);
-    const start = { r: m.entrance.r, c: m.entrance.c };
-    setPlayer(start);
+    setExplored(computeRayVisible(m, { r: m.entrance.r, c: m.entrance.c }));
+    setPlayer({ r: m.entrance.r, c: m.entrance.c });
     setFacing("N");
     setPathHighlight([]);
     setWinOpen(false);
@@ -667,12 +530,31 @@ setExplored(startVis);
     setStartTs(null);
     setEndTs(null);
     setWrongMoves(0);
-
-    const sp = shortestPathFrom(m, start);
-    setShortestLenFromStart(sp.length);
+    setMazeCount(1);
+    setBump(null);
   }, [rows, cols, quizPool]);
 
-  // Click-to-highlight (world coords)
+  const advanceMaze = useCallback(() => {
+    const m = generatePerfectMaze(rows, cols);
+    assignGreedyDirections(m);
+    attachQuestionsToJunctions(m, quizPool);
+    setMaze(m);
+    setExplored(computeRayVisible(m, { r: m.entrance.r, c: m.entrance.c }));
+    setPlayer({ r: m.entrance.r, c: m.entrance.c });
+    setFacing("N");
+    setPathHighlight([]);
+    setWinOpen(false);
+    setEndTs(null);
+    setMazeCount((n) => n + 1);
+    setBump(null);
+  }, [rows, cols, quizPool]);
+
+  // Manual regenerate (keeps progress)
+  const regenerate = useCallback(() => {
+    advanceMaze();
+  }, [advanceMaze]);
+
+  // Click-to-highlight
   const onCellClick = (r: number, c: number) => {
     setPathHighlight(shortestPathFrom(maze, { r, c }));
   };
@@ -685,50 +567,106 @@ setExplored(startVis);
   const turn180 = (d: Dir): Dir =>
     (({ N: "S", S: "N", E: "W", W: "E" } as Record<Dir, Dir>)[d]);
 
+  // ---- BUMP (collision) animation & lockout ----
+  type Bump = { start: number; screenDir: Dir };
+  const [bump, setBump] = useState<Bump | null>(null);
+  const [animNow, setAnimNow] = useState<number>(0);
+
+  // Drive animation while active (RAF loop)
+  useEffect(() => {
+    let raf: number | null = null;
+    const step = () => {
+      setAnimNow(performance.now());
+      raf = requestAnimationFrame(step);
+    };
+    if (bump) {
+      raf = requestAnimationFrame(step);
+    }
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [bump]);
+
+  // Auto-clear bump after wallPenaltyMs total
+  useEffect(() => {
+    if (!bump) return;
+    const id = setTimeout(() => setBump(null), wallPenaltyMs);
+    return () => clearTimeout(id);
+  }, [bump, wallPenaltyMs]);
+
+  // Movement blocked while bump is active
+  const controlsLocked = !!bump;
+
   // Move forward one cell in given world direction
-const moveForwardWorld = useCallback((dir: Dir) => {
-  const { r, c } = player;
-  const here = maze.cells[r][c];
+  const moveForwardWorld = useCallback(
+    (dir: Dir) => {
+      if (controlsLocked) return;
 
-  // ✅ Count wrong only when leaving a junction (>2 openings) in a non-greedy direction
-  if (
-    here.openings > 2 &&                // true junction
-    here.greedyDirection &&             // we know the best way
-    dir !== here.greedyDirection        // not taking it
-  ) {
-    setWrongMoves((x) => x + 1);
-  }
+      const { r, c } = player;
+      const here = maze.cells[r][c];
 
-  if (here.walls[dir]) return;
-  const nr = r + DELTA[dir].dr;
-  const nc = c + DELTA[dir].dc;
-  if (nr < 0 || nc < 0 || nr >= maze.rows || nc >= maze.cols) return;
+      // COLLISION: bump if wall blocks the move
+      if (here.walls[dir]) {
+        // WASTE TIME ONLY: do not increment wrongMoves or affect score
+        const screenDir = worldToScreenDir(dir, facing);
+        setBump({ start: performance.now(), screenDir });
+        return;
+      }
 
-  const next = { r: nr, c: nc };
-  setPlayer(next);
-  if (vizMode === "blind_memory") {
-  const v = computeRayVisible(maze, next);
-  setExplored(prev => {
-    const merged = new Set(prev);
-    v.forEach(x => merged.add(x));
-    return merged;
-  });
-}
-  setFacing(dir); // facing follows movement
-  setPathHighlight([]);
+      // Normal movement
+      const nr = r + DELTA[dir].dr;
+      const nc = c + DELTA[dir].dc;
+      if (nr < 0 || nc < 0 || nr >= maze.rows || nc >= maze.cols) return;
 
-  if (!hasStarted) { setHasStarted(true); setStartTs(Date.now()); }
+      const next = { r: nr, c: nc };
+      setPlayer(next);
 
-  if (next.r === maze.exit.r && next.c === maze.exit.c) {
-    setEndTs(Date.now());
-    setWinOpen(true);
-  }
-}, [player, maze, hasStarted, vizMode]);
+      if (vizMode === "blind_memory") {
+        const v = computeRayVisible(maze, next);
+        setExplored((prev) => {
+          const merged = new Set(prev);
+          v.forEach((x) => merged.add(x));
+          return merged;
+        });
+      }
 
+      setFacing(dir);
+      setPathHighlight([]);
 
-  // Keyboard: Up -> forward; Left/Right/Down -> rotate (no move).
+      if (!hasStarted) {
+        setHasStarted(true);
+        setStartTs(Date.now());
+      }
+
+      // Check for exit
+      if (next.r === maze.exit.r && next.c === maze.exit.c) {
+        if (!requireAllQuestions || questionIdsSeen.size >= totalUniqueQuestions) {
+          setEndTs(Date.now());
+          setWinOpen(true);
+        } else {
+          advanceMaze();
+        }
+      }
+    },
+    [
+      player,
+      maze,
+      vizMode,
+      facing,
+      hasStarted,
+      controlsLocked,
+      requireAllQuestions,
+      questionIdsSeen.size,
+      totalUniqueQuestions,
+      advanceMaze,
+    ]
+  );
+
+  // Keyboard
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (controlsLocked) return;
+
       const k = e.key.toLowerCase();
 
       if (["w", "arrowup"].includes(k)) {
@@ -762,22 +700,19 @@ const moveForwardWorld = useCallback((dir: Dir) => {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [moveForwardWorld, facing]);
+  }, [moveForwardWorld, facing, controlsLocked]);
 
+  const nowRays = useMemo(() => computeRayVisible(maze, player), [maze, player]);
+  const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, player, facing]);
 
-
-const nowRays = useMemo(() => computeRayVisible(maze, player), [maze, player]);
-const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, player, facing]);
-
-
-
-
-  // Swipe: Up -> forward; Right/Left/Down -> rotate.
+  // Swipe
   const onTouchStart = (e: React.TouchEvent) => {
+    if (controlsLocked) return;
     const t = e.touches[0];
     touchStart.current = { x: t.clientX, y: t.clientY };
   };
   const onTouchEnd = (e: React.TouchEvent) => {
+    if (controlsLocked) return;
     if (!touchStart.current) return;
     const t = e.changedTouches[0];
     const dx = t.clientX - touchStart.current.x;
@@ -786,124 +721,275 @@ const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, 
     const TH = 24;
     if (Math.abs(dx) < TH && Math.abs(dy) < TH) return;
     if (Math.abs(dx) > Math.abs(dy)) {
-      // horizontal -> rotate
       if (dx > 0) setFacing((f) => turnCW(f));
       else setFacing((f) => turnCCW(f));
     } else {
-      if (dy > 0) setFacing((f) => turn180(f)); // swipe down -> 180°
-      else moveForwardWorld(facing); // swipe up -> forward
+      if (dy > 0) setFacing((f) => turn180(f));
+      else moveForwardWorld(facing);
     }
   };
 
-  // CSV upload
+  // CSV upload — auto regenerate maze & reset run using the new pool
   const onCsvUpload = async (file: File) => {
     const text = await file.text();
     const parsed = parseCSV(text);
-    if (parsed.length) setQuizPool(parsed);
+    if (!parsed.length) return;
+
+    setQuizPool(parsed);
+
+    // Build a new maze immediately with the parsed pool, and reset the run.
+    const m = generatePerfectMaze(rows, cols);
+    assignGreedyDirections(m);
+    attachQuestionsToJunctions(m, parsed);
+
+    setMaze(m);
+    setExplored(computeRayVisible(m, { r: m.entrance.r, c: m.entrance.c }));
+    setPlayer({ r: m.entrance.r, c: m.entrance.c });
+    setFacing("N");
+    setPathHighlight([]);
+    setWinOpen(false);
+    setQuestionIdsSeen(new Set());
+    setHasStarted(false);
+    setStartTs(null);
+    setEndTs(null);
+    setWrongMoves(0);
+    setMazeCount(1);
+    setBump(null);
   };
 
   // ------- RENDER -------
   const windowSize = 2 * viewRadius + 1;
 
+  // Helper: bump transform & color
+  function playerBumpStyle(): { transform: string; transition: string; background: string } {
+    const base = {
+      transform: "translate(0px, 0px)",
+      transition: "transform 0ms linear, background-color 0ms linear",
+      background: "#1e88e5",
+    };
+    if (!bump) return base;
+
+    const total = Math.max(100, wallPenaltyMs);
+    const forwardMs = Math.max(50, Math.round(total * 0.2));
+    const backMs = Math.max(50, total - forwardMs);
+    const maxOffset = 14;
+    const elapsed = Math.max(0, animNow - bump.start);
+
+    if (elapsed <= forwardMs) {
+      const t = Math.min(1, elapsed / forwardMs);
+      const d = maxOffset * (1 - (1 - t) * (1 - t));
+      const { x, y } = offsetForDir(bump.screenDir, d);
+      return {
+        transform: `translate(${x}px, ${y}px)`,
+        transition: "transform 16ms linear, background-color 16ms linear",
+        background: "#e53935",
+      };
+    }
+
+    const backElapsed = Math.min(backMs, elapsed - forwardMs);
+    const t = backElapsed / backMs;
+    const d = maxOffset * (1 - t * t);
+    const { x, y } = offsetForDir(bump.screenDir, d);
+    return {
+      transform: `translate(${x}px, ${y}px)`,
+      transition: "transform 16ms linear, background-color 16ms linear",
+      background: "#1e88e5",
+    };
+  }
+
+  function offsetForDir(screenDir: Dir, dist: number): { x: number; y: number } {
+    switch (screenDir) {
+      case "N": return { x: 0, y: -dist };
+      case "S": return { x: 0, y: dist };
+      case "E": return { x: dist, y: 0 };
+      case "W": return { x: -dist, y: 0 };
+    }
+  }
+
   return (
     <Stack spacing={2} sx={{ p: { xs: 1, md: 2 }, width: "100%" }}>
+      {/* Header with metrics */}
       <Stack
-        direction="row"
+        direction={{ xs: "column", lg: "row" }}
+        spacing={1}
+        alignItems={{ xs: "flex-start", lg: "center" }}
         justifyContent="space-between"
-        alignItems="center"
-        sx={{ width: "100%" }}
       >
         <Typography variant="h5">Perfect Maze + Junction Quiz</Typography>
-        <Stack direction="row" spacing={2} alignItems="center">
+
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
           <Typography variant="body2">⏱ {timeStr}</Typography>
           <Typography variant="body2">❌ {wrongMoves}</Typography>
-          <Typography variant="body2">🧩 {uniqueQ}</Typography>
-          <Typography variant="body2">📏 {shortestLenFromStart}</Typography>
-          <Typography variant="body2">🏆 {liveScore}</Typography>
+          <Typography variant="body2">🧩 {questionIdsSeen.size}/{totalUniqueQuestions}</Typography>
+          <Typography variant="body2">🧭 Mazes: {mazeCount}</Typography>
+          <Typography variant="body2">📏 Shortest (this maze): {shortestLenFromStart}</Typography>
+          <Typography variant="body2" sx={{ fontWeight: 600 }}>
+            🏆 {liveScore}
+          </Typography>
         </Stack>
       </Stack>
 
-      {/* Top controls */}
-      <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={2}
-        alignItems={{ xs: "stretch", md: "center" }}
-        sx={{ width: "100%" }}
-      >
-        <Stack sx={{ minWidth: 180, flex: 1 }}>
-          <Typography gutterBottom>Rows: {rows}</Typography>
-          <Slider
-            min={5}
-            max={50}
-            value={rows}
-            onChange={(_, v) => setRows(v as number)}
-          />
-        </Stack>
-        <Stack sx={{ minWidth: 180, flex: 1 }}>
-          <Typography gutterBottom>Cols: {cols}</Typography>
-          <Slider
-            min={5}
-            max={70}
-            value={cols}
-            onChange={(_, v) => setCols(v as number)}
-          />
-        </Stack>
-        <Stack sx={{ minWidth: 220, maxWidth: 360 }}>
-          <Typography gutterBottom>Zoom (view radius): {viewRadius}</Typography>
-          <Slider
-            min={1}
-            max={8}
-            step={1}
-            value={viewRadius}
-            onChange={(_, v) => setViewRadius(v as number)}
-          />
-        </Stack>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={showGreedy}
-              onChange={(e) => setShowGreedy(e.target.checked)}
-            />
-          }
-          label="Show greedy arrow"
-        />
-        <ToggleButtonGroup
-          exclusive
-          size="small"
-          value={vizMode}
-          onChange={(_, v) => v && setVizMode(v)}
-        >
-          <ToggleButton value="god">God</ToggleButton>
-          <ToggleButton value="blind_memory">Blind + Memory</ToggleButton>
-          <ToggleButton value="blind_now">Blind (No Memory)</ToggleButton>
-          <ToggleButton value="absolute_blind">Absolute Blind</ToggleButton>
-        </ToggleButtonGroup>
-        <Button variant="contained" onClick={regenerate}>
-          Regenerate
-        </Button>
-        <Button variant="outlined" onClick={() => setPathHighlight([])}>
-          Clear Highlight
-        </Button>
-        <label>
-          <input
-            type="file"
-            accept=".csv"
-            style={{ display: "none" }}
-            onChange={(e) => e.target.files && onCsvUpload(e.target.files[0])}
-          />
-          <Button variant="outlined" component="span">
-            Upload CSV
-          </Button>
-        </label>
-      </Stack>
+      {/* OPTIONS ACCORDION */}
+      <Accordion defaultExpanded>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography variant="subtitle1">Options</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Stack spacing={2}>
+            {/* Scoring */}
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle1" gutterBottom>Scoring</Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Base Score: {baseScore}</Typography>
+                    <Slider min={0} max={5000} step={50} value={baseScore} onChange={(_, v) => setBaseScore(v as number)} />
+                  </Stack>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Unique Q Weight: {uniqueQWeight}</Typography>
+                    <Slider min={-100} max={200} step={1} value={uniqueQWeight} onChange={(_, v) => setUniqueQWeight(v as number)} />
+                  </Stack>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Path Length Weight: {pathLenWeight}</Typography>
+                    <Slider min={-100} max={200} step={1} value={pathLenWeight} onChange={(_, v) => setPathLenWeight(v as number)} />
+                  </Stack>
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 2 }}>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Wrong Move Penalty: {wrongMovePenalty}</Typography>
+                    <Slider min={0} max={200} step={1} value={wrongMovePenalty} onChange={(_, v) => setWrongMovePenalty(v as number)} />
+                  </Stack>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Time Penalty / sec: {timePenaltyPerSec}</Typography>
+                    <Slider min={0} max={10} step={0.5} value={timePenaltyPerSec} onChange={(_, v) => setTimePenaltyPerSec(v as number)} />
+                  </Stack>
+                  <Stack sx={{ minWidth: 220, justifyContent: "center" }}>
+                    <FormControlLabel
+                      control={<Switch checked={clampScoreAtZero} onChange={(e) => setClampScoreAtZero(e.target.checked)} />}
+                      label="Clamp score at 0"
+                    />
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => {
+                        setBaseScore(1000);
+                        setUniqueQWeight(20);
+                        setPathLenWeight(10);
+                        setWrongMovePenalty(50);
+                        setTimePenaltyPerSec(5); // keep default
+                        setClampScoreAtZero(true);
+                      }}
+                      sx={{ mt: 1 }}
+                    >
+                      Reset scoring
+                    </Button>
+                  </Stack>
+                </Stack>
+              </CardContent>
+            </Card>
+
+            {/* Gameplay / View */}
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle1" gutterBottom>Gameplay & View</Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Stack
+                  direction={{ xs: "column", xl: "row" }}
+                  spacing={2}
+                  alignItems={{ xs: "stretch", xl: "center" }}
+                >
+                  <Stack sx={{ minWidth: 180, flex: 1 }}>
+                    <Typography gutterBottom>Rows: {rows}</Typography>
+                    <Slider min={5} max={50} value={rows} onChange={(_, v) => setRows(v as number)} />
+                  </Stack>
+                  <Stack sx={{ minWidth: 180, flex: 1 }}>
+                    <Typography gutterBottom>Cols: {cols}</Typography>
+                    <Slider min={5} max={70} value={cols} onChange={(_, v) => setCols(v as number)} />
+                  </Stack>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Zoom (view radius): {viewRadius}</Typography>
+                    <Slider min={1} max={8} step={1} value={viewRadius} onChange={(_, v) => setViewRadius(v as number)} />
+                  </Stack>
+                  <Stack sx={{ minWidth: 220, flex: 1 }}>
+                    <Typography gutterBottom>Wall hit penalty (ms): {wallPenaltyMs}</Typography>
+                    <Slider min={200} max={3000} step={50} value={wallPenaltyMs} onChange={(_, v) => setWallPenaltyMs(v as number)} />
+                  </Stack>
+                  <FormControlLabel
+                    control={<Switch checked={showGreedy} onChange={(e) => setShowGreedy(e.target.checked)} />}
+                    label="Show greedy arrow"
+                  />
+                  <ToggleButtonGroup
+                    exclusive
+                    size="small"
+                    value={vizMode}
+                    onChange={(_, v) => v && setVizMode(v)}
+                  >
+                    <ToggleButton value="god">God</ToggleButton>
+                    <ToggleButton value="blind_memory">Blind+Memory</ToggleButton>
+                    <ToggleButton value="blind_now">Blind</ToggleButton>
+                    <ToggleButton value="absolute_blind">Absolute</ToggleButton>
+                  </ToggleButtonGroup>
+                </Stack>
+
+                <Stack direction="row" spacing={2} sx={{ mt: 2 }} alignItems="center" flexWrap="wrap">
+                  <Button variant="contained" onClick={regenerate}>
+                    Regenerate Maze (keep progress)
+                  </Button>
+                  <Button variant="outlined" onClick={() => setPathHighlight([])}>
+                    Clear Highlight
+                  </Button>
+                  <label>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      style={{ display: "none" }}
+                      onChange={(e) => e.target.files && onCsvUpload(e.target.files[0])}
+                    />
+                    <Button variant="outlined" component="span">
+                      Upload CSV
+                    </Button>
+                  </label>
+                </Stack>
+              </CardContent>
+            </Card>
+
+            {/* Progression controls */}
+            <Card variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle1" gutterBottom>Progression</Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={requireAllQuestions}
+                        onChange={(e) => setRequireAllQuestions(e.target.checked)}
+                      />
+                    }
+                    label="Require all questions to win"
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Progress: {questionIdsSeen.size} / {totalUniqueQuestions} unique seen
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={hardResetRun}
+                  >
+                    Reset Run (clear progress & timer)
+                  </Button>
+                </Stack>
+              </CardContent>
+            </Card>
+          </Stack>
+        </AccordionDetails>
+      </Accordion>
 
       {/* Main content area — radius view + quiz panel */}
       <div style={{ position: "relative", width: "100%" }}>
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          alignItems="flex-start"
-        >
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="flex-start">
           {/* Radius Maze View */}
           <Card variant="outlined" sx={{ width: "max-content" }}>
             <CardContent>
@@ -915,6 +1001,7 @@ const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, 
                 {isMobile
                   ? "Swipe: Up=forward, Left/Right/Down=turn. Tap a cell to show its fastest path."
                   : "W/↑=forward. A/D/←/→=turn left/right. S/↓=turn around.\nClick any cell to highlight its fastest path to the exit."}
+                {controlsLocked ? "\n(Hit a wall — controls locked)" : ""}
               </Typography>
 
               <div
@@ -929,101 +1016,117 @@ const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, 
                   userSelect: "none",
                   width: windowSize * cellPx,
                   height: windowSize * cellPx,
+                  filter: controlsLocked ? "grayscale(0.2)" : undefined,
                 }}
               >
-{Array.from({ length: windowSize }, (_, i) => i - viewRadius).map((sr) =>
-  Array.from({ length: windowSize }, (_, j) => j - viewRadius).map((sc) => {
-    // 1) You already have this orientation mapping:
-    const off = rotateOffsetToWorld(sr, sc, facing);
-    const wr = player.r + off.dr;
-    const wc = player.c + off.dc;
+                {Array.from({ length: windowSize }, (_, i) => i - viewRadius).map((sr) =>
+                  Array.from({ length: windowSize }, (_, j) => j - viewRadius).map((sc) => {
+                    const off = rotateOffsetToWorld(sr, sc, facing);
+                    const wr = player.r + off.dr;
+                    const wc = player.c + off.dc;
 
-    // 2) OOB placeholder stays the same:
-    if (wr < 0 || wc < 0 || wr >= maze.rows || wc >= maze.cols) {
-      return (
-        <div
-          key={`${sr},${sc}`}
-          style={{ width: cellPx, height: cellPx, background: "#111", border: "2px solid #111" }}
-        />
-      );
-    }
+                    if (wr < 0 || wc < 0 || wr >= maze.rows || wc >= maze.cols) {
+                      return (
+                        <div
+                          key={`${sr},${sc}`}
+                          style={{ width: cellPx, height: cellPx, background: "#111", border: "2px solid #111" }}
+                        />
+                      );
+                    }
 
-    // 3) Gather info you already use:
-    const cell = maze.cells[wr][wc];
-    const isPlayerHere = sr === 0 && sc === 0;
-    const isExit = wr === maze.exit.r && wc === maze.exit.c;
-    const isEntrance = wr === maze.entrance.r && wc === maze.entrance.c;
-    const hl = pathHighlight.some((p) => p.r === wr && p.c === wc);
+                    const cell = maze.cells[wr][wc];
+                    const isPlayerHere = sr === 0 && sc === 0;
+                    const isExit = wr === maze.exit.r && wc === maze.exit.c;
+                    const isEntrance = wr === maze.entrance.r && wc === maze.entrance.c;
+                    const hl = pathHighlight.some((p) => p.r === wr && p.c === wc);
 
-    // 4) ⬅️ NEW: compute visibility for this tile, based on vizMode
-    const k = `${wr},${wc}`; // or use your keyRC helper
-    let visible = true;
-    switch (vizMode) {
-      case "god":
-        visible = true;
-        break;
-      case "blind_now":
-        visible = nowRays.has(k);        // from useMemo(computeRayVisible(maze, player))
-        break;
-      case "blind_memory":
-        visible = explored.has(k);       // your explored Set<string>
-        break;
-      case "absolute_blind":
-        visible = absNow.has(k);         // from useMemo(computeAbsoluteBlind(...))
-        break;
-    }
+                    const k = `${wr},${wc}`;
+                    let visible = true;
+                    switch (vizMode) {
+                      case "god":
+                        visible = true;
+                        break;
+                      case "blind_now":
+                        visible = nowRays.has(k);
+                        break;
+                      case "blind_memory":
+                        visible = explored.has(k);
+                        break;
+                      case "absolute_blind":
+                        visible = absNow.has(k);
+                        break;
+                    }
 
-    // 5) Style based on visibility
-    const wallColor = visible ? "#111" : "#222";
-    const bg = visible
-      ? (isPlayerHere ? "#90caf9"
-        : hl ? "#a5d6a7"
-        : isEntrance ? "#bbdefb"
-        : isExit ? "#ffcdd2"
-        : cell.openings > 2 ? "#fff9c4" : "#fafafa")
-      : "#0a0a0a";
+                    const w = rotateWallsToScreen(cell.walls, facing);
 
-    // rotate walls for the current facing (same as before)
-    const w = rotateWallsToScreen(cell.walls, facing);
+                    // Junction color depends on whether that question id is seen
+                    const isJunction = cell.openings > 2;
+                    const qId = cell.quiz?.id;
+                    const seenThisQ = qId ? questionIdsSeen.has(qId) : false;
+                    const junctionBg = seenThisQ ? "#ffd54f" /* darker yellow-orange */ : "#fff9c4" /* light yellow */;
+                    const wallColor = visible ? "#111" : "#222";
+                    const bg = visible
+                      ? (hl ? "#a5d6a7"
+                        : isEntrance ? "#bbdefb"
+                        : isExit ? "#ffcdd2"
+                        : isJunction ? junctionBg : "#fafafa")
+                      : "#0a0a0a";
 
-    // 6) Return the tile div; only show greedy arrow if visible
-    return (
-      <div
-        key={`${sr},${sc}`}
-        onClick={() => onCellClick(wr, wc)}
-        title={visible ? `(${wr},${wc}) openings:${cell.openings}` : undefined}
-        style={{
-          width: cellPx,
-          height: cellPx,
-          boxSizing: "border-box",
-          borderTop: w.N ? `2px solid ${wallColor}` : "2px solid transparent",
-          borderBottom: w.S ? `2px solid ${wallColor}` : "2px solid transparent",
-          borderLeft: w.W ? `2px solid ${wallColor}` : "2px solid transparent",
-          borderRight: w.E ? `2px solid ${wallColor}` : "2px solid transparent",
-          background: bg,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: 14,
-          position: "relative",
-          cursor: "pointer",
-          transition: "background 120ms, border-color 120ms, opacity 120ms",
-          opacity: visible ? 1 : 0.95,
-        }}
-      >
-        {showGreedy && cell.greedyDirection && visible && (
-          <span style={{ opacity: 0.7 }}>
-            {worldToScreenDir(cell.greedyDirection, facing) === "N" && "↑"}
-            {worldToScreenDir(cell.greedyDirection, facing) === "S" && "↓"}
-            {worldToScreenDir(cell.greedyDirection, facing) === "E" && "→"}
-            {worldToScreenDir(cell.greedyDirection, facing) === "W" && "←"}
-          </span>
-        )}
-      </div>
-    );
-  })
-)}
+                    return (
+                      <div
+                        key={`${sr},${sc}`}
+                        onClick={() => onCellClick(wr, wc)}
+                        title={
+                          visible
+                            ? `(${wr},${wc}) openings:${cell.openings}${
+                                qId ? ` • Q:${qId}${seenThisQ ? " (seen)" : ""}` : ""
+                              }`
+                            : undefined
+                        }
+                        style={{
+                          width: cellPx,
+                          height: cellPx,
+                          boxSizing: "border-box",
+                          borderTop: w.N ? `2px solid ${wallColor}` : "2px solid transparent",
+                          borderBottom: w.S ? `2px solid ${wallColor}` : "2px solid transparent",
+                          borderLeft: w.W ? `2px solid ${wallColor}` : "2px solid transparent",
+                          borderRight: w.E ? `2px solid ${wallColor}` : "2px solid transparent",
+                          background: isPlayerHere ? "#e3f2fd" : bg,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          position: "relative",
+                          cursor: "pointer",
+                          transition: "background 160ms, border-color 120ms, opacity 120ms",
+                          opacity: visible ? 1 : 0.95,
+                        }}
+                      >
+                        {/* Player dot (with bump animation) */}
+                        {isPlayerHere && (
+                          <div
+                            style={{
+                              position: "absolute",
+                              width: 28,
+                              height: 28,
+                              borderRadius: "50%",
+                              boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                              ...playerBumpStyle(),
+                            }}
+                          />
+                        )}
 
+                        {showGreedy && cell.greedyDirection && visible && (
+                          <span style={{ opacity: 0.7, fontSize: 14, zIndex: 1 }}>
+                            {worldToScreenDir(cell.greedyDirection, facing) === "N" && "↑"}
+                            {worldToScreenDir(cell.greedyDirection, facing) === "S" && "↓"}
+                            {worldToScreenDir(cell.greedyDirection, facing) === "E" && "→"}
+                            {worldToScreenDir(cell.greedyDirection, facing) === "W" && "←"}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1067,26 +1170,20 @@ const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, 
             gridTemplateRows: "56px 56px 56px",
             gap: 6,
             zIndex: 10,
+            opacity: controlsLocked ? 0.5 : 1,
+            pointerEvents: controlsLocked ? "none" : "auto",
           }}
         >
           <div />
-          <Fab
-            color="primary"
-            size="small"
-            onClick={() => moveForwardWorld(facing)}
-          >
+          <Fab color="primary" size="small" onClick={() => moveForwardWorld(facing)} disabled={controlsLocked}>
             <ArrowUpwardIcon />
           </Fab>
           <div />
           <Fab
             color="primary"
             size="small"
-            onClick={() =>
-              setFacing(
-                (f) =>
-                  (({ N: "W", W: "S", S: "E", E: "N" } as Record<Dir, Dir>)[f])
-              )
-            }
+            onClick={() => setFacing((f) => turnCCW(f))}
+            disabled={controlsLocked}
           >
             <ArrowBackIcon />
           </Fab>
@@ -1094,12 +1191,8 @@ const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, 
           <Fab
             color="primary"
             size="small"
-            onClick={() =>
-              setFacing(
-                (f) =>
-                  (({ N: "E", E: "S", S: "W", W: "N" } as Record<Dir, Dir>)[f])
-              )
-            }
+            onClick={() => setFacing((f) => turnCW(f))}
+            disabled={controlsLocked}
           >
             <ArrowForwardIcon />
           </Fab>
@@ -1107,12 +1200,8 @@ const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, 
           <Fab
             color="primary"
             size="small"
-            onClick={() =>
-              setFacing(
-                (f) =>
-                  (({ N: "S", S: "N", E: "W", W: "E" } as Record<Dir, Dir>)[f])
-              )
-            }
+            onClick={() => setFacing((f) => turn180(f))}
+            disabled={controlsLocked}
           >
             <ArrowDownwardIcon />
           </Fab>
@@ -1122,20 +1211,27 @@ const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, 
 
       {/* Win Modal with final score */}
       <Dialog open={winOpen} onClose={() => {}} disableEscapeKeyDown>
-        <DialogTitle>🏁 You reached the exit!</DialogTitle>
+        <DialogTitle>🏁 You collected all questions and reached the exit!</DialogTitle>
         <DialogContent>
           <Stack spacing={1}>
             <Typography>⏱ Time: {timeStr}</Typography>
             <Typography>❌ Wrong moves: {wrongMoves}</Typography>
-            <Typography>🧩 Unique questions: {uniqueQ}</Typography>
+            <Typography>🧩 Unique questions: {questionIdsSeen.size} / {totalUniqueQuestions}</Typography>
+            <Typography>🧭 Mazes completed: {mazeCount}</Typography>
             <Typography>
-              📏 Shortest path length: {shortestLenFromStart}
+              📏 Shortest path length (current maze): {shortestLenFromStart}
             </Typography>
             <Typography variant="h6">🏆 Score: {finalScore}</Typography>
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button variant="contained" onClick={regenerate}>
+          <Button
+            variant="contained"
+            onClick={() => {
+              // start a brand-new run
+              hardResetRun();
+            }}
+          >
             Play Again
           </Button>
         </DialogActions>
@@ -1188,7 +1284,6 @@ function QuizReadOnly({
     );
   }
 
-  // Map world answers onto screen sides so layout matches current orientation
   const screenAnswers: Partial<Record<Dir, string>> = {};
   (Object.keys(currentCell.answerMap) as Dir[]).forEach((worldDir) => {
     const label = currentCell.answerMap![worldDir];
@@ -1224,17 +1319,13 @@ function QuizReadOnly({
         gap: 8,
       }}
     >
-      <div
-        style={{ gridColumn: "2 / 3", gridRow: "1 / 2", textAlign: "center" }}
-      >
+      <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2", textAlign: "center" }}>
         {pill(screenAnswers.N)}
       </div>
       <div style={{ gridColumn: "1 / 2", gridRow: "2 / 3" }}>
         {pill(screenAnswers.W)}
       </div>
-      <div
-        style={{ gridColumn: "2 / 3", gridRow: "2 / 3", textAlign: "center" }}
-      >
+      <div style={{ gridColumn: "2 / 3", gridRow: "2 / 3", textAlign: "center" }}>
         <Typography
           variant="subtitle1"
           sx={{ p: 1, borderRadius: 1, bgcolor: "#f5f5f5" }}
