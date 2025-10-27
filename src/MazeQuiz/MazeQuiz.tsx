@@ -43,6 +43,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
  * - CSV upload auto-regenerates a fresh maze and resets the run with the new pool.
  */
 
+const EDGE_CROP = 6;
+
 // ---------- Types ----------
 export type Dir = "N" | "S" | "E" | "W";
 const DIRS: Dir[] = ["N", "S", "E", "W"];
@@ -260,16 +262,87 @@ export function findHighDegreeCells(
 
 // ---------- Quiz helpers ----------
 const SAMPLE_QUIZ: QuizQuestion[] = [
-  { id: "1", question: "What does CPU stand for?", correct: "Central Processing Unit", false1: "Computer Primary Utility", false2: "Control Program Unit", false3: "Central Peripheral Unit" },
-  { id: "2", question: "Which number system is base-2?", correct: "Binary", false1: "Decimal", false2: "Hexadecimal", false3: "Octal" },
-  { id: "3", question: "What does RAM provide for a computer?", correct: "Temporary working memory", false1: "Permanent storage", false2: "Graphics rendering", false3: "Network connectivity" },
-  { id: "4", question: "Which algorithm has average O(n log n) time?", correct: "Merge sort", false1: "Bubble sort", false2: "Linear search", false3: "Selection sort" },
-  { id: "5", question: "What is the purpose of an if-statement?", correct: "Make a decision based on a condition", false1: "Repeat code a fixed number of times", false2: "Store multiple values", false3: "Convert data types" },
-  { id: "6", question: "Which data structure uses FIFO order?", correct: "Queue", false1: "Stack", false2: "Tree", false3: "Hash map" },
-  { id: "7", question: "Which Boolean operator returns true only if both inputs are true?", correct: "AND", false1: "OR", false2: "XOR", false3: "NOT" },
-  { id: "8", question: "What does HTML stand for?", correct: "HyperText Markup Language", false1: "High Tech Machine Language", false2: "Hyperlink Transfer Method", false3: "Home Tool Markup List" },
-  { id: "9", question: "Which device stores data even when powered off?", correct: "SSD", false1: "RAM", false2: "Cache", false3: "Register" },
-  { id: "10", question: "Which protocol secures HTTP traffic?", correct: "TLS", false1: "FTP", false2: "SMTP", false3: "UDP" },
+  {
+    id: "1",
+    question: "What does CPU stand for?",
+    correct: "Central Processing Unit",
+    false1: "Computer Primary Utility",
+    false2: "Control Program Unit",
+    false3: "Central Peripheral Unit",
+  },
+  {
+    id: "2",
+    question: "Which number system is base-2?",
+    correct: "Binary",
+    false1: "Decimal",
+    false2: "Hexadecimal",
+    false3: "Octal",
+  },
+  {
+    id: "3",
+    question: "What does RAM provide for a computer?",
+    correct: "Temporary working memory",
+    false1: "Permanent storage",
+    false2: "Graphics rendering",
+    false3: "Network connectivity",
+  },
+  {
+    id: "4",
+    question: "Which algorithm has average O(n log n) time?",
+    correct: "Merge sort",
+    false1: "Bubble sort",
+    false2: "Linear search",
+    false3: "Selection sort",
+  },
+  {
+    id: "5",
+    question: "What is the purpose of an if-statement?",
+    correct: "Make a decision based on a condition",
+    false1: "Repeat code a fixed number of times",
+    false2: "Store multiple values",
+    false3: "Convert data types",
+  },
+  {
+    id: "6",
+    question: "Which data structure uses FIFO order?",
+    correct: "Queue",
+    false1: "Stack",
+    false2: "Tree",
+    false3: "Hash map",
+  },
+  {
+    id: "7",
+    question:
+      "Which Boolean operator returns true only if both inputs are true?",
+    correct: "AND",
+    false1: "OR",
+    false2: "XOR",
+    false3: "NOT",
+  },
+  {
+    id: "8",
+    question: "What does HTML stand for?",
+    correct: "HyperText Markup Language",
+    false1: "High Tech Machine Language",
+    false2: "Hyperlink Transfer Method",
+    false3: "Home Tool Markup List",
+  },
+  {
+    id: "9",
+    question: "Which device stores data even when powered off?",
+    correct: "SSD",
+    false1: "RAM",
+    false2: "Cache",
+    false3: "Register",
+  },
+  {
+    id: "10",
+    question: "Which protocol secures HTTP traffic?",
+    correct: "TLS",
+    false1: "FTP",
+    false2: "SMTP",
+    false3: "UDP",
+  },
 ];
 
 function parseCSV(text: string): QuizQuestion[] {
@@ -376,20 +449,25 @@ const PANEL_GAP = 32;
 
 const keyRC = (r: number, c: number) => `${r},${c}`;
 
-function computeRayVisible(maze: Maze, at: { r: number; c: number }): Set<string> {
+function computeRayVisible(
+  maze: Maze,
+  at: { r: number; c: number }
+): Set<string> {
   const vis = new Set<string>();
   const here = maze.cells[at.r][at.c];
   vis.add(keyRC(at.r, at.c));
   for (const d of DIRS) {
     if (here.walls[d]) continue;
-    let r = at.r, c = at.c;
+    let r = at.r,
+      c = at.c;
     while (true) {
       const nr = r + DELTA[d].dr;
       const nc = c + DELTA[d].dc;
       if (nr < 0 || nc < 0 || nr >= maze.rows || nc >= maze.cols) break;
       const curCell = maze.cells[r][c];
       if (curCell.walls[d]) break;
-      r = nr; c = nc;
+      r = nr;
+      c = nc;
       vis.add(keyRC(r, c));
       if (maze.cells[r][c].walls[d]) break;
     }
@@ -397,14 +475,19 @@ function computeRayVisible(maze: Maze, at: { r: number; c: number }): Set<string
   return vis;
 }
 
-function computeAbsoluteBlind(maze: Maze, at: { r: number; c: number }, facing: Dir): Set<string> {
+function computeAbsoluteBlind(
+  maze: Maze,
+  at: { r: number; c: number },
+  facing: Dir
+): Set<string> {
   const vis = new Set<string>();
   vis.add(keyRC(at.r, at.c));
   const cell = maze.cells[at.r][at.c];
   if (!cell.walls[facing]) {
     const nr = at.r + DELTA[facing].dr;
     const nc = at.c + DELTA[facing].dc;
-    if (nr >= 0 && nc >= 0 && nr < maze.rows && nc < maze.cols) vis.add(keyRC(nr, nc));
+    if (nr >= 0 && nc >= 0 && nr < maze.rows && nc < maze.cols)
+      vis.add(keyRC(nr, nc));
   }
   return vis;
 }
@@ -448,9 +531,13 @@ export default function MazeQuizApp() {
 
   // Timer & scoring tracking
   // questionIdsSeen persists across mazes until win or reset
-  const [questionIdsSeen, setQuestionIdsSeen] = useState<Set<string>>(new Set());
+  const [questionIdsSeen, setQuestionIdsSeen] = useState<Set<string>>(
+    new Set()
+  );
   // NEW: unique questions correctly answered (credited once per question id)
-  const [correctQuestionIds, setCorrectQuestionIds] = useState<Set<string>>(new Set());
+  const [correctQuestionIds, setCorrectQuestionIds] = useState<Set<string>>(
+    new Set()
+  );
 
   const [hasStarted, setHasStarted] = useState(false);
   const [startTs, setStartTs] = useState<number | null>(null);
@@ -665,7 +752,10 @@ export default function MazeQuizApp() {
 
       // Check for exit
       if (next.r === maze.exit.r && next.c === maze.exit.c) {
-        if (!requireAllQuestions || questionIdsSeen.size >= totalUniqueQuestions) {
+        if (
+          !requireAllQuestions ||
+          questionIdsSeen.size >= totalUniqueQuestions
+        ) {
           setEndTs(Date.now());
           setWinOpen(true);
         } else {
@@ -727,8 +817,14 @@ export default function MazeQuizApp() {
     return () => window.removeEventListener("keydown", onKey);
   }, [moveForwardWorld, facing, controlsLocked]);
 
-  const nowRays = useMemo(() => computeRayVisible(maze, player), [maze, player]);
-  const absNow = useMemo(() => computeAbsoluteBlind(maze, player, facing), [maze, player, facing]);
+  const nowRays = useMemo(
+    () => computeRayVisible(maze, player),
+    [maze, player]
+  );
+  const absNow = useMemo(
+    () => computeAbsoluteBlind(maze, player, facing),
+    [maze, player, facing]
+  );
 
   // Swipe
   const onTouchStart = (e: React.TouchEvent) => {
@@ -787,7 +883,11 @@ export default function MazeQuizApp() {
   const windowSize = 2 * viewRadius + 1;
 
   // Helper: bump transform & color
-  function playerBumpStyle(): { transform: string; transition: string; background: string } {
+  function playerBumpStyle(): {
+    transform: string;
+    transition: string;
+    background: string;
+  } {
     const base = {
       transform: "translate(0px, 0px)",
       transition: "transform 0ms linear, background-color 0ms linear",
@@ -823,12 +923,19 @@ export default function MazeQuizApp() {
     };
   }
 
-  function offsetForDir(screenDir: Dir, dist: number): { x: number; y: number } {
+  function offsetForDir(
+    screenDir: Dir,
+    dist: number
+  ): { x: number; y: number } {
     switch (screenDir) {
-      case "N": return { x: 0, y: -dist };
-      case "S": return { x: 0, y: dist };
-      case "E": return { x: dist, y: 0 };
-      case "W": return { x: -dist, y: 0 };
+      case "N":
+        return { x: 0, y: -dist };
+      case "S":
+        return { x: 0, y: dist };
+      case "E":
+        return { x: dist, y: 0 };
+      case "W":
+        return { x: -dist, y: 0 };
     }
   }
 
@@ -846,10 +953,14 @@ export default function MazeQuizApp() {
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
           <Typography variant="body2">⏱ {timeStr}</Typography>
           <Typography variant="body2">❌ {wrongMoves}</Typography>
-          <Typography variant="body2">🧩 {questionIdsSeen.size}/{totalUniqueQuestions}</Typography>
+          <Typography variant="body2">
+            🧩 {questionIdsSeen.size}/{totalUniqueQuestions}
+          </Typography>
           <Typography variant="body2">✅ {correctQuestionIds.size}</Typography>
           <Typography variant="body2">🧭 Mazes: {mazeCount}</Typography>
-          <Typography variant="body2">📏 Shortest (this maze): {shortestLenFromStart}</Typography>
+          <Typography variant="body2">
+            📏 Shortest (this maze): {shortestLenFromStart}
+          </Typography>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
             🏆 {liveScore}
           </Typography>
@@ -866,39 +977,100 @@ export default function MazeQuizApp() {
             {/* Scoring */}
             <Card variant="outlined">
               <CardContent>
-                <Typography variant="subtitle1" gutterBottom>Scoring</Typography>
+                <Typography variant="subtitle1" gutterBottom>
+                  Scoring
+                </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Base Score: {baseScore}</Typography>
-                    <Slider min={0} max={5000} step={50} value={baseScore} onChange={(_, v) => setBaseScore(v as number)} />
+                    <Typography gutterBottom>
+                      Base Score: {baseScore}
+                    </Typography>
+                    <Slider
+                      min={0}
+                      max={5000}
+                      step={50}
+                      value={baseScore}
+                      onChange={(_, v) => setBaseScore(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Unique Q Weight: {uniqueQWeight}</Typography>
-                    <Slider min={-100} max={200} step={1} value={uniqueQWeight} onChange={(_, v) => setUniqueQWeight(v as number)} />
+                    <Typography gutterBottom>
+                      Unique Q Weight: {uniqueQWeight}
+                    </Typography>
+                    <Slider
+                      min={-100}
+                      max={200}
+                      step={1}
+                      value={uniqueQWeight}
+                      onChange={(_, v) => setUniqueQWeight(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Path Length Weight: {pathLenWeight}</Typography>
-                    <Slider min={-100} max={200} step={1} value={pathLenWeight} onChange={(_, v) => setPathLenWeight(v as number)} />
+                    <Typography gutterBottom>
+                      Path Length Weight: {pathLenWeight}
+                    </Typography>
+                    <Slider
+                      min={-100}
+                      max={200}
+                      step={1}
+                      value={pathLenWeight}
+                      onChange={(_, v) => setPathLenWeight(v as number)}
+                    />
                   </Stack>
                 </Stack>
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 2 }}>
+                <Stack
+                  direction={{ xs: "column", md: "row" }}
+                  spacing={2}
+                  sx={{ mt: 2 }}
+                >
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Wrong Move Penalty: {wrongMovePenalty}</Typography>
-                    <Slider min={0} max={200} step={1} value={wrongMovePenalty} onChange={(_, v) => setWrongMovePenalty(v as number)} />
+                    <Typography gutterBottom>
+                      Wrong Move Penalty: {wrongMovePenalty}
+                    </Typography>
+                    <Slider
+                      min={0}
+                      max={200}
+                      step={1}
+                      value={wrongMovePenalty}
+                      onChange={(_, v) => setWrongMovePenalty(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Time Penalty / sec: {timePenaltyPerSec}</Typography>
-                    <Slider min={0} max={10} step={0.5} value={timePenaltyPerSec} onChange={(_, v) => setTimePenaltyPerSec(v as number)} />
+                    <Typography gutterBottom>
+                      Time Penalty / sec: {timePenaltyPerSec}
+                    </Typography>
+                    <Slider
+                      min={0}
+                      max={10}
+                      step={0.5}
+                      value={timePenaltyPerSec}
+                      onChange={(_, v) => setTimePenaltyPerSec(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Points per correct question: {correctReward}</Typography>
-                    <Slider min={0} max={200} step={1} value={correctReward} onChange={(_, v) => setCorrectReward(v as number)} />
+                    <Typography gutterBottom>
+                      Points per correct question: {correctReward}
+                    </Typography>
+                    <Slider
+                      min={0}
+                      max={200}
+                      step={1}
+                      value={correctReward}
+                      onChange={(_, v) => setCorrectReward(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 220, justifyContent: "center" }}>
                     <FormControlLabel
-                      control={<Switch checked={clampScoreAtZero} onChange={(e) => setClampScoreAtZero(e.target.checked)} />}
+                      control={
+                        <Switch
+                          checked={clampScoreAtZero}
+                          onChange={(e) =>
+                            setClampScoreAtZero(e.target.checked)
+                          }
+                        />
+                      }
                       label="Clamp score at 0"
                     />
                     <Button
@@ -925,7 +1097,9 @@ export default function MazeQuizApp() {
             {/* Gameplay / View */}
             <Card variant="outlined">
               <CardContent>
-                <Typography variant="subtitle1" gutterBottom>Gameplay & View</Typography>
+                <Typography variant="subtitle1" gutterBottom>
+                  Gameplay & View
+                </Typography>
                 <Divider sx={{ mb: 2 }} />
                 <Stack
                   direction={{ xs: "column", xl: "row" }}
@@ -934,22 +1108,53 @@ export default function MazeQuizApp() {
                 >
                   <Stack sx={{ minWidth: 180, flex: 1 }}>
                     <Typography gutterBottom>Rows: {rows}</Typography>
-                    <Slider min={5} max={50} value={rows} onChange={(_, v) => setRows(v as number)} />
+                    <Slider
+                      min={5}
+                      max={50}
+                      value={rows}
+                      onChange={(_, v) => setRows(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 180, flex: 1 }}>
                     <Typography gutterBottom>Cols: {cols}</Typography>
-                    <Slider min={5} max={70} value={cols} onChange={(_, v) => setCols(v as number)} />
+                    <Slider
+                      min={5}
+                      max={70}
+                      value={cols}
+                      onChange={(_, v) => setCols(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Zoom (view radius): {viewRadius}</Typography>
-                    <Slider min={1} max={8} step={1} value={viewRadius} onChange={(_, v) => setViewRadius(v as number)} />
+                    <Typography gutterBottom>
+                      Zoom (view radius): {viewRadius}
+                    </Typography>
+                    <Slider
+                      min={1}
+                      max={8}
+                      step={1}
+                      value={viewRadius}
+                      onChange={(_, v) => setViewRadius(v as number)}
+                    />
                   </Stack>
                   <Stack sx={{ minWidth: 220, flex: 1 }}>
-                    <Typography gutterBottom>Wall hit penalty (ms): {wallPenaltyMs}</Typography>
-                    <Slider min={200} max={3000} step={50} value={wallPenaltyMs} onChange={(_, v) => setWallPenaltyMs(v as number)} />
+                    <Typography gutterBottom>
+                      Wall hit penalty (ms): {wallPenaltyMs}
+                    </Typography>
+                    <Slider
+                      min={200}
+                      max={3000}
+                      step={50}
+                      value={wallPenaltyMs}
+                      onChange={(_, v) => setWallPenaltyMs(v as number)}
+                    />
                   </Stack>
                   <FormControlLabel
-                    control={<Switch checked={showGreedy} onChange={(e) => setShowGreedy(e.target.checked)} />}
+                    control={
+                      <Switch
+                        checked={showGreedy}
+                        onChange={(e) => setShowGreedy(e.target.checked)}
+                      />
+                    }
                     label="Show greedy arrow"
                   />
                   <ToggleButtonGroup
@@ -959,17 +1164,28 @@ export default function MazeQuizApp() {
                     onChange={(_, v) => v && setVizMode(v)}
                   >
                     <ToggleButton value="god">God</ToggleButton>
-                    <ToggleButton value="blind_memory">Blind+Memory</ToggleButton>
+                    <ToggleButton value="blind_memory">
+                      Blind+Memory
+                    </ToggleButton>
                     <ToggleButton value="blind_now">Blind</ToggleButton>
                     <ToggleButton value="absolute_blind">Absolute</ToggleButton>
                   </ToggleButtonGroup>
                 </Stack>
 
-                <Stack direction="row" spacing={2} sx={{ mt: 2 }} alignItems="center" flexWrap="wrap">
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  sx={{ mt: 2 }}
+                  alignItems="center"
+                  flexWrap="wrap"
+                >
                   <Button variant="contained" onClick={regenerate}>
                     Regenerate Maze (keep progress)
                   </Button>
-                  <Button variant="outlined" onClick={() => setPathHighlight([])}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setPathHighlight([])}
+                  >
                     Clear Highlight
                   </Button>
                   <label>
@@ -977,7 +1193,9 @@ export default function MazeQuizApp() {
                       type="file"
                       accept=".csv"
                       style={{ display: "none" }}
-                      onChange={(e) => e.target.files && onCsvUpload(e.target.files[0])}
+                      onChange={(e) =>
+                        e.target.files && onCsvUpload(e.target.files[0])
+                      }
                     />
                     <Button variant="outlined" component="span">
                       Upload CSV
@@ -990,20 +1208,29 @@ export default function MazeQuizApp() {
             {/* Progression controls */}
             <Card variant="outlined">
               <CardContent>
-                <Typography variant="subtitle1" gutterBottom>Progression</Typography>
+                <Typography variant="subtitle1" gutterBottom>
+                  Progression
+                </Typography>
                 <Divider sx={{ mb: 2 }} />
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems="center">
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  alignItems="center"
+                >
                   <FormControlLabel
                     control={
                       <Switch
                         checked={requireAllQuestions}
-                        onChange={(e) => setRequireAllQuestions(e.target.checked)}
+                        onChange={(e) =>
+                          setRequireAllQuestions(e.target.checked)
+                        }
                       />
                     }
                     label="Require all questions to win"
                   />
                   <Typography variant="body2" color="text.secondary">
-                    Progress: {questionIdsSeen.size} / {totalUniqueQuestions} unique seen
+                    Progress: {questionIdsSeen.size} / {totalUniqueQuestions}{" "}
+                    unique seen
                   </Typography>
                   <Button
                     size="small"
@@ -1021,7 +1248,11 @@ export default function MazeQuizApp() {
 
       {/* Main content area — radius view + quiz panel */}
       <div style={{ position: "relative", width: "100%" }}>
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="flex-start">
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          alignItems="flex-start"
+        >
           {/* Radius Maze View */}
           <Card variant="outlined" sx={{ width: "max-content" }}>
             <CardContent>
@@ -1037,128 +1268,192 @@ export default function MazeQuizApp() {
               </Typography>
 
               <div
-                onTouchStart={onTouchStart}
-                onTouchEnd={onTouchEnd}
                 style={{
                   position: "relative",
-                  display: "grid",
-                  gridTemplateColumns: `repeat(${windowSize}, ${cellPx}px)`,
-                  gridAutoRows: `${cellPx}px`,
-                  gap: 0,
-                  userSelect: "none",
-                  width: windowSize * cellPx,
-                  height: windowSize * cellPx,
-                  filter: controlsLocked ? "grayscale(0.2)" : undefined,
+                  overflow: "hidden",
+                  width: windowSize * cellPx - EDGE_CROP * 2,
+                  height: windowSize * cellPx - EDGE_CROP * 2,
+                  borderRadius: 4, // optional, looks nice; remove if you want sharp edges
                 }}
               >
-                {Array.from({ length: windowSize }, (_, i) => i - viewRadius).map((sr) =>
-                  Array.from({ length: windowSize }, (_, j) => j - viewRadius).map((sc) => {
-                    const off = rotateOffsetToWorld(sr, sc, facing);
-                    const wr = player.r + off.dr;
-                    const wc = player.c + off.dc;
+                {/* Offset the actual grid outwards so edges are hidden */}
+                <div
+                  onTouchStart={onTouchStart}
+                  onTouchEnd={onTouchEnd}
+                  style={{
+                    position: "absolute",
+                    left: -EDGE_CROP,
+                    top: -EDGE_CROP,
+                    display: "grid",
+                    gridTemplateColumns: `repeat(${windowSize}, ${cellPx}px)`,
+                    gridAutoRows: `${cellPx}px`,
+                    gap: 0,
+                    userSelect: "none",
+                    width: windowSize * cellPx + EDGE_CROP * 2,
+                    height: windowSize * cellPx + EDGE_CROP * 2,
+                    filter: controlsLocked ? "grayscale(0.2)" : undefined,
+                  }}
+                >
+                  {Array.from(
+                    { length: windowSize },
+                    (_, i) => i - viewRadius
+                  ).map((sr) =>
+                    Array.from(
+                      { length: windowSize },
+                      (_, j) => j - viewRadius
+                    ).map((sc) => {
+                      const off = rotateOffsetToWorld(sr, sc, facing);
+                      const wr = player.r + off.dr;
+                      const wc = player.c + off.dc;
 
-                    if (wr < 0 || wc < 0 || wr >= maze.rows || wc >= maze.cols) {
+                      if (
+                        wr < 0 ||
+                        wc < 0 ||
+                        wr >= maze.rows ||
+                        wc >= maze.cols
+                      ) {
+                        return (
+                          <div
+                            key={`${sr},${sc}`}
+                            style={{
+                              width: cellPx,
+                              height: cellPx,
+                              background: "#111",
+                              border: "2px solid #111",
+                            }}
+                          />
+                        );
+                      }
+
+                      const cell = maze.cells[wr][wc];
+                      const isPlayerHere = sr === 0 && sc === 0;
+                      const isExit = wr === maze.exit.r && wc === maze.exit.c;
+                      const isEntrance =
+                        wr === maze.entrance.r && wc === maze.entrance.c;
+                      const hl = pathHighlight.some(
+                        (p) => p.r === wr && p.c === wc
+                      );
+
+                      const k = `${wr},${wc}`;
+                      let visible = true;
+                      switch (vizMode) {
+                        case "god":
+                          visible = true;
+                          break;
+                        case "blind_now":
+                          visible = nowRays.has(k);
+                          break;
+                        case "blind_memory":
+                          visible = explored.has(k);
+                          break;
+                        case "absolute_blind":
+                          visible = absNow.has(k);
+                          break;
+                      }
+
+                      const w = rotateWallsToScreen(cell.walls, facing);
+
+                      // Junction color depends on whether that question id is seen
+                      const isJunction = cell.openings > 2;
+                      const qId = cell.quiz?.id;
+                      const seenThisQ = qId ? questionIdsSeen.has(qId) : false;
+                      const junctionBg = seenThisQ
+                        ? "#ffd54f" /* darker yellow-orange */
+                        : "#fff9c4"; /* light yellow */
+                      const wallColor = visible ? "#111" : "#222";
+                      const bg = visible
+                        ? hl
+                          ? "#a5d6a7"
+                          : isEntrance
+                          ? "#bbdefb"
+                          : isExit
+                          ? "#ffcdd2"
+                          : isJunction
+                          ? junctionBg
+                          : "#fafafa"
+                        : "#0a0a0a";
+
                       return (
                         <div
                           key={`${sr},${sc}`}
-                          style={{ width: cellPx, height: cellPx, background: "#111", border: "2px solid #111" }}
-                        />
+                          onClick={() => onCellClick(wr, wc)}
+                          title={
+                            visible
+                              ? `(${wr},${wc}) openings:${cell.openings}${
+                                  qId
+                                    ? ` • Q:${qId}${seenThisQ ? " (seen)" : ""}`
+                                    : ""
+                                }`
+                              : undefined
+                          }
+                          style={{
+                            width: cellPx,
+                            height: cellPx,
+                            boxSizing: "border-box",
+                            borderTop: w.N
+                              ? `2px solid ${wallColor}`
+                              : "2px solid transparent",
+                            borderBottom: w.S
+                              ? `2px solid ${wallColor}`
+                              : "2px solid transparent",
+                            borderLeft: w.W
+                              ? `2px solid ${wallColor}`
+                              : "2px solid transparent",
+                            borderRight: w.E
+                              ? `2px solid ${wallColor}`
+                              : "2px solid transparent",
+                            background: isPlayerHere ? "#e3f2fd" : bg,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            position: "relative",
+                            cursor: "pointer",
+                            transition:
+                              "background 160ms, border-color 120ms, opacity 120ms",
+                            opacity: visible ? 1 : 0.95,
+                          }}
+                        >
+                          {/* Player dot (with bump animation) */}
+                          {isPlayerHere && (
+                            <div
+                              style={{
+                                position: "absolute",
+                                width: 28,
+                                height: 28,
+                                borderRadius: "50%",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                                ...playerBumpStyle(),
+                              }}
+                            />
+                          )}
+
+                          {showGreedy && cell.greedyDirection && visible && (
+                            <span
+                              style={{ opacity: 0.7, fontSize: 14, zIndex: 1 }}
+                            >
+                              {worldToScreenDir(
+                                cell.greedyDirection,
+                                facing
+                              ) === "N" && "↑"}
+                              {worldToScreenDir(
+                                cell.greedyDirection,
+                                facing
+                              ) === "S" && "↓"}
+                              {worldToScreenDir(
+                                cell.greedyDirection,
+                                facing
+                              ) === "E" && "→"}
+                              {worldToScreenDir(
+                                cell.greedyDirection,
+                                facing
+                              ) === "W" && "←"}
+                            </span>
+                          )}
+                        </div>
                       );
-                    }
-
-                    const cell = maze.cells[wr][wc];
-                    const isPlayerHere = sr === 0 && sc === 0;
-                    const isExit = wr === maze.exit.r && wc === maze.exit.c;
-                    const isEntrance = wr === maze.entrance.r && wc === maze.entrance.c;
-                    const hl = pathHighlight.some((p) => p.r === wr && p.c === wc);
-
-                    const k = `${wr},${wc}`;
-                    let visible = true;
-                    switch (vizMode) {
-                      case "god":
-                        visible = true;
-                        break;
-                      case "blind_now":
-                        visible = nowRays.has(k);
-                        break;
-                      case "blind_memory":
-                        visible = explored.has(k);
-                        break;
-                      case "absolute_blind":
-                        visible = absNow.has(k);
-                        break;
-                    }
-
-                    const w = rotateWallsToScreen(cell.walls, facing);
-
-                    // Junction color depends on whether that question id is seen
-                    const isJunction = cell.openings > 2;
-                    const qId = cell.quiz?.id;
-                    const seenThisQ = qId ? questionIdsSeen.has(qId) : false;
-                    const junctionBg = seenThisQ ? "#ffd54f" /* darker yellow-orange */ : "#fff9c4" /* light yellow */;
-                    const wallColor = visible ? "#111" : "#222";
-                    const bg = visible
-                      ? (hl ? "#a5d6a7"
-                        : isEntrance ? "#bbdefb"
-                        : isExit ? "#ffcdd2"
-                        : isJunction ? junctionBg : "#fafafa")
-                      : "#0a0a0a";
-
-                    return (
-                      <div
-                        key={`${sr},${sc}`}
-                        onClick={() => onCellClick(wr, wc)}
-                        title={
-                          visible
-                            ? `(${wr},${wc}) openings:${cell.openings}${
-                                qId ? ` • Q:${qId}${seenThisQ ? " (seen)" : ""}` : ""
-                              }`
-                            : undefined
-                        }
-                        style={{
-                          width: cellPx,
-                          height: cellPx,
-                          boxSizing: "border-box",
-                          borderTop: w.N ? `2px solid ${wallColor}` : "2px solid transparent",
-                          borderBottom: w.S ? `2px solid ${wallColor}` : "2px solid transparent",
-                          borderLeft: w.W ? `2px solid ${wallColor}` : "2px solid transparent",
-                          borderRight: w.E ? `2px solid ${wallColor}` : "2px solid transparent",
-                          background: isPlayerHere ? "#e3f2fd" : bg,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          position: "relative",
-                          cursor: "pointer",
-                          transition: "background 160ms, border-color 120ms, opacity 120ms",
-                          opacity: visible ? 1 : 0.95,
-                        }}
-                      >
-                        {/* Player dot (with bump animation) */}
-                        {isPlayerHere && (
-                          <div
-                            style={{
-                              position: "absolute",
-                              width: 28,
-                              height: 28,
-                              borderRadius: "50%",
-                              boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                              ...playerBumpStyle(),
-                            }}
-                          />
-                        )}
-
-                        {showGreedy && cell.greedyDirection && visible && (
-                          <span style={{ opacity: 0.7, fontSize: 14, zIndex: 1 }}>
-                            {worldToScreenDir(cell.greedyDirection, facing) === "N" && "↑"}
-                            {worldToScreenDir(cell.greedyDirection, facing) === "S" && "↓"}
-                            {worldToScreenDir(cell.greedyDirection, facing) === "E" && "→"}
-                            {worldToScreenDir(cell.greedyDirection, facing) === "W" && "←"}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })
-                )}
+                    })
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1207,7 +1502,12 @@ export default function MazeQuizApp() {
           }}
         >
           <div />
-          <Fab color="primary" size="small" onClick={() => moveForwardWorld(facing)} disabled={controlsLocked}>
+          <Fab
+            color="primary"
+            size="small"
+            onClick={() => moveForwardWorld(facing)}
+            disabled={controlsLocked}
+          >
             <ArrowUpwardIcon />
           </Fab>
           <div />
@@ -1243,13 +1543,20 @@ export default function MazeQuizApp() {
 
       {/* Win Modal with final score */}
       <Dialog open={winOpen} onClose={() => {}} disableEscapeKeyDown>
-        <DialogTitle>🏁 You collected all questions and reached the exit!</DialogTitle>
+        <DialogTitle>
+          🏁 You collected all questions and reached the exit!
+        </DialogTitle>
         <DialogContent>
           <Stack spacing={1}>
             <Typography>⏱ Time: {timeStr}</Typography>
             <Typography>❌ Wrong moves: {wrongMoves}</Typography>
-            <Typography>🧩 Unique questions seen: {questionIdsSeen.size} / {totalUniqueQuestions}</Typography>
-            <Typography>✅ Unique questions correct: {correctQuestionIds.size}</Typography>
+            <Typography>
+              🧩 Unique questions seen: {questionIdsSeen.size} /{" "}
+              {totalUniqueQuestions}
+            </Typography>
+            <Typography>
+              ✅ Unique questions correct: {correctQuestionIds.size}
+            </Typography>
             <Typography>🧭 Mazes completed: {mazeCount}</Typography>
             <Typography>
               📏 Shortest path length (current maze): {shortestLenFromStart}
@@ -1352,13 +1659,17 @@ function QuizReadOnly({
         gap: 8,
       }}
     >
-      <div style={{ gridColumn: "2 / 3", gridRow: "1 / 2", textAlign: "center" }}>
+      <div
+        style={{ gridColumn: "2 / 3", gridRow: "1 / 2", textAlign: "center" }}
+      >
         {pill(screenAnswers.N)}
       </div>
       <div style={{ gridColumn: "1 / 2", gridRow: "2 / 3" }}>
         {pill(screenAnswers.W)}
       </div>
-      <div style={{ gridColumn: "2 / 3", gridRow: "2 / 3", textAlign: "center" }}>
+      <div
+        style={{ gridColumn: "2 / 3", gridRow: "2 / 3", textAlign: "center" }}
+      >
         <Typography
           variant="subtitle1"
           sx={{ p: 1, borderRadius: 1, bgcolor: "#f5f5f5" }}
