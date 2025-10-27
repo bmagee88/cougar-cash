@@ -161,50 +161,7 @@ export default function App() {
     running ? 1000 : null
   );
 
-  // Keyboard controls
-  const keys = useRef<{ [k: string]: boolean }>({});
-  useEffect(() => {
-    const onDown = (e: KeyboardEvent) => {
-      const key = e.key;
-      const code = (e as any).code || "";
-      // Robust space detection across browsers + prevent page scroll
-      if (key === " " || key === "Spacebar" || key === "Space" || code === "Space") {
-        e.preventDefault();
-        handleAction();
-        return;
-      }
-      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
-        e.preventDefault();
-      }
-      keys.current[key.toLowerCase()] = true;
-    };
-    const onUp = (e: KeyboardEvent) => {
-      keys.current[e.key.toLowerCase()] = false;
-    };
-    window.addEventListener("keydown", onDown);
-    window.addEventListener("keyup", onUp);
-    return () => {
-      window.removeEventListener("keydown", onDown);
-      window.removeEventListener("keyup", onUp);
-    };
-  }, []);
-
-  // Movement tick
-  useInterval(() => {
-    if (!running) return;
-    let { x, y } = player;
-    const step = 1; // grid step in cells
-    if (keys.current["arrowup"] || keys.current["w"]) y -= step;
-    if (keys.current["arrowdown"] || keys.current["s"]) y += step;
-    if (keys.current["arrowleft"] || keys.current["a"]) x -= step;
-    if (keys.current["arrowright"] || keys.current["d"]) x += step;
-    x = clamp(x, 0, GRID_COLS - 1);
-    y = clamp(y, 0, GRID_ROWS - 1);
-    if (x !== player.x || y !== player.y) setPlayer({ x, y });
-  }, 150);
-
-  const tileRect = (x: number, y: number) => ({ left: x * CELL, top: y * CELL, width: CELL, height: CELL });
-
+  
   // Collision checks — allow pickup/dropoff within ~1 tile
   const NEAR_RADIUS = 1;
   const isNear = (ax: number, ay: number, bx: number, by: number, r: number) =>
@@ -253,6 +210,51 @@ export default function App() {
       }
     }
   }, [running, nearShop, hasPizza, houseUnderPlayer, tasks]);
+
+
+  // Keyboard controls
+  const keys = useRef<{ [k: string]: boolean }>({});
+  useEffect(() => {
+    const onDown = (e: KeyboardEvent) => {
+      const key = e.key;
+      const code = (e as any).code || "";
+      // Robust space detection across browsers + prevent page scroll
+      if (key === " " || key === "Spacebar" || key === "Space" || code === "Space") {
+        e.preventDefault();
+        handleAction();
+        return;
+      }
+      if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(key)) {
+        e.preventDefault();
+      }
+      keys.current[key.toLowerCase()] = true;
+    };
+    const onUp = (e: KeyboardEvent) => {
+      keys.current[e.key.toLowerCase()] = false;
+    };
+    window.addEventListener("keydown", onDown);
+    window.addEventListener("keyup", onUp);
+    return () => {
+      window.removeEventListener("keydown", onDown);
+      window.removeEventListener("keyup", onUp);
+    };
+  }, [handleAction]);
+
+  // Movement tick
+  useInterval(() => {
+    if (!running) return;
+    let { x, y } = player;
+    const step = 1; // grid step in cells
+    if (keys.current["arrowup"] || keys.current["w"]) y -= step;
+    if (keys.current["arrowdown"] || keys.current["s"]) y += step;
+    if (keys.current["arrowleft"] || keys.current["a"]) x -= step;
+    if (keys.current["arrowright"] || keys.current["d"]) x += step;
+    x = clamp(x, 0, GRID_COLS - 1);
+    y = clamp(y, 0, GRID_ROWS - 1);
+    if (x !== player.x || y !== player.y) setPlayer({ x, y });
+  }, 150);
+
+  const tileRect = (x: number, y: number) => ({ left: x * CELL, top: y * CELL, width: CELL, height: CELL });
 
   const avgRating = ratings.length
     ? ratings.reduce((a, b) => a + b, 0) / ratings.length
