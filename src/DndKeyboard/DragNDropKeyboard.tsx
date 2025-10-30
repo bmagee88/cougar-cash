@@ -165,14 +165,17 @@ type Difficulty = 1 | 2 | 3 | 4 | 5;
 
 const clamp = (n: number, min: number, max: number) =>
   Math.max(min, Math.min(max, n));
-const shuffle = <T,>(arr: T[]) => {
+const shuffle = <T,>(arr: T[]): T[] => {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
+    const tmp = a[i];
+    a[i] = a[j];
+    a[j] = tmp;
   }
   return a;
 };
+
 
 /* Build a count map of how many slots each label has on the keyboard (for duplicates in pool) */
 const SLOT_COUNT: Record<string, number> = ROWS.flat().reduce((acc, k) => {
@@ -316,7 +319,7 @@ function useSfx() {
   const ctxRef = useRef<AudioContext | null>(null);
   const ensureCtx = useCallback(async () => {
     if (!ctxRef.current) {
-      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      const Ctx = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext | undefined;
       if (Ctx) ctxRef.current = new Ctx();
     }
     if (ctxRef.current && ctxRef.current.state === "suspended")
@@ -433,75 +436,95 @@ export default function App() {
   const [avgPlaceMs, setAvgPlaceMs] = useState<number>(0);
   const [correctCount, setCorrectCount] = useState<number>(0);
 
+  /* NEW: latches to prevent loops / double-finish */
+  const goalRewardedRef = useRef(false);
+  const finishedRef = useRef(false);
+
   /* SFX */
   const sfx = useSfx();
-  // Prime audio after first user interaction
   const primeAudio = useCallback(() => {
     sfx.prime();
   }, [sfx]);
 
- /* Round controls */
-const hardReset = useCallback((keepDiff: boolean = true) => {
-  // build labels for the current difficulty
-  const labels = labelsForDifficulty(difficulty);
-
-  // reset key states
-  const next: KeyStateMap = {};
-  labels.forEach((k) => (next[k] = { slot: null, status: "idle" }));
-  setKeysState(next);
-
-  // reset slot states
-  const fresh: SlotStateMap = {};
-  ALL_SLOTS.forEach(
-    ({ slotId }) =>
-      (fresh[slotId] = { keyLabel: null, spotlight: false, stars: false })
+  /* Helper: goal satisfaction using live metrics */
+  const isGoalSatisfied = useCallback(
+    (g: Goal) => {
+      switch (g.kind) {
+        case "streak":
+          return bestStreak >= g.target;
+        case "avg":
+          return avgPlaceMs > 0 && avgPlaceMs < g.targetMs;
+        case "placed":
+          return correctCount >= g.target;
+      }
+    },
+    [bestStreak, avgPlaceMs, correctCount]
   );
-  setSlotState(fresh);
 
-  // shuffle pool and reset round metrics
-  setPoolOrder(shuffle(labels));
-  setScore(0);
-  setStreak(0);
-  setBestStreak(0);
-  setShowFireworks(false);
-  setReturningAnim({});
-  setCorrectCount(0);
-  setAvgPlaceMs(0);
-  lastCorrectRef.current = null;
+  /* Round controls */
+  const hardReset = useCallback(
+    (keepDiff: boolean = true) => {
+      const labels = labelsForDifficulty(difficulty);
 
-  // timer + round flags
-  setTimeLeft(roundSeconds);
-  setRoundActive(false);
+      const next: KeyStateMap = {};
+      labels.forEach((k) => (next[k] = { slot: null, status: "idle" }));
+      setKeysState(next);
 
-  // new goal sized to this round’s label count
-  setGoal(randomGoal(labels.length));
-}, [difficulty, roundSeconds]); // <- only what’s actually read
+      const fresh: SlotStateMap = {};
+      ALL_SLOTS.forEach(
+        ({ slotId }) =>
+          (fresh[slotId] = { keyLabel: null, spotlight: false, stars: false })
+      );
+      setSlotState(fresh);
 
+      setPoolOrder(shuffle(labels));
+      setScore(0);
+      setStreak(0);
+      setBestStreak(0);
+      setShowFireworks(false);
+      setReturningAnim({});
+      setCorrectCount(0);
+      setAvgPlaceMs(0);
+      lastCorrectRef.current = null;
 
-const endRound = useCallback((completedAll: boolean = false) => {
-  setRoundActive(false);
+      setTimeLeft(roundSeconds);
+      setRoundActive(false);
 
-  // compute final score from current snapshot values
-  const bonus = timeLeft > 0 ? timeLeft * 10 : 0;
-  const finalScore = score + bonus;
-  setScore(finalScore);
+      setGoal(randomGoal(labels.length));
+      goalRewardedRef.current = false; // reset goal latch for new goal
+      finishedRef.current = false;     // ensure round can end later
+    },
+    [difficulty, roundSeconds]
+  );
 
-  if (completedAll) {
-    setShowFireworks(true);
-    sfx.finish();
-  }
+  const endRound = useCallback(
+    (completedAll: boolean = false) => {
+      if (finishedRef.current) return; // idempotent guard
+      finishedRef.current = true;
 
-  // check rank and prompt for name entry if top-10
-  const updated = [...leaderboard, { name: "", score: finalScore, when: Date.now() }]
-    .sort((a, b) => b.score - a.score);
+      setRoundActive(false);
 
-  const rank = updated.findIndex((e) => e.score === finalScore);
-  if (rank >= 0 && rank < 10) {
-    setPendingScore(finalScore);
-    setNameDialogOpen(true);
-  }
-}, [timeLeft, score, leaderboard, sfx]); // <- tight, complete deps
+      const bonus = timeLeft > 0 ? timeLeft * 10 : 0;
+      const finalScore = score + bonus;
+      setScore(finalScore);
 
+      if (completedAll) {
+        setShowFireworks(true);
+        sfx.finish();
+      }
+
+      const updated = [
+        ...leaderboard,
+        { name: "", score: finalScore, when: Date.now() },
+      ].sort((a, b) => b.score - a.score);
+      const rank = updated.findIndex((e) => e.score === finalScore);
+      if (rank >= 0 && rank < 10) {
+        setPendingScore(finalScore);
+        setNameDialogOpen(true);
+      }
+    },
+    [timeLeft, score, leaderboard, sfx]
+  );
 
   /* Timer */
   useEffect(() => {
@@ -513,6 +536,7 @@ const endRound = useCallback((completedAll: boolean = false) => {
     const id = window.setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => window.clearInterval(id);
   }, [roundActive, timeLeft, endRound]);
+
   useEffect(() => {
     if (!roundActive) setTimeLeft(roundSeconds);
   }, [roundSeconds, roundActive]);
@@ -522,18 +546,16 @@ const endRound = useCallback((completedAll: boolean = false) => {
     hardReset(false);
   }, [difficulty, hardReset]);
 
-  /* All correct? */
-  const allCorrect = useMemo(
-    () =>
+  /* All correct? — guarded to run once */
+  useEffect(() => {
+    const allCorrectNow =
       Object.keys(keysState).length > 0 &&
       Object.values(keysState).every(
         (k) => k.status === "correct" || k.status === "aliased"
-      ),
-    [keysState]
-  );
-  useEffect(() => {
-    if (allCorrect && Object.keys(keysState).length > 0) endRound(true);
-  }, [allCorrect, endRound, keysState]);
+      );
+    if (!allCorrectNow || finishedRef.current) return;
+    endRound(true);
+  }, [keysState, endRound]);
 
   /* Pointer-based DnD (mouse + touch unified) */
   const slotRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -614,39 +636,56 @@ const endRound = useCallback((completedAll: boolean = false) => {
     return () => window.removeEventListener("resize", onResize);
   }, [recomputeUnit]);
 
-
-
   const startRound = () => {
+    finishedRef.current = false;      // reset end guard
+    goalRewardedRef.current = false;  // reset goal reward latch
     hardReset(true);
     setRoundActive(true);
     sfx.prime();
   };
 
-
-
-  /* Goals advancement */
+  /* Goals advancement — reward once per goal, avoid loops at end */
   useEffect(() => {
     if (!roundActive) return;
-    let achieved = false;
-    if (goal.kind === "streak" && bestStreak >= goal.target) achieved = true;
-    if (goal.kind === "avg" && avgPlaceMs > 0 && avgPlaceMs < goal.targetMs)
-      achieved = true;
-    if (goal.kind === "placed" && correctCount >= goal.target) achieved = true;
 
-    if (achieved) {
-      setScore((s) => s + goal.reward);
-      sfx.goal();
-      setGoal(randomGoal(allowedLabels.length));
+    const everyPlaced =
+      Object.keys(keysState).length > 0 &&
+      Object.values(keysState).every(
+        (k) => k.status === "correct" || k.status === "aliased"
+      );
+    if (everyPlaced) return; // don't award goals when round is effectively done
+
+    const achieved = isGoalSatisfied(goal);
+    if (!achieved || goalRewardedRef.current) return;
+
+    // Reward exactly once for current goal
+    goalRewardedRef.current = true;
+    setScore((s) => s + goal.reward);
+    sfx.goal();
+
+    // Pick a new goal that isn't instantly satisfied (try a few times)
+    let next = randomGoal(allowedLabels.length);
+    let tries = 0;
+    while (isGoalSatisfied(next) && tries++ < 10) {
+      next = randomGoal(allowedLabels.length);
     }
+    setGoal(next);
   }, [
-    bestStreak,
-    avgPlaceMs,
-    correctCount,
-    goal,
     roundActive,
+    goal,
+    isGoalSatisfied,
+    keysState,
     allowedLabels.length,
     sfx,
   ]);
+
+  // Reset goal latch whenever goal changes or round stops
+  useEffect(() => {
+    goalRewardedRef.current = false;
+  }, [goal]);
+  useEffect(() => {
+    if (!roundActive) goalRewardedRef.current = false;
+  }, [roundActive]);
 
   /* Validation + alias handling */
   const isCorrectForSlot = (labelInPool: string, slotId: string) => {
@@ -706,6 +745,7 @@ const endRound = useCallback((completedAll: boolean = false) => {
             return ns;
           });
 
+          // sound
           sfx.correct();
 
           setKeysState((kPrev) => ({
@@ -718,7 +758,6 @@ const endRound = useCallback((completedAll: boolean = false) => {
           const partnerTop = SHIFT_FOR_BASE[expected];
           const placedBase = baseName(labelInPool);
           if (partnerTop && placedBase === expected) {
-            // if top symbol exists in pool, mark it aliased
             const topIdx = Object.keys(keysState).find(
               (k) =>
                 baseName(k) === partnerTop && keysState[k]?.status === "idle"
@@ -1318,6 +1357,7 @@ const endRound = useCallback((completedAll: boolean = false) => {
             <Button
               variant="outlined"
               onClick={() => {
+                finishedRef.current = false; // allow a future endRound
                 setRoundActive(false);
                 setTimeLeft(roundSeconds);
               }}
@@ -1434,6 +1474,7 @@ const endRound = useCallback((completedAll: boolean = false) => {
             <Button
               color="inherit"
               onClick={() => {
+                finishedRef.current = false; // allow a future endRound
                 setRoundActive(false);
                 setTimeLeft(roundSeconds);
               }}
