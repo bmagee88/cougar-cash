@@ -15,6 +15,7 @@ import Oroboros from "./oroboros/Oroboros";
 import MazeQuiz from "./MazeQuiz/MazeQuiz";
 import PieTimer from "./NewTimer/PieTimer";
 import PizzaGame from "./pizzaGame/PizzaGame";
+import DnDKeyboard from "./DndKeyboard/DragNDropKeyboard";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -66,6 +67,9 @@ function App() {
           <Route
             path='/pizza-game'
             element={<PizzaGame />}></Route>
+          <Route
+            path='/keyboard'
+            element={<DnDKeyboard />}></Route>
         </Routes>
       </Router>
     </Box>
