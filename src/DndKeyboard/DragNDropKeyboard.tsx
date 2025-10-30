@@ -440,54 +440,68 @@ export default function App() {
     sfx.prime();
   }, [sfx]);
 
-    /* Round controls */
-  const hardReset = (keepDiff = true) => {
-    const labels = labelsForDifficulty(difficulty);
-    const next: KeyStateMap = {};
-    labels.forEach((k) => (next[k] = { slot: null, status: "idle" }));
-    setKeysState(next);
+ /* Round controls */
+const hardReset = useCallback((keepDiff: boolean = true) => {
+  // build labels for the current difficulty
+  const labels = labelsForDifficulty(difficulty);
 
-    const fresh: SlotStateMap = {};
-    ALL_SLOTS.forEach(
-      ({ slotId }) =>
-        (fresh[slotId] = { keyLabel: null, spotlight: false, stars: false })
-    );
-    setSlotState(fresh);
+  // reset key states
+  const next: KeyStateMap = {};
+  labels.forEach((k) => (next[k] = { slot: null, status: "idle" }));
+  setKeysState(next);
 
-    setPoolOrder(shuffle(labels)); // shuffle before start
-    setScore(0);
-    setStreak(0);
-    setBestStreak(0);
-    setShowFireworks(false);
-    setReturningAnim({});
-    setCorrectCount(0);
-    setAvgPlaceMs(0);
-    lastCorrectRef.current = null;
-    setTimeLeft(roundSeconds);
-    setRoundActive(false);
-    setGoal(randomGoal(labels.length));
-  };
+  // reset slot states
+  const fresh: SlotStateMap = {};
+  ALL_SLOTS.forEach(
+    ({ slotId }) =>
+      (fresh[slotId] = { keyLabel: null, spotlight: false, stars: false })
+  );
+  setSlotState(fresh);
 
-  const endRound = (completedAll: boolean = false) => {
-    setRoundActive(false);
-    const bonus = timeLeft > 0 ? timeLeft * 10 : 0;
-    const finalScore = score + bonus;
-    setScore(finalScore);
-    if (completedAll) {
-      setShowFireworks(true);
-      sfx.finish();
-    }
+  // shuffle pool and reset round metrics
+  setPoolOrder(shuffle(labels));
+  setScore(0);
+  setStreak(0);
+  setBestStreak(0);
+  setShowFireworks(false);
+  setReturningAnim({});
+  setCorrectCount(0);
+  setAvgPlaceMs(0);
+  lastCorrectRef.current = null;
 
-    const updated = [
-      ...leaderboard,
-      { name: "", score: finalScore, when: Date.now() },
-    ].sort((a, b) => b.score - a.score);
-    const rank = updated.findIndex((e) => e.score === finalScore);
-    if (rank >= 0 && rank < 10) {
-      setPendingScore(finalScore);
-      setNameDialogOpen(true);
-    }
-  };
+  // timer + round flags
+  setTimeLeft(roundSeconds);
+  setRoundActive(false);
+
+  // new goal sized to this round’s label count
+  setGoal(randomGoal(labels.length));
+}, [difficulty, roundSeconds]); // <- only what’s actually read
+
+
+const endRound = useCallback((completedAll: boolean = false) => {
+  setRoundActive(false);
+
+  // compute final score from current snapshot values
+  const bonus = timeLeft > 0 ? timeLeft * 10 : 0;
+  const finalScore = score + bonus;
+  setScore(finalScore);
+
+  if (completedAll) {
+    setShowFireworks(true);
+    sfx.finish();
+  }
+
+  // check rank and prompt for name entry if top-10
+  const updated = [...leaderboard, { name: "", score: finalScore, when: Date.now() }]
+    .sort((a, b) => b.score - a.score);
+
+  const rank = updated.findIndex((e) => e.score === finalScore);
+  if (rank >= 0 && rank < 10) {
+    setPendingScore(finalScore);
+    setNameDialogOpen(true);
+  }
+}, [timeLeft, score, leaderboard, sfx.finish]); // <- tight, complete deps
+
 
   /* Timer */
   useEffect(() => {
