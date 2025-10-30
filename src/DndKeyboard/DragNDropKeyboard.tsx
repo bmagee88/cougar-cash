@@ -440,6 +440,55 @@ export default function App() {
     sfx.prime();
   }, [sfx]);
 
+    /* Round controls */
+  const hardReset = (keepDiff = true) => {
+    const labels = labelsForDifficulty(difficulty);
+    const next: KeyStateMap = {};
+    labels.forEach((k) => (next[k] = { slot: null, status: "idle" }));
+    setKeysState(next);
+
+    const fresh: SlotStateMap = {};
+    ALL_SLOTS.forEach(
+      ({ slotId }) =>
+        (fresh[slotId] = { keyLabel: null, spotlight: false, stars: false })
+    );
+    setSlotState(fresh);
+
+    setPoolOrder(shuffle(labels)); // shuffle before start
+    setScore(0);
+    setStreak(0);
+    setBestStreak(0);
+    setShowFireworks(false);
+    setReturningAnim({});
+    setCorrectCount(0);
+    setAvgPlaceMs(0);
+    lastCorrectRef.current = null;
+    setTimeLeft(roundSeconds);
+    setRoundActive(false);
+    setGoal(randomGoal(labels.length));
+  };
+
+  const endRound = (completedAll: boolean = false) => {
+    setRoundActive(false);
+    const bonus = timeLeft > 0 ? timeLeft * 10 : 0;
+    const finalScore = score + bonus;
+    setScore(finalScore);
+    if (completedAll) {
+      setShowFireworks(true);
+      sfx.finish();
+    }
+
+    const updated = [
+      ...leaderboard,
+      { name: "", score: finalScore, when: Date.now() },
+    ].sort((a, b) => b.score - a.score);
+    const rank = updated.findIndex((e) => e.score === finalScore);
+    if (rank >= 0 && rank < 10) {
+      setPendingScore(finalScore);
+      setNameDialogOpen(true);
+    }
+  };
+
   /* Timer */
   useEffect(() => {
     if (!roundActive) return;
@@ -449,7 +498,7 @@ export default function App() {
     }
     const id = window.setInterval(() => setTimeLeft((t) => t - 1), 1000);
     return () => window.clearInterval(id);
-  }, [roundActive, timeLeft]);
+  }, [roundActive, timeLeft, endRound]);
   useEffect(() => {
     if (!roundActive) setTimeLeft(roundSeconds);
   }, [roundSeconds, roundActive]);
@@ -457,7 +506,7 @@ export default function App() {
   /* Reset on difficulty change */
   useEffect(() => {
     hardReset(false);
-  }, [difficulty]);
+  }, [difficulty, hardReset]);
 
   /* All correct? */
   const allCorrect = useMemo(
@@ -470,7 +519,7 @@ export default function App() {
   );
   useEffect(() => {
     if (allCorrect && Object.keys(keysState).length > 0) endRound(true);
-  }, [allCorrect]);
+  }, [allCorrect, endRound, keysState]);
 
   /* Pointer-based DnD (mouse + touch unified) */
   const slotRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -551,33 +600,7 @@ export default function App() {
     return () => window.removeEventListener("resize", onResize);
   }, [recomputeUnit]);
 
-  /* Round controls */
-  const hardReset = (keepDiff = true) => {
-    const labels = labelsForDifficulty(difficulty);
-    const next: KeyStateMap = {};
-    labels.forEach((k) => (next[k] = { slot: null, status: "idle" }));
-    setKeysState(next);
 
-    const fresh: SlotStateMap = {};
-    ALL_SLOTS.forEach(
-      ({ slotId }) =>
-        (fresh[slotId] = { keyLabel: null, spotlight: false, stars: false })
-    );
-    setSlotState(fresh);
-
-    setPoolOrder(shuffle(labels)); // shuffle before start
-    setScore(0);
-    setStreak(0);
-    setBestStreak(0);
-    setShowFireworks(false);
-    setReturningAnim({});
-    setCorrectCount(0);
-    setAvgPlaceMs(0);
-    lastCorrectRef.current = null;
-    setTimeLeft(roundSeconds);
-    setRoundActive(false);
-    setGoal(randomGoal(labels.length));
-  };
 
   const startRound = () => {
     hardReset(true);
@@ -585,26 +608,7 @@ export default function App() {
     sfx.prime();
   };
 
-  const endRound = (completedAll: boolean = false) => {
-    setRoundActive(false);
-    const bonus = timeLeft > 0 ? timeLeft * 10 : 0;
-    const finalScore = score + bonus;
-    setScore(finalScore);
-    if (completedAll) {
-      setShowFireworks(true);
-      sfx.finish();
-    }
 
-    const updated = [
-      ...leaderboard,
-      { name: "", score: finalScore, when: Date.now() },
-    ].sort((a, b) => b.score - a.score);
-    const rank = updated.findIndex((e) => e.score === finalScore);
-    if (rank >= 0 && rank < 10) {
-      setPendingScore(finalScore);
-      setNameDialogOpen(true);
-    }
-  };
 
   /* Goals advancement */
   useEffect(() => {
