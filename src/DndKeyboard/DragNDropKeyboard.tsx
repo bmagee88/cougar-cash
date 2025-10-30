@@ -500,7 +500,7 @@ const endRound = useCallback((completedAll: boolean = false) => {
     setPendingScore(finalScore);
     setNameDialogOpen(true);
   }
-}, [timeLeft, score, leaderboard, sfx.finish]); // <- tight, complete deps
+}, [timeLeft, score, leaderboard, sfx]); // <- tight, complete deps
 
 
   /* Timer */
