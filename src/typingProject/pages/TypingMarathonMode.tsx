@@ -283,7 +283,11 @@ export default function TypingMarathonMode() {
       saveScore(reason, stats); // ← for the leaderboard
       setShowResults(true);
     },
-    [saveScore]
+    [saveScore, 
+    typedChars,
+    incorrectChars,
+    elapsedTime,
+    difficulty,]
   );
 
   const countMistakes = (typed: string, actual: string) => {
