@@ -1,5 +1,6 @@
 import "./App.css";
 import Home from "./pages/Home";
+import CougarCash from "./pages/CougarCash";
 import Directions from "./pages/Directions";
 import About from "./pages/About";
 // import Header from "./components/Header";
@@ -28,6 +29,9 @@ function App() {
           <Route
             path='/'
             element={<Home />}></Route>
+          <Route
+            path='/cougar-cash'
+            element={<CougarCash />}></Route>
           <Route
             path='/directions'
             element={<Directions />}></Route>
