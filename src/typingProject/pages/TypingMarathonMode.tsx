@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { words as wordsByLength } from "typingProject/resources/staticData";
 import {
   Box,
@@ -263,25 +263,28 @@ export default function TypingMarathonMode() {
     }
   };
 
-  const endGame = (
-    reason: "timeout" | "errors" | "repeatChar",
-    statsOverride?: {
-      characters: number;
-      elapsedTime: number;
-      accuracy: number;
-      rating: number;
-    }
-  ) => {
-    const stats =
-      statsOverride ??
-      computeStats(typedChars, incorrectChars, elapsedTime, difficulty);
+  const endGame = useCallback(
+    (
+      reason: "timeout" | "errors" | "repeatChar",
+      statsOverride?: {
+        characters: number;
+        elapsedTime: number;
+        accuracy: number;
+        rating: number;
+      }
+    ) => {
+      const stats =
+        statsOverride ??
+        computeStats(typedChars, incorrectChars, elapsedTime, difficulty);
 
-    setIsRunning(false);
-    setLossReason(reason);
-    setFinalStats(stats); // ← for the modal
-    saveScore(reason, stats); // ← for the leaderboard
-    setShowResults(true);
-  };
+      setIsRunning(false);
+      setLossReason(reason);
+      setFinalStats(stats); // ← for the modal
+      saveScore(reason, stats); // ← for the leaderboard
+      setShowResults(true);
+    },
+    [saveScore]
+  );
 
   const countMistakes = (typed: string, actual: string) => {
     let mistakes = 0;
@@ -408,7 +411,7 @@ export default function TypingMarathonMode() {
     incorrectChars,
     elapsedTime,
     difficulty,
-    endGame
+    endGame,
   ]);
 
   const accuracy =
@@ -499,8 +502,8 @@ export default function TypingMarathonMode() {
         <Box
           sx={{
             display: "flex",
-            justifyContent: {xs:"center", md:"space-between"},
-            alignItems: {xs:"center", md:"flex-start"},
+            justifyContent: { xs: "center", md: "space-between" },
+            alignItems: { xs: "center", md: "flex-start" },
             flexDirection: { xs: "column-reverse", md: "row" },
             gap: 3,
           }}
@@ -868,7 +871,7 @@ export default function TypingMarathonMode() {
 
           {/* RIGHT-MOST COLUMN – Stats */}
           <Box
-          id="stats"
+            id="stats"
             display="flex"
             flexDirection={"column"}
             alignItems={"center"}
@@ -883,19 +886,25 @@ export default function TypingMarathonMode() {
                 Rating:{rating.toFixed(2)}
               </Typography>
             </div>
-            <Box sx={{display:"flex", flexDirection:{xs:"row", md:"column"}, gap: "20px"}}>
-            <Typography>
-              Run: <strong>#{gameNumber}</strong>
-            </Typography>
-            <Typography>
-              Time Elapsed: <strong>{elapsedTime.toFixed(1)}s</strong>
-            </Typography>
-            <Box>
-              <strong>Characters Seen:</strong> {typedChars}
-            </Box>
-            <Box>
-              <strong>Accuracy:</strong> {(accuracy * 100).toFixed(1)}%
-            </Box>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "row", md: "column" },
+                gap: "20px",
+              }}
+            >
+              <Typography>
+                Run: <strong>#{gameNumber}</strong>
+              </Typography>
+              <Typography>
+                Time Elapsed: <strong>{elapsedTime.toFixed(1)}s</strong>
+              </Typography>
+              <Box>
+                <strong>Characters Seen:</strong> {typedChars}
+              </Box>
+              <Box>
+                <strong>Accuracy:</strong> {(accuracy * 100).toFixed(1)}%
+              </Box>
             </Box>
           </Box>
         </Box>
