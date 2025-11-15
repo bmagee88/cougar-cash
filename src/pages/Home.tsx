@@ -24,8 +24,8 @@ const tiles = [
     gradient: "linear-gradient(135deg, #3b82f6, #0ea5e9)",
   },
   {
-    path: "/timer",
-    title: "Timer App",
+    path: "/pie-timer",
+    title: "Pie Timer App",
     subtitle: "Focus & activity timers",
     emoji: "⏱️",
     gradient: "linear-gradient(135deg, #6366f1, #a855f7)",
