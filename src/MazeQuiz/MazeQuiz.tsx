@@ -968,7 +968,7 @@ export default function MazeQuizApp() {
       </Stack>
 
       {/* OPTIONS ACCORDION */}
-      <Accordion defaultExpanded>
+      <Accordion>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="subtitle1">Options</Typography>
         </AccordionSummary>

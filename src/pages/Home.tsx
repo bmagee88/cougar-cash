@@ -1,43 +1,149 @@
-import React, { useEffect } from "react";
-import { Divider, Stack } from "@mui/material";
-import CashBalanceDisplay from "../components/listsDisplay/CashBalancesDisplay";
-import ListsDisplay from "components/listsDisplay/ListsDisplay";
-import RewardButton from "components/RewardButton";
-import DataAccordion from "components/DataAccordion";
-import { useDispatch } from "react-redux";
-import { loadFromLocal } from "store/teacher/teacherSlice";
+import { Box, Grid, Paper, Typography } from "@mui/material";
+import { Link as RouterLink } from "react-router-dom";
 
-const Home: React.FC = () => {
-  const dispatch = useDispatch();
+const tiles = [
+  {
+    path: "/cougar-cash",
+    title: "Cougar Cash",
+    subtitle: "Classroom economy & rewards",
+    emoji: "💰",
+    gradient: "linear-gradient(135deg, #f97316, #facc15)",
+  },
+  {
+    path: "/typing",
+    title: "Typing Game",
+    subtitle: "Warm-up typing practice",
+    emoji: "⌨️",
+    gradient: "linear-gradient(135deg, #22c55e, #a3e635)",
+  },
+  {
+    path: "/typing/marathon",
+    title: "Typing Marathon",
+    subtitle: "Endurance mode challenge",
+    emoji: "🏃‍♂️",
+    gradient: "linear-gradient(135deg, #3b82f6, #0ea5e9)",
+  },
+  {
+    path: "/timer",
+    title: "Timer App",
+    subtitle: "Focus & activity timers",
+    emoji: "⏱️",
+    gradient: "linear-gradient(135deg, #6366f1, #a855f7)",
+  },
+  {
+    path: "/oroboros",
+    title: "Oroboros",
+    subtitle: "Endless loop demo",
+    emoji: "🐍",
+    gradient: "linear-gradient(135deg, #ec4899, #f97316)",
+  },
+  {
+    path: "/maze-quiz",
+    title: "Maze Quiz",
+    subtitle: "Find your way with answers",
+    emoji: "🧩",
+    gradient: "linear-gradient(135deg, #0ea5e9, #22c55e)",
+  },
+  {
+    path: "/pizza-game",
+    title: "Pizza Game",
+    subtitle: "Slice up some fun",
+    emoji: "🍕",
+    gradient: "linear-gradient(135deg, #ef4444, #f97316)",
+  },
+  {
+    path: "/keyboard",
+    title: "Drag & Drop Keyboard",
+    subtitle: "Build the keyboard layout",
+    emoji: "🎹",
+    gradient: "linear-gradient(135deg, #14b8a6, #22c55e)",
+  },
+  {
+    path: "/c-quiz",
+    title: "Compliance Quiz",
+    subtitle: "Policy & rules check",
+    emoji: "📋",
+    gradient: "linear-gradient(135deg, #64748b, #0f172a)",
+  },
+];
 
-  useEffect(() => {
-    dispatch(loadFromLocal());
-  }, [dispatch]);
-  // const testStudents: Student[] = [
-  //   { id: 15378, label: "Morty", name: "Morty", balance: 0 },
-  //   { id: 23461, label: "Larry", name: "Larry", balance: 0 },
-  //   { id: 37351, label: "Moe", name: "Moe", balance: 0 },
-  //   { id: 43469, label: "Curly", name: "Curly", balance: 0 },
-  //   { id: 57540, label: "John", name: "John", balance: 0 },
-  //   { id: 60416, label: "Sally", name: "Sally", balance: 0 },
-  //   { id: 72756, label: "Hunter", name: "Hunter", balance: 0 },
-  //   { id: 87772, label: "Makenzie", name: "Makenzie", balance: 0 },
-  //   { id: 94523, label: "Salma", name: "Salma", balance: 0 },
-  //   { id: 10590, label: "Camden", name: "Camden", balance: 0 },
-  //   { id: 11427, label: "Keivon", name: "Keivon", balance: 0 },
-  // ];
+export default function Home() {
   return (
-    <Stack gap={"1rem"}>
-      <DataAccordion />
+    <Box
+      sx={{
+        minHeight: "100vh",
+        py: 6,
+        px: { xs: 2, sm: 3, md: 6 },
+        background: "radial-gradient(circle at top left, #e0f2fe, #f9fafb)",
+      }}
+    >
+      <Box sx={{ mb: 4, textAlign: "center" }}>
+        <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
+          Cougar Tech Lab
+        </Typography>
+        <Typography variant="subtitle1" sx={{ color: "text.secondary" }}>
+          Choose an activity to get started
+        </Typography>
+      </Box>
 
-      {/* <Divider /> */}
-      <CashBalanceDisplay />
-      {/* <Divider /> */}
-      <ListsDisplay />
-      <Divider />
-      <RewardButton />
-    </Stack>
+      <Grid container spacing={3}>
+        {tiles.map((tile) => (
+          <Grid item xs={12} sm={6} md={4} key={tile.path}>
+            <Paper
+              component={RouterLink}
+              to={tile.path}
+              elevation={4}
+              sx={{
+                textDecoration: "none",
+                borderRadius: 4,
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column",
+                height: "100%",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                "&:hover": {
+                  transform: "translateY(-4px)",
+                  boxShadow: 8,
+                },
+              }}
+            >
+              {/* “Image” area */}
+              <Box
+                sx={{
+                  background: tile.gradient,
+                  minHeight: 140,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Typography
+                  component="span"
+                  sx={{ fontSize: 56, textAlign: "center" }}
+                >
+                  {tile.emoji}
+                </Typography>
+              </Box>
+
+              {/* Text area */}
+              <Box sx={{ p: 2.5 }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: 600, mb: 0.5, color: "text.primary" }}
+                >
+                  {tile.title}
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ color: "text.secondary", minHeight: 36 }}
+                >
+                  {tile.subtitle}
+                </Typography>
+              </Box>
+            </Paper>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
-};
-
-export default Home;
+}
