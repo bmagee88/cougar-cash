@@ -1,5 +1,12 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { computeRating } from "./entities/math";
+
+/**
+ * FetchProgressModal
+ * - Runs an async `action` or a simulated duration with rich UX.
+ * - Supports `headless` mode: runs logic without rendering the modal UI.
+ * - Supports `open` flag so parents can trigger runs (pairs well with Auto‑run switches).
+ */
 
 type Props<T = unknown> = {
   action?: () => Promise<T>;
@@ -23,13 +30,18 @@ type Props<T = unknown> = {
 
   /** Tooltip override (else we compose one) */
   hoverHint?: string;
+
+  /** NEW: Run logic without showing UI. */
+  headless?: boolean;
+
+  /** NEW: Parent-controlled trigger. When true, starts a run. */
+  open?: boolean; // default true for backward-compat
 };
 
 /* --------------------------------------------------------- */
 /* Calibrated log curve: ~5s from 50→60, ~20s from 80→90     */
 /* --------------------------------------------------------- */
-const clamp = (v: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, v));
+const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
 const K = 30 / Math.log(4);
 const A = (Math.exp(60 / K) - Math.exp(50 / K)) / 5;
 
@@ -51,8 +63,7 @@ function normalizedPercent(secondsElapsed: number, plannedMs?: number): number {
 /* Timeout modulation helpers (bell curve in log-space)      */
 /* --------------------------------------------------------- */
 function randn() {
-  let u = 0,
-    v = 0;
+  let u = 0, v = 0;
   while (u === 0) u = Math.random();
   while (v === 0) v = Math.random();
   return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
@@ -124,12 +135,7 @@ const AnxietyStyles = () => (
     @keyframes textGlitch { 0%{text-shadow:1px 0 #ff3b30,-1px 0 #00e1ff} 50%{text-shadow:0 1px #ff3b30,0 -1px #00e1ff} 100%{text-shadow:-1px 0 #ff3b30,1px 0 #00e1ff} }
     @keyframes scanSweep { 0%{transform:translateY(-110%)} 100%{transform:translateY(110%)} }
 
-    .anx-overlay {
-      position: fixed; inset: 0;
-      display: grid; place-items: center;
-      z-index: 9999;
-      overflow: hidden;
-
+    .anx-overlay { position: fixed; inset: 0; display: grid; place-items: center; z-index: 9999; overflow: hidden;
       background:
         repeating-linear-gradient(
           -45deg,
@@ -155,58 +161,20 @@ const AnxietyStyles = () => (
           rgba(0,0,0,.78) 100%
         ),
         var(--anx-bg);
-
-      animation-name: bgStripes, flicker;
-      animation-timing-function: linear, linear;
-      animation-iteration-count: infinite, infinite;
-      animation-duration: var(--stripeSpeed), var(--flickerSpeed);
-    }
-    .anx-overlay::before {
-      content: "";
-      position: absolute; inset: -25% 0 -25% 0;
-      background: linear-gradient(180deg, transparent 0%, rgba(255,80,80,.12) 50%, transparent 100%);
-      mix-blend-mode: screen;
-      animation: scanSweep var(--scanSpeed) linear infinite;
-      pointer-events: none;
-    }
-    .anx-overlay::after {
-      content: "";
-      position: absolute; inset: 0;
-      pointer-events: none;
-      background:
+      animation-name: bgStripes, flicker; animation-timing-function: linear, linear; animation-iteration-count: infinite, infinite; animation-duration: var(--stripeSpeed), var(--flickerSpeed); }
+    .anx-overlay::before { content: ""; position: absolute; inset: -25% 0 -25% 0; background: linear-gradient(180deg, transparent 0%, rgba(255,80,80,.12) 50%, transparent 100%); mix-blend-mode: screen; animation: scanSweep var(--scanSpeed) linear infinite; pointer-events: none; }
+    .anx-overlay::after { content: ""; position: absolute; inset: 0; pointer-events: none; background:
         repeating-linear-gradient(0deg, rgba(255,255,255,.018) 0 1px, transparent 1px 2px),
         repeating-linear-gradient(90deg, rgba(255,255,255,.01) 0 1px, transparent 1px 3px);
-      opacity: .6;
-      animation: flicker 2.8s linear infinite;
-    }
+      opacity: .6; animation: flicker 2.8s linear infinite; }
     .anx-overlay.warn { --stripeSpeed: .7s;  --scanSpeed: 3.1s; }
     .anx-overlay.panic { --stripeSpeed: .55s; --scanSpeed: 2.4s; }
 
-    .anx-card {
-      position: relative;
-      z-index: 1;
-      width: min(640px, 92vw);
-      background: var(--anx-card);
-      color: var(--anx-text);
-      border-radius: 18px;
-      padding: 24px 22px 18px;
-      border: 2px solid var(--anx-border-calm);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.02);
-      user-select: none;
-      transition: border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease;
-    }
+    .anx-card { position: relative; z-index: 1; width: min(640px, 92vw); background: var(--anx-card); color: var(--anx-text); border-radius: 18px; padding: 24px 22px 18px; border: 2px solid var(--anx-border-calm); box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.02); user-select: none; transition: border-color 160ms ease, box-shadow 160ms ease, transform 120ms ease; }
     .anx-card.warn { border-color: var(--anx-border-warn); }
     .anx-card.panic { border-color: var(--anx-border); animation: jitter 280ms infinite; }
 
-    .anx-title {
-      margin: 0 0 6px 0;
-      font-size: 14px;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--anx-amber);
-      display: flex; align-items: center; gap: 8px;
-      animation: textGlitch 1.6s infinite;
-    }
+    .anx-title { margin: 0 0 6px 0; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--anx-amber); display: flex; align-items: center; gap: 8px; animation: textGlitch 1.6s infinite; }
     .anx-subtle { color: var(--anx-muted); font-size: 13px; margin-bottom: 14px; }
 
     .bar-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 8px; margin-top: 10px; }
@@ -220,56 +188,23 @@ const AnxietyStyles = () => (
     .readout.warn .timer, .readout.warn .percent { color: var(--anx-amber); }
     .readout.panic .timer, .readout.panic .percent { color: var(--anx-red); }
 
-    .blackout {
-      position: fixed; inset: 0;
-      background: #000;
-      opacity: 0;
-      z-index: 10000;
-      pointer-events: none;
-    }
+    .blackout { position: fixed; inset: 0; background: #000; opacity: 0; z-index: 10000; pointer-events: none; }
     .blackout.active { opacity: 1; }
   `}</style>
 );
 
-function BlockingModal(props: {
-  children: React.ReactNode;
-  title?: string;
-  level: "calm" | "warn" | "panic";
-}) {
+function BlockingModal(props: { children: React.ReactNode; title?: string; level: "calm" | "warn" | "panic"; }) {
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); } };
     document.addEventListener("keydown", onKey, true);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey, true);
-      document.body.style.overflow = prev;
-    };
+    return () => { document.removeEventListener("keydown", onKey, true); document.body.style.overflow = prev; };
   }, []);
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={props.title || "Loading"}
-      className={`anx-overlay ${props.level}`}
-      onClick={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-      }}
-    >
-      <div
-        className={`anx-card ${props.level}`}
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-      >
+    <div role="dialog" aria-modal="true" aria-label={props.title || "Loading"} className={`anx-overlay ${props.level}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+      <div className={`anx-card ${props.level}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
         {props.title && <h2 className="anx-title">⚠ {props.title}</h2>}
         {props.children}
       </div>
@@ -277,19 +212,9 @@ function BlockingModal(props: {
   );
 }
 
-function TenBlockBar({
-  percent,
-  flashRedIndex,
-  maxFullBlocks,
-}: {
-  percent: number;
-  flashRedIndex?: number | null;
-  maxFullBlocks?: number | null; // freeze cap after red
-}) {
+function TenBlockBar({ percent, flashRedIndex, maxFullBlocks, }: { percent: number; flashRedIndex?: number | null; maxFullBlocks?: number | null; }) {
   const currentFull = Math.floor(percent / 10);
-  const fullBlocks =
-    maxFullBlocks != null ? Math.min(currentFull, maxFullBlocks) : currentFull;
-
+  const fullBlocks = maxFullBlocks != null ? Math.min(currentFull, maxFullBlocks) : currentFull;
   return (
     <div className="bar-grid">
       {Array.from({ length: 10 }).map((_, i) => {
@@ -329,8 +254,12 @@ export default function FetchProgressModal<T = unknown>({
   timeoutMs,
 
   hoverHint,
+
+  // NEW
+  headless = false,
+  open = true,
 }: Props<T>) {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = useState<boolean>(false);
   const [percent, setPercent] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [flashRedIndex, setFlashRedIndex] = useState<number | null>(null);
@@ -339,9 +268,7 @@ export default function FetchProgressModal<T = unknown>({
   const [warnFrac, setWarnFrac] = useState(0.7);
   const [panicFrac, setPanicFrac] = useState(0.9);
 
-  const [effectiveTimeoutMs, setEffectiveTimeoutMs] = useState<number>(
-    timeoutMs ?? 40000
-  );
+  const [effectiveTimeoutMs, setEffectiveTimeoutMs] = useState<number>(timeoutMs ?? 40000);
 
   const [maxFullBlocks, setMaxFullBlocks] = useState<number | null>(null);
   const [blackout, setBlackout] = useState(false);
@@ -355,7 +282,12 @@ export default function FetchProgressModal<T = unknown>({
   const percentRef = useRef(0);
   const timedOutRef = useRef(false);
 
-const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.floor(plannedMs/1000), Math.floor(effectiveTimeoutMs/1000))}, [plannedMs, effectiveTimeoutMs]);
+  // Guard computeRating if plannedMs is still undefined
+  const { rating, multiplier } = useMemo(() => {
+    const p = plannedMs ? Math.max(0, Math.floor(plannedMs / 1000)) : 0;
+    const t = Math.max(0, Math.floor((effectiveTimeoutMs ?? 0) / 1000));
+    return computeRating(p, t);
+  }, [plannedMs, effectiveTimeoutMs]);
 
   const cleanup = () => {
     if (closedRef.current) return;
@@ -366,24 +298,29 @@ const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.fl
   };
 
   useEffect(() => {
+    // Do nothing if not open; render also returns null in that case
+    if (!open) return;
+
+    // Reset per‑run flags
+    closedRef.current = false;
+    timedOutRef.current = false;
+    percentRef.current = 0;
+    setVisible(true);
+    setPercent(0);
+    setElapsed(0);
+    setFlashRedIndex(null);
+    setMaxFullBlocks(null);
+
     let cancelled = false;
 
     const mode = modeSec ?? medianSec ?? 40;
 
     // Planned success duration: sample in log-space (triangular-like) if not provided
     const minSec = Math.max(0.5, (mode * mode) / (maxSec || 500));
-    const a = Math.log(minSec),
-      b = Math.log(maxSec || 500),
-      c = (a + b) / 2;
+    const a = Math.log(minSec), b = Math.log(maxSec || 500), c = (a + b) / 2;
     const u = Math.random();
-    const x =
-      u < 0.5
-        ? a + Math.sqrt(u * (b - a) * (c - a))
-        : b - Math.sqrt((1 - u) * (b - a) * (b - c));
-    const selPlannedMs =
-      plannedDurationMs && plannedDurationMs > 0
-        ? plannedDurationMs
-        : Math.exp(x) * 1000;
+    const x = u < 0.5 ? a + Math.sqrt(u * (b - a) * (c - a)) : b - Math.sqrt((1 - u) * (b - a) * (b - c));
+    const selPlannedMs = plannedDurationMs && plannedDurationMs > 0 ? plannedDurationMs : Math.exp(x) * 1000;
     setPlannedMs(selPlannedMs);
 
     // Pre-sample visual timings for tooltip and for failure use
@@ -393,53 +330,29 @@ const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.fl
     setBlackHoldMs(sampledHold);
 
     // Per-run warn/panic thresholds (fractions of total time)
-    const minWarn = 0.1;
-    const maxWarn = 0.9;
-
-    // Yellow anywhere from 10% to 90%
-    const wf = minWarn + Math.random() * (maxWarn - minWarn);
-
-    // Midpoint between yellow and 100%
-    const m = 0.5 * (wf + 1.0);
-
-    // 25% variation toward yellow (down) and toward 100% (up)
-    const down = 0.25 * (m - wf); // e.g., 6.25% when wf=50%
-    const up = 0.25 * (1.0 - m); // e.g., 6.25% when wf=50%
-
-    // Red chosen uniformly inside [m - down, m + up]
+    const minWarn = 0.1; const maxWarn = 0.9;
+    const wf = minWarn + Math.random() * (maxWarn - minWarn); // yellow anywhere 10–90%
+    const m = 0.5 * (wf + 1.0); // midpoint between yellow and 100%
+    const down = 0.25 * (m - wf);
+    const up = 0.25 * (1.0 - m);
     const pf = m - down + Math.random() * (down + up);
-
     setWarnFrac(wf);
     setPanicFrac(pf);
 
-    // Compute effective timeout (randomized + mirrored), keep a local copy for this run
+    // Compute effective timeout (randomized + mirrored)
     const pickedTimeoutMs = timeoutRandom
-      ? Math.round(
-          sampleTimeoutSecLogNormal(
-            timeoutMedianSec,
-            timeoutMinSec,
-            timeoutMaxSec
-          ) * 1000
-        )
+      ? Math.round(sampleTimeoutSecLogNormal(timeoutMedianSec, timeoutMinSec, timeoutMaxSec) * 1000)
       : timeoutMs ?? 40000;
 
     const successSec = selPlannedMs / 1000;
-    const adjustedFailSec = remapTimeoutAcross40(
-      pickedTimeoutMs / 1000,
-      successSec,
-      timeoutMinSec,
-      timeoutMaxSec
-    );
+    const adjustedFailSec = remapTimeoutAcross40(pickedTimeoutMs / 1000, successSec, timeoutMinSec, timeoutMaxSec);
     const pickedEffectiveTimeoutMs = Math.round(adjustedFailSec * 1000);
     setEffectiveTimeoutMs(pickedEffectiveTimeoutMs);
 
     // Decide whether to simulate
     const shouldSimulate = simulate ?? !action;
     const runAction: () => Promise<T | void> = shouldSimulate
-      ? async () => {
-          await new Promise((r) => setTimeout(r, selPlannedMs));
-          return;
-        }
+      ? async () => { await new Promise((r) => setTimeout(r, selPlannedMs)); return; }
       : (action as () => Promise<T>);
 
     // RAF: drive elapsed + percent (freeze after red)
@@ -455,10 +368,7 @@ const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.fl
         return;
       }
       setPercent((prev) => {
-        const next = Math.max(
-          prev,
-          normalizedPercent(elapsedSec, selPlannedMs)
-        );
+        const next = Math.max(prev, normalizedPercent(elapsedSec, selPlannedMs));
         percentRef.current = next;
         return next;
       });
@@ -469,19 +379,13 @@ const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.fl
     // Timeout path: last green -> red, freeze, fade-to-black, hold, then cleanup
     timeoutRef.current = window.setTimeout(() => {
       timedOutRef.current = true;
-
       const idx = lastGreenIndex(percentRef.current);
       setFlashRedIndex(idx);
       setMaxFullBlocks(Math.floor(percentRef.current / 10));
-
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
-
       setBlackout(true);
-      window.setTimeout(() => {
-        cleanup();
-        onError?.(new Error("timeout"));
-      }, sampledFade + sampledHold);
+      window.setTimeout(() => { cleanup(); onError?.(new Error("timeout")); }, sampledFade + sampledHold);
     }, pickedEffectiveTimeoutMs);
 
     // Run (or simulate) the async action
@@ -489,32 +393,20 @@ const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.fl
       try {
         const result = await runAction();
         if (cancelled || timedOutRef.current) return;
-
         if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
         setPercent(100);
         percentRef.current = 100;
-
-        setTimeout(() => {
-          cleanup();
-          onSuccess?.(result as T);
-        }, 200);
+        setTimeout(() => { cleanup(); onSuccess?.(result as T); }, 200);
       } catch (err) {
         if (cancelled || timedOutRef.current) return;
-
         if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
-
         const idx = lastGreenIndex(percentRef.current);
         setFlashRedIndex(idx);
         setMaxFullBlocks(Math.floor(percentRef.current / 10));
-
         if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
         rafRef.current = null;
-
         setBlackout(true);
-        window.setTimeout(() => {
-          cleanup();
-          onError?.(err);
-        }, sampledFade + sampledHold);
+        window.setTimeout(() => { cleanup(); onError?.(err); }, sampledFade + sampledHold);
       }
     })();
 
@@ -524,6 +416,7 @@ const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.fl
       if (timeoutRef.current !== null) clearTimeout(timeoutRef.current);
     };
   }, [
+    open,
     action,
     simulate,
     plannedDurationMs,
@@ -540,60 +433,42 @@ const { rating, multiplier } = React.useMemo(() => {return computeRating(Math.fl
     maxFullBlocks,
   ]);
 
-  if (!visible) return null;
+  // If closed or not open, render nothing.
+  if (!open || !visible) return null;
 
   // Stress level → UI level, using per-run warn/panic fractions
   const stress = clamp(elapsed / ((effectiveTimeoutMs || 1) / 1000), 0, 1);
-  const level: "calm" | "warn" | "panic" =
-    stress >= panicFrac ? "panic" : stress >= warnFrac ? "warn" : "calm";
+  const level: "calm" | "warn" | "panic" = stress >= panicFrac ? "panic" : stress >= warnFrac ? "warn" : "calm";
 
   // Tooltip
-  const minutes = Math.floor(elapsed / 60)
-    .toString()
-    .padStart(2, "0");
-  const seconds = Math.floor(elapsed % 60)
-    .toString()
-    .padStart(2, "0");
+  const minutes = Math.floor(elapsed / 60).toString().padStart(2, "0");
+  const seconds = Math.floor(elapsed % 60).toString().padStart(2, "0");
   const warnPct = Math.round(warnFrac * 100);
   const panicPct = Math.round(panicFrac * 100);
 
   const computedHint =
     hoverHint ??
     (plannedMs
-      ? `Planned: ${(plannedMs / 1000).toFixed(1)}s • Timeout: ${(
-          effectiveTimeoutMs / 1000
-        ).toFixed(1)}s • Yellow ~${warnPct}% • Red ~${panicPct}% • Fade ${(
-          fadeMs / 1000
-        ).toFixed(1)}s • Black hold ${(blackHoldMs / 1000).toFixed(
-          1
-        )}s • Rating ${rating.toLocaleString()} (×${multiplier.toFixed(2)})`
+      ? `Planned: ${(plannedMs / 1000).toFixed(1)}s • Timeout: ${(effectiveTimeoutMs / 1000).toFixed(1)}s • Yellow ~${warnPct}% • Red ~${panicPct}% • Fade ${(fadeMs / 1000).toFixed(1)}s • Black hold ${(blackHoldMs / 1000).toFixed(1)}s • Rating ${rating.toLocaleString()} (×${multiplier.toFixed(2)})`
       : undefined);
+
+  // In headless mode, suppress ALL visuals (including blackout), but keep running logic.
+  if (headless) return null;
 
   return (
     <>
       <AnxietyStyles />
       <BlockingModal title={title} level={level}>
-        <div className="anx-subtle">
-          System is processing your request. This may take a moment…
-        </div>
-        <TenBlockBar
-          percent={percent}
-          flashRedIndex={flashRedIndex}
-          maxFullBlocks={maxFullBlocks}
-        />
+        <div className="anx-subtle">System is processing your request. This may take a moment…</div>
+        <TenBlockBar percent={percent} flashRedIndex={flashRedIndex} maxFullBlocks={maxFullBlocks} />
         <div className={`readout ${level}`}>
-          <span className="timer" title={computedHint}>
-            ⏱ {minutes}:{seconds}
-          </span>
+          <span className="timer" title={computedHint}>⏱ {minutes}:{seconds}</span>
           <span className="percent">{Math.floor(percent)}%</span>
         </div>
       </BlockingModal>
 
       {/* Fade-to-black layer: transition uses per-run fadeMs; cleanup happens after fade+hold */}
-      <div
-        className={`blackout ${blackout ? "active" : ""}`}
-        style={{ transition: `opacity ${fadeMs}ms ease` }}
-      />
+      <div className={`blackout ${blackout ? "active" : ""}`} style={{ transition: `opacity ${fadeMs}ms ease` }} />
     </>
   );
 }
