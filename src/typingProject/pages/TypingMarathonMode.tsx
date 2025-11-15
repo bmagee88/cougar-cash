@@ -408,6 +408,7 @@ export default function TypingMarathonMode() {
     incorrectChars,
     elapsedTime,
     difficulty,
+    endGame
   ]);
 
   const accuracy =
@@ -644,7 +645,7 @@ export default function TypingMarathonMode() {
                                   "  " +
                                     `${displayName}` +
                                     ` (${entry.gameNumber})`}
-                                {entry.lostBy != "timeout"
+                                {entry.lostBy !== "timeout"
                                   ? `[${entry.lostBy}]`
                                   : ""}
                               </Box>
