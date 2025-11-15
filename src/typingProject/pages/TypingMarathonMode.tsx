@@ -42,6 +42,29 @@ const LEADERBOARD_KEY = "marathon_leaderboard";
 const GAME_NUMBER_KEY = "marathon_game_number";
 const PLAYERS_KEY = "marathon_players";
 
+type DifficultyKey = keyof typeof DIFFICULTY_SETTINGS;
+
+type LossReason = "timeout" | "errors" | "repeatChar";
+
+type Stats = {
+  characters: number;
+  elapsedTime: number;
+  accuracy: number; // percent
+  rating: number;
+};
+
+type LeaderboardEntry = {
+  name: string;
+  gameNumber: number;
+  difficulty: string;
+  characters: number;
+  accuracy: number;
+  elapsedTime: number;
+  rating: number;
+  lostBy: LossReason | null;
+  timestamp: string;
+};
+
 const getAllWords = () => {
   return Object.keys(wordsByLength)
     .filter((key) => !isNaN(Number(key)))
@@ -56,9 +79,34 @@ const generateWords = (n: number) => {
   );
 };
 
+// ---- PURE HELPER (no React, no state) ----
+function computeStats(
+  finalChars: number,
+  finalIncorrect: number,
+  finalElapsed: number,
+  diff: DifficultyKey
+): Stats {
+  const acc =
+    finalChars === 0 ? 0 : (finalChars - finalIncorrect) / finalChars;
+
+  const ratingRaw =
+    finalElapsed > 0
+      ? finalChars *
+        (finalChars / finalElapsed) *
+        acc *
+        DIFFICULTY_SETTINGS[diff].value
+      : 0;
+
+  return {
+    characters: finalChars,
+    elapsedTime: Number(finalElapsed.toFixed(1)),
+    accuracy: Number((acc * 100).toFixed(1)), // store as %
+    rating: Number(ratingRaw.toFixed(2)),
+  };
+}
+
 export default function TypingMarathonMode() {
-  const [difficulty, setDifficulty] =
-    useState<keyof typeof DIFFICULTY_SETTINGS>("medium");
+  const [difficulty, setDifficulty] = useState<DifficultyKey>("medium");
   const [wordList, setWordList] = useState<string[]>(generateWords(50));
   const [input, setInput] = useState("");
   const [typedChars, setTypedChars] = useState(0);
@@ -73,57 +121,19 @@ export default function TypingMarathonMode() {
   const [consecutiveErrors, setConsecutiveErrors] = useState(0); // incorrect words in a row
   const [lastChar, setLastChar] = useState<string | null>(null);
   const [repeatCharCount, setRepeatCharCount] = useState(0);
-  const [lossReason, setLossReason] = useState<
-    "timeout" | "errors" | "repeatChar" | null
-  >(null);
+  const [lossReason, setLossReason] = useState<LossReason | null>(null);
 
-  const [finalStats, setFinalStats] = useState({
+  const [finalStats, setFinalStats] = useState<Stats>({
     characters: 0,
     elapsedTime: 0,
     accuracy: 0, // percent
     rating: 0,
   });
 
-  const computeStats = (
-    finalChars: number,
-    finalIncorrect: number,
-    finalElapsed: number,
-    diff: keyof typeof DIFFICULTY_SETTINGS
-  ) => {
-    const acc =
-      finalChars === 0 ? 0 : (finalChars - finalIncorrect) / finalChars;
-    const ratingRaw =
-      finalElapsed > 0
-        ? finalChars *
-          (finalChars / finalElapsed) *
-          acc *
-          DIFFICULTY_SETTINGS[diff].value
-        : 0;
-
-    return {
-      characters: finalChars,
-      elapsedTime: Number(finalElapsed.toFixed(1)),
-      accuracy: Number((acc * 100).toFixed(1)), // store as %
-      rating: Number(ratingRaw.toFixed(2)),
-    };
-  };
-
   // Leaderboard & run tracking
   const [playerName, setPlayerName] = useState(""); // used for autocomplete & score
   const [playerOptions, setPlayerOptions] = useState<string[]>([]);
-  const [leaderboard, setLeaderboard] = useState<
-    {
-      name: string;
-      gameNumber: number;
-      difficulty: string;
-      characters: number;
-      accuracy: number;
-      elapsedTime: number;
-      rating: number;
-      lostBy: string | null;
-      timestamp: string;
-    }[]
-  >([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [gameNumber, setGameNumber] = useState(1);
   const [leaderboardFilter, setLeaderboardFilter] = useState<
     "all" | "easy" | "medium" | "hard" | "veryhard"
@@ -145,7 +155,7 @@ export default function TypingMarathonMode() {
 
           // highlight most recent saved run overall on load
           const latestTs = parsed.reduce(
-            (acc: string, e: any) =>
+            (acc: string, e: LeaderboardEntry) =>
               e.timestamp && e.timestamp > acc ? e.timestamp : acc,
             parsed[0].timestamp
           );
@@ -229,65 +239,51 @@ export default function TypingMarathonMode() {
     });
   };
 
-  const saveScore = (
-    reason: "timeout" | "errors" | "repeatChar",
-    stats: {
-      characters: number;
-      elapsedTime: number;
-      accuracy: number;
-      rating: number;
-    }
-  ) => {
-    const trimmedName = playerName.trim().slice(0, 10); // blank allowed
-    const timestamp = new Date().toISOString();
+  // stable: used by endGame
+  const saveScore = useCallback(
+    (reason: LossReason, stats: Stats) => {
+      const trimmedName = playerName.trim().slice(0, 10); // blank allowed
+      const timestamp = new Date().toISOString();
 
-    const entry = {
-      name: trimmedName,
-      gameNumber,
-      difficulty,
-      characters: stats.characters,
-      accuracy: stats.accuracy,
-      elapsedTime: stats.elapsedTime,
-      rating: stats.rating,
-      lostBy: reason,
-      timestamp,
-    };
+      const entry: LeaderboardEntry = {
+        name: trimmedName,
+        gameNumber,
+        difficulty,
+        characters: stats.characters,
+        accuracy: stats.accuracy,
+        elapsedTime: stats.elapsedTime,
+        rating: stats.rating,
+        lostBy: reason,
+        timestamp,
+      };
 
-    const updated = [...leaderboard, entry].sort((a, b) => b.rating - a.rating);
+      setLeaderboard((prev) => {
+        const updated = [...prev, entry].sort((a, b) => b.rating - a.rating);
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(updated));
+        }
+        return updated;
+      });
 
-    setLeaderboard(updated);
-    setLastSavedTimestamp(timestamp);
+      setLastSavedTimestamp(timestamp);
+    },
+    [playerName, gameNumber, difficulty]
+  );
 
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(updated));
-    }
-  };
-
+  // stable: used by timeout effect and key handler
   const endGame = useCallback(
-    (
-      reason: "timeout" | "errors" | "repeatChar",
-      statsOverride?: {
-        characters: number;
-        elapsedTime: number;
-        accuracy: number;
-        rating: number;
-      }
-    ) => {
+    (reason: LossReason, statsOverride?: Stats) => {
       const stats =
         statsOverride ??
         computeStats(typedChars, incorrectChars, elapsedTime, difficulty);
 
       setIsRunning(false);
       setLossReason(reason);
-      setFinalStats(stats); // ← for the modal
-      saveScore(reason, stats); // ← for the leaderboard
+      setFinalStats(stats); // for the modal
+      saveScore(reason, stats); // for the leaderboard
       setShowResults(true);
     },
-    [saveScore, 
-    typedChars,
-    incorrectChars,
-    elapsedTime,
-    difficulty,]
+    [typedChars, incorrectChars, elapsedTime, difficulty, saveScore]
   );
 
   const countMistakes = (typed: string, actual: string) => {
@@ -342,6 +338,10 @@ export default function TypingMarathonMode() {
         setLastChar(e.key);
         setRepeatCharCount(1);
       }
+    } else if (e.key === " " || e.key === "Enter") {
+      // reset repeat count on word boundaries
+      setRepeatCharCount(0);
+      setLastChar(null);
     }
 
     if (!isRunning && !startingNow) return;
@@ -396,28 +396,15 @@ export default function TypingMarathonMode() {
     return () => clearInterval(timer);
   }, [isRunning]);
 
-  // Check for timeout loss
+  // Check for timeout loss – only depends on time & endGame
   useEffect(() => {
     if (!isRunning) return;
     if (timeLeft <= 0) {
-      const stats = computeStats(
-        typedChars,
-        incorrectChars,
-        elapsedTime,
-        difficulty
-      );
-      endGame("timeout", stats);
+      endGame("timeout");
     }
-  }, [
-    timeLeft,
-    isRunning,
-    typedChars,
-    incorrectChars,
-    elapsedTime,
-    difficulty,
-    endGame,
-  ]);
+  }, [timeLeft, isRunning, endGame]);
 
+  // Live stats for the side panel (not used for saving)
   const accuracy =
     typedChars === 0 ? 0 : (typedChars - incorrectChars) / typedChars;
   const rating =
@@ -652,7 +639,7 @@ export default function TypingMarathonMode() {
                                   "  " +
                                     `${displayName}` +
                                     ` (${entry.gameNumber})`}
-                                {entry.lostBy !== "timeout"
+                                {entry.lostBy !== "timeout" && entry.lostBy
                                   ? `[${entry.lostBy}]`
                                   : ""}
                               </Box>
@@ -816,8 +803,7 @@ export default function TypingMarathonMode() {
                 value={difficulty}
                 label="Difficulty"
                 onChange={(e) => {
-                  const newDiff = e.target
-                    .value as keyof typeof DIFFICULTY_SETTINGS;
+                  const newDiff = e.target.value as DifficultyKey;
                   setDifficulty(newDiff);
                   setTimeLeft(DIFFICULTY_SETTINGS[newDiff].timer);
                 }}
