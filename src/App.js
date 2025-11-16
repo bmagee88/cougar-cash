@@ -17,6 +17,7 @@ import MazeQuiz from "./MazeQuiz/MazeQuiz";
 import PieTimer from "./NewTimer/PieTimer";
 import PizzaGame from "./pizzaGame/PizzaGame";
 import DnDKeyboard from "./DndKeyboard/DragNDropKeyboard";
+import MapVisualizer  from "./RegionsMapApp/MapVisualizer";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -74,6 +75,9 @@ function App() {
           <Route
             path='/keyboard'
             element={<DnDKeyboard />}></Route>
+          <Route
+            path='/map'
+            element={<MapVisualizer />}></Route>
         </Routes>
       </Router>
     </Box>

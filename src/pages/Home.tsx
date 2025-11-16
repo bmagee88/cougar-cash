@@ -65,6 +65,20 @@ const tiles = [
     emoji: "📋",
     gradient: "linear-gradient(135deg, #64748b, #0f172a)",
   },
+  {
+    path: "/c-quiz",
+    title: "Compliance Quiz",
+    subtitle: "Policy & rules check",
+    emoji: "📋",
+    gradient: "linear-gradient(135deg, #64748b, #0f172a)",
+  },
+  {
+    path: "/map",
+    title: "Regions Map",
+    subtitle: "World Generation",
+    emoji: "🗺️",
+    gradient: "linear-gradient(135deg, #648b70ff, #0f2a1dff)",
+  },
 ];
 
 export default function Home() {
