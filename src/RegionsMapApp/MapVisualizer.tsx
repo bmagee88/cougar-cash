@@ -1868,7 +1868,7 @@ const MapVisualizer: React.FC = () => {
                               primary={
                                 <Typography
                                   variant="body2"
-                                  sx={{ fontWeight: 600 }}
+                                  sx={{ fontWeight: 600, color: "white" }}
                                 >
                                   Depth {level.depth}
                                 </Typography>
@@ -1886,7 +1886,7 @@ const MapVisualizer: React.FC = () => {
                                   >
                                     <Typography
                                       variant="caption"
-                                      sx={{ opacity: 0.7, minWidth: 64 }}
+                                      sx={{ opacity: 0.7, minWidth: 64, color: "white" }}
                                     >
                                       Resources
                                     </Typography>
@@ -1896,9 +1896,9 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
                                         border:
-                                          "1px solid rgba(251, 191, 36, 0.7)", // warm gold
+                                          "1px solid rgba(251, 191, 36, 0.7)", // warm gold, color: "white"
                                       }}
                                     />
                                     <Chip
@@ -1906,7 +1906,7 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
                                         border:
                                           "1px solid rgba(56, 189, 248, 0.7)", // cyan
                                       }}
@@ -1916,7 +1916,7 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
                                         border:
                                           "1px solid rgba(74, 222, 128, 0.7)", // green
                                       }}
@@ -1926,7 +1926,7 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
                                         border:
                                           "1px solid rgba(248, 113, 113, 0.7)", // red
                                       }}
@@ -1947,7 +1947,7 @@ const MapVisualizer: React.FC = () => {
                                       sx={{
                                         opacity: 0.7,
                                         minWidth: 64,
-                                        mt: 0.25,
+                                        mt: 0.25, color: "white"
                                       }}
                                     >
                                       POIs
@@ -1956,7 +1956,7 @@ const MapVisualizer: React.FC = () => {
                                     {level.pois.length === 0 ? (
                                       <Typography
                                         variant="caption"
-                                        sx={{ opacity: 0.6 }}
+                                        sx={{ opacity: 0.6, color: "white" }}
                                       >
                                         none
                                       </Typography>
@@ -1967,7 +1967,7 @@ const MapVisualizer: React.FC = () => {
                                           label={poiLabel(poi.type)}
                                           size="small"
                                           sx={{
-                                            fontSize: "0.65rem",
+                                            fontSize: "0.65rem", color: "white",
                                             bgcolor: "rgba(15,23,42,0.9)",
                                             border:
                                               poi.type === "city"
