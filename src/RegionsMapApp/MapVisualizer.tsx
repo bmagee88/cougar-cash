@@ -631,12 +631,12 @@ function randInt(min: number, maxInclusive: number): number {
   return min + Math.floor(Math.random() * (maxInclusive - min + 1));
 }
 
-function chooseRandom<T>(values: readonly T[]): T {
-  if (values.length === 0) {
-    throw new Error("chooseRandom: empty array");
-  }
-  return values[randInt(0, values.length - 1)];
-}
+// function chooseRandom<T>(values: readonly T[]): T {
+//   if (values.length === 0) {
+//     throw new Error("chooseRandom: empty array");
+//   }
+//   return values[randInt(0, values.length - 1)];
+// }
 
 function chooseWeighted<T extends string>(
   weights: Partial<Record<T, number>>
@@ -1855,7 +1855,7 @@ const MapVisualizer: React.FC = () => {
                         bgcolor: BIOME_COLORS[biome.name],
                       }}
                     />
-                    <Typography variant="subtitle2"  sx={{ color: "#ffffff" }}>
+                    <Typography variant="subtitle2" sx={{ color: "#ffffff" }}>
                       {titleCase(biome.name)}
                     </Typography>
                   </AccordionSummary>
@@ -1886,7 +1886,11 @@ const MapVisualizer: React.FC = () => {
                                   >
                                     <Typography
                                       variant="caption"
-                                      sx={{ opacity: 0.7, minWidth: 64, color: "white" }}
+                                      sx={{
+                                        opacity: 0.7,
+                                        minWidth: 64,
+                                        color: "white",
+                                      }}
                                     >
                                       Resources
                                     </Typography>
@@ -1896,7 +1900,8 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
+                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        color: "white",
                                         border:
                                           "1px solid rgba(251, 191, 36, 0.7)", // warm gold, color: "white"
                                       }}
@@ -1906,7 +1911,8 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
+                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        color: "white",
                                         border:
                                           "1px solid rgba(56, 189, 248, 0.7)", // cyan
                                       }}
@@ -1916,7 +1922,8 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
+                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        color: "white",
                                         border:
                                           "1px solid rgba(74, 222, 128, 0.7)", // green
                                       }}
@@ -1926,7 +1933,8 @@ const MapVisualizer: React.FC = () => {
                                       size="small"
                                       sx={{
                                         fontSize: "0.65rem",
-                                        bgcolor: "rgba(15,23,42,0.9)", color: "white",
+                                        bgcolor: "rgba(15,23,42,0.9)",
+                                        color: "white",
                                         border:
                                           "1px solid rgba(248, 113, 113, 0.7)", // red
                                       }}
@@ -1947,7 +1955,8 @@ const MapVisualizer: React.FC = () => {
                                       sx={{
                                         opacity: 0.7,
                                         minWidth: 64,
-                                        mt: 0.25, color: "white"
+                                        mt: 0.25,
+                                        color: "white",
                                       }}
                                     >
                                       POIs
@@ -1967,7 +1976,8 @@ const MapVisualizer: React.FC = () => {
                                           label={poiLabel(poi.type)}
                                           size="small"
                                           sx={{
-                                            fontSize: "0.65rem", color: "white",
+                                            fontSize: "0.65rem",
+                                            color: "white",
                                             bgcolor: "rgba(15,23,42,0.9)",
                                             border:
                                               poi.type === "city"
