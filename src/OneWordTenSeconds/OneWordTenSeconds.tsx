@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Autocomplete,
   Box,
@@ -575,8 +569,7 @@ const NOUNS: string[] = [
   "Stage",
 ];
 
-const randomFrom = (arr: string[]) =>
-  arr[Math.floor(Math.random() * arr.length)];
+const randomFrom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
 const generateRandomName = (): string => {
   const adj = randomFrom(ADJECTIVES);
@@ -711,22 +704,20 @@ const fall = keyframes`
   }
 `;
 
-const ConfettiBurst: React.FC<{ special?: boolean }> = ({
-  special = false,
-}) => {
-  const baseColors = [
-    "#22c55e",
-    "#3b82f6",
-    "#f97316",
-    "#eab308",
-    "#ec4899",
-    "#a855f7",
-  ];
-  const colors = special
-    ? [...baseColors, "#facc15", "#facc15", "#facc15"]
-    : baseColors;
-
+const ConfettiBurst: React.FC<{ special?: boolean }> = ({ special = false }) => {
   const pieces = useMemo(() => {
+    const baseColors = [
+      "#22c55e",
+      "#3b82f6",
+      "#f97316",
+      "#eab308",
+      "#ec4899",
+      "#a855f7",
+    ];
+    const colors = special
+      ? [...baseColors, "#facc15", "#facc15", "#facc15"]
+      : baseColors;
+
     const count = special ? 260 : 180;
     return Array.from({ length: count }).map((_, i) => ({
       id: i,
@@ -735,7 +726,7 @@ const ConfettiBurst: React.FC<{ special?: boolean }> = ({
       delay: Math.random() * (special ? 1 : 0.8),
       color: colors[Math.floor(Math.random() * colors.length)],
     }));
-  }, [special, colors]);
+  }, [special]);
 
   const durationMs = special ? 2800 : 2200;
 
@@ -790,16 +781,12 @@ const OneWordTenSeconds: React.FC = () => {
     partialCorrect: number;
     wordLength: number;
   } | null>(null);
-  const [selectedLeaderboardWord, setSelectedLeaderboardWord] = useState<
-    string | null
-  >(null);
-  const [lastTypedIndex, setLastTypedIndex] = useState<number | null>(null);
-  const [lastTypedCorrect, setLastTypedCorrect] = useState<boolean | null>(
+  const [selectedLeaderboardWord, setSelectedLeaderboardWord] = useState<string | null>(
     null
   );
+  const [lastTypedIndex, setLastTypedIndex] = useState<number | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const [isPersonalBestCelebration, setIsPersonalBestCelebration] =
-    useState(false);
+  const [isPersonalBestCelebration, setIsPersonalBestCelebration] = useState(false);
 
   const [darkMode, setDarkMode] = useState<boolean>(true);
 
@@ -861,10 +848,7 @@ const OneWordTenSeconds: React.FC = () => {
   // Persist leaderboard on change
   useEffect(() => {
     try {
-      localStorage.setItem(
-        LEADERBOARD_STORAGE_KEY,
-        JSON.stringify(leaderboard)
-      );
+      localStorage.setItem(LEADERBOARD_STORAGE_KEY, JSON.stringify(leaderboard));
     } catch {
       // ignore
     }
@@ -907,7 +891,6 @@ const OneWordTenSeconds: React.FC = () => {
     setLastScore(null);
     setLastSummary(null);
     setLastTypedIndex(null);
-    setLastTypedCorrect(null);
     setIsPersonalBestCelebration(false);
   }, []);
 
@@ -938,8 +921,7 @@ const OneWordTenSeconds: React.FC = () => {
     }
 
     // Otherwise: troll them with a random word.
-    const randomWord =
-      SAMPLE_WORDS[Math.floor(Math.random() * SAMPLE_WORDS.length)];
+    const randomWord = SAMPLE_WORDS[Math.floor(Math.random() * SAMPLE_WORDS.length)];
     setCustomWord(randomWord);
     setWordError(null);
     setSelectedLeaderboardWord(randomWord.toLowerCase());
@@ -1043,9 +1025,7 @@ const OneWordTenSeconds: React.FC = () => {
         };
 
         prevEntries.push(newEntry);
-        prevEntries.sort(
-          (a, b) => b.score - a.score || a.createdAt - b.createdAt
-        );
+        prevEntries.sort((a, b) => b.score - a.score || a.createdAt - b.createdAt);
 
         const newMap: LeaderboardMap = {
           ...prev,
@@ -1122,7 +1102,6 @@ const OneWordTenSeconds: React.FC = () => {
 
       setCurrentInput("");
       setLastTypedIndex(null);
-      setLastTypedCorrect(null);
       return;
     }
 
@@ -1130,7 +1109,6 @@ const OneWordTenSeconds: React.FC = () => {
       if (currentInput.length > 0) {
         setCurrentInput((prev) => prev.slice(0, -1));
         setLastTypedIndex(currentInput.length - 1);
-        setLastTypedCorrect(null);
         playNeutralBackspace();
       }
       return;
@@ -1152,7 +1130,6 @@ const OneWordTenSeconds: React.FC = () => {
 
       setCurrentInput((prev) => prev + nextChar);
       setLastTypedIndex(currentInput.length);
-      setLastTypedCorrect(isCorrect);
 
       if (isCorrect) {
         playPositiveLetter();
@@ -1191,10 +1168,7 @@ const OneWordTenSeconds: React.FC = () => {
           const typedChar = currentInput[index];
           let color: string | undefined;
           if (typedChar) {
-            color =
-              typedChar.toLowerCase() === ch.toLowerCase()
-                ? "#22c55e"
-                : "#ef4444";
+            color = typedChar.toLowerCase() === ch.toLowerCase() ? "#22c55e" : "#ef4444";
           } else {
             color = undefined;
           }
@@ -1222,9 +1196,7 @@ const OneWordTenSeconds: React.FC = () => {
                   bottom: -6,
                   height: 2,
                   borderRadius: 999,
-                  bgcolor: typedChar
-                    ? color || "text.secondary"
-                    : "text.disabled",
+                  bgcolor: typedChar ? (color || "text.secondary") : "text.disabled",
                   opacity: 0.7,
                 }}
               />
@@ -1275,9 +1247,7 @@ const OneWordTenSeconds: React.FC = () => {
     showToast("I can't let you do that.");
   }, [playerName, knownPlayerNames, showToast]);
 
-  const handlePlayerNameKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>
-  ) => {
+  const handlePlayerNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
       handleConfirmPlayerName();
@@ -1335,15 +1305,10 @@ const OneWordTenSeconds: React.FC = () => {
 
         <Typography variant="subtitle1" textAlign="center" sx={{ mb: 3 }}>
           Type one word as many times as you can in 10 seconds. Score ={" "}
-          <b>full words</b> completed + <b>partial credit</b> on your last
-          attempt.
+          <b>full words</b> completed + <b>partial credit</b> on your last attempt.
         </Typography>
 
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={3}
-          alignItems="stretch"
-        >
+        <Stack direction={{ xs: "column", md: "row" }} spacing={3} alignItems="stretch">
           {/* Left: Game panel */}
           <Paper
             elevation={3}
@@ -1402,10 +1367,7 @@ const OneWordTenSeconds: React.FC = () => {
                 onKeyDown={handleWordFieldKeyDown}
                 disabled={isRunning || isCountdown}
                 error={!!wordError}
-                helperText={
-                  wordError ??
-                  "Enter any appropriate word you want to practice."
-                }
+                helperText={wordError ?? "Enter any appropriate word you want to practice."}
               />
               <Button
                 variant="contained"
@@ -1429,12 +1391,7 @@ const OneWordTenSeconds: React.FC = () => {
             </Stack>
 
             {/* Timers */}
-            <Stack
-              direction="row"
-              spacing={2}
-              justifyContent="center"
-              sx={{ mt: 1 }}
-            >
+            <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 1 }}>
               <Box textAlign="center">
                 <Typography variant="caption">Status</Typography>
                 <Typography variant="h6">
@@ -1450,11 +1407,7 @@ const OneWordTenSeconds: React.FC = () => {
               <Box textAlign="center">
                 <Typography variant="caption">Time left</Typography>
                 <Typography variant="h6">
-                  {isRunning
-                    ? `${timeLeft.toFixed(1)}s`
-                    : isCountdown
-                    ? "—"
-                    : "0.0s"}
+                  {isRunning ? `${timeLeft.toFixed(1)}s` : isCountdown ? "—" : "0.0s"}
                 </Typography>
               </Box>
               <Box textAlign="center">
@@ -1547,8 +1500,8 @@ const OneWordTenSeconds: React.FC = () => {
             </Typography>
 
             <Typography variant="body2">
-              Leaderboards are separate for each word. Choose a word below to
-              see all recorded runs.
+              Leaderboards are separate for each word. Choose a word below to see all
+              recorded runs.
             </Typography>
 
             <Autocomplete
