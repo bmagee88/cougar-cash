@@ -79,6 +79,13 @@ const tiles = [
     emoji: "🗺️",
     gradient: "linear-gradient(135deg, #648b70ff, #0f2a1dff)",
   },
+  {
+    path: "/one-word",
+    title: "One Word Ten Seconds",
+    subtitle: "Speed Typing One Word Challenge",
+    emoji: "⚡",
+    gradient: "linear-gradient(135deg, #d9ff00ff, #768b00ff)",
+  },
 ];
 
 export default function Home() {
