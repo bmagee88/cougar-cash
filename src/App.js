@@ -17,7 +17,8 @@ import MazeQuiz from "./MazeQuiz/MazeQuiz";
 import PieTimer from "./NewTimer/PieTimer";
 import PizzaGame from "./pizzaGame/PizzaGame";
 import DnDKeyboard from "./DndKeyboard/DragNDropKeyboard";
-import MapVisualizer  from "./RegionsMapApp/MapVisualizer";
+import MapVisualizer from "./RegionsMapApp/MapVisualizer";
+import OneWordTenSeconds from "./OneWordTenSeconds/OneWordTenSeconds";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -78,6 +79,9 @@ function App() {
           <Route
             path='/map'
             element={<MapVisualizer />}></Route>
+          <Route
+            path='/one-word'
+            element={<OneWordTenSeconds />}></Route>
         </Routes>
       </Router>
     </Box>
