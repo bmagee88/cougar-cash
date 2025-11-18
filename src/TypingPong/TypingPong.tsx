@@ -667,41 +667,41 @@ const TypingPong: React.FC = () => {
   };
 
   // --- Bot logic: moves top paddle toward ball based on difficulty ---
-  const updateBot = (
-    dt: number,
-    x: number,
-    y: number,
-    vx: number,
-    vy: number
-  ) => {
-    if (gameMode !== "single") return;
-    if (!isRunningRef.current) return;
+//   const updateBot = (
+//     dt: number,
+//     x: number,
+//     y: number,
+//     vx: number,
+//     vy: number
+//   ) => {
+//     if (gameMode !== "single") return;
+//     if (!isRunningRef.current) return;
 
-    // Only care when ball is moving towards the top paddle
-    if (vy >= 0) return;
+//     // Only care when ball is moving towards the top paddle
+//     if (vy >= 0) return;
 
-    botMoveAccumulatorRef.current += dt;
-    const settings = BOT_SETTINGS[botDifficultyRef.current];
+//     botMoveAccumulatorRef.current += dt;
+//     const settings = BOT_SETTINGS[botDifficultyRef.current];
 
-    while (botMoveAccumulatorRef.current >= settings.moveInterval) {
-      botMoveAccumulatorRef.current -= settings.moveInterval;
+//     while (botMoveAccumulatorRef.current >= settings.moveInterval) {
+//       botMoveAccumulatorRef.current -= settings.moveInterval;
 
-      setTopPaddleCol((prev) => {
-        const desiredCol = Math.round(x * (BOARD_COLS - 1));
-        let error = desiredCol - prev;
-        if (error === 0) return prev;
+//       setTopPaddleCol((prev) => {
+//         const desiredCol = Math.round(x * (BOARD_COLS - 1));
+//         let error = desiredCol - prev;
+//         if (error === 0) return prev;
 
-        let step = error > 0 ? 1 : -1;
+//         let step = error > 0 ? 1 : -1;
 
-        // chance to move the wrong way
-        if (Math.random() < settings.mistakeChance) {
-          step = -step;
-        }
+//         // chance to move the wrong way
+//         if (Math.random() < settings.mistakeChance) {
+//           step = -step;
+//         }
 
-        return prev + step;
-      });
-    }
-  };
+//         return prev + step;
+//       });
+//     }
+//   };
 
   // --- PLAN NEXT SEGMENT (from current x,y,vx,vy to next wall or paddle line) ---
   const planNextSegment = (startX: number, startY: number, vx: number, vy: number) => {
