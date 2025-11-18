@@ -804,49 +804,69 @@ const TypingPong: React.FC = () => {
     return { x: newX, y: newY, vx, vy };
   };
 
-  const handlePoint = (
-    winner: Side
-  ): { x: number; y: number; vx: number; vy: number } => {
-    const loser: Side = winner === "top" ? "bottom" : "top";
+const handlePoint = (
+  winner: Side
+): { x: number; y: number; vx: number; vy: number } => {
+  const loser: Side = winner === "top" ? "bottom" : "top";
 
-    setScores((prev) => ({
-      ...prev,
-      [winner]: prev[winner] + 1,
-    }));
+  // Update score
+  setScores((prev) => ({
+    ...prev,
+    [winner]: prev[winner] + 1,
+  }));
 
-    // Reset travel time to default on every point
-    setTravelTime(INITIAL_TRAVEL_TIME);
-    travelTimeRef.current = INITIAL_TRAVEL_TIME;
+  // Reset travel time to default on every point
+  setTravelTime(INITIAL_TRAVEL_TIME);
+  travelTimeRef.current = INITIAL_TRAVEL_TIME;
 
-    setStatusMessage(`${capitalize(winner)} scored! Serving again...`);
+  // End the round – do NOT auto-start the next one
+  setStatusMessage(
+    `${capitalize(winner)} scored! Press Start to serve the next round.`
+  );
 
-    setCurrentAttacker(winner);
-    setCurrentDefender(loser);
+  setCurrentAttacker(winner);
+  setCurrentDefender(loser);
 
-    const paddleColCenter =
-      winner === "top"
-        ? getPaddleCenterCol(topPaddleRef.current)
-        : getPaddleCenterCol(bottomPaddleRef.current);
+  // Stop the game loop
+  setIsRunning(false);
+  isRunningRef.current = false;
 
-    const startX = getPaddleCenterXNorm(paddleColCenter);
-    const startY =
-      winner === "top"
-        ? TOP_PADDLE_Y + BALL_RADIUS
-        : BOTTOM_PADDLE_Y - BALL_RADIUS;
+  if (animationFrameIdRef.current !== null) {
+    cancelAnimationFrame(animationFrameIdRef.current);
+    animationFrameIdRef.current = null;
+  }
 
-    const verticalSpeedMag = VERTICAL_DISTANCE / travelTimeRef.current;
-    const directionSign = winner === "top" ? 1 : -1; // away from winner
-    const vy = verticalSpeedMag * directionSign;
+  // Clear typing state / prompt for the new round
+  setPromptText("");
+  setTypedText("");
+  typedLengthRef.current = 0;
+  setTargetHitCol(null);
+  targetHitColRef.current = null;
+  setCenterStepIndex(0);
+  setDistanceColsState(0);
+  distanceColsRef.current = 0;
 
-    const baseSlope = 1; // start with slope 1
-    const vxMag = verticalSpeedMag / baseSlope;
-    const horizontalSign = Math.random() < 0.5 ? -1 : 1;
-    const vx = vxMag * horizontalSign;
+  // Park the ball in the center, not moving
+  const x = 0.5;
+  const y = 0.5;
+  const vx = 0;
+  const vy = 0;
 
-    setupDefensePrompt(winner, loser, startX, startY, vx, vy);
+  ballPosRef.current = { x, y };
+  velocityRef.current = { vx, vy };
+  setBallPos({ x, y });
 
-    return { x: startX, y: startY, vx, vy };
-  };
+  // Also clear any segment info so nothing keeps animating
+  segmentStartPosRef.current = { x, y };
+  segmentEndPosRef.current = { x, y };
+  segmentDurationRef.current = 0;
+  segmentStartTimeRef.current = null;
+  currentEventRef.current = null;
+
+  // We still return something for callers, but it won't be used
+  return { x, y, vx, vy };
+};
+
 
   // --- Uses UNDERLINES (for human) or geometry (for bot) to decide hit vs score ---
   const handlePaddleRegion = (
@@ -989,7 +1009,7 @@ const TypingPong: React.FC = () => {
 
   // --- SMOOTH SEGMENT-BASED GAME LOOP (LERP BETWEEN ENDPOINTS ONLY) ---
   const gameLoop = (timestamp: number) => {
-    if (!isRunningRef.current) return;
+    // if (!isRunningRef.current) return;
 
     if (segmentStartTimeRef.current === null) {
       segmentStartTimeRef.current = timestamp;
@@ -1050,7 +1070,11 @@ const TypingPong: React.FC = () => {
       }
     }
 
-    animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+if (isRunningRef.current) {
+  animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+} else {
+  animationFrameIdRef.current = null;
+}
   };
 
   const startServe = (attacker: Side) => {
