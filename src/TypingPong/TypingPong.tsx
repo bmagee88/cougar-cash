@@ -45,9 +45,41 @@ type SegmentEventType =
 
 const MAX_WORD_LENGTH = 10;
 
-const WORD_BANK: Record<number, string[]> = {
-  1: ["a", "i"],
-  2: ["go", "do", "up", "no", "it", "in", "on", "we", "me", "to"],
+  const WORD_BANK: Record<number, string[]> = {
+  1: [
+    "a",
+    "i",
+    // there really aren't many natural 1-letter words in English
+  ],
+  2: [
+    "go",
+    "do",
+    "up",
+    "no",
+    "it",
+    "in",
+    "on",
+    "we",
+    "me",
+    "to",
+    "at",
+    "an",
+    "am",
+    "as",
+    "by",
+    "he",
+    "hi",
+    "if",
+    "is",
+    "of",
+    "or",
+    "so",
+    "us",
+    "be",
+    "my",
+    "ox",
+    "ok",
+  ],
   3: [
     "cat",
     "dog",
@@ -61,6 +93,35 @@ const WORD_BANK: Record<number, string[]> = {
     "fun",
     "map",
     "box",
+    "pen",
+    "cup",
+    "bag",
+    "hat",
+    "cap",
+    "bat",
+    "bus",
+    "car",
+    "bed",
+    "top",
+    "log",
+    "bug",
+    "ant",
+    "bee",
+    "web",
+    "key",
+    "jam",
+    "ice",
+    "sea",
+    "row",
+    "win",
+    "toy",
+    "hug",
+    "lap",
+    "sit",
+    "fix",
+    "mix",
+    "hop",
+    "dig",
   ],
   4: [
     "game",
@@ -75,6 +136,44 @@ const WORD_BANK: Record<number, string[]> = {
     "read",
     "type",
     "home",
+    "word",
+    "line",
+    "page",
+    "math",
+    "desk",
+    "book",
+    "ball",
+    "room",
+    "star",
+    "tree",
+    "door",
+    "talk",
+    "walk",
+    "show",
+    "test",
+    "quiz",
+    "rule",
+    "kind",
+    "safe",
+    "help",
+    "join",
+    "save",
+    "need",
+    "want",
+    "work",
+    "file",
+    "menu",
+    "open",
+    "send",
+    "site",
+    "link",
+    "text",
+    "data",
+    "user",
+    "fact",
+    "idea",
+    "plan",
+    "goal",
   ],
   5: [
     "skill",
@@ -89,6 +188,39 @@ const WORD_BANK: Record<number, string[]> = {
     "level",
     "speed",
     "point",
+    "think",
+    "share",
+    "click",
+    "start",
+    "class",
+    "short",
+    "light",
+    "sound",
+    "green",
+    "brown",
+    "stick",
+    "press",
+    "space",
+    "shift",
+    "enter",
+    "arrow",
+    "above",
+    "below",
+    "track",
+    "happy",
+    "funny",
+    "great",
+    "proud",
+    "brave",
+    "focus",
+    "group",
+    "essay",
+    "paper",
+    "notes",
+    "rules",
+    "tools",
+    "build",
+    "draft",
   ],
   6: [
     "school",
@@ -103,6 +235,37 @@ const WORD_BANK: Record<number, string[]> = {
     "number",
     "online",
     "screen",
+    "middle",
+    "person",
+    "second",
+    "answer",
+    "choose",
+    "random",
+    "player",
+    "delete",
+    "insert",
+    "search",
+    "select",
+    "export",
+    "import",
+    "social",
+    "window",
+    "dialog",
+    "button",
+    "volume",
+    "camera",
+    "tablet",
+    "upload",
+    "typing",
+    "coding",
+    "output",
+    "cursor",
+    "submit",
+    "create",
+    "record",
+    "memory",
+    "policy",
+    "symbol",
   ],
   7: [
     "student",
@@ -116,7 +279,32 @@ const WORD_BANK: Record<number, string[]> = {
     "picture",
     "library",
     "project",
-    "practice",
+    "example",
+    "message",
+    "profile",
+    "improve",
+    "drawing",
+    "history",
+    "science",
+    "monitor",
+    "village",
+    "journey",
+    "fantasy",
+    "courage",
+    "respect",
+    "problem",
+    "choices",
+    "grammar",
+    "timeout",
+    "account",
+    "privacy",
+    "caution",
+    "connect",
+    "replies",
+    "subject",
+    "balance",
+    "percent",
+    "careful",
   ],
   8: [
     "keyboard",
@@ -126,11 +314,29 @@ const WORD_BANK: Record<number, string[]> = {
     "learning",
     "distance",
     "sentence",
-    "character",
-    "confidence",
     "accuracy",
     "movement",
     "velocity",
+    "internet",
+    "notebook",
+    "username",
+    "password",
+    "download",
+    "homework",
+    "research",
+    "solution",
+    "activity",
+    "settings",
+    "document",
+    "feedback",
+    "creation",
+    "overview",
+    "security",
+    "practice",
+    "tracking",
+    "managing",
+    "software",
+    "database",
   ],
   9: [
     "challenge",
@@ -143,6 +349,20 @@ const WORD_BANK: Record<number, string[]> = {
     "fantastic",
     "knowledge",
     "dinosaur",
+    "character",
+    "rectangle",
+    "algorithm",
+    "magnitude",
+    "objective",
+    "education",
+    "paragraph",
+    "organizer",
+    "sensitive",
+    "interface",
+    "invisible",
+    "difficult",
+    "automatic",
+    "community",
   ],
   10: [
     "concentration",
@@ -155,17 +375,33 @@ const WORD_BANK: Record<number, string[]> = {
     "leadership",
     "definition",
     "creativity",
+    "connection",
+    "navigation",
+    "evaluation",
+    "generation",
+    "background",
+    "controller",
+    "percentage",
+    "regulation",
+    "validation",
+    "prediction",
+    "electronic",
+    "programmer",
+    "classmates",
+    "processing",
+    "recordings",
   ],
 };
 
-const BOT_SETTINGS: Record<
-  BotDifficulty,
-  { moveInterval: number; mistakeChance: number }
-> = {
-  easy: { moveInterval: 0.2, mistakeChance: 0.25 },
-  medium: { moveInterval: 0.12, mistakeChance: 0.1 },
-  hard: { moveInterval: 0.08, mistakeChance: 0.02 },
-};
+
+// const BOT_SETTINGS: Record<
+//   BotDifficulty,
+//   { moveInterval: number; mistakeChance: number }
+// > = {
+//   easy: { moveInterval: 0.2, mistakeChance: 0.25 },
+//   medium: { moveInterval: 0.12, mistakeChance: 0.1 },
+//   hard: { moveInterval: 0.08, mistakeChance: 0.02 },
+// };
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
@@ -568,49 +804,69 @@ const TypingPong: React.FC = () => {
     return { x: newX, y: newY, vx, vy };
   };
 
-  const handlePoint = (
-    winner: Side
-  ): { x: number; y: number; vx: number; vy: number } => {
-    const loser: Side = winner === "top" ? "bottom" : "top";
+const handlePoint = (
+  winner: Side
+): { x: number; y: number; vx: number; vy: number } => {
+  const loser: Side = winner === "top" ? "bottom" : "top";
 
-    setScores((prev) => ({
-      ...prev,
-      [winner]: prev[winner] + 1,
-    }));
+  // Update score
+  setScores((prev) => ({
+    ...prev,
+    [winner]: prev[winner] + 1,
+  }));
 
-    // Reset travel time to default on every point
-    setTravelTime(INITIAL_TRAVEL_TIME);
-    travelTimeRef.current = INITIAL_TRAVEL_TIME;
+  // Reset travel time to default on every point
+  setTravelTime(INITIAL_TRAVEL_TIME);
+  travelTimeRef.current = INITIAL_TRAVEL_TIME;
 
-    setStatusMessage(`${capitalize(winner)} scored! Serving again...`);
+  // End the round – do NOT auto-start the next one
+  setStatusMessage(
+    `${capitalize(winner)} scored! Press Start to serve the next round.`
+  );
 
-    setCurrentAttacker(winner);
-    setCurrentDefender(loser);
+  setCurrentAttacker(winner);
+  setCurrentDefender(loser);
 
-    const paddleColCenter =
-      winner === "top"
-        ? getPaddleCenterCol(topPaddleRef.current)
-        : getPaddleCenterCol(bottomPaddleRef.current);
+  // Stop the game loop
+  setIsRunning(false);
+  isRunningRef.current = false;
 
-    const startX = getPaddleCenterXNorm(paddleColCenter);
-    const startY =
-      winner === "top"
-        ? TOP_PADDLE_Y + BALL_RADIUS
-        : BOTTOM_PADDLE_Y - BALL_RADIUS;
+  if (animationFrameIdRef.current !== null) {
+    cancelAnimationFrame(animationFrameIdRef.current);
+    animationFrameIdRef.current = null;
+  }
 
-    const verticalSpeedMag = VERTICAL_DISTANCE / travelTimeRef.current;
-    const directionSign = winner === "top" ? 1 : -1; // away from winner
-    const vy = verticalSpeedMag * directionSign;
+  // Clear typing state / prompt for the new round
+  setPromptText("");
+  setTypedText("");
+  typedLengthRef.current = 0;
+  setTargetHitCol(null);
+  targetHitColRef.current = null;
+  setCenterStepIndex(0);
+  setDistanceColsState(0);
+  distanceColsRef.current = 0;
 
-    const baseSlope = 1; // start with slope 1
-    const vxMag = verticalSpeedMag / baseSlope;
-    const horizontalSign = Math.random() < 0.5 ? -1 : 1;
-    const vx = vxMag * horizontalSign;
+  // Park the ball in the center, not moving
+  const x = 0.5;
+  const y = 0.5;
+  const vx = 0;
+  const vy = 0;
 
-    setupDefensePrompt(winner, loser, startX, startY, vx, vy);
+  ballPosRef.current = { x, y };
+  velocityRef.current = { vx, vy };
+  setBallPos({ x, y });
 
-    return { x: startX, y: startY, vx, vy };
-  };
+  // Also clear any segment info so nothing keeps animating
+  segmentStartPosRef.current = { x, y };
+  segmentEndPosRef.current = { x, y };
+  segmentDurationRef.current = 0;
+  segmentStartTimeRef.current = null;
+  currentEventRef.current = null;
+
+  // We still return something for callers, but it won't be used
+  return { x, y, vx, vy };
+};
+
 
   // --- Uses UNDERLINES (for human) or geometry (for bot) to decide hit vs score ---
   const handlePaddleRegion = (
@@ -667,41 +923,41 @@ const TypingPong: React.FC = () => {
   };
 
   // --- Bot logic: moves top paddle toward ball based on difficulty ---
-  const updateBot = (
-    dt: number,
-    x: number,
-    y: number,
-    vx: number,
-    vy: number
-  ) => {
-    if (gameMode !== "single") return;
-    if (!isRunningRef.current) return;
+//   const updateBot = (
+//     dt: number,
+//     x: number,
+//     y: number,
+//     vx: number,
+//     vy: number
+//   ) => {
+//     if (gameMode !== "single") return;
+//     if (!isRunningRef.current) return;
 
-    // Only care when ball is moving towards the top paddle
-    if (vy >= 0) return;
+//     // Only care when ball is moving towards the top paddle
+//     if (vy >= 0) return;
 
-    botMoveAccumulatorRef.current += dt;
-    const settings = BOT_SETTINGS[botDifficultyRef.current];
+//     botMoveAccumulatorRef.current += dt;
+//     const settings = BOT_SETTINGS[botDifficultyRef.current];
 
-    while (botMoveAccumulatorRef.current >= settings.moveInterval) {
-      botMoveAccumulatorRef.current -= settings.moveInterval;
+//     while (botMoveAccumulatorRef.current >= settings.moveInterval) {
+//       botMoveAccumulatorRef.current -= settings.moveInterval;
 
-      setTopPaddleCol((prev) => {
-        const desiredCol = Math.round(x * (BOARD_COLS - 1));
-        let error = desiredCol - prev;
-        if (error === 0) return prev;
+//       setTopPaddleCol((prev) => {
+//         const desiredCol = Math.round(x * (BOARD_COLS - 1));
+//         let error = desiredCol - prev;
+//         if (error === 0) return prev;
 
-        let step = error > 0 ? 1 : -1;
+//         let step = error > 0 ? 1 : -1;
 
-        // chance to move the wrong way
-        if (Math.random() < settings.mistakeChance) {
-          step = -step;
-        }
+//         // chance to move the wrong way
+//         if (Math.random() < settings.mistakeChance) {
+//           step = -step;
+//         }
 
-        return prev + step;
-      });
-    }
-  };
+//         return prev + step;
+//       });
+//     }
+//   };
 
   // --- PLAN NEXT SEGMENT (from current x,y,vx,vy to next wall or paddle line) ---
   const planNextSegment = (startX: number, startY: number, vx: number, vy: number) => {
@@ -753,7 +1009,7 @@ const TypingPong: React.FC = () => {
 
   // --- SMOOTH SEGMENT-BASED GAME LOOP (LERP BETWEEN ENDPOINTS ONLY) ---
   const gameLoop = (timestamp: number) => {
-    if (!isRunningRef.current) return;
+    // if (!isRunningRef.current) return;
 
     if (segmentStartTimeRef.current === null) {
       segmentStartTimeRef.current = timestamp;
@@ -814,7 +1070,11 @@ const TypingPong: React.FC = () => {
       }
     }
 
-    animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+if (isRunningRef.current) {
+  animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+} else {
+  animationFrameIdRef.current = null;
+}
   };
 
   const startServe = (attacker: Side) => {
