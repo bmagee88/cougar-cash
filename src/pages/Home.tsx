@@ -86,6 +86,13 @@ const tiles = [
     emoji: "⚡",
     gradient: "linear-gradient(135deg, #d9ff00ff, #768b00ff)",
   },
+  {
+    path: "/pong",
+    title: "Typing Pong",
+    subtitle: "Play pong but you have to type to move the paddle.",
+    emoji: "🕹️",
+    gradient: "linear-gradient(135deg, #ffffffff, #000000ff)",
+  },
 ];
 
 export default function Home() {
