@@ -19,6 +19,7 @@ import PizzaGame from "./pizzaGame/PizzaGame";
 import DnDKeyboard from "./DndKeyboard/DragNDropKeyboard";
 import MapVisualizer from "./RegionsMapApp/MapVisualizer";
 import OneWordTenSeconds from "./OneWordTenSeconds/OneWordTenSeconds";
+import TypingPong from "./TypingPong/TypingPong";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -82,6 +83,9 @@ function App() {
           <Route
             path='/one-word'
             element={<OneWordTenSeconds />}></Route>
+          <Route
+            path='/pong'
+            element={<TypingPong />}></Route>
         </Routes>
       </Router>
     </Box>
