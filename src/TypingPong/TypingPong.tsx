@@ -7,6 +7,7 @@ import {
   Stack,
   TextField,
   Typography,
+  MenuItem,
 } from "@mui/material";
 
 const DEFAULT_BOARD_COLS = 20;
@@ -20,7 +21,7 @@ const BALL_RADIUS = 0.02;
 const VERTICAL_DISTANCE = BOTTOM_PADDLE_Y - TOP_PADDLE_Y;
 
 type Side = "top" | "bottom";
-type Phase = "preServe" | "rally";
+type Phase = "preServe" | "rally" | "gameOver";
 
 interface Scores {
   top: number;
@@ -389,30 +390,73 @@ function capitalize(side: Side): string {
 
 /**
  * Build a multi-word prompt whose total character count (including spaces)
- * is at least targetSteps.
+ * is EXACTLY targetSteps if possible, using random word lengths.
+ * Falls back to "at least targetSteps" if no exact combo is found.
  */
 function buildPrompt(targetSteps: number): { text: string; totalChars: number } {
   const steps = Math.max(1, targetSteps);
+  const lengths = Object.keys(WORD_BANK)
+    .map(Number)
+    .filter((len) => WORD_BANK[len] && WORD_BANK[len]!.length > 0);
+
+  function shuffle<T>(arr: T[]): T[] {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function backtrack(remaining: number, isFirst: boolean): string[] | null {
+    if (remaining === 0) return [];
+
+    const shuffledLengths = shuffle(lengths);
+    for (const len of shuffledLengths) {
+      const cost = isFirst ? len : len + 1; // include space after first word
+      if (cost > remaining) continue;
+
+      const bank = WORD_BANK[len];
+      if (!bank || bank.length === 0) continue;
+
+      const word = bank[Math.floor(Math.random() * bank.length)];
+      if (cost === remaining) {
+        return [word];
+      }
+
+      const rest = backtrack(remaining - cost, false);
+      if (rest) return [word, ...rest];
+    }
+    return null;
+  }
+
+  let words: string[] | null = null;
+  for (let attempt = 0; attempt < 25 && !words; attempt++) {
+    words = backtrack(steps, true);
+  }
+
+  if (words) {
+    const text = words.join(" ");
+    return { text, totalChars: text.length };
+  }
+
+  // Fallback: old "at least steps" behavior using longest words
   let text = "";
   let totalChars = 0;
-
   while (totalChars < steps) {
     const remaining = steps - totalChars;
     const maxLen = Math.min(MAX_WORD_LENGTH, remaining);
-
     const len = maxLen;
-    const words = WORD_BANK[len] ?? WORD_BANK[MAX_WORD_LENGTH];
-    const word = words[Math.floor(Math.random() * words.length)];
+    const bank = WORD_BANK[len] ?? WORD_BANK[MAX_WORD_LENGTH];
+    const word = bank[Math.floor(Math.random() * bank.length)];
 
     if (text.length > 0) {
       text += " ";
-      totalChars += 1; // space
+      totalChars += 1;
     }
-
     text += word;
     totalChars += word.length;
   }
-
   return { text, totalChars };
 }
 
@@ -443,11 +487,11 @@ function reflectX(x0: number, vx: number, time: number): number {
 const TypingPong: React.FC = () => {
   // Board / paddle / speed settings (menu)
   const [boardCols, setBoardCols] = useState<number>(DEFAULT_BOARD_COLS);
-  const [paddleWidthCols, setPaddleWidthCols] = useState<number>(
-    DEFAULT_PADDLE_WIDTH_COLS
-  );
+  const [paddleWidthCols, setPaddleWidthCols] =
+    useState<number>(DEFAULT_PADDLE_WIDTH_COLS);
   const [startingSpeed, setStartingSpeed] =
     useState<number>(DEFAULT_STARTING_SPEED);
+  const [maxPoints, setMaxPoints] = useState<number | null>(null); // null = no limit
 
   // Treat paddleCol as the *center column* (can overhang the walls)
   const [topPaddleCol, setTopPaddleCol] = useState<number>(0);
@@ -459,9 +503,6 @@ const TypingPong: React.FC = () => {
     x: 0.5,
     y: 0.5,
   });
-
-  const defenseInputRef = useRef<HTMLInputElement | null>(null);
-
 
   const [travelTime, setTravelTime] =
     useState<number>(DEFAULT_STARTING_SPEED);
@@ -536,22 +577,16 @@ const TypingPong: React.FC = () => {
   const targetHitColRef = useRef<number | null>(null);
   const distanceColsRef = useRef<number>(0);
 
+  // Input refs for auto-focus
+  const defenseInputRef = useRef<HTMLInputElement | null>(null);
+  const serveInputRef = useRef<HTMLInputElement | null>(null);
+
   // --- derived values based on settings ---
   const halfPaddleUnits = Math.floor(paddleWidthCols / 2);
   const paddleWidthNorm = paddleWidthCols / boardCols;
   const columnWidthPercent = 100 / boardCols;
 
   // --- sync refs with state ---
-useEffect(() => {
-  if (phase === "rally") {
-    // small timeout to let React paint the new UI first
-    setTimeout(() => {
-      defenseInputRef.current?.focus();
-    }, 0);
-  }
-}, [phase]);
-
-
   useEffect(() => {
     ballPosRef.current = ballPos;
   }, [ballPos]);
@@ -594,6 +629,24 @@ useEffect(() => {
 
   useEffect(() => {
     phaseRef.current = phase;
+  }, [phase]);
+
+  // Focus defender input when rally starts
+  useEffect(() => {
+    if (phase === "rally") {
+      setTimeout(() => {
+        defenseInputRef.current?.focus();
+      }, 0);
+    }
+  }, [phase]);
+
+  // Focus serve input whenever we enter preServe (e.g., after a point)
+  useEffect(() => {
+    if (phase === "preServe") {
+      setTimeout(() => {
+        serveInputRef.current?.focus();
+      }, 0);
+    }
   }, [phase]);
 
   useEffect(() => {
@@ -673,7 +726,7 @@ useEffect(() => {
       predictedCol - Math.round(defenderColCenter)
     );
 
-    // Word length = distance to center + half paddle width (floored)
+    // Word steps = distance to center + half paddle width (floored)
     const extraLetters = halfPaddleUnits;
     const totalSteps = distanceCols + extraLetters;
 
@@ -818,26 +871,39 @@ useEffect(() => {
   const handlePoint = (winner: Side): void => {
     const loser: Side = winner === "top" ? "bottom" : "top";
 
-    // Update score
-    setScores((prev) => ({
-      ...prev,
-      [winner]: prev[winner] + 1,
-    }));
+    stopAnimation();
 
     // Reset travel time to starting speed on every point
     setTravelTime(startingSpeed);
     travelTimeRef.current = startingSpeed;
 
-    stopAnimation();
-
-    // Next attacker is the one who scored
-    setCurrentAttacker(winner);
-    setCurrentDefender(loser);
-
     resetDefensePromptState();
 
-    // Move to pre-serve phase for the winner
-    beginPreServe(winner);
+    setScores((prev) => {
+      const updated: Scores = {
+        ...prev,
+        [winner]: prev[winner] + 1,
+      };
+      const newScore = updated[winner];
+      const reachedLimit =
+        maxPoints !== null && newScore >= maxPoints;
+
+      if (reachedLimit) {
+        setStatusMessage(
+          `${capitalize(
+            winner
+          )} wins ${updated.top}-${updated.bottom}! Press Reset to play again.`
+        );
+        setPhase("gameOver");
+        phaseRef.current = "gameOver";
+      } else {
+        setCurrentAttacker(winner);
+        setCurrentDefender(loser);
+        beginPreServe(winner);
+      }
+
+      return updated;
+    });
   };
 
   // --- Uses UNDERLINES to decide hit vs score ---
@@ -1028,6 +1094,8 @@ useEffect(() => {
 
   // --- Launch a serve from the current attacker ---
   const launchServe = (attacker: Side) => {
+    if (phaseRef.current === "gameOver") return;
+
     const defender: Side = attacker === "top" ? "bottom" : "top";
 
     setPhase("rally");
@@ -1085,6 +1153,8 @@ useEffect(() => {
 
   // --- Move into pre-serve phase for a given attacker ---
   const beginPreServe = (attacker: Side) => {
+    if (phaseRef.current === "gameOver") return;
+
     stopAnimation();
     resetDefensePromptState();
 
@@ -1365,6 +1435,11 @@ useEffect(() => {
 
     resetDefensePromptState();
 
+    setPhase("preServe");
+    phaseRef.current = "preServe";
+    setStatusMessage(
+      "Bottom serves first. Use arrow keys to position your paddle, type the serve word, and press Enter to launch."
+    );
     beginPreServe("bottom");
   };
 
@@ -1451,7 +1526,7 @@ useEffect(() => {
             {/* Settings side menu */}
             <Box
               sx={{
-                width: 240,
+                width: 260,
                 p: 2,
                 bgcolor: "#020617",
                 borderRadius: 2,
@@ -1533,12 +1608,45 @@ useEffect(() => {
                 }}
                 inputProps={{ step: 0.5, min: 1, max: 10 }}
               />
+              <TextField
+                select
+                label="Point max"
+                size="small"
+                value={maxPoints === null ? "infinity" : String(maxPoints)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "infinity") setMaxPoints(null);
+                  else setMaxPoints(parseInt(val, 10));
+                }}
+                disabled={phase === "rally"}
+                sx={{
+                  "& .MuiInputBase-root": {
+                    color: "#e5e7eb",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "#9ca3af",
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4b5563",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#e5e7eb",
+                  },
+                }}
+              >
+                {[3, 4, 5, 6, 7, 8, 9, 10, 11].map((n) => (
+                  <MenuItem key={n} value={String(n)}>
+                    {n} points
+                  </MenuItem>
+                ))}
+                <MenuItem value="infinity">No limit</MenuItem>
+              </TextField>
               <Typography
                 variant="caption"
                 sx={{ color: "#9ca3af" }}
               >
-                Changes apply on new serves. Press Reset to restart
-                with new settings.
+                Changes apply on new serves. Reset to restart with
+                updated settings.
               </Typography>
             </Box>
 
@@ -1716,6 +1824,7 @@ useEffect(() => {
                   value={serveText}
                   onChange={(e) => setServeText(e.target.value)}
                   onKeyDown={handleServeKeyDown}
+                  inputRef={serveInputRef}
                   sx={{
                     maxWidth: 400,
                     mx: "auto",
@@ -1744,17 +1853,17 @@ useEffect(() => {
               <>
                 {promptText && renderPromptWithUnderlines(promptText)}
                 <TextField
-  label="Defender typing"
-  variant="outlined"
-  value={typedText}
-  onKeyDown={handleDefenseKeyDown}
-    inputRef={defenseInputRef}
-  InputProps={{ readOnly: true }}
-  helperText={
-    isRunning
-      ? "Type letters and spaces exactly as shown. Each character moves the defending paddle by one column."
-      : "Wait for the serve to launch."
-  }
+                  label="Defender typing"
+                  variant="outlined"
+                  value={typedText}
+                  onKeyDown={handleDefenseKeyDown}
+                  inputRef={defenseInputRef}
+                  InputProps={{ readOnly: true }}
+                  helperText={
+                    isRunning
+                      ? "Type letters and spaces exactly as shown. Each character moves the defending paddle by one column."
+                      : "Wait for the serve to launch."
+                  }
                   sx={{
                     maxWidth: 400,
                     mx: "auto",
