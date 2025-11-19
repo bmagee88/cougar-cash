@@ -3,24 +3,15 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Box,
   Button,
-  FormControl,
-  InputLabel,
-  MenuItem,
   Paper,
-  Select,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 
-const BOARD_COLS = 20;
-const PADDLE_WIDTH_COLS = 5; // must be odd
-
-const INITIAL_TRAVEL_TIME = 5;
-const MIN_TRAVEL_TIME = 2;
-const TRAVEL_TIME_STEP = 0.1;
+const DEFAULT_BOARD_COLS = 20;
+const DEFAULT_PADDLE_WIDTH_COLS = 5; // must be odd
+const DEFAULT_STARTING_SPEED = 5; // seconds for ball to travel between paddles
 
 // Normalized coordinates (0..1)
 const TOP_PADDLE_Y = 0.1;
@@ -29,8 +20,7 @@ const BALL_RADIUS = 0.02;
 const VERTICAL_DISTANCE = BOTTOM_PADDLE_Y - TOP_PADDLE_Y;
 
 type Side = "top" | "bottom";
-type GameMode = "single" | "two";
-type BotDifficulty = "easy" | "medium" | "hard";
+type Phase = "preServe" | "rally";
 
 interface Scores {
   top: number;
@@ -45,12 +35,8 @@ type SegmentEventType =
 
 const MAX_WORD_LENGTH = 10;
 
-  const WORD_BANK: Record<number, string[]> = {
-  1: [
-    "a",
-    "i",
-    // there really aren't many natural 1-letter words in English
-  ],
+const WORD_BANK: Record<number, string[]> = {
+  1: ["a", "i"],
   2: [
     "go",
     "do",
@@ -393,16 +379,6 @@ const MAX_WORD_LENGTH = 10;
   ],
 };
 
-
-// const BOT_SETTINGS: Record<
-//   BotDifficulty,
-//   { moveInterval: number; mistakeChance: number }
-// > = {
-//   easy: { moveInterval: 0.2, mistakeChance: 0.25 },
-//   medium: { moveInterval: 0.12, mistakeChance: 0.1 },
-//   hard: { moveInterval: 0.08, mistakeChance: 0.02 },
-// };
-
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
@@ -441,6 +417,16 @@ function buildPrompt(targetSteps: number): { text: string; totalChars: number } 
 }
 
 /**
+ * Pick a random "serve word" (use 4–7 letter words).
+ */
+function getRandomServeWord(): string {
+  const lengths = [4, 5, 6, 7];
+  const len = lengths[Math.floor(Math.random() * lengths.length)];
+  const bank = WORD_BANK[len] ?? WORD_BANK[4];
+  return bank[Math.floor(Math.random() * bank.length)];
+}
+
+/**
  * Reflect a 1D motion with bouncing walls at 0 and 1.
  */
 function reflectX(x0: number, vx: number, time: number): number {
@@ -455,15 +441,18 @@ function reflectX(x0: number, vx: number, time: number): number {
 }
 
 const TypingPong: React.FC = () => {
-  // Game mode & bot difficulty
-  const [gameMode, setGameMode] = useState<GameMode>("single");
-  const [botDifficulty, setBotDifficulty] =
-    useState<BotDifficulty>("medium");
+  // Board / paddle / speed settings (menu)
+  const [boardCols, setBoardCols] = useState<number>(DEFAULT_BOARD_COLS);
+  const [paddleWidthCols, setPaddleWidthCols] = useState<number>(
+    DEFAULT_PADDLE_WIDTH_COLS
+  );
+  const [startingSpeed, setStartingSpeed] =
+    useState<number>(DEFAULT_STARTING_SPEED);
 
   // Treat paddleCol as the *center column* (can overhang the walls)
   const [topPaddleCol, setTopPaddleCol] = useState<number>(0);
   const [bottomPaddleCol, setBottomPaddleCol] = useState<number>(
-    BOARD_COLS - 1
+    DEFAULT_BOARD_COLS - 1
   );
 
   const [ballPos, setBallPos] = useState<{ x: number; y: number }>({
@@ -471,13 +460,21 @@ const TypingPong: React.FC = () => {
     y: 0.5,
   });
 
+  const defenseInputRef = useRef<HTMLInputElement | null>(null);
+
+
   const [travelTime, setTravelTime] =
-    useState<number>(INITIAL_TRAVEL_TIME);
+    useState<number>(DEFAULT_STARTING_SPEED);
   const [scores, setScores] = useState<Scores>({ top: 0, bottom: 0 });
 
-  // Typing prompt state
+  // Typing prompt state (defender)
   const [promptText, setPromptText] = useState<string>("");
   const [typedText, setTypedText] = useState<string>("");
+
+  // Serve-phase typing
+  const [serveWord, setServeWord] = useState<string>(getRandomServeWord());
+  const [serveText, setServeText] = useState<string>("");
+  const [serveTimeLeft, setServeTimeLeft] = useState<number>(30);
 
   // Index of the character that corresponds to a *center hit*
   const [centerStepIndex, setCenterStepIndex] =
@@ -486,7 +483,7 @@ const TypingPong: React.FC = () => {
     useState<number>(0);
 
   const [statusMessage, setStatusMessage] = useState<string>(
-    "Press Start to begin! In 1 Player mode, you control the bottom paddle; the top is a bot."
+    "Bottom serves first. Use arrow keys to position your paddle, type the serve word, and press Enter to launch."
   );
 
   const [currentAttacker, setCurrentAttacker] =
@@ -495,6 +492,9 @@ const TypingPong: React.FC = () => {
     useState<Side>("top");
   const [targetHitCol, setTargetHitCol] =
     useState<number | null>(null);
+
+  const [phase, setPhase] = useState<Phase>("preServe");
+  const phaseRef = useRef<Phase>("preServe");
 
   const [isRunning, setIsRunning] = useState<boolean>(false);
 
@@ -508,11 +508,11 @@ const TypingPong: React.FC = () => {
   const topPaddleRef = useRef(topPaddleCol);
   const bottomPaddleRef = useRef(bottomPaddleCol);
 
-  const travelTimeRef = useRef(travelTime);
-  const attackerRef = useRef<Side>(currentAttacker);
-  const defenderRef = useRef<Side>(currentDefender);
+  const travelTimeRef = useRef<number>(DEFAULT_STARTING_SPEED);
+  const attackerRef = useRef<Side>("bottom");
+  const defenderRef = useRef<Side>("top");
 
-  const isRunningRef = useRef<boolean>(isRunning);
+  const isRunningRef = useRef<boolean>(false);
   const animationFrameIdRef = useRef<number | null>(null);
 
   // Segment interpolation refs
@@ -536,9 +536,21 @@ const TypingPong: React.FC = () => {
   const targetHitColRef = useRef<number | null>(null);
   const distanceColsRef = useRef<number>(0);
 
-  // Bot refs
-  const botDifficultyRef = useRef<BotDifficulty>("medium");
-  const botMoveAccumulatorRef = useRef<number>(0);
+  // --- derived values based on settings ---
+  const halfPaddleUnits = Math.floor(paddleWidthCols / 2);
+  const paddleWidthNorm = paddleWidthCols / boardCols;
+  const columnWidthPercent = 100 / boardCols;
+
+  // --- sync refs with state ---
+useEffect(() => {
+  if (phase === "rally") {
+    // small timeout to let React paint the new UI first
+    setTimeout(() => {
+      defenseInputRef.current?.focus();
+    }, 0);
+  }
+}, [phase]);
+
 
   useEffect(() => {
     ballPosRef.current = ballPos;
@@ -581,8 +593,8 @@ const TypingPong: React.FC = () => {
   }, [typedText]);
 
   useEffect(() => {
-    botDifficultyRef.current = botDifficulty;
-  }, [botDifficulty]);
+    phaseRef.current = phase;
+  }, [phase]);
 
   useEffect(() => {
     return () => {
@@ -592,15 +604,13 @@ const TypingPong: React.FC = () => {
     };
   }, []);
 
-  const halfPaddleUnits = Math.floor(PADDLE_WIDTH_COLS / 2);
-  const paddleWidthNorm = PADDLE_WIDTH_COLS / BOARD_COLS;
-
+  // --- helper: center/paddle utilities ---
   const getPaddleCenterCol = (col: number) => col; // allow overhang
 
   const getPaddleCenterXNorm = (col: number) => {
-    if (BOARD_COLS <= 1) return 0.5;
+    if (boardCols <= 1) return 0.5;
     const centerCol = getPaddleCenterCol(col);
-    return centerCol / (BOARD_COLS - 1);
+    return centerCol / (boardCols - 1);
   };
 
   const getPaddleBoundsNorm = (col: number) => {
@@ -619,24 +629,6 @@ const TypingPong: React.FC = () => {
     vx: number,
     vy: number
   ): void => {
-    // In single-player mode, if the defender is the BOT (top),
-    // we skip prompt/underline logic and let the AI handle it.
-    if (gameMode === "single" && defender === "top") {
-      setPromptText("");
-      setTypedText("");
-      typedLengthRef.current = 0;
-      setTargetHitCol(null);
-      targetHitColRef.current = null;
-      setCenterStepIndex(0);
-      setDistanceColsState(0);
-      distanceColsRef.current = 0;
-
-      setStatusMessage(
-        "Bot is defending on top. Get ready to defend when it's your turn!"
-      );
-      return;
-    }
-
     const targetY = defender === "top" ? TOP_PADDLE_Y : BOTTOM_PADDLE_Y;
     const timeToDefender = (targetY - ballY) / vy;
 
@@ -649,7 +641,7 @@ const TypingPong: React.FC = () => {
       // fallback: simple short prompt
       const distanceColsFallback = 3;
       const totalStepsFallback =
-        distanceColsFallback + Math.floor(PADDLE_WIDTH_COLS / 2);
+        distanceColsFallback + Math.floor(paddleWidthCols / 2);
       const { text } = buildPrompt(totalStepsFallback);
 
       setPromptText(text);
@@ -671,7 +663,9 @@ const TypingPong: React.FC = () => {
     }
 
     const predictedXNorm = reflectX(ballX, vx, timeToDefender);
-    const predictedCol = Math.round(predictedXNorm * (BOARD_COLS - 1));
+    const predictedCol = Math.round(
+      predictedXNorm * (boardCols - 1)
+    );
     setTargetHitCol(predictedCol);
     targetHitColRef.current = predictedCol;
 
@@ -697,20 +691,23 @@ const TypingPong: React.FC = () => {
     typedLengthRef.current = 0;
 
     setStatusMessage(
-      `${capitalize(defender)} player: type the prompt. Each character moves the paddle one column.`
+      `${capitalize(
+        defender
+      )} player: type the prompt. Each character moves the paddle one column.`
     );
   };
 
-  // --- Paddle hit: bounce and speed up - using UNDERLINES for human side ---
+  // --- Paddle hit: bounce and speed up - using UNDERLINES ---
   const handlePaddleBounce = (
     side: Side,
     x: number,
     y: number
   ): { x: number; y: number; vx: number; vy: number } => {
     // Speed adjustment (rally-only; scoring will reset later)
+    const minTime = 2;
     const newTravelTime = Math.max(
-      MIN_TRAVEL_TIME,
-      parseFloat((travelTimeRef.current - TRAVEL_TIME_STEP).toFixed(2))
+      minTime,
+      parseFloat((travelTimeRef.current - 0.1).toFixed(2))
     );
     setTravelTime(newTravelTime);
     travelTimeRef.current = newTravelTime;
@@ -727,14 +724,7 @@ const TypingPong: React.FC = () => {
     let relCols: number;
     let xAfter: number;
 
-    const useUnderlineLogic =
-      !(
-        gameMode === "single" && side === "top"
-      ) && // never use underlines for bot
-      predictedCol != null &&
-      distanceCols > 0;
-
-    if (useUnderlineLogic) {
+    if (predictedCol != null && distanceCols > 0) {
       // Use UNDERLINES to compute where on the paddle the ball hits
       const centerColAtCollision = predictedCol + (typedSteps - distanceCols);
       const rawRel = predictedCol - centerColAtCollision;
@@ -745,21 +735,21 @@ const TypingPong: React.FC = () => {
       );
 
       // Snap ball X to exactly where it "hits" (the predicted column)
-      xAfter = clamp(predictedCol / (BOARD_COLS - 1), 0, 1);
+      xAfter = clamp(predictedCol / (boardCols - 1), 0, 1);
     } else {
-      // Fallback to actual x if underline info missing or side is bot
+      // Fallback to actual x if underline info missing
       const paddleColCenter =
         side === "top"
           ? getPaddleCenterCol(topPaddleRef.current)
           : getPaddleCenterCol(bottomPaddleRef.current);
-      const hitCol = Math.round(x * (BOARD_COLS - 1));
+      const hitCol = Math.round(x * (boardCols - 1));
       relCols = clamp(
         hitCol - Math.round(paddleColCenter),
         -halfPaddleUnits,
         halfPaddleUnits
       );
       // Snap to the actual hit column
-      xAfter = clamp(hitCol / (BOARD_COLS - 1), 0, 1);
+      xAfter = clamp(hitCol / (boardCols - 1), 0, 1);
     }
 
     const absRel = Math.abs(relCols);
@@ -804,71 +794,53 @@ const TypingPong: React.FC = () => {
     return { x: newX, y: newY, vx, vy };
   };
 
-const handlePoint = (
-  winner: Side
-): { x: number; y: number; vx: number; vy: number } => {
-  const loser: Side = winner === "top" ? "bottom" : "top";
+  const resetDefensePromptState = () => {
+    setPromptText("");
+    setTypedText("");
+    typedLengthRef.current = 0;
+    setTargetHitCol(null);
+    targetHitColRef.current = null;
+    setCenterStepIndex(0);
+    setDistanceColsState(0);
+    distanceColsRef.current = 0;
+  };
 
-  // Update score
-  setScores((prev) => ({
-    ...prev,
-    [winner]: prev[winner] + 1,
-  }));
+  const stopAnimation = () => {
+    setIsRunning(false);
+    isRunningRef.current = false;
+    if (animationFrameIdRef.current !== null) {
+      cancelAnimationFrame(animationFrameIdRef.current);
+      animationFrameIdRef.current = null;
+    }
+  };
 
-  // Reset travel time to default on every point
-  setTravelTime(INITIAL_TRAVEL_TIME);
-  travelTimeRef.current = INITIAL_TRAVEL_TIME;
+  // --- Called when a point is scored ---
+  const handlePoint = (winner: Side): void => {
+    const loser: Side = winner === "top" ? "bottom" : "top";
 
-  // End the round – do NOT auto-start the next one
-  setStatusMessage(
-    `${capitalize(winner)} scored! Press Start to serve the next round.`
-  );
+    // Update score
+    setScores((prev) => ({
+      ...prev,
+      [winner]: prev[winner] + 1,
+    }));
 
-  setCurrentAttacker(winner);
-  setCurrentDefender(loser);
+    // Reset travel time to starting speed on every point
+    setTravelTime(startingSpeed);
+    travelTimeRef.current = startingSpeed;
 
-  // Stop the game loop
-  setIsRunning(false);
-  isRunningRef.current = false;
+    stopAnimation();
 
-  if (animationFrameIdRef.current !== null) {
-    cancelAnimationFrame(animationFrameIdRef.current);
-    animationFrameIdRef.current = null;
-  }
+    // Next attacker is the one who scored
+    setCurrentAttacker(winner);
+    setCurrentDefender(loser);
 
-  // Clear typing state / prompt for the new round
-  setPromptText("");
-  setTypedText("");
-  typedLengthRef.current = 0;
-  setTargetHitCol(null);
-  targetHitColRef.current = null;
-  setCenterStepIndex(0);
-  setDistanceColsState(0);
-  distanceColsRef.current = 0;
+    resetDefensePromptState();
 
-  // Park the ball in the center, not moving
-  const x = 0.5;
-  const y = 0.5;
-  const vx = 0;
-  const vy = 0;
+    // Move to pre-serve phase for the winner
+    beginPreServe(winner);
+  };
 
-  ballPosRef.current = { x, y };
-  velocityRef.current = { vx, vy };
-  setBallPos({ x, y });
-
-  // Also clear any segment info so nothing keeps animating
-  segmentStartPosRef.current = { x, y };
-  segmentEndPosRef.current = { x, y };
-  segmentDurationRef.current = 0;
-  segmentStartTimeRef.current = null;
-  currentEventRef.current = null;
-
-  // We still return something for callers, but it won't be used
-  return { x, y, vx, vy };
-};
-
-
-  // --- Uses UNDERLINES (for human) or geometry (for bot) to decide hit vs score ---
+  // --- Uses UNDERLINES to decide hit vs score ---
   const handlePaddleRegion = (
     side: Side,
     x: number,
@@ -888,10 +860,8 @@ const handlePoint = (
     const typedStepsRaw = typedLengthRef.current;
     const typedSteps = Math.min(typedStepsRaw, totalStepsPlanned);
 
-    const isBotSide = gameMode === "single" && side === "top";
-
-    if (!isBotSide && predictedCol != null && distanceCols > 0) {
-      // HUMAN defender side: use underlines as the *true* paddle position
+    if (predictedCol != null && distanceCols > 0) {
+      // Use underlines as the *true* paddle position
       const centerColAtCollision = predictedCol + (typedSteps - distanceCols);
       const minCol = centerColAtCollision - halfPaddleUnits;
       const maxCol = centerColAtCollision + halfPaddleUnits;
@@ -899,17 +869,17 @@ const handlePoint = (
       const isHit = predictedCol >= minCol && predictedCol <= maxCol;
 
       if (isHit) {
-        // Hit: let handlePaddleBounce figure out the new angle,
-        // and snap the ball to the exact hit column.
+        // Hit: bounce with underline logic
         return handlePaddleBounce(side, x, y);
       } else {
         // Miss: other side scores, regardless of actual ball.x
         const winner: Side = side === "top" ? "bottom" : "top";
-        return handlePoint(winner);
+        handlePoint(winner);
+        return { x, y, vx: 0, vy: 0 };
       }
     }
 
-    // BOT side or missing underline data: use actual paddle geometry
+    // Fallback: use actual paddle geometry
     const paddleCol =
       side === "top" ? topPaddleRef.current : bottomPaddleRef.current;
     const { minX, maxX } = getPaddleBoundsNorm(paddleCol);
@@ -918,49 +888,18 @@ const handlePoint = (
       return handlePaddleBounce(side, x, y);
     } else {
       const winner: Side = side === "top" ? "bottom" : "top";
-      return handlePoint(winner);
+      handlePoint(winner);
+      return { x, y, vx: 0, vy: 0 };
     }
   };
 
-  // --- Bot logic: moves top paddle toward ball based on difficulty ---
-//   const updateBot = (
-//     dt: number,
-//     x: number,
-//     y: number,
-//     vx: number,
-//     vy: number
-//   ) => {
-//     if (gameMode !== "single") return;
-//     if (!isRunningRef.current) return;
-
-//     // Only care when ball is moving towards the top paddle
-//     if (vy >= 0) return;
-
-//     botMoveAccumulatorRef.current += dt;
-//     const settings = BOT_SETTINGS[botDifficultyRef.current];
-
-//     while (botMoveAccumulatorRef.current >= settings.moveInterval) {
-//       botMoveAccumulatorRef.current -= settings.moveInterval;
-
-//       setTopPaddleCol((prev) => {
-//         const desiredCol = Math.round(x * (BOARD_COLS - 1));
-//         let error = desiredCol - prev;
-//         if (error === 0) return prev;
-
-//         let step = error > 0 ? 1 : -1;
-
-//         // chance to move the wrong way
-//         if (Math.random() < settings.mistakeChance) {
-//           step = -step;
-//         }
-
-//         return prev + step;
-//       });
-//     }
-//   };
-
   // --- PLAN NEXT SEGMENT (from current x,y,vx,vy to next wall or paddle line) ---
-  const planNextSegment = (startX: number, startY: number, vx: number, vy: number) => {
+  const planNextSegment = (
+    startX: number,
+    startY: number,
+    vx: number,
+    vy: number
+  ) => {
     const events: { t: number; type: SegmentEventType }[] = [];
     const EPS = 1e-6;
 
@@ -1009,10 +948,9 @@ const handlePoint = (
 
   // --- SMOOTH SEGMENT-BASED GAME LOOP (LERP BETWEEN ENDPOINTS ONLY) ---
   const gameLoop = (timestamp: number) => {
-    // if (!isRunningRef.current) return;
-
-    if (segmentStartTimeRef.current === null) {
-      segmentStartTimeRef.current = timestamp;
+    if (!isRunningRef.current) {
+      animationFrameIdRef.current = null;
+      return;
     }
 
     const start = segmentStartPosRef.current;
@@ -1023,7 +961,12 @@ const handlePoint = (
       // Nothing to animate
       setBallPos(ballPosRef.current);
     } else {
-      const elapsed = (timestamp - segmentStartTimeRef.current) / 1000;
+      if (segmentStartTimeRef.current === null) {
+        segmentStartTimeRef.current = timestamp;
+      }
+
+      const elapsed =
+        (timestamp - segmentStartTimeRef.current) / 1000;
       const t = clamp(elapsed / duration, 0, 1);
 
       const x = start.x + (end.x - start.x) * t;
@@ -1064,28 +1007,36 @@ const handlePoint = (
         ballPosRef.current = { x: newX, y: newY };
         setBallPos({ x: newX, y: newY });
 
+        // If a point was scored, isRunningRef may now be false
+        if (!isRunningRef.current) {
+          animationFrameIdRef.current = null;
+          return;
+        }
+
         // Plan next segment from this new state
         planNextSegment(newX, newY, vx, vy);
         segmentStartTimeRef.current = timestamp;
       }
     }
 
-if (isRunningRef.current) {
-  animationFrameIdRef.current = requestAnimationFrame(gameLoop);
-} else {
-  animationFrameIdRef.current = null;
-}
+    if (isRunningRef.current) {
+      animationFrameIdRef.current = requestAnimationFrame(gameLoop);
+    } else {
+      animationFrameIdRef.current = null;
+    }
   };
 
-  const startServe = (attacker: Side) => {
-    setIsRunning(true);
-    isRunningRef.current = true;
-    botMoveAccumulatorRef.current = 0;
-
+  // --- Launch a serve from the current attacker ---
+  const launchServe = (attacker: Side) => {
     const defender: Side = attacker === "top" ? "bottom" : "top";
+
+    setPhase("rally");
+    phaseRef.current = "rally";
+
     setCurrentAttacker(attacker);
     setCurrentDefender(defender);
 
+    // Ball starts at attacker's paddle center
     const paddleColCenter =
       attacker === "top"
         ? getPaddleCenterCol(topPaddleRef.current)
@@ -1097,7 +1048,8 @@ if (isRunningRef.current) {
         ? TOP_PADDLE_Y + BALL_RADIUS
         : BOTTOM_PADDLE_Y - BALL_RADIUS;
 
-    const verticalSpeedMag = VERTICAL_DISTANCE / travelTimeRef.current;
+    const verticalSpeedMag =
+      VERTICAL_DISTANCE / travelTimeRef.current;
     const directionSign = attacker === "top" ? 1 : -1; // toward opposite side
     const vy = verticalSpeedMag * directionSign;
 
@@ -1110,73 +1062,136 @@ if (isRunningRef.current) {
     velocityRef.current = { vx, vy };
     setBallPos({ x: startX, y: startY });
 
-    // Set up defender prompt for this rally
+    // Defender prompt
     setupDefensePrompt(attacker, defender, startX, startY, vx, vy);
+
+    // Clear serve UI
+    setServeText("");
+    setServeTimeLeft(0);
 
     // Plan first segment from serve
     planNextSegment(startX, startY, vx, vy);
-    segmentStartTimeRef.current = null; // will be set on first frame
+    segmentStartTimeRef.current = null;
+
+    // Start animation
+    setIsRunning(true);
+    isRunningRef.current = true;
 
     if (animationFrameIdRef.current !== null) {
       cancelAnimationFrame(animationFrameIdRef.current);
     }
-    animationFrameIdRef.current = requestAnimationFrame((ts) => {
-      // Reset bot accumulator and start time for consistency
-      botMoveAccumulatorRef.current = 0;
-      segmentStartTimeRef.current = ts;
-      gameLoop(ts);
-    });
+    animationFrameIdRef.current = requestAnimationFrame(gameLoop);
   };
 
-  const handleReset = () => {
-    setScores({ top: 0, bottom: 0 });
-    setTravelTime(INITIAL_TRAVEL_TIME);
-    travelTimeRef.current = INITIAL_TRAVEL_TIME;
+  // --- Move into pre-serve phase for a given attacker ---
+  const beginPreServe = (attacker: Side) => {
+    stopAnimation();
+    resetDefensePromptState();
 
-    setTopPaddleCol(0);
-    setBottomPaddleCol(BOARD_COLS - 1);
+    setPhase("preServe");
+    phaseRef.current = "preServe";
 
-    setPromptText("");
-    setTypedText("");
-    typedLengthRef.current = 0;
-    setTargetHitCol(null);
-    targetHitColRef.current = null;
-    setCenterStepIndex(0);
-    setDistanceColsState(0);
-    distanceColsRef.current = 0;
+    setCurrentAttacker(attacker);
+    setCurrentDefender(attacker === "top" ? "bottom" : "top");
+    attackerRef.current = attacker;
+    defenderRef.current = attacker === "top" ? "bottom" : "top";
 
-    setStatusMessage(
-      "Game reset. Press a Start button to serve. In 1 Player mode, you control the bottom paddle."
-    );
-    setIsRunning(false);
-    isRunningRef.current = false;
+    // Ball parked at attacker's paddle line
+    const paddleColCenter =
+      attacker === "top"
+        ? getPaddleCenterCol(topPaddleRef.current)
+        : getPaddleCenterCol(bottomPaddleRef.current);
+    const x = getPaddleCenterXNorm(paddleColCenter);
+    const y =
+      attacker === "top"
+        ? TOP_PADDLE_Y + BALL_RADIUS
+        : BOTTOM_PADDLE_Y - BALL_RADIUS;
 
-    if (animationFrameIdRef.current !== null) {
-      cancelAnimationFrame(animationFrameIdRef.current);
-    }
-
-    ballPosRef.current = { x: 0.5, y: 0.5 };
+    ballPosRef.current = { x, y };
     velocityRef.current = { vx: 0, vy: 0 };
-    setBallPos({ x: 0.5, y: 0.5 });
+    setBallPos({ x, y });
 
-    botMoveAccumulatorRef.current = 0;
-
-    // Clear segment info
-    segmentStartPosRef.current = { x: 0.5, y: 0.5 };
-    segmentEndPosRef.current = { x: 0.5, y: 0.5 };
+    segmentStartPosRef.current = { x, y };
+    segmentEndPosRef.current = { x, y };
     segmentDurationRef.current = 0;
     segmentStartTimeRef.current = null;
     currentEventRef.current = null;
+
+    // New serve word & countdown
+    const word = getRandomServeWord();
+    setServeWord(word);
+    setServeText("");
+    setServeTimeLeft(30);
+
+    setStatusMessage(
+      `${capitalize(
+        attacker
+      )} to serve. Use arrow keys to move your paddle, type the word, and press Enter to launch.`
+    );
   };
+
+  // --- Serve countdown timer (30s) ---
+  useEffect(() => {
+    if (phase !== "preServe") return;
+
+    setServeTimeLeft(30);
+    let cancelled = false;
+
+    const id = window.setInterval(() => {
+      if (cancelled) return;
+      setServeTimeLeft((prev) => {
+        // If phase changed, stop
+        if (phaseRef.current !== "preServe") {
+          window.clearInterval(id);
+          return prev;
+        }
+
+        if (prev <= 1) {
+          window.clearInterval(id);
+          // Auto-launch if not already running
+          if (!isRunningRef.current) {
+            launchServe(attackerRef.current);
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase]);
+
+  // --- Keyboard: attacker moves paddle with arrow keys during pre-serve ---
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (phaseRef.current !== "preServe") return;
+
+      // Arrow keys move the ATTACKER's paddle
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault();
+        const attacker = attackerRef.current;
+
+        const delta = e.key === "ArrowLeft" ? -1 : 1;
+
+        if (attacker === "top") {
+          setTopPaddleCol((prev) => prev + delta);
+        } else {
+          setBottomPaddleCol((prev) => prev + delta);
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, []);
 
   // --- Typing logic: move defender 1 column per correct char ---
   const moveDefenderPaddleOneStep = () => {
     const defender = defenderRef.current;
-
-    // In single-player, the bot (top) never moves by typing
-    if (gameMode === "single" && defender === "top") {
-      return;
-    }
 
     if (defender === "top") {
       setTopPaddleCol((prev) => {
@@ -1193,9 +1208,11 @@ if (isRunningRef.current) {
     }
   };
 
-  const handleKeyDown = (
+  // Defender typing
+  const handleDefenseKeyDown = (
     event: React.KeyboardEvent<HTMLInputElement>
   ) => {
+    if (phaseRef.current !== "rally") return;
     if (!promptText || !isRunningRef.current) return;
 
     const key = event.key;
@@ -1232,12 +1249,31 @@ if (isRunningRef.current) {
     }
   };
 
-  const columnWidthPercent = 100 / BOARD_COLS;
+  // Serve typing
+  const handleServeKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>
+  ) => {
+    if (phaseRef.current !== "preServe") return;
+
+    if (event.key === "Enter") {
+      event.preventDefault();
+      // Require at least one character typed before serving
+      if (serveText.trim().length === 0) {
+        setStatusMessage(
+          "Type at least one letter of the word before serving."
+        );
+        return;
+      }
+      if (!isRunningRef.current) {
+        launchServe(attackerRef.current);
+      }
+    }
+  };
 
   const getPaddleLeftPercent = (col: number) => {
     const centerCol = getPaddleCenterCol(col);
-    const startCol = centerCol - PADDLE_WIDTH_COLS / 2;
-    return (startCol / BOARD_COLS) * 100;
+    const startCol = centerCol - paddleWidthCols / 2;
+    return (startCol / boardCols) * 100;
   };
 
   // Prompt render:
@@ -1276,7 +1312,7 @@ if (isRunningRef.current) {
             const isCenter = idx === centerStepIndex;
             const isUnderlined = idx >= startIdx && idx <= endIdx;
             const isTyped = idx < typedText.length;
-            const isActive = idx === activeIndex; // ONLY this one gets the "what to type" highlight
+            const isActive = idx === activeIndex; // ONLY this one gets the "next" highlight
 
             const displayChar = ch === " " ? "·" : ch;
 
@@ -1318,6 +1354,60 @@ if (isRunningRef.current) {
     );
   };
 
+  const handleReset = () => {
+    stopAnimation();
+    setScores({ top: 0, bottom: 0 });
+    setTravelTime(startingSpeed);
+    travelTimeRef.current = startingSpeed;
+
+    setTopPaddleCol(0);
+    setBottomPaddleCol(boardCols - 1);
+
+    resetDefensePromptState();
+
+    beginPreServe("bottom");
+  };
+
+  // --- Settings handlers (side menu) ---
+  const handleBoardColsChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const raw = parseInt(event.target.value, 10);
+    if (Number.isNaN(raw)) return;
+    const val = clamp(raw, 8, 50);
+    setBoardCols(val);
+    // keep paddles roughly at ends
+    setTopPaddleCol(0);
+    setBottomPaddleCol(val - 1);
+  };
+
+  const handlePaddleWidthChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const raw = parseInt(event.target.value, 10);
+    if (Number.isNaN(raw)) return;
+    // force odd width, at least 1, at most boardCols
+    let val = clamp(raw, 1, boardCols);
+    if (val % 2 === 0) val += 1;
+    if (val > boardCols) val = boardCols - 1; // still odd
+    setPaddleWidthCols(val);
+  };
+
+  const handleStartingSpeedChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const raw = parseFloat(event.target.value);
+    if (Number.isNaN(raw)) return;
+    const val = clamp(raw, 1, 10); // 1–10 seconds
+    setStartingSpeed(val);
+  };
+
+  // Kick off initial pre-serve for bottom on first mount
+  useEffect(() => {
+    beginPreServe("bottom");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <Box
       sx={{
@@ -1329,7 +1419,7 @@ if (isRunningRef.current) {
       <Paper
         elevation={3}
         sx={{
-          maxWidth: 1000,
+          maxWidth: 1100,
           mx: "auto",
           p: 3,
           bgcolor: "#0b1120", // dark card
@@ -1347,76 +1437,111 @@ if (isRunningRef.current) {
             Typing Pong
           </Typography>
 
-          {/* Mode & difficulty controls */}
-          <Stack
-            direction="row"
-            spacing={2}
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <ToggleButtonGroup
-              value={gameMode}
-              exclusive
-              onChange={(_, val: GameMode | null) => {
-                if (val) setGameMode(val);
-              }}
-              size="small"
-              disabled={isRunning}
-            >
-              <ToggleButton value="single">1 Player</ToggleButton>
-              <ToggleButton value="two">2 Players</ToggleButton>
-            </ToggleButtonGroup>
-
-            {gameMode === "single" && (
-              <FormControl
-                size="small"
-                sx={{ minWidth: 160 }}
-                disabled={isRunning}
-              >
-                <InputLabel id="bot-difficulty-label">
-                  Bot Difficulty
-                </InputLabel>
-                <Select
-                  labelId="bot-difficulty-label"
-                  label="Bot Difficulty"
-                  value={botDifficulty}
-                  onChange={(e) =>
-                    setBotDifficulty(e.target.value as BotDifficulty)
-                  }
-                  sx={{
-                    color: "#e5e7eb",
-                    "& .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#4b5563",
-                    },
-                    "&:hover .MuiOutlinedInput-notchedOutline": {
-                      borderColor: "#e5e7eb",
-                    },
-                    "& .MuiSvgIcon-root": {
-                      color: "#e5e7eb",
-                    },
-                  }}
-                >
-                  <MenuItem value="easy">Easy</MenuItem>
-                  <MenuItem value="medium">Medium</MenuItem>
-                  <MenuItem value="hard">Hard</MenuItem>
-                </Select>
-              </FormControl>
-            )}
-          </Stack>
-
           <Stack direction="row" justifyContent="space-between">
             <Typography variant="subtitle1">
               Top Score: <strong>{scores.top}</strong>
-              {gameMode === "single" && " (Bot)"}
             </Typography>
             <Typography variant="subtitle1">
               Bottom Score: <strong>{scores.bottom}</strong>
-              {gameMode === "single" && " (You)"}
             </Typography>
           </Stack>
 
-          {/* Main area: the field */}
+          {/* Main area: settings + field */}
           <Stack direction="row" spacing={2} alignItems="flex-start">
+            {/* Settings side menu */}
+            <Box
+              sx={{
+                width: 240,
+                p: 2,
+                bgcolor: "#020617",
+                borderRadius: 2,
+                border: "1px solid #4b5563",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              <Typography variant="subtitle1">
+                Game Settings
+              </Typography>
+              <TextField
+                label="Columns"
+                type="number"
+                size="small"
+                value={boardCols}
+                onChange={handleBoardColsChange}
+                disabled={phase === "rally"}
+                sx={{
+                  "& .MuiInputBase-root": {
+                    color: "#e5e7eb",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "#9ca3af",
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4b5563",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#e5e7eb",
+                  },
+                }}
+                inputProps={{ min: 8, max: 50 }}
+              />
+              <TextField
+                label="Paddle width"
+                type="number"
+                size="small"
+                value={paddleWidthCols}
+                onChange={handlePaddleWidthChange}
+                disabled={phase === "rally"}
+                sx={{
+                  "& .MuiInputBase-root": {
+                    color: "#e5e7eb",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "#9ca3af",
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4b5563",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#e5e7eb",
+                  },
+                }}
+                inputProps={{ min: 1, max: boardCols }}
+              />
+              <TextField
+                label="Starting travel time (s)"
+                type="number"
+                size="small"
+                value={startingSpeed}
+                onChange={handleStartingSpeedChange}
+                disabled={phase === "rally"}
+                sx={{
+                  "& .MuiInputBase-root": {
+                    color: "#e5e7eb",
+                  },
+                  "& .MuiInputLabel-root": {
+                    color: "#9ca3af",
+                  },
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#4b5563",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#e5e7eb",
+                  },
+                }}
+                inputProps={{ step: 0.5, min: 1, max: 10 }}
+              />
+              <Typography
+                variant="caption"
+                sx={{ color: "#9ca3af" }}
+              >
+                Changes apply on new serves. Press Reset to restart
+                with new settings.
+              </Typography>
+            </Box>
+
             {/* Game Field */}
             <Box
               sx={{
@@ -1430,14 +1555,14 @@ if (isRunningRef.current) {
               }}
             >
               {/* Grid vertical lines */}
-              {Array.from({ length: BOARD_COLS + 1 }).map((_, col) => (
+              {Array.from({ length: boardCols + 1 }).map((_, col) => (
                 <Box
                   key={col}
                   sx={{
                     position: "absolute",
                     top: 0,
                     bottom: 0,
-                    left: `${(col / BOARD_COLS) * 100}%`,
+                    left: `${(col / boardCols) * 100}%`,
                     width: "1px",
                     bgcolor: "rgba(148, 163, 184, 0.15)",
                   }}
@@ -1445,13 +1570,13 @@ if (isRunningRef.current) {
               ))}
 
               {/* Column labels */}
-              {Array.from({ length: BOARD_COLS }).map((_, col) => (
+              {Array.from({ length: boardCols }).map((_, col) => (
                 <Box
                   key={`label-${col}`}
                   sx={{
                     position: "absolute",
                     bottom: 4,
-                    left: `${((col + 0.5) / BOARD_COLS) * 100}%`,
+                    left: `${((col + 0.5) / boardCols) * 100}%`,
                     transform: "translateX(-50%)",
                     fontSize: "0.6rem",
                     color: "#9ca3af",
@@ -1527,7 +1652,7 @@ if (isRunningRef.current) {
                   position: "absolute",
                   top: "4%",
                   height: 10,
-                  width: `${PADDLE_WIDTH_COLS * columnWidthPercent}%`,
+                  width: `${paddleWidthCols * columnWidthPercent}%`,
                   left: `${getPaddleLeftPercent(topPaddleCol)}%`,
                   bgcolor: "#fbbf24",
                   borderRadius: 999,
@@ -1541,7 +1666,7 @@ if (isRunningRef.current) {
                   position: "absolute",
                   bottom: "4%",
                   height: 10,
-                  width: `${PADDLE_WIDTH_COLS * columnWidthPercent}%`,
+                  width: `${paddleWidthCols * columnWidthPercent}%`,
                   left: `${getPaddleLeftPercent(bottomPaddleCol)}%`,
                   bgcolor: "#22c55e",
                   borderRadius: 999,
@@ -1566,62 +1691,95 @@ if (isRunningRef.current) {
             </Box>
           </Stack>
 
-          {/* Typing control */}
+          {/* Typing controls */}
           <Stack spacing={1}>
             <Typography variant="body1" align="center">
               {statusMessage}
             </Typography>
 
-            {promptText && renderPromptWithUnderlines(promptText)}
+            {phase === "preServe" && (
+              <Box textAlign="center">
+                <Typography variant="subtitle1" sx={{ mb: 0.5 }}>
+                  Serve word (
+                  {capitalize(currentAttacker)} serves in{" "}
+                  {serveTimeLeft}s):
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{ mb: 1, color: "#fbbf24" }}
+                >
+                  {serveWord}
+                </Typography>
+                <TextField
+                  label="Type to get ready, then press Enter to serve"
+                  variant="outlined"
+                  value={serveText}
+                  onChange={(e) => setServeText(e.target.value)}
+                  onKeyDown={handleServeKeyDown}
+                  sx={{
+                    maxWidth: 400,
+                    mx: "auto",
+                    "& .MuiInputBase-root": {
+                      color: "#e5e7eb",
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#9ca3af",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#4b5563",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#e5e7eb",
+                    },
+                    "& .MuiFormHelperText-root": {
+                      color: "#9ca3af",
+                    },
+                  }}
+                  helperText="Use Arrow keys to position your paddle while you type."
+                />
+              </Box>
+            )}
 
-            <TextField
-              label="Type here"
-              variant="outlined"
-              value={typedText}
-              onKeyDown={handleKeyDown}
-              InputProps={{ readOnly: true }}
-              helperText={
-                isRunning
-                  ? "Type letters and spaces exactly as shown. Each character moves the defending paddle by one column."
-                  : "Press a Start button, then click here and type to defend."
-              }
-              sx={{
-                maxWidth: 400,
-                mx: "auto",
-                "& .MuiInputBase-root": {
-                  color: "#e5e7eb",
-                },
-                "& .MuiInputLabel-root": {
-                  color: "#9ca3af",
-                },
-                "& .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#4b5563",
-                },
-                "&:hover .MuiOutlinedInput-notchedOutline": {
-                  borderColor: "#e5e7eb",
-                },
-                "& .MuiFormHelperText-root": {
-                  color: "#9ca3af",
-                },
-              }}
-            />
+            {phase === "rally" && (
+              <>
+                {promptText && renderPromptWithUnderlines(promptText)}
+                <TextField
+  label="Defender typing"
+  variant="outlined"
+  value={typedText}
+  onKeyDown={handleDefenseKeyDown}
+    inputRef={defenseInputRef}
+  InputProps={{ readOnly: true }}
+  helperText={
+    isRunning
+      ? "Type letters and spaces exactly as shown. Each character moves the defending paddle by one column."
+      : "Wait for the serve to launch."
+  }
+                  sx={{
+                    maxWidth: 400,
+                    mx: "auto",
+                    "& .MuiInputBase-root": {
+                      color: "#e5e7eb",
+                    },
+                    "& .MuiInputLabel-root": {
+                      color: "#9ca3af",
+                    },
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#4b5563",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#e5e7eb",
+                    },
+                    "& .MuiFormHelperText-root": {
+                      color: "#9ca3af",
+                    },
+                  }}
+                />
+              </>
+            )}
           </Stack>
 
           <Stack direction="row" justifyContent="center" spacing={2}>
-            <Button
-              variant="contained"
-              onClick={() => startServe("bottom")}
-              disabled={isRunning}
-            >
-              Start (Bottom serves)
-            </Button>
-            <Button
-              variant="outlined"
-              onClick={() => startServe("top")}
-              disabled={isRunning}
-            >
-              Start (Top serves)
-            </Button>
             <Button
               variant="text"
               onClick={handleReset}
