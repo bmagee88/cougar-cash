@@ -28,6 +28,14 @@ const tiles = [
     multiplayer: true,
   },
   {
+    path: "/zombie",
+    title: "Zombie Typing",
+    subtitle: "Can you type away the horde?",
+    emoji: "🧟",
+    gradient: "linear-gradient(135deg, #26f749ff, #62d70eff)",
+    category: "typing",
+  },
+  {
     path: "/pie-timer",
     title: "Pie Timer App",
     subtitle: "Focus & activity timers",

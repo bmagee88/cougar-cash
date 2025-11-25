@@ -20,6 +20,7 @@ import DnDKeyboard from "./DndKeyboard/DragNDropKeyboard";
 import MapVisualizer from "./RegionsMapApp/MapVisualizer";
 import OneWordTenSeconds from "./OneWordTenSeconds/OneWordTenSeconds";
 import TypingPong from "./TypingPong/TypingPong";
+import ZombieTyping from "./ZombieTyping/ZombieTypingGame";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -86,6 +87,9 @@ function App() {
           <Route
             path='/pong'
             element={<TypingPong />}></Route>
+          <Route
+            path='/zombie'
+            element={<ZombieTyping />}></Route>
         </Routes>
       </Router>
     </Box>
