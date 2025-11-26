@@ -66,9 +66,9 @@ const toDateKey = (timestamp: number | Date): string => {
   return `${year}-${month}-${day}`;
 };
 
-interface ScoreChartProps {
-  attempts: Attempt[];
-}
+// interface ScoreChartProps {
+//   attempts: Attempt[];
+// }
 
 const ScoreChart: React.FC<{ attempts: Attempt[] }> = ({ attempts }) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
