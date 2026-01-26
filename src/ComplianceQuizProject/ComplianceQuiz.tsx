@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 import {
   Box,
@@ -749,7 +749,8 @@ const CSVMatchGame: React.FC = () => {
   const getStorageKey = (fk: string, player: string) =>
     `${STORAGE_PREFIX}::${fk}::${player}`;
 
-  const loadAttemptsFor = (fk: string, player: string): Attempt[] => {
+const loadAttemptsFor = useCallback(
+  (fk: string, player: string): Attempt[] => {
     try {
       const raw = localStorage.getItem(getStorageKey(fk, player));
       if (!raw) return [];
@@ -766,7 +767,9 @@ const CSVMatchGame: React.FC = () => {
     } catch {
       return [];
     }
-  };
+  },
+  [], // getStorageKey + toDateKey are stable (module-scope), so deps can be []
+);
 
   useEffect(() => {
     if (!fileKey || !playerName) {
@@ -1028,7 +1031,7 @@ const CSVMatchGame: React.FC = () => {
     }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [csvList, playerName, todayKey, attempts]);
+  }, [csvList, playerName, todayKey, attempts, loadAttemptsFor]);
 
   const sortedCsvList: CsvItem[] = useMemo(() => {
     // If we don't know the player, we can't compute due timing meaningfully.
