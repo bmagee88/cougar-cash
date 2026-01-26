@@ -774,7 +774,7 @@ const CSVMatchGame: React.FC = () => {
       return;
     }
     setAttempts(loadAttemptsFor(fileKey, playerName));
-  }, [fileKey, playerName]);
+  }, [fileKey, playerName, loadAttemptsFor]);
 
   const recordAttempt = (score: number) => {
     if (!fileKey || !playerName) return;
