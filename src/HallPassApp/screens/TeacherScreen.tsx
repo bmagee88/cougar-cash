@@ -14,7 +14,7 @@ import {
 import CampaignIcon from "@mui/icons-material/Campaign";
 import AcUnitIcon from "@mui/icons-material/AcUnit";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
-import { useAuth } from "../auth/AuthContext";
+// import { useAuth } from "../auth/AuthContext";
 import { backend } from "../mock/mockBackend";
 
 export function TeacherScreen({ snapshot }: { snapshot: any }) {
