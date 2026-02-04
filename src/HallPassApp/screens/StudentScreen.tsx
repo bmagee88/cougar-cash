@@ -25,7 +25,7 @@ export function StudentScreen({ snapshot }: { snapshot: any }) {
   const msLeft = useMemo(() => {
     if (!myActive) return null;
     return Math.max(0, myActive.dueBy - Date.now());
-  }, [myActive, snapshot.currentHHMM]); // re-eval on time ticks
+  }, [myActive]); // re-eval on time ticks
 
   const timeLeftText = useMemo(() => {
     if (msLeft == null) return "";

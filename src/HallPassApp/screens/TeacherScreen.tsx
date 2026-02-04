@@ -18,7 +18,7 @@ import { useAuth } from "../auth/AuthContext";
 import { backend } from "../mock/mockBackend";
 
 export function TeacherScreen({ snapshot }: { snapshot: any }) {
-  const { user } = useAuth();
+//   const { user } = useAuth();
 
   // TODO: later derive from teacher uid -> class mapping
   const classId = "class-101";
