@@ -21,6 +21,8 @@ import MapVisualizer from "./RegionsMapApp/MapVisualizer";
 import OneWordTenSeconds from "./OneWordTenSeconds/OneWordTenSeconds";
 import TypingPong from "./TypingPong/TypingPong";
 
+import HallPassRoutes from "./HallPassApp/HallPassRoutes";
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 function App() {
@@ -29,63 +31,29 @@ function App() {
       <Router>
         {/* <Header /> */}
         <Routes>
+          <Route path="/" element={<Home />}></Route>
+          <Route path="/cougar-cash" element={<CougarCash />}></Route>
+          <Route path="/directions" element={<Directions />}></Route>
+          <Route path="/about" element={<About />}></Route>
+          <Route path="/sheets" element={<SheetsTestPage />}></Route>
+          <Route path="/typing" element={<TypingGamePage />}></Route>
           <Route
-            path='/'
-            element={<Home />}></Route>
-          <Route
-            path='/cougar-cash'
-            element={<CougarCash />}></Route>
-          <Route
-            path='/directions'
-            element={<Directions />}></Route>
-          <Route
-            path='/about'
-            element={<About />}></Route>
-          <Route
-            path='/sheets'
-            element={<SheetsTestPage />}></Route>
-          <Route
-            path='/typing'
-            element={<TypingGamePage />}></Route>
-          <Route
-            path='/typing/marathon'
-            element={<TypingMarathonMode />}></Route>
-          <Route
-            path='/snake'
-            element={<SnakeGamePage />}></Route>
-          <Route
-            path='/c-quiz'
-            element={<ComplianceQuizPage />}></Route>
-          <Route
-            path='/timer'
-            element={<TimerApp />}></Route>
-          <Route
-            path='/fpm'
-            element={<Demo />}></Route>
-          <Route
-            path='/oroboros'
-            element={<Oroboros />}></Route>
-          <Route
-            path='/maze-quiz'
-            element={<MazeQuiz />}></Route>
-          <Route
-            path='/pie-timer'
-            element={<PieTimer />}></Route>
-          <Route
-            path='/pizza-game'
-            element={<PizzaGame />}></Route>
-          <Route
-            path='/keyboard'
-            element={<DnDKeyboard />}></Route>
-          <Route
-            path='/map'
-            element={<MapVisualizer />}></Route>
-          <Route
-            path='/one-word'
-            element={<OneWordTenSeconds />}></Route>
-          <Route
-            path='/pong'
-            element={<TypingPong />}></Route>
+            path="/typing/marathon"
+            element={<TypingMarathonMode />}
+          ></Route>
+          <Route path="/snake" element={<SnakeGamePage />}></Route>
+          <Route path="/c-quiz" element={<ComplianceQuizPage />}></Route>
+          <Route path="/timer" element={<TimerApp />}></Route>
+          <Route path="/fpm" element={<Demo />}></Route>
+          <Route path="/oroboros" element={<Oroboros />}></Route>
+          <Route path="/maze-quiz" element={<MazeQuiz />}></Route>
+          <Route path="/pie-timer" element={<PieTimer />}></Route>
+          <Route path="/pizza-game" element={<PizzaGame />}></Route>
+          <Route path="/keyboard" element={<DnDKeyboard />}></Route>
+          <Route path="/map" element={<MapVisualizer />}></Route>
+          <Route path="/one-word" element={<OneWordTenSeconds />}></Route>
+          <Route path="/pong" element={<TypingPong />}></Route>
+          <Route path="/hall-pass/*" element={<HallPassRoutes />} />
         </Routes>
       </Router>
     </Box>
