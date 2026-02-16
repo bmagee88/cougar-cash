@@ -20,6 +20,7 @@ import DnDKeyboard from "./DndKeyboard/DragNDropKeyboard";
 import MapVisualizer from "./RegionsMapApp/MapVisualizer";
 import OneWordTenSeconds from "./OneWordTenSeconds/OneWordTenSeconds";
 import TypingPong from "./TypingPong/TypingPong";
+import DiceDuel from "./DiceDuel/DiceDuel";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -54,6 +55,7 @@ function App() {
           <Route path="/one-word" element={<OneWordTenSeconds />}></Route>
           <Route path="/pong" element={<TypingPong />}></Route>
           <Route path="/hall-pass/*" element={<HallPassRoutes />} />
+          <Route path="/shogun" element={<DiceDuel />} />
         </Routes>
       </Router>
     </Box>
