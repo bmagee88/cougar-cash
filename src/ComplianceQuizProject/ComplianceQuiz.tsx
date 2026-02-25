@@ -62,45 +62,31 @@ import {
 type CsvItem = { label: string; url: string };
 type CsvLibrary = Record<string, Record<string, CsvItem[]>>;
 
+/** ✅ Teacher → grade mapping (edit this!) */
+const TEACHER_GRADES: Record<string, number> = {
+  Magbr: 4,
+  // Pacst: 3,
+  // Add more teachers here...
+};
+
 // ✅ Your hard-coded library
 const CSV_LIBRARY: CsvLibrary = {
   Magbr: {
     ACert: [
-      {
-        label: "Cloud Computing 1",
-        url: "/csv/Magbr/ACert/cloud_computing_1.csv",
-      },
+      { label: "Cloud Computing 1", url: "/csv/Magbr/ACert/cloud_computing_1.csv" },
       { label: "Hardware 1", url: "/csv/Magbr/ACert/hardware_1.csv" },
       {
         label: "Hardware and Network Troubleshooting 1",
         url: "/csv/Magbr/ACert/hardware_and_network_troubleshooting.csv",
       },
-      {
-        label: "Mobile Devices 1",
-        url: "/csv/Magbr/ACert/mobile_devices_1.csv",
-      },
+      { label: "Mobile Devices 1", url: "/csv/Magbr/ACert/mobile_devices_1.csv" },
       { label: "Networking 1", url: "/csv/Magbr/ACert/networking_1.csv" },
-      {
-        label: "Operating Systems 1",
-        url: "/csv/Magbr/ACert/operating_systems_1.csv",
-      },
-      {
-        label: "Operational Procedures 1",
-        url: "/csv/Magbr/ACert/operational_procedures_1.csv",
-      },
-      {
-        label: "Operational Procedures 2",
-        url: "/csv/Magbr/ACert/operational_procedures_2.csv",
-      },
+      { label: "Operating Systems 1", url: "/csv/Magbr/ACert/operating_systems_1.csv" },
+      { label: "Operational Procedures 1", url: "/csv/Magbr/ACert/operational_procedures_1.csv" },
+      { label: "Operational Procedures 2", url: "/csv/Magbr/ACert/operational_procedures_2.csv" },
       { label: "Security 1", url: "/csv/Magbr/ACert/security_1.csv" },
-      {
-        label: "Software Troubleshooting 1",
-        url: "/csv/Magbr/ACert/software_troubleshooting_1.csv",
-      },
-      {
-        label: "Software Troubleshooting 2",
-        url: "/csv/Magbr/ACert/software_troubleshooting_2.csv",
-      },
+      { label: "Software Troubleshooting 1", url: "/csv/Magbr/ACert/software_troubleshooting_1.csv" },
+      { label: "Software Troubleshooting 2", url: "/csv/Magbr/ACert/software_troubleshooting_2.csv" },
     ],
   },
 };
@@ -122,15 +108,17 @@ type CapState = "grey" | "yellow" | null;
 
 type StreakStatus = {
   green: number;
-  cap: CapState; // grey if due-at-start + no attempts today; yellow if due-at-start + attempted today but no 100
-  due: boolean; // ✅ CURRENTLY due (after considering today's attempts)
-  dueDate: string; // next due date after processing up to today
-  daysUntilDue: number; // 0 if due today, otherwise positive
+  cap: CapState;
+  due: boolean;
+  dueDate: string;
+  daysUntilDue: number;
 };
 
 const STORAGE_PREFIX = "csvMatchGameAttempts";
 
 const LAST_PLAYER_KEY = "csvMatchLastPlayer";
+const LAST_LUNCH_KEY = "csvMatchLastLunch";
+const LAST_STUDENT_GRADE_KEY = "csvMatchLastStudentGrade";
 const LAST_TEACHER_KEY = "csvMatchLastTeacher";
 const LAST_UNIT_KEY = "csvMatchLastUnit";
 
@@ -140,11 +128,9 @@ const THEME_MODE_KEY = "csvMatchThemeMode";
 // 🔧 Dev options (change here only)
 const DEV_OPTIONS = {
   MASTER_DEBUG: false,
-  MAX_TRIES_PER_DAY: 3,
 } as const;
 
 const MASTER_DEBUG = DEV_OPTIONS.MASTER_DEBUG;
-const MAX_TRIES_PER_DAY = DEV_OPTIONS.MAX_TRIES_PER_DAY;
 
 const toDateKey = (timestamp: number | Date): string => {
   const d = typeof timestamp === "number" ? new Date(timestamp) : timestamp;
@@ -162,7 +148,7 @@ const withPublicUrl = (p: string) => {
 
 const dateKeyToDate = (key: string) => {
   const [y, m, d] = key.split("-").map((n) => parseInt(n, 10));
-  return new Date(y, m - 1, d, 12, 0, 0, 0); // noon to avoid DST weirdness
+  return new Date(y, m - 1, d, 12, 0, 0, 0);
 };
 
 const addDaysKey = (key: string, days: number) => {
@@ -190,7 +176,6 @@ const buildTheme = (mode: ThemeMode) =>
   createTheme({
     palette: {
       mode,
-      // friendly teal + violet accents
       primary: { main: mode === "dark" ? "#62d6c4" : "#0ea5a5" },
       secondary: { main: mode === "dark" ? "#b7a6ff" : "#6d28d9" },
       success: { main: mode === "dark" ? "#66e2a5" : "#16a34a" },
@@ -263,9 +248,7 @@ const buildTheme = (mode: ThemeMode) =>
           }),
         },
       },
-      MuiTextField: {
-        defaultProps: { size: "small" },
-      },
+      MuiTextField: { defaultProps: { size: "small" } },
       MuiLinearProgress: {
         styleOverrides: {
           root: ({ theme }) => ({
@@ -311,7 +294,47 @@ const buildTheme = (mode: ThemeMode) =>
     },
   });
 
-const ScoreChart: React.FC<{ attempts: Attempt[] }> = ({ attempts }) => {
+  const ThemedRechartsTooltip: React.FC<{
+  active?: boolean;
+  payload?: any[];
+  label?: any;
+  themeMode: "light" | "dark";
+}> = ({ active, payload, themeMode }) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  const p = payload[0]?.payload;
+
+  return (
+    <div
+      style={{
+        padding: "10px 12px",
+        borderRadius: 12,
+        border: themeMode === "dark" ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.12)",
+        background: themeMode === "dark" ? "rgba(17,26,46,0.95)" : "rgba(255,255,255,0.95)",
+        color: themeMode === "dark" ? "#fff" : "#111",
+        boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+        fontSize: 12,
+        lineHeight: 1.35,
+      }}
+    >
+      <div style={{ fontWeight: 800, marginBottom: 6 }}>
+        Attempt #{p?.attempt} — {p?.date}
+      </div>
+      <div style={{ opacity: themeMode === "dark" ? 0.9 : 0.8, marginBottom: 6 }}>
+        {p?.datetime}
+      </div>
+      <div>
+        <span style={{ fontWeight: 800 }}>Score:</span>{" "}
+        {payload[0]?.value}%
+      </div>
+    </div>
+  );
+};
+
+const ScoreChart: React.FC<{ attempts: Attempt[]; themeMode: ThemeMode }> = ({
+  attempts,
+  themeMode,
+}) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -364,17 +387,7 @@ const ScoreChart: React.FC<{ attempts: Attempt[] }> = ({ attempts }) => {
               offset: 10,
             }}
           />
-          <Tooltip
-            formatter={(value: any, name: any) => {
-              if (name === "score") return [`${value}%`, "Score"];
-              return [value, name];
-            }}
-            labelFormatter={(_label: any, payload: any) => {
-              if (!payload || !payload[0]) return "";
-              const p = payload[0].payload as any;
-              return `Attempt #${p.attempt} — ${p.date} (${p.datetime})`;
-            }}
-          />
+          <Tooltip content={<ThemedRechartsTooltip themeMode={themeMode} />} />
           <Legend />
           <Line
             type="monotone"
@@ -566,6 +579,82 @@ const saveUploadedCSVs = (items: UploadedCsv[]) => {
 
 const makeUploadedUrl = (id: string) => `local://uploaded/${id}`;
 
+/**
+ * ✅ Normalize uploaded CSV text so it always becomes:
+ * id,questions,answers
+ * 1,<q1>,<a1>
+ * 2,<q2>,<a2>
+ *
+ * Accepts uploads like:
+ * "this is a question one","this is answer one"
+ * "this is question two","this answer two"
+ *
+ * Or already-normalized:
+ * id,questions,answers
+ * 1,...
+ */
+const normalizeUploadedCsvText = (rawText: string): string => {
+  const normCell = (v: any) =>
+    String(v ?? "")
+      .replace(/^\uFEFF/, "") // strip BOM
+      .trim();
+
+  const isNumericId = (v: any) => {
+    const s = normCell(v);
+    return !!s && /^[0-9]+$/.test(s);
+  };
+
+  const parsed = Papa.parse(rawText, {
+    header: false,
+    skipEmptyLines: true,
+  });
+
+  const rowsRaw = (parsed.data as any[][]) ?? [];
+  const rows = rowsRaw
+    .map((r) => (Array.isArray(r) ? r.map(normCell) : []))
+    .filter((r) => r.some((c) => c !== ""));
+
+  // Always output at least a header
+  if (rows.length === 0) {
+    return Papa.unparse([], { columns: ["id", "questions", "answers"] });
+  }
+
+  const r0 = rows[0] ?? [];
+  const headerPresent =
+    (r0[0] ?? "").toLowerCase() === "id" &&
+    (r0[1] ?? "").toLowerCase() === "questions" &&
+    (r0[2] ?? "").toLowerCase() === "answers";
+
+  const dataRows = rows.slice(headerPresent ? 1 : 0);
+
+  // Determine if this file truly has numeric ids in column 1
+  const looksLikeHasNumericIdColumn =
+    dataRows.length > 0 &&
+    dataRows.every((r) => (r?.length ?? 0) >= 3 && isNumericId(r[0]));
+
+  const out = dataRows
+    .map((r, idx) => {
+      if (!r || r.length === 0) return null;
+
+      if (looksLikeHasNumericIdColumn) {
+        const id = normCell(r[0]);
+        const q = normCell(r[1]);
+        const a = normCell(r[2]);
+        if (!q && !a) return null;
+        return { id, questions: q, answers: a };
+      }
+
+      // Otherwise generate ids and treat first 2 cols as Q/A
+      const q = normCell(r[0]);
+      const a = normCell(r[1] ?? "");
+      if (!q && !a) return null;
+      return { id: String(idx + 1), questions: q, answers: a };
+    })
+    .filter(Boolean) as Array<{ id: string; questions: string; answers: string }>;
+
+  return Papa.unparse(out, { columns: ["id", "questions", "answers"] });
+};
+
 const CSVMatchGame: React.FC = () => {
   const debug = MASTER_DEBUG;
 
@@ -602,7 +691,10 @@ const CSVMatchGame: React.FC = () => {
   const [scorePercent, setScorePercent] = useState<number | null>(null);
   const [showSubmit, setShowSubmit] = useState(true);
 
+  // Student identity fields (persisted)
   const [playerName, setPlayerName] = useState("");
+  const [lunchNumber, setLunchNumber] = useState("");
+  const [studentGrade, setStudentGrade] = useState<number | "">("");
 
   const [fileDisplayName, setFileDisplayName] = useState("");
   const [fileKey, setFileKey] = useState("");
@@ -649,20 +741,43 @@ const CSVMatchGame: React.FC = () => {
     }
   };
 
-  // ✅ Load last player on refresh
+  // ✅ Load last student info on refresh
   useEffect(() => {
-    const saved = lsGet(LAST_PLAYER_KEY);
-    if (saved) setPlayerName(saved);
+    const savedName = lsGet(LAST_PLAYER_KEY);
+    if (savedName) setPlayerName(savedName);
+
+    const savedLunch = lsGet(LAST_LUNCH_KEY);
+    if (savedLunch) setLunchNumber(savedLunch);
+
+    const savedGrade = lsGet(LAST_STUDENT_GRADE_KEY);
+    if (savedGrade && !Number.isNaN(Number(savedGrade)))
+      setStudentGrade(Number(savedGrade));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ Save player name whenever it changes
+  // ✅ Save student info whenever it changes
   useEffect(() => {
     const name = playerName.trim();
     if (name) lsSet(LAST_PLAYER_KEY, name);
     else lsDel(LAST_PLAYER_KEY);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerName]);
+
+  useEffect(() => {
+    const ln = lunchNumber.trim();
+    if (ln) lsSet(LAST_LUNCH_KEY, ln);
+    else lsDel(LAST_LUNCH_KEY);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lunchNumber]);
+
+  useEffect(() => {
+    if (studentGrade === "") {
+      lsDel(LAST_STUDENT_GRADE_KEY);
+    } else {
+      lsSet(LAST_STUDENT_GRADE_KEY, String(studentGrade));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentGrade]);
 
   /** merge hard-coded + uploaded into one library shape */
   const mergedLibrary: CsvLibrary = useMemo(() => {
@@ -745,31 +860,45 @@ const CSVMatchGame: React.FC = () => {
     return mergedLibrary[selectedTeacher]?.[selectedUnit] ?? [];
   }, [mergedLibrary, selectedTeacher, selectedUnit]);
 
+  /** ✅ Teacher grade (fallback: student grade, else 6) */
+  const teacherGrade = useMemo(() => {
+    const fromMap = TEACHER_GRADES[selectedTeacher];
+    if (typeof fromMap === "number") return fromMap;
+    if (typeof studentGrade === "number") return studentGrade;
+    return 6;
+  }, [selectedTeacher, studentGrade]);
+
+  /** ✅ Window size = grade + 2 */
+  const questionWindowSize = useMemo(
+    () => Math.max(1, teacherGrade + 2),
+    [teacherGrade],
+  );
+
   // ---- Attempts storage ----
   const getStorageKey = (fk: string, player: string) =>
     `${STORAGE_PREFIX}::${fk}::${player}`;
 
-const loadAttemptsFor = useCallback(
-  (fk: string, player: string): Attempt[] => {
-    try {
-      const raw = localStorage.getItem(getStorageKey(fk, player));
-      if (!raw) return [];
-      const parsed = JSON.parse(raw) as any[];
-      return parsed
-        .map((a) => {
-          const timestamp =
-            typeof a.timestamp === "number" ? a.timestamp : Date.now();
-          const score = typeof a.score === "number" ? a.score : 0;
-          const date = a.date ?? toDateKey(timestamp);
-          return { timestamp, score, date } as Attempt;
-        })
-        .sort((a, b) => a.timestamp - b.timestamp);
-    } catch {
-      return [];
-    }
-  },
-  [], // getStorageKey + toDateKey are stable (module-scope), so deps can be []
-);
+  const loadAttemptsFor = useCallback(
+    (fk: string, player: string): Attempt[] => {
+      try {
+        const raw = localStorage.getItem(getStorageKey(fk, player));
+        if (!raw) return [];
+        const parsed = JSON.parse(raw) as any[];
+        return parsed
+          .map((a) => {
+            const timestamp =
+              typeof a.timestamp === "number" ? a.timestamp : Date.now();
+            const score = typeof a.score === "number" ? a.score : 0;
+            const date = a.date ?? toDateKey(timestamp);
+            return { timestamp, score, date } as Attempt;
+          })
+          .sort((a, b) => a.timestamp - b.timestamp);
+      } catch {
+        return [];
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!fileKey || !playerName) {
@@ -786,10 +915,7 @@ const loadAttemptsFor = useCallback(
     const dateKey = toDateKey(now);
 
     setAttempts((prev) => {
-      const next: Attempt[] = [
-        ...prev,
-        { timestamp: now, score, date: dateKey },
-      ];
+      const next: Attempt[] = [...prev, { timestamp: now, score, date: dateKey }];
       try {
         localStorage.setItem(
           getStorageKey(fileKey, playerName),
@@ -816,6 +942,19 @@ const loadAttemptsFor = useCallback(
     return arr;
   }
 
+  /** ✅ Attempts/day = ceil(totalQuestions / questionsShown) */
+  const maxTriesPerDay = useMemo(() => {
+    const total = masterQuestions.length;
+    if (!fileKey || !total) return 0;
+    const shown = Math.min(questionWindowSize, total);
+    return Math.max(1, Math.ceil(total / shown));
+  }, [fileKey, masterQuestions.length, questionWindowSize]);
+
+  const remainingToday = useMemo(() => {
+    if (!fileKey || !playerName) return 0;
+    return Math.max(0, maxTriesPerDay - attemptsToday.length);
+  }, [fileKey, playerName, maxTriesPerDay, attemptsToday.length]);
+
   const generateCurrentQuestionSet = (allQs: QAData[]) => {
     if (!allQs.length) {
       setCurrentQuestions([]);
@@ -826,7 +965,7 @@ const loadAttemptsFor = useCallback(
     const incorrect = allQs.filter((q) => !q.isCorrect);
     const correct = allQs.filter((q) => q.isCorrect);
 
-    const targetCount = Math.min(10, allQs.length);
+    const targetCount = Math.min(questionWindowSize, allQs.length);
 
     const basePool = incorrect.length ? incorrect : allQs;
     const remainingSlots = Math.max(0, targetCount - basePool.length);
@@ -867,6 +1006,17 @@ const loadAttemptsFor = useCallback(
     setShowSubmit(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerName]);
+
+  // ✅ If teacher grade changes AND a quiz is loaded, re-slice the window
+  useEffect(() => {
+    if (masterQuestions.length > 0) {
+      generateCurrentQuestionSet(masterQuestions);
+      setCheckedAnswers({});
+      setShowSubmit(true);
+      setScorePercent(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questionWindowSize]);
 
   // ---- DnD ----
   const sensors = useSensors(
@@ -921,7 +1071,6 @@ const loadAttemptsFor = useCallback(
 
     const hasAnyAttemptsEver = allAttempts.length > 0;
 
-    // No attempts ever: due today with grey (Day 1 pre-anything)
     if (!hasAnyAttemptsEver) {
       const status: StreakStatus = {
         green: 0,
@@ -937,9 +1086,8 @@ const loadAttemptsFor = useCallback(
     const start = dates[0] ?? today;
 
     let green = 0;
-    let dueDate = start; // due immediately at the very beginning
+    let dueDate = start;
 
-    // Simulate up to yesterday only (no "today" decay before they act)
     const yesterday = addDaysKey(today, -1);
     let d = start;
 
@@ -957,10 +1105,9 @@ const loadAttemptsFor = useCallback(
           }
         } else {
           green = Math.max(0, green - 1);
-          dueDate = d; // stay due
+          dueDate = d;
         }
       } else {
-        // not due yet; but if they get 100 anyway, treat as win and reset schedule
         if (info?.attempted && info.got100) {
           green += 1;
           dueDate = addDaysKey(d, nextIntervalDays(green));
@@ -970,7 +1117,6 @@ const loadAttemptsFor = useCallback(
       d = addDaysKey(d, 1);
     }
 
-    // Start-of-day due for today (used ONLY for cap/decay logic)
     const dueAtStartToday = today >= dueDate;
 
     const todayInfo = byDate[today];
@@ -979,11 +1125,9 @@ const loadAttemptsFor = useCallback(
 
     let cap: CapState = null;
 
-    // Apply TODAY outcome (this updates dueDate/green)
     if (dueAtStartToday) {
       if (!attemptedToday) {
         cap = "grey";
-        // dueDate stays today
       } else if (got100Today) {
         green += 1;
         dueDate = addDaysKey(today, nextIntervalDays(green));
@@ -993,7 +1137,6 @@ const loadAttemptsFor = useCallback(
         dueDate = addDaysKey(today, 1);
       }
     } else {
-      // Not due at start; if they still got 100 today, count it as a win
       if (attemptedToday && got100Today) {
         green += 1;
         dueDate = addDaysKey(today, nextIntervalDays(green));
@@ -1001,9 +1144,7 @@ const loadAttemptsFor = useCallback(
       cap = null;
     }
 
-    // ✅ CURRENT due (after applying today outcome)
     const dueNow = today >= dueDate;
-
     const daysUntilDue = Math.max(0, daysBetweenKeys(today, dueDate));
 
     const status: StreakStatus = {
@@ -1034,7 +1175,6 @@ const loadAttemptsFor = useCallback(
   }, [csvList, playerName, todayKey, attempts, loadAttemptsFor]);
 
   const sortedCsvList: CsvItem[] = useMemo(() => {
-    // If we don't know the player, we can't compute due timing meaningfully.
     if (!playerName) return csvList;
 
     const withMeta = csvList.map((c, idx) => {
@@ -1048,14 +1188,11 @@ const loadAttemptsFor = useCallback(
     });
 
     withMeta.sort((a, b) => {
-      // 1) due sooner first (0 = due today)
       if (a.daysUntilDue !== b.daysUntilDue)
         return a.daysUntilDue - b.daysUntilDue;
 
-      // 2) if tied, due-now items first
       if (a.isDueNow !== b.isDueNow) return a.isDueNow ? -1 : 1;
 
-      // 3) keep original order stable
       return a.idx - b.idx;
     });
 
@@ -1065,9 +1202,8 @@ const loadAttemptsFor = useCallback(
   const loadCsvFromUrl = async (url: string, labelForDisplay: string) => {
     try {
       setFileDisplayName(labelForDisplay);
-      setFileKey(url); // stable key for localStorage across builds
+      setFileKey(url);
 
-      // ✅ Uploaded CSV
       if (url.startsWith("local://uploaded/")) {
         const id = url.replace("local://uploaded/", "");
         const found = uploadedCSVs.find((u) => u.id === id);
@@ -1085,7 +1221,6 @@ const loadAttemptsFor = useCallback(
         return;
       }
 
-      // ✅ Public CSV
       const finalUrl = withPublicUrl(url);
 
       const res = await fetch(finalUrl, { cache: "no-cache" });
@@ -1118,51 +1253,78 @@ const loadAttemptsFor = useCallback(
     }
   };
 
-  const handleManagedUpload = async (file: File) => {
-    const teacher = uploadMetaTeacher.trim();
-    const unit = uploadMetaUnit.trim();
-    const label = uploadMetaLabel.trim();
+const handleManagedUpload = async (file: File) => {
+  const teacher = uploadMetaTeacher.trim();
+  const unit = uploadMetaUnit.trim();
+  const label = uploadMetaLabel.trim();
 
-    if (!teacher || !unit || !label) {
-      alert("Please enter Teacher, Unit, and Label before uploading.");
-      return;
-    }
+  if (!teacher || !unit || !label) {
+    alert("Please enter Teacher, Unit, and Label before uploading.");
+    return;
+  }
 
-    const csvText = await file.text();
+  const rawText = await file.text();
 
-    const newItem: UploadedCsv = {
-      id:
-        crypto?.randomUUID?.() ??
-        `u_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-      teacher,
-      unit,
-      label,
-      filename: file.name,
-      createdAt: Date.now(),
-      csvText,
-    };
+  // ✅ Clean/normalize into id,questions,answers with numeric ids when needed
+  const csvText = normalizeUploadedCsvText(rawText);
 
-    setUploadedCSVs((prev) => {
-      const next = [...prev, newItem];
-      saveUploadedCSVs(next);
-      return next;
-    });
-
-    // open it right away
-    setSelectedTeacher(teacher);
-    setSelectedUnit(unit);
-    const uUrl = makeUploadedUrl(newItem.id);
-    setSelectedCsvUrl(uUrl);
-    loadCsvFromUrl(uUrl, label);
-
-    setOpenClassAccordionOpen(false);
-    setUploadMetaLabel("");
+  const newItem: UploadedCsv = {
+    id:
+      crypto?.randomUUID?.() ??
+      `u_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    teacher,
+    unit,
+    label,
+    filename: file.name,
+    createdAt: Date.now(),
+    csvText,
   };
 
+  // ✅ Save to state + localStorage (so it shows up in dropdowns)
+  setUploadedCSVs((prev) => {
+    const next = [...prev, newItem];
+    saveUploadedCSVs(next);
+    return next;
+  });
+
+  // ✅ Select it in the UI
+  setSelectedTeacher(teacher);
+  setSelectedUnit(unit);
+
+  const uUrl = makeUploadedUrl(newItem.id);
+  setSelectedCsvUrl(uUrl);
+
+  // ✅ Load immediately WITHOUT relying on state having updated yet
+  setFileDisplayName(label);
+  setFileKey(uUrl);
+
+  const parsed = Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  if (parsed.errors?.length) console.warn("CSV parse warnings:", parsed.errors);
+
+  parseAndStartQuiz((parsed.data as any[]) ?? []);
+  setOpenClassAccordionOpen(false);
+
+  setUploadMetaLabel("");
+};
+
   const handleSubmit = () => {
-    if (fileKey && playerName && attemptsToday.length >= MAX_TRIES_PER_DAY) {
+    if (!playerName.trim() || !lunchNumber.trim() || studentGrade === "") {
+      alert("Please enter your Name, Lunch #, and Grade before submitting.");
+      return;
+    }
+    if (
+      fileKey &&
+      playerName &&
+      maxTriesPerDay > 0 &&
+      attemptsToday.length >= maxTriesPerDay
+    ) {
       alert(
-        `Daily limit reached: ${MAX_TRIES_PER_DAY} attempts per day for this player & file.`,
+        `Daily limit reached: ${maxTriesPerDay} attempt${
+          maxTriesPerDay === 1 ? "" : "s"
+        } today for this quiz.`,
       );
       return;
     }
@@ -1227,8 +1389,8 @@ const loadAttemptsFor = useCallback(
               CSV Match Game
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Drag answers to match questions • track attempts • spaced
-              repetition streaks
+              Drag answers to match questions • track attempts • spaced repetition
+              streaks
             </Typography>
           </Box>
 
@@ -1251,6 +1413,74 @@ const loadAttemptsFor = useCallback(
           </Stack>
         </Paper>
 
+        {/* Directions */}
+        <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 18 }}>
+          <Typography variant="h6" sx={{ fontWeight: 900, mb: 1 }}>
+            Directions
+          </Typography>
+          <Box component="ol" sx={{ m: 0, pl: 2.5, color: "text.secondary" }}>
+            <li>
+              Enter your <b>Name</b>, <b>Lunch #</b>, and <b>Grade</b>.
+            </li>
+            <li>
+              Open a quiz: choose <b>Teacher</b> → <b>Unit</b> → <b>Quiz</b>.
+            </li>
+            <li>
+              Drag answers to match the questions, then press <b>Submit</b>.
+            </li>
+            <li>
+              Press <b>Keep Going!</b> to continue until you reach <b>100%</b>.
+            </li>
+            <li>
+              When you get <b>100%</b>, take a <b>screenshot</b> showing your{" "}
+              <b>Name</b>, <b>Lunch #</b>, <b>Grade</b>, the <b>Teacher</b>, the{" "}
+              <b>Quiz name</b>, and the <b>100%</b> score — then{" "}
+              <b>upload the screenshot</b> to your assignment.
+            </li>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Student name"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Lunch #"
+                value={lunchNumber}
+                onChange={(e) => setLunchNumber(e.target.value)}
+              />
+            </Grid>
+            <Grid item xs={12} md={4}>
+              <TextField
+                fullWidth
+                label="Grade"
+                type="number"
+                inputProps={{ min: 0, max: 12 }}
+                value={studentGrade}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === "") return setStudentGrade("");
+                  const n = Number(v);
+                  setStudentGrade(Number.isFinite(n) ? n : "");
+                }}
+                helperText={
+                  TEACHER_GRADES[selectedTeacher] == null
+                    ? "Used as fallback if teacher grade isn't set."
+                    : `Teacher grade is set to ${TEACHER_GRADES[selectedTeacher]}.`
+                }
+              />
+            </Grid>
+          </Grid>
+        </Paper>
+
         {/* Player + Graph Accordion */}
         <Accordion
           expanded={playerAccordionOpen}
@@ -1269,18 +1499,33 @@ const loadAttemptsFor = useCallback(
                 alignItems="center"
                 mb={2}
               >
-                <TextField
-                  label="Player name"
-                  value={playerName}
-                  onChange={(e) => setPlayerName(e.target.value)}
-                />
+                <Typography variant="body2" color="text.secondary">
+                  Showing{" "}
+                  <b>
+                    {Math.min(
+                      questionWindowSize,
+                      masterQuestions.length || questionWindowSize,
+                    )}
+                  </b>{" "}
+                  question
+                  {Math.min(
+                    questionWindowSize,
+                    masterQuestions.length || questionWindowSize,
+                  ) === 1
+                    ? ""
+                    : "s"}{" "}
+                  at a time (Teacher grade {teacherGrade} → grade+2)
+                </Typography>
+
                 <Typography variant="body2" color="text.secondary">
                   File: {fileDisplayName || "—"}
                 </Typography>
+
                 {fileKey && playerName && (
                   <Typography variant="body2" color="text.secondary">
                     Today ({todayKey}) attempts: {attemptsToday.length} /{" "}
-                    {MAX_TRIES_PER_DAY}
+                    {maxTriesPerDay || "—"}{" "}
+                    {maxTriesPerDay ? `(remaining: ${remainingToday})` : ""}
                   </Typography>
                 )}
               </Box>
@@ -1291,14 +1536,14 @@ const loadAttemptsFor = useCallback(
 
               {!playerName || !fileKey ? (
                 <Typography variant="body2" color="text.secondary">
-                  Enter a player name and open a file to track attempts.
+                  Enter your name and open a file to track attempts.
                 </Typography>
               ) : attempts.length === 0 ? (
                 <Typography variant="body2" color="text.secondary">
                   No attempts recorded yet.
                 </Typography>
               ) : (
-                <ScoreChart attempts={attempts} />
+                <ScoreChart attempts={attempts} themeMode={themeMode} />
               )}
             </Paper>
           </AccordionDetails>
@@ -1322,9 +1567,7 @@ const loadAttemptsFor = useCallback(
                     <Select
                       label="Teacher"
                       value={selectedTeacher}
-                      onChange={(e) =>
-                        setSelectedTeacher(String(e.target.value))
-                      }
+                      onChange={(e) => setSelectedTeacher(String(e.target.value))}
                     >
                       {teacherOptions.map((t) => (
                         <MenuItem key={t} value={t}>
@@ -1336,11 +1579,7 @@ const loadAttemptsFor = useCallback(
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <FormControl
-                    fullWidth
-                    size="small"
-                    disabled={!selectedTeacher}
-                  >
+                  <FormControl fullWidth size="small" disabled={!selectedTeacher}>
                     <InputLabel>Unit</InputLabel>
                     <Select
                       label="Unit"
@@ -1393,15 +1632,11 @@ const loadAttemptsFor = useCallback(
                 />
               </Button>
 
-              <Typography
-                variant="subtitle2"
-                color="text.secondary"
-                gutterBottom
-              >
+              <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                 Quiz list{" "}
                 {playerName
                   ? `(streak + due countdown for ${playerName})`
-                  : `(enter player name to see streaks)`}
+                  : `(enter student name to see streaks)`}
               </Typography>
 
               {csvList.length === 0 ? (
@@ -1413,8 +1648,7 @@ const loadAttemptsFor = useCallback(
                   {sortedCsvList.map((c) => {
                     const pack = playerName ? streakStatusByUrl[c.url] : null;
                     const ss = pack?.status ?? null;
-                    const hasAnyAttemptsEver =
-                      pack?.hasAnyAttemptsEver ?? false;
+                    const hasAnyAttemptsEver = pack?.hasAnyAttemptsEver ?? false;
 
                     const waitingText =
                       ss && ss.due
@@ -1444,14 +1678,8 @@ const loadAttemptsFor = useCallback(
                         <Radio checked={selectedCsvUrl === c.url} />
                         <ListItemText
                           primary={
-                            <Box
-                              display="flex"
-                              alignItems="center"
-                              flexWrap="wrap"
-                            >
-                              <Typography component="span">
-                                {c.label}
-                              </Typography>
+                            <Box display="flex" alignItems="center" flexWrap="wrap">
+                              <Typography component="span">{c.label}</Typography>
 
                               {playerName && ss && (
                                 <StreakMarks
@@ -1652,29 +1880,42 @@ const loadAttemptsFor = useCallback(
                   <LinearProgress variant="determinate" value={scorePercent} />
                 </>
               )}
+
+              <Box mt={1}>
+                <Typography variant="body2" color="text.secondary">
+                  Total questions: <b>{masterQuestions.length}</b> • Showing:{" "}
+                  <b>{currentQuestions.length}</b> • Attempts/day:{" "}
+                  <b>{maxTriesPerDay || "—"}</b>
+                </Typography>
+              </Box>
             </Box>
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-
-            {showSubmit ? (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSubmit}
-                sx={{ mb: 2, mr: 2 }}
-              >
-                Submit
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={handleKeepGoing}
-                sx={{ mb: 2, mr: 2 }}
-              >
-                Keep Going!
-              </Button>
-            )}
+              {showSubmit ? (
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit}
+                  sx={{ mb: 2, mr: 2 }}
+                  disabled={
+                    !!fileKey &&
+                    !!playerName &&
+                    maxTriesPerDay > 0 &&
+                    attemptsToday.length >= maxTriesPerDay
+                  }
+                >
+                  Submit
+                </Button>
+              ) : (
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  onClick={handleKeepGoing}
+                  sx={{ mb: 2, mr: 2 }}
+                >
+                  Keep Going!
+                </Button>
+              )}
             </Box>
 
             <Paper
@@ -1733,12 +1974,19 @@ const loadAttemptsFor = useCallback(
                 </SortableContext>
               </DndContext>
             </Paper>
+
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
               {showSubmit ? (
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={handleSubmit}
+                  disabled={
+                    !!fileKey &&
+                    !!playerName &&
+                    maxTriesPerDay > 0 &&
+                    attemptsToday.length >= maxTriesPerDay
+                  }
                 >
                   Submit
                 </Button>
@@ -1752,6 +2000,14 @@ const loadAttemptsFor = useCallback(
                 </Button>
               )}
             </Box>
+
+            {!!fileKey && !!playerName && maxTriesPerDay > 0 && (
+              <Box mt={1}>
+                <Typography variant="body2" color="text.secondary" align="right">
+                  Attempts remaining today: <b>{remainingToday}</b>
+                </Typography>
+              </Box>
+            )}
           </Box>
         )}
       </Box>
