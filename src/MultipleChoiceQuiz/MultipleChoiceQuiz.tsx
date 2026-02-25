@@ -424,11 +424,11 @@ export default function App() {
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);
   const [deleteAllConfirmText, setDeleteAllConfirmText] = useState("");
 
-  const attemptsForUserAndQuiz = useMemo(() => {
-    if (!username.trim() || !selectedQuizId) return [];
-    const scores = loadScores();
-    return scores[username.trim()]?.[selectedQuizId] ?? [];
-  }, [username, selectedQuizId, showResults, quizzes]); // recompute after results
+const attemptsForUserAndQuiz = useMemo(() => {
+  if (!username.trim() || !selectedQuizId) return [];
+  const scores = loadScores();
+  return scores[username.trim()]?.[selectedQuizId] ?? [];
+}, [username, selectedQuizId]);
 
   useEffect(() => {
     localStorage.setItem(LS_LAST_USER_KEY, username);
