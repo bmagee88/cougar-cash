@@ -294,7 +294,47 @@ const buildTheme = (mode: ThemeMode) =>
     },
   });
 
-const ScoreChart: React.FC<{ attempts: Attempt[] }> = ({ attempts }) => {
+  const ThemedRechartsTooltip: React.FC<{
+  active?: boolean;
+  payload?: any[];
+  label?: any;
+  themeMode: "light" | "dark";
+}> = ({ active, payload, themeMode }) => {
+  if (!active || !payload || payload.length === 0) return null;
+
+  const p = payload[0]?.payload;
+
+  return (
+    <div
+      style={{
+        padding: "10px 12px",
+        borderRadius: 12,
+        border: themeMode === "dark" ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(0,0,0,0.12)",
+        background: themeMode === "dark" ? "rgba(17,26,46,0.95)" : "rgba(255,255,255,0.95)",
+        color: themeMode === "dark" ? "#fff" : "#111",
+        boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
+        fontSize: 12,
+        lineHeight: 1.35,
+      }}
+    >
+      <div style={{ fontWeight: 800, marginBottom: 6 }}>
+        Attempt #{p?.attempt} — {p?.date}
+      </div>
+      <div style={{ opacity: themeMode === "dark" ? 0.9 : 0.8, marginBottom: 6 }}>
+        {p?.datetime}
+      </div>
+      <div>
+        <span style={{ fontWeight: 800 }}>Score:</span>{" "}
+        {payload[0]?.value}%
+      </div>
+    </div>
+  );
+};
+
+const ScoreChart: React.FC<{ attempts: Attempt[]; themeMode: ThemeMode }> = ({
+  attempts,
+  themeMode,
+}) => {
   const containerRef = React.useRef<HTMLDivElement | null>(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
@@ -347,17 +387,7 @@ const ScoreChart: React.FC<{ attempts: Attempt[] }> = ({ attempts }) => {
               offset: 10,
             }}
           />
-          <Tooltip
-            formatter={(value: any, name: any) => {
-              if (name === "score") return [`${value}%`, "Score"];
-              return [value, name];
-            }}
-            labelFormatter={(_label: any, payload: any) => {
-              if (!payload || !payload[0]) return "";
-              const p = payload[0].payload as any;
-              return `Attempt #${p.attempt} — ${p.date} (${p.datetime})`;
-            }}
-          />
+          <Tooltip content={<ThemedRechartsTooltip themeMode={themeMode} />} />
           <Legend />
           <Line
             type="monotone"
@@ -548,6 +578,82 @@ const saveUploadedCSVs = (items: UploadedCsv[]) => {
 };
 
 const makeUploadedUrl = (id: string) => `local://uploaded/${id}`;
+
+/**
+ * ✅ Normalize uploaded CSV text so it always becomes:
+ * id,questions,answers
+ * 1,<q1>,<a1>
+ * 2,<q2>,<a2>
+ *
+ * Accepts uploads like:
+ * "this is a question one","this is answer one"
+ * "this is question two","this answer two"
+ *
+ * Or already-normalized:
+ * id,questions,answers
+ * 1,...
+ */
+const normalizeUploadedCsvText = (rawText: string): string => {
+  const normCell = (v: any) =>
+    String(v ?? "")
+      .replace(/^\uFEFF/, "") // strip BOM
+      .trim();
+
+  const isNumericId = (v: any) => {
+    const s = normCell(v);
+    return !!s && /^[0-9]+$/.test(s);
+  };
+
+  const parsed = Papa.parse(rawText, {
+    header: false,
+    skipEmptyLines: true,
+  });
+
+  const rowsRaw = (parsed.data as any[][]) ?? [];
+  const rows = rowsRaw
+    .map((r) => (Array.isArray(r) ? r.map(normCell) : []))
+    .filter((r) => r.some((c) => c !== ""));
+
+  // Always output at least a header
+  if (rows.length === 0) {
+    return Papa.unparse([], { columns: ["id", "questions", "answers"] });
+  }
+
+  const r0 = rows[0] ?? [];
+  const headerPresent =
+    (r0[0] ?? "").toLowerCase() === "id" &&
+    (r0[1] ?? "").toLowerCase() === "questions" &&
+    (r0[2] ?? "").toLowerCase() === "answers";
+
+  const dataRows = rows.slice(headerPresent ? 1 : 0);
+
+  // Determine if this file truly has numeric ids in column 1
+  const looksLikeHasNumericIdColumn =
+    dataRows.length > 0 &&
+    dataRows.every((r) => (r?.length ?? 0) >= 3 && isNumericId(r[0]));
+
+  const out = dataRows
+    .map((r, idx) => {
+      if (!r || r.length === 0) return null;
+
+      if (looksLikeHasNumericIdColumn) {
+        const id = normCell(r[0]);
+        const q = normCell(r[1]);
+        const a = normCell(r[2]);
+        if (!q && !a) return null;
+        return { id, questions: q, answers: a };
+      }
+
+      // Otherwise generate ids and treat first 2 cols as Q/A
+      const q = normCell(r[0]);
+      const a = normCell(r[1] ?? "");
+      if (!q && !a) return null;
+      return { id: String(idx + 1), questions: q, answers: a };
+    })
+    .filter(Boolean) as Array<{ id: string; questions: string; answers: string }>;
+
+  return Papa.unparse(out, { columns: ["id", "questions", "answers"] });
+};
 
 const CSVMatchGame: React.FC = () => {
   const debug = MASTER_DEBUG;
@@ -763,7 +869,10 @@ const CSVMatchGame: React.FC = () => {
   }, [selectedTeacher, studentGrade]);
 
   /** ✅ Window size = grade + 2 */
-  const questionWindowSize = useMemo(() => Math.max(1, teacherGrade + 2), [teacherGrade]);
+  const questionWindowSize = useMemo(
+    () => Math.max(1, teacherGrade + 2),
+    [teacherGrade],
+  );
 
   // ---- Attempts storage ----
   const getStorageKey = (fk: string, player: string) =>
@@ -806,12 +915,12 @@ const CSVMatchGame: React.FC = () => {
     const dateKey = toDateKey(now);
 
     setAttempts((prev) => {
-      const next: Attempt[] = [
-        ...prev,
-        { timestamp: now, score, date: dateKey },
-      ];
+      const next: Attempt[] = [...prev, { timestamp: now, score, date: dateKey }];
       try {
-        localStorage.setItem(getStorageKey(fileKey, playerName), JSON.stringify(next));
+        localStorage.setItem(
+          getStorageKey(fileKey, playerName),
+          JSON.stringify(next),
+        );
       } catch (err) {
         console.error("Failed to save attempts", err);
       }
@@ -1144,52 +1253,74 @@ const CSVMatchGame: React.FC = () => {
     }
   };
 
-  const handleManagedUpload = async (file: File) => {
-    const teacher = uploadMetaTeacher.trim();
-    const unit = uploadMetaUnit.trim();
-    const label = uploadMetaLabel.trim();
+const handleManagedUpload = async (file: File) => {
+  const teacher = uploadMetaTeacher.trim();
+  const unit = uploadMetaUnit.trim();
+  const label = uploadMetaLabel.trim();
 
-    if (!teacher || !unit || !label) {
-      alert("Please enter Teacher, Unit, and Label before uploading.");
-      return;
-    }
+  if (!teacher || !unit || !label) {
+    alert("Please enter Teacher, Unit, and Label before uploading.");
+    return;
+  }
 
-    const csvText = await file.text();
+  const rawText = await file.text();
 
-    const newItem: UploadedCsv = {
-      id:
-        crypto?.randomUUID?.() ??
-        `u_${Date.now()}_${Math.random().toString(16).slice(2)}`,
-      teacher,
-      unit,
-      label,
-      filename: file.name,
-      createdAt: Date.now(),
-      csvText,
-    };
+  // ✅ Clean/normalize into id,questions,answers with numeric ids when needed
+  const csvText = normalizeUploadedCsvText(rawText);
 
-    setUploadedCSVs((prev) => {
-      const next = [...prev, newItem];
-      saveUploadedCSVs(next);
-      return next;
-    });
-
-    setSelectedTeacher(teacher);
-    setSelectedUnit(unit);
-    const uUrl = makeUploadedUrl(newItem.id);
-    setSelectedCsvUrl(uUrl);
-    loadCsvFromUrl(uUrl, label);
-
-    setOpenClassAccordionOpen(false);
-    setUploadMetaLabel("");
+  const newItem: UploadedCsv = {
+    id:
+      crypto?.randomUUID?.() ??
+      `u_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    teacher,
+    unit,
+    label,
+    filename: file.name,
+    createdAt: Date.now(),
+    csvText,
   };
+
+  // ✅ Save to state + localStorage (so it shows up in dropdowns)
+  setUploadedCSVs((prev) => {
+    const next = [...prev, newItem];
+    saveUploadedCSVs(next);
+    return next;
+  });
+
+  // ✅ Select it in the UI
+  setSelectedTeacher(teacher);
+  setSelectedUnit(unit);
+
+  const uUrl = makeUploadedUrl(newItem.id);
+  setSelectedCsvUrl(uUrl);
+
+  // ✅ Load immediately WITHOUT relying on state having updated yet
+  setFileDisplayName(label);
+  setFileKey(uUrl);
+
+  const parsed = Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true,
+  });
+  if (parsed.errors?.length) console.warn("CSV parse warnings:", parsed.errors);
+
+  parseAndStartQuiz((parsed.data as any[]) ?? []);
+  setOpenClassAccordionOpen(false);
+
+  setUploadMetaLabel("");
+};
 
   const handleSubmit = () => {
     if (!playerName.trim() || !lunchNumber.trim() || studentGrade === "") {
       alert("Please enter your Name, Lunch #, and Grade before submitting.");
       return;
     }
-    if (fileKey && playerName && maxTriesPerDay > 0 && attemptsToday.length >= maxTriesPerDay) {
+    if (
+      fileKey &&
+      playerName &&
+      maxTriesPerDay > 0 &&
+      attemptsToday.length >= maxTriesPerDay
+    ) {
       alert(
         `Daily limit reached: ${maxTriesPerDay} attempt${
           maxTriesPerDay === 1 ? "" : "s"
@@ -1258,7 +1389,8 @@ const CSVMatchGame: React.FC = () => {
               CSV Match Game
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Drag answers to match questions • track attempts • spaced repetition streaks
+              Drag answers to match questions • track attempts • spaced repetition
+              streaks
             </Typography>
           </Box>
 
@@ -1360,10 +1492,28 @@ const CSVMatchGame: React.FC = () => {
           </AccordionSummary>
           <AccordionDetails>
             <Paper elevation={0} sx={{ p: 0 }}>
-              <Box display="flex" flexWrap="wrap" gap={2} alignItems="center" mb={2}>
+              <Box
+                display="flex"
+                flexWrap="wrap"
+                gap={2}
+                alignItems="center"
+                mb={2}
+              >
                 <Typography variant="body2" color="text.secondary">
-                  Showing <b>{Math.min(questionWindowSize, masterQuestions.length || questionWindowSize)}</b>{" "}
-                  question{Math.min(questionWindowSize, masterQuestions.length || questionWindowSize) === 1 ? "" : "s"}{" "}
+                  Showing{" "}
+                  <b>
+                    {Math.min(
+                      questionWindowSize,
+                      masterQuestions.length || questionWindowSize,
+                    )}
+                  </b>{" "}
+                  question
+                  {Math.min(
+                    questionWindowSize,
+                    masterQuestions.length || questionWindowSize,
+                  ) === 1
+                    ? ""
+                    : "s"}{" "}
                   at a time (Teacher grade {teacherGrade} → grade+2)
                 </Typography>
 
@@ -1393,7 +1543,7 @@ const CSVMatchGame: React.FC = () => {
                   No attempts recorded yet.
                 </Typography>
               ) : (
-                <ScoreChart attempts={attempts} />
+                <ScoreChart attempts={attempts} themeMode={themeMode} />
               )}
             </Paper>
           </AccordionDetails>
@@ -1417,9 +1567,7 @@ const CSVMatchGame: React.FC = () => {
                     <Select
                       label="Teacher"
                       value={selectedTeacher}
-                      onChange={(e) =>
-                        setSelectedTeacher(String(e.target.value))
-                      }
+                      onChange={(e) => setSelectedTeacher(String(e.target.value))}
                     >
                       {teacherOptions.map((t) => (
                         <MenuItem key={t} value={t}>
@@ -1431,11 +1579,7 @@ const CSVMatchGame: React.FC = () => {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
-                  <FormControl
-                    fullWidth
-                    size="small"
-                    disabled={!selectedTeacher}
-                  >
+                  <FormControl fullWidth size="small" disabled={!selectedTeacher}>
                     <InputLabel>Unit</InputLabel>
                     <Select
                       label="Unit"
@@ -1726,7 +1870,11 @@ const CSVMatchGame: React.FC = () => {
             <Box mb={2}>
               {scorePercent !== null && (
                 <>
-                  <Typography variant="body1" gutterBottom sx={{ fontWeight: 800 }}>
+                  <Typography
+                    variant="body1"
+                    gutterBottom
+                    sx={{ fontWeight: 800 }}
+                  >
                     Score: {scorePercent}%
                   </Typography>
                   <LinearProgress variant="determinate" value={scorePercent} />
@@ -1749,7 +1897,12 @@ const CSVMatchGame: React.FC = () => {
                   color="primary"
                   onClick={handleSubmit}
                   sx={{ mb: 2, mr: 2 }}
-                  disabled={!!fileKey && !!playerName && maxTriesPerDay > 0 && attemptsToday.length >= maxTriesPerDay}
+                  disabled={
+                    !!fileKey &&
+                    !!playerName &&
+                    maxTriesPerDay > 0 &&
+                    attemptsToday.length >= maxTriesPerDay
+                  }
                 >
                   Submit
                 </Button>
@@ -1828,7 +1981,12 @@ const CSVMatchGame: React.FC = () => {
                   variant="contained"
                   color="primary"
                   onClick={handleSubmit}
-                  disabled={!!fileKey && !!playerName && maxTriesPerDay > 0 && attemptsToday.length >= maxTriesPerDay}
+                  disabled={
+                    !!fileKey &&
+                    !!playerName &&
+                    maxTriesPerDay > 0 &&
+                    attemptsToday.length >= maxTriesPerDay
+                  }
                 >
                   Submit
                 </Button>
