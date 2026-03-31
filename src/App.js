@@ -21,6 +21,7 @@ import MapVisualizer from "./RegionsMapApp/MapVisualizer";
 import OneWordTenSeconds from "./OneWordTenSeconds/OneWordTenSeconds";
 import TypingPong from "./TypingPong/TypingPong";
 import MultipleChoiceQuiz from "./MultipleChoiceQuiz/MultipleChoiceQuiz";
+import ParentLetter from "./ParentLetter/ParentLetter";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -56,6 +57,7 @@ function App() {
           <Route path="/pong" element={<TypingPong />}></Route>
           <Route path="/hall-pass/*" element={<HallPassRoutes />} />
           <Route path="/mc-quiz" element={<MultipleChoiceQuiz />} />
+          <Route path="/parent-letter" element={<ParentLetter />} />
         </Routes>
       </Router>
     </Box>
