@@ -1174,13 +1174,13 @@ function getOptionLabelById(id: string, language: Language) {
   return behaviorLookup.get(id)?.label[language] || id;
 }
 
-function getOptionShortById(id: string, language: Language) {
-  return behaviorLookup.get(id)?.short[language] || id;
-}
+// function getOptionShortById(id: string, language: Language) {
+//   return behaviorLookup.get(id)?.short[language] || id;
+// }
 
-function getOptionEmojiById(id: string) {
-  return behaviorLookup.get(id)?.emoji || '•';
-}
+// function getOptionEmojiById(id: string) {
+//   return behaviorLookup.get(id)?.emoji || '•';
+// }
 
 function toParagraphListFromIds(ids: string[], language: Language) {
   const items = ids.map((id) => getOptionLabelById(id, language));
