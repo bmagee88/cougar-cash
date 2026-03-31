@@ -40,9 +40,10 @@ type BehaviorViewMode = 'text' | 'emoji';
 type ClosingCategory = 'goodOnly' | 'badOnly' | 'mixed' | 'neutral';
 
 type BehaviorOption = {
-  label: string;
+  id: string;
   emoji: string;
-  short: string;
+  label: Record<Language, string>;
+  short: Record<Language, string>;
 };
 
 type StudentRecord = {
@@ -98,6 +99,7 @@ const STORAGE_KEYS = {
   signingTeacher: 'parent-letter-generator-signing-teacher',
   theme: 'parent-letter-generator-theme',
   themeMode: 'parent-letter-generator-theme-mode',
+  uiLanguage: 'parent-letter-generator-ui-language',
 } as const;
 
 const themePalette: Record<
@@ -340,44 +342,603 @@ const themeOrder: ThemeKey[] = [
 ];
 
 const exemplaryOptions: BehaviorOption[] = [
-  { label: 'showed respectful behavior', emoji: '🙂', short: 'Respectful' },
-  { label: 'followed directions', emoji: '🫡', short: 'Directions' },
-  { label: 'completed assigned classwork', emoji: '✅', short: 'Completed Work' },
-  { label: 'used classroom materials appropriately', emoji: '🧰', short: 'Materials' },
-  { label: 'worked cooperatively with others', emoji: '🤝', short: 'Cooperative' },
-  { label: 'stayed focused', emoji: '🎯', short: 'Focused' },
-  { label: 'participated appropriately', emoji: '🙋', short: 'Participation' },
-  { label: 'showed self-control', emoji: '🧠', short: 'Self-Control' },
-  { label: 'responded appropriately to redirection', emoji: '👍', short: 'Redirection' },
-  { label: 'showed readiness to learn', emoji: '📘', short: 'Ready to Learn' },
-  { label: 'returned to the task after support', emoji: '🔄', short: 'Returned to Task' },
-  { label: 'made a good effort', emoji: '💪', short: 'Good Effort' },
-  { label: 'stayed engaged during work time', emoji: '📝', short: 'Engaged' },
-  { label: 'used technology appropriately', emoji: '💻', short: 'Tech Use' },
-  { label: 'made positive choices', emoji: '🌟', short: 'Positive Choices' },
-  { label: 'showed improvement in behavior', emoji: '📈', short: 'Improvement' },
+  {
+    id: 'respectful',
+    emoji: '🙂',
+    label: {
+      english: 'showed respectful behavior',
+      spanish: 'mostró un comportamiento respetuoso',
+      pashto: 'درناوی کوونکی چلند یې وښود',
+    },
+    short: {
+      english: 'Respectful',
+      spanish: 'Respeto',
+      pashto: 'درناوی',
+    },
+  },
+  {
+    id: 'directions',
+    emoji: '🫡',
+    label: {
+      english: 'followed directions',
+      spanish: 'siguió las instrucciones',
+      pashto: 'لارښوونې یې تعقیب کړې',
+    },
+    short: {
+      english: 'Directions',
+      spanish: 'Instrucciones',
+      pashto: 'لارښوونې',
+    },
+  },
+  {
+    id: 'completed_work',
+    emoji: '✅',
+    label: {
+      english: 'completed assigned classwork',
+      spanish: 'completó el trabajo asignado',
+      pashto: 'سپارل شوی ټولګیوال کار یې بشپړ کړ',
+    },
+    short: {
+      english: 'Completed Work',
+      spanish: 'Trabajo Completo',
+      pashto: 'کار بشپړ',
+    },
+  },
+  {
+    id: 'materials',
+    emoji: '🧰',
+    label: {
+      english: 'used classroom materials appropriately',
+      spanish: 'usó los materiales del salón de manera apropiada',
+      pashto: 'د ټولګي وسایل یې په سمه توګه وکارول',
+    },
+    short: {
+      english: 'Materials',
+      spanish: 'Materiales',
+      pashto: 'وسایل',
+    },
+  },
+  {
+    id: 'cooperative',
+    emoji: '🤝',
+    label: {
+      english: 'worked cooperatively with others',
+      spanish: 'trabajó cooperativamente con otros',
+      pashto: 'له نورو سره یې په همکارۍ کار وکړ',
+    },
+    short: {
+      english: 'Cooperative',
+      spanish: 'Cooperó',
+      pashto: 'همکاري',
+    },
+  },
+  {
+    id: 'focused',
+    emoji: '🎯',
+    label: {
+      english: 'stayed focused',
+      spanish: 'se mantuvo enfocado',
+      pashto: 'متمرکز پاتې شو',
+    },
+    short: {
+      english: 'Focused',
+      spanish: 'Enfoque',
+      pashto: 'تمرکز',
+    },
+  },
+  {
+    id: 'participation',
+    emoji: '🙋',
+    label: {
+      english: 'participated appropriately',
+      spanish: 'participó de manera apropiada',
+      pashto: 'په مناسب ډول یې ګډون وکړ',
+    },
+    short: {
+      english: 'Participation',
+      spanish: 'Participación',
+      pashto: 'ګډون',
+    },
+  },
+  {
+    id: 'self_control',
+    emoji: '🧠',
+    label: {
+      english: 'showed self-control',
+      spanish: 'mostró autocontrol',
+      pashto: 'ځان کنټرول یې وښود',
+    },
+    short: {
+      english: 'Self-Control',
+      spanish: 'Autocontrol',
+      pashto: 'ځان کنټرول',
+    },
+  },
+  {
+    id: 'redirection_positive',
+    emoji: '👍',
+    label: {
+      english: 'responded appropriately to redirection',
+      spanish: 'respondió de manera apropiada a la corrección',
+      pashto: 'سمون ته یې په مناسب ډول ځواب ورکړ',
+    },
+    short: {
+      english: 'Redirection',
+      spanish: 'Corrección',
+      pashto: 'سمون',
+    },
+  },
+  {
+    id: 'readiness',
+    emoji: '📘',
+    label: {
+      english: 'showed readiness to learn',
+      spanish: 'mostró disposición para aprender',
+      pashto: 'د زده کړې چمتووالی یې وښود',
+    },
+    short: {
+      english: 'Ready to Learn',
+      spanish: 'Listo para Aprender',
+      pashto: 'زده کړې ته چمتو',
+    },
+  },
+  {
+    id: 'returned_to_task',
+    emoji: '🔄',
+    label: {
+      english: 'returned to the task after support',
+      spanish: 'regresó a la tarea después de recibir apoyo',
+      pashto: 'له مرستې وروسته بېرته دندې ته راوګرځېد',
+    },
+    short: {
+      english: 'Returned to Task',
+      spanish: 'Volvió a la Tarea',
+      pashto: 'کار ته ستون شو',
+    },
+  },
+  {
+    id: 'good_effort',
+    emoji: '💪',
+    label: {
+      english: 'made a good effort',
+      spanish: 'hizo un buen esfuerzo',
+      pashto: 'ښه هڅه یې وکړه',
+    },
+    short: {
+      english: 'Good Effort',
+      spanish: 'Buen Esfuerzo',
+      pashto: 'ښه هڅه',
+    },
+  },
+  {
+    id: 'engaged',
+    emoji: '📝',
+    label: {
+      english: 'stayed engaged during work time',
+      spanish: 'se mantuvo involucrado durante el tiempo de trabajo',
+      pashto: 'د کار پر مهال بوخت پاتې شو',
+    },
+    short: {
+      english: 'Engaged',
+      spanish: 'Participó',
+      pashto: 'بوخت',
+    },
+  },
+  {
+    id: 'tech_use_positive',
+    emoji: '💻',
+    label: {
+      english: 'used technology appropriately',
+      spanish: 'usó la tecnología de manera apropiada',
+      pashto: 'ټکنالوژي یې په مناسب ډول وکاروله',
+    },
+    short: {
+      english: 'Tech Use',
+      spanish: 'Tecnología',
+      pashto: 'ټکنالوژي',
+    },
+  },
+  {
+    id: 'positive_choices',
+    emoji: '🌟',
+    label: {
+      english: 'made positive choices',
+      spanish: 'tomó decisiones positivas',
+      pashto: 'مثبت انتخابونه یې وکړل',
+    },
+    short: {
+      english: 'Positive Choices',
+      spanish: 'Buenas Decisiones',
+      pashto: 'مثبت انتخابونه',
+    },
+  },
+  {
+    id: 'improvement',
+    emoji: '📈',
+    label: {
+      english: 'showed improvement in behavior',
+      spanish: 'mostró mejoría en su comportamiento',
+      pashto: 'په چلند کې یې ښه والی وښود',
+    },
+    short: {
+      english: 'Improvement',
+      spanish: 'Mejoría',
+      pashto: 'ښه والی',
+    },
+  },
 ];
 
 const misbehaviorOptions: BehaviorOption[] = [
-  { label: 'used inappropriate language', emoji: '🤬', short: 'Language' },
-  { label: 'responded disrespectfully to redirection', emoji: '🙄', short: 'Disrespect' },
-  { label: 'called out during instruction', emoji: '🗣️', short: 'Calling Out' },
-  { label: 'left their seat without permission', emoji: '🚶', short: 'Out of Seat' },
-  { label: 'did not complete assigned classwork', emoji: '❌', short: 'No Work' },
-  { label: 'used technology for non-class purposes', emoji: '📱', short: 'Off-Task Tech' },
-  { label: 'visited YouTube or other non-class websites', emoji: '📺', short: 'YouTube' },
-  { label: 'distracted other students', emoji: '😵', short: 'Distracting Others' },
-  { label: 'did not follow classroom directions', emoji: '⚠️', short: 'Directions' },
-  { label: 'misused classroom materials or equipment', emoji: '🧱', short: 'Misused Materials' },
-  { label: 'had difficulty staying on task', emoji: '🌀', short: 'Off Task' },
-  { label: 'interrupted instruction', emoji: '⛔', short: 'Interrupting' },
-  { label: 'needed repeated redirection', emoji: '🔁', short: 'Repeated Redirect' },
-  { label: 'was unprepared for class expectations', emoji: '📭', short: 'Unprepared' },
-  { label: 'had difficulty working independently', emoji: '🫤', short: 'Independent Work' },
-  { label: 'engaged in side conversations during instruction', emoji: '💬', short: 'Side Talking' },
-  { label: 'showed poor use of class time', emoji: '⏳', short: 'Class Time' },
-  { label: 'struggled to remain focused during work time', emoji: '😶‍🌫️', short: 'Focus' },
+  {
+    id: 'language',
+    emoji: '🤬',
+    label: {
+      english: 'used inappropriate language',
+      spanish: 'usó lenguaje inapropiado',
+      pashto: 'نامناسبه ژبه یې وکاروله',
+    },
+    short: {
+      english: 'Language',
+      spanish: 'Lenguaje',
+      pashto: 'ژبه',
+    },
+  },
+  {
+    id: 'disrespect',
+    emoji: '🙄',
+    label: {
+      english: 'responded disrespectfully to redirection',
+      spanish: 'respondió de manera irrespetuosa a la corrección',
+      pashto: 'سمون ته یې په بې‌ادبۍ ځواب ورکړ',
+    },
+    short: {
+      english: 'Disrespect',
+      spanish: 'Irrespeto',
+      pashto: 'بې‌ادبي',
+    },
+  },
+  {
+    id: 'calling_out',
+    emoji: '🗣️',
+    label: {
+      english: 'called out during instruction',
+      spanish: 'habló fuera de turno durante la instrucción',
+      pashto: 'د تدریس پر مهال بې نوبته خبرې وکړې',
+    },
+    short: {
+      english: 'Calling Out',
+      spanish: 'Interrupciones',
+      pashto: 'بې نوبته خبرې',
+    },
+  },
+  {
+    id: 'out_of_seat',
+    emoji: '🚶',
+    label: {
+      english: 'left their seat without permission',
+      spanish: 'salió de su asiento sin permiso',
+      pashto: 'له اجازې پرته له خپلې څوکۍ پورته شو',
+    },
+    short: {
+      english: 'Out of Seat',
+      spanish: 'Fuera del Asiento',
+      pashto: 'له څوکۍ وتل',
+    },
+  },
+  {
+    id: 'no_work',
+    emoji: '❌',
+    label: {
+      english: 'did not complete assigned classwork',
+      spanish: 'no completó el trabajo asignado',
+      pashto: 'سپارل شوی کار یې بشپړ نه کړ',
+    },
+    short: {
+      english: 'No Work',
+      spanish: 'Sin Trabajo',
+      pashto: 'کار نه و',
+    },
+  },
+  {
+    id: 'off_task_tech',
+    emoji: '📱',
+    label: {
+      english: 'used technology for non-class purposes',
+      spanish: 'usó la tecnología para fines no relacionados con la clase',
+      pashto: 'ټکنالوژي یې د ټولګي نه‌اړوندو کارونو لپاره وکاروله',
+    },
+    short: {
+      english: 'Off-Task Tech',
+      spanish: 'Tecnología',
+      pashto: 'بې‌موخې ټکنالوژي',
+    },
+  },
+  {
+    id: 'youtube',
+    emoji: '📺',
+    label: {
+      english: 'visited YouTube or other non-class websites',
+      spanish: 'visitó YouTube u otros sitios que no eran de clase',
+      pashto: 'یوټیوب یا نور د ټولګي نه‌اړوند وېب‌سایټونه یې وکتل',
+    },
+    short: {
+      english: 'YouTube',
+      spanish: 'YouTube',
+      pashto: 'یوټیوب',
+    },
+  },
+  {
+    id: 'distracting_others',
+    emoji: '😵',
+    label: {
+      english: 'distracted other students',
+      spanish: 'distrajo a otros estudiantes',
+      pashto: 'نور زده کوونکي یې حواس پرک کړل',
+    },
+    short: {
+      english: 'Distracting Others',
+      spanish: 'Distrajo',
+      pashto: 'نور یې ګډوډ کړل',
+    },
+  },
+  {
+    id: 'directions_negative',
+    emoji: '⚠️',
+    label: {
+      english: 'did not follow classroom directions',
+      spanish: 'no siguió las instrucciones del salón',
+      pashto: 'د ټولګي لارښوونې یې تعقیب نه کړې',
+    },
+    short: {
+      english: 'Directions',
+      spanish: 'Instrucciones',
+      pashto: 'لارښوونې',
+    },
+  },
+  {
+    id: 'misused_materials',
+    emoji: '🧱',
+    label: {
+      english: 'misused classroom materials or equipment',
+      spanish: 'hizo mal uso de los materiales o equipos del salón',
+      pashto: 'د ټولګي وسایل یا تجهیزات یې ناسم وکارول',
+    },
+    short: {
+      english: 'Misused Materials',
+      spanish: 'Mal Uso',
+      pashto: 'ناسم استعمال',
+    },
+  },
+  {
+    id: 'off_task',
+    emoji: '🌀',
+    label: {
+      english: 'had difficulty staying on task',
+      spanish: 'tuvo dificultad para mantenerse enfocado en la tarea',
+      pashto: 'په دنده تمرکز ساتلو کې ستونزه درلوده',
+    },
+    short: {
+      english: 'Off Task',
+      spanish: 'Fuera de Tarea',
+      pashto: 'له دندې لرې',
+    },
+  },
+  {
+    id: 'interrupting',
+    emoji: '⛔',
+    label: {
+      english: 'interrupted instruction',
+      spanish: 'interrumpió la instrucción',
+      pashto: 'تدریس یې مداخله کړ',
+    },
+    short: {
+      english: 'Interrupting',
+      spanish: 'Interrumpió',
+      pashto: 'مداخله',
+    },
+  },
+  {
+    id: 'repeated_redirect',
+    emoji: '🔁',
+    label: {
+      english: 'needed repeated redirection',
+      spanish: 'necesitó corrección repetida',
+      pashto: 'پرله‌پسې سمون ته اړتیا وه',
+    },
+    short: {
+      english: 'Repeated Redirect',
+      spanish: 'Corrección Repetida',
+      pashto: 'تکراري سمون',
+    },
+  },
+  {
+    id: 'unprepared',
+    emoji: '📭',
+    label: {
+      english: 'was unprepared for class expectations',
+      spanish: 'no estaba preparado para las expectativas de la clase',
+      pashto: 'د ټولګي تمو لپاره چمتو نه و',
+    },
+    short: {
+      english: 'Unprepared',
+      spanish: 'No Preparado',
+      pashto: 'ناچمتو',
+    },
+  },
+  {
+    id: 'independent_work',
+    emoji: '🫤',
+    label: {
+      english: 'had difficulty working independently',
+      spanish: 'tuvo dificultad para trabajar de manera independiente',
+      pashto: 'په خپلواکه توګه کار کولو کې ستونزه درلوده',
+    },
+    short: {
+      english: 'Independent Work',
+      spanish: 'Trabajo Solo',
+      pashto: 'خپلواک کار',
+    },
+  },
+  {
+    id: 'side_talking',
+    emoji: '💬',
+    label: {
+      english: 'engaged in side conversations during instruction',
+      spanish: 'participó en conversaciones paralelas durante la instrucción',
+      pashto: 'د تدریس پر مهال یې غاړې خبرې کولې',
+    },
+    short: {
+      english: 'Side Talking',
+      spanish: 'Conversaciones',
+      pashto: 'غاړې خبرې',
+    },
+  },
+  {
+    id: 'class_time',
+    emoji: '⏳',
+    label: {
+      english: 'showed poor use of class time',
+      spanish: 'mostró un mal uso del tiempo de clase',
+      pashto: 'د ټولګي وخت یې په ښه توګه ونه کاراوه',
+    },
+    short: {
+      english: 'Class Time',
+      spanish: 'Tiempo de Clase',
+      pashto: 'د ټولګي وخت',
+    },
+  },
+  {
+    id: 'focus_struggle',
+    emoji: '😶‍🌫️',
+    label: {
+      english: 'struggled to remain focused during work time',
+      spanish: 'tuvo dificultad para mantenerse enfocado durante el tiempo de trabajo',
+      pashto: 'د کار پر مهال په تمرکز ساتلو کې ستونزه درلوده',
+    },
+    short: {
+      english: 'Focus',
+      spanish: 'Enfoque',
+      pashto: 'تمرکز',
+    },
+  },
 ];
+
+const allBehaviorOptions = [...exemplaryOptions, ...misbehaviorOptions];
+const behaviorLookup = new Map(allBehaviorOptions.map((option) => [option.id, option]));
+
+const staticText = {
+  english: {
+    greeting: 'Dear Parent or Guardian,',
+    copied: 'Letter copied to clipboard.',
+    englishLabel: 'English',
+    spanishLabel: 'Spanish',
+    pashtoLabel: 'Pashto',
+    studentName: 'Student Name',
+    parentName: 'Parent / Guardian Name',
+    hrTeacher: 'HR Teacher / Class',
+    signingTeacher: 'Signing Teacher',
+    uiLanguage: 'Site Language',
+    letterLanguage: 'Letter Language',
+    language: 'Language',
+    exemplary: 'Exemplary Behaviors',
+    misbehaviors: 'Misbehaviors',
+    preview: 'Letter Preview',
+    save: 'Save Letter Record',
+    shuffle: 'Shuffle Opening / Closing',
+    stats: 'Statistics',
+    overall: 'Overall',
+    byClass: 'Per Class',
+    byStudent: 'Individual Student',
+    filterClass: 'Select Class',
+    filterStudent: 'Select Student',
+    totalLetters: 'Total Letters',
+    noData: 'No data available for this view.',
+    topExemplary: 'Exemplary Behaviors Count',
+    topMisbehaviors: 'Misbehavior Count',
+    saved: 'Letter record saved.',
+    studentSearch: 'Student Search / Select',
+    copy: 'Copy Letter',
+    behaviorView: 'Behavior View',
+    textView: 'Text',
+    emojiView: 'Emoji Grid',
+    darkMode: 'Dark mode',
+    lightMode: 'Light mode',
+  },
+  spanish: {
+    greeting: 'Estimado padre, madre o tutor:',
+    copied: 'La carta fue copiada al portapapeles.',
+    englishLabel: 'Inglés',
+    spanishLabel: 'Español',
+    pashtoLabel: 'Pastún',
+    studentName: 'Nombre del estudiante',
+    parentName: 'Nombre del padre, madre o tutor',
+    hrTeacher: 'Maestro/a de HR / Clase',
+    signingTeacher: 'Docente que firma',
+    uiLanguage: 'Idioma del sitio',
+    letterLanguage: 'Idioma de la carta',
+    language: 'Idioma',
+    exemplary: 'Conductas ejemplares',
+    misbehaviors: 'Conductas problemáticas',
+    preview: 'Vista previa de la carta',
+    save: 'Guardar registro de carta',
+    shuffle: 'Cambiar apertura / cierre',
+    stats: 'Estadísticas',
+    overall: 'General',
+    byClass: 'Por clase',
+    byStudent: 'Estudiante individual',
+    filterClass: 'Seleccionar clase',
+    filterStudent: 'Seleccionar estudiante',
+    totalLetters: 'Total de cartas',
+    noData: 'No hay datos disponibles para esta vista.',
+    topExemplary: 'Conteo de conductas ejemplares',
+    topMisbehaviors: 'Conteo de conductas problemáticas',
+    saved: 'Registro de carta guardado.',
+    studentSearch: 'Buscar / seleccionar estudiante',
+    copy: 'Copiar carta',
+    behaviorView: 'Vista de conducta',
+    textView: 'Texto',
+    emojiView: 'Cuadrícula de emojis',
+    darkMode: 'Modo oscuro',
+    lightMode: 'Modo claro',
+  },
+  pashto: {
+    greeting: 'ګرانه مور، پلار یا سرپرست،',
+    copied: 'لیک کلپ بورډ ته کاپي شو.',
+    englishLabel: 'انګلیسي',
+    spanishLabel: 'هسپانوي',
+    pashtoLabel: 'پښتو',
+    studentName: 'د زده کوونکي نوم',
+    parentName: 'د مور، پلار یا سرپرست نوم',
+    hrTeacher: 'د HR ښوونکی / ټولګی',
+    signingTeacher: 'لاسلیک کوونکی ښوونکی',
+    uiLanguage: 'د وېب‌پاڼې ژبه',
+    letterLanguage: 'د لیک ژبه',
+    language: 'ژبه',
+    exemplary: 'مثالي چلندونه',
+    misbehaviors: 'ناسم چلندونه',
+    preview: 'د لیک مخکتنه',
+    save: 'د لیک ریکارډ خوندي کړئ',
+    shuffle: 'پیل / پای بدل کړئ',
+    stats: 'احصایې',
+    overall: 'ټولیز',
+    byClass: 'د ټولګي له مخې',
+    byStudent: 'انفرادي زده کوونکی',
+    filterClass: 'ټولګی وټاکئ',
+    filterStudent: 'زده کوونکی وټاکئ',
+    totalLetters: 'ټول لیکونه',
+    noData: 'د دې لید لپاره معلومات نشته.',
+    topExemplary: 'د مثالي چلندونو شمېر',
+    topMisbehaviors: 'د ناسم چلندونو شمېر',
+    saved: 'د لیک ریکارډ خوندي شو.',
+    studentSearch: 'زده کوونکی وپلټئ / وټاکئ',
+    copy: 'لیک کاپي کړئ',
+    behaviorView: 'د چلند بڼه',
+    textView: 'متن',
+    emojiView: 'د ایموجي جال',
+    darkMode: 'تیاره بڼه',
+    lightMode: 'روښانه بڼه',
+  },
+} as const;
 
 const openingStatements: Record<Language, string[]> = {
   english: [
@@ -550,133 +1111,12 @@ const closingStatementsByCategory: Record<Language, Record<ClosingCategory, stri
   },
 };
 
-const staticText = {
-  english: {
-    greeting: 'Dear Parent or Guardian,',
-    copied: 'Letter copied to clipboard.',
-    englishLabel: 'English',
-    spanishLabel: 'Spanish',
-    pashtoLabel: 'Pashto',
-    studentName: 'Student Name',
-    parentName: 'Parent / Guardian Name',
-    hrTeacher: 'HR Teacher / Class',
-    signingTeacher: 'Signing Teacher',
-    language: 'Language',
-    exemplary: 'Exemplary Behaviors',
-    misbehaviors: 'Misbehaviors',
-    preview: 'Letter Preview',
-    save: 'Save Letter Record',
-    shuffle: 'Shuffle Opening / Closing',
-    stats: 'Statistics',
-    overall: 'Overall',
-    byClass: 'Per Class',
-    byStudent: 'Individual Student',
-    filterClass: 'Select Class',
-    filterStudent: 'Select Student',
-    totalLetters: 'Total Letters',
-    noData: 'No data available for this view.',
-    topExemplary: 'Exemplary Behaviors Count',
-    topMisbehaviors: 'Misbehavior Count',
-    saved: 'Letter record saved.',
-    studentSearch: 'Student Search / Select',
-    copy: 'Copy Letter',
-    behaviorView: 'Behavior View',
-    textView: 'Text',
-    emojiView: 'Emoji Grid',
-  },
-  spanish: {
-    greeting: 'Estimado padre, madre o tutor:',
-    copied: 'La carta fue copiada al portapapeles.',
-    englishLabel: 'Inglés',
-    spanishLabel: 'Español',
-    pashtoLabel: 'Pastún',
-    studentName: 'Nombre del estudiante',
-    parentName: 'Nombre del padre, madre o tutor',
-    hrTeacher: 'Maestro/a de HR / Clase',
-    signingTeacher: 'Docente que firma',
-    language: 'Idioma',
-    exemplary: 'Conductas ejemplares',
-    misbehaviors: 'Conductas problemáticas',
-    preview: 'Vista previa de la carta',
-    save: 'Guardar registro de carta',
-    shuffle: 'Cambiar apertura / cierre',
-    stats: 'Estadísticas',
-    overall: 'General',
-    byClass: 'Por clase',
-    byStudent: 'Estudiante individual',
-    filterClass: 'Seleccionar clase',
-    filterStudent: 'Seleccionar estudiante',
-    totalLetters: 'Total de cartas',
-    noData: 'No hay datos disponibles para esta vista.',
-    topExemplary: 'Conteo de conductas ejemplares',
-    topMisbehaviors: 'Conteo de conductas problemáticas',
-    saved: 'Registro de carta guardado.',
-    studentSearch: 'Buscar / seleccionar estudiante',
-    copy: 'Copiar carta',
-    behaviorView: 'Vista de conducta',
-    textView: 'Texto',
-    emojiView: 'Cuadrícula de emojis',
-  },
-  pashto: {
-    greeting: 'ګرانه مور، پلار یا سرپرست،',
-    copied: 'لیک کلپ بورډ ته کاپي شو.',
-    englishLabel: 'انګلیسي',
-    spanishLabel: 'هسپانوي',
-    pashtoLabel: 'پښتو',
-    studentName: 'د زده کوونکي نوم',
-    parentName: 'د مور، پلار یا سرپرست نوم',
-    hrTeacher: 'د HR ښوونکی / ټولګی',
-    signingTeacher: 'لاسلیک کوونکی ښوونکی',
-    language: 'ژبه',
-    exemplary: 'مثالي چلندونه',
-    misbehaviors: 'ناسم چلندونه',
-    preview: 'د لیک مخکتنه',
-    save: 'د لیک ریکارډ خوندي کړئ',
-    shuffle: 'پیل / پای بدل کړئ',
-    stats: 'احصایې',
-    overall: 'ټولیز',
-    byClass: 'د ټولګي له مخې',
-    byStudent: 'انفرادي زده کوونکی',
-    filterClass: 'ټولګی وټاکئ',
-    filterStudent: 'زده کوونکی وټاکئ',
-    totalLetters: 'ټول لیکونه',
-    noData: 'د دې لید لپاره معلومات نشته.',
-    topExemplary: 'د مثالي چلندونو شمېر',
-    topMisbehaviors: 'د ناسم چلندونو شمېر',
-    saved: 'د لیک ریکارډ خوندي شو.',
-    studentSearch: 'زده کوونکی وپلټئ / وټاکئ',
-    copy: 'لیک کاپي کړئ',
-    behaviorView: 'د چلند بڼه',
-    textView: 'متن',
-    emojiView: 'د ایموجي جال',
-  },
-} as const;
-
 function pickRandomIndex(length: number) {
   return Math.floor(Math.random() * length);
 }
 
 function replaceStudentName(text: string, studentName: string) {
   return text.split('[studentName]').join(studentName || 'the student');
-}
-
-function toParagraphList(items: string[], language: Language, emptyText: string) {
-  if (!items.length) return emptyText;
-
-  if (language === 'spanish') {
-    if (items.length === 1) return `${items[0]}.`;
-    if (items.length === 2) return `${items[0]} y ${items[1]}.`;
-    return `${items.slice(0, -1).join(', ')}, y ${items[items.length - 1]}.`;
-  }
-
-  if (language === 'pashto') {
-    if (items.length === 1) return `${items[0]}۔`;
-    return `${items.join('، ')}۔`;
-  }
-
-  if (items.length === 1) return `${items[0]}.`;
-  if (items.length === 2) return `${items[0]} and ${items[1]}.`;
-  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}.`;
 }
 
 function readLocalStorage<T>(key: string, fallback: T): T {
@@ -719,10 +1159,8 @@ function getMaxCount(record: Record<string, number>) {
   return values.length ? Math.max(...values) : 1;
 }
 
-function toggleSelection(current: string[], label: string) {
-  return current.includes(label)
-    ? current.filter((item) => item !== label)
-    : [...current, label];
+function toggleSelection(current: string[], id: string) {
+  return current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
 }
 
 function getClosingCategory(hasExemplary: boolean, hasMisbehaviors: boolean): ClosingCategory {
@@ -732,11 +1170,44 @@ function getClosingCategory(hasExemplary: boolean, hasMisbehaviors: boolean): Cl
   return 'neutral';
 }
 
+function getOptionLabelById(id: string, language: Language) {
+  return behaviorLookup.get(id)?.label[language] || id;
+}
+
+// function getOptionShortById(id: string, language: Language) {
+//   return behaviorLookup.get(id)?.short[language] || id;
+// }
+
+// function getOptionEmojiById(id: string) {
+//   return behaviorLookup.get(id)?.emoji || '•';
+// }
+
+function toParagraphListFromIds(ids: string[], language: Language) {
+  const items = ids.map((id) => getOptionLabelById(id, language));
+  if (!items.length) return '';
+
+  if (language === 'spanish') {
+    if (items.length === 1) return `${items[0]}.`;
+    if (items.length === 2) return `${items[0]} y ${items[1]}.`;
+    return `${items.slice(0, -1).join(', ')}, y ${items[items.length - 1]}.`;
+  }
+
+  if (language === 'pashto') {
+    if (items.length === 1) return `${items[0]}۔`;
+    return `${items.join('، ')}۔`;
+  }
+
+  if (items.length === 1) return `${items[0]}.`;
+  if (items.length === 2) return `${items[0]} and ${items[1]}.`;
+  return `${items.slice(0, -1).join(', ')}, and ${items[items.length - 1]}.`;
+}
+
 export default function ParentLetterGenerator() {
   const [studentName, setStudentName] = useState('');
   const [parentName, setParentName] = useState('');
   const [hrTeacher, setHrTeacher] = useState('');
   const [signingTeacher, setSigningTeacher] = useState('Mr. Magee');
+  const [uiLanguage, setUiLanguage] = useState<Language>('english');
   const [language, setLanguage] = useState<Language>('english');
   const [selectedTheme, setSelectedTheme] = useState<ThemeKey>('blue');
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
@@ -757,7 +1228,7 @@ export default function ParentLetterGenerator() {
   const [classFilter, setClassFilter] = useState<string | null>(null);
   const [studentFilter, setStudentFilter] = useState<string | null>(null);
 
-  const t = staticText[language];
+  const t = staticText[uiLanguage];
   const palette = themePalette[selectedTheme][themeMode];
   const goodTileBg = themeMode === 'dark' ? '#16351d' : '#dcfce7';
   const goodTileBorder = themeMode === 'dark' ? '#22c55e' : '#86efac';
@@ -768,12 +1239,10 @@ export default function ParentLetterGenerator() {
     const loadedProfiles = readLocalStorage<StudentProfile[]>(STORAGE_KEYS.profiles, []);
     const loadedRecords = readLocalStorage<StudentRecord[]>(STORAGE_KEYS.records, []);
     const loadedStats = readLocalStorage<StatsShape>(STORAGE_KEYS.stats, emptyStats());
-    const loadedSigningTeacher = readLocalStorage<string>(
-      STORAGE_KEYS.signingTeacher,
-      'Mr. Magee',
-    );
+    const loadedSigningTeacher = readLocalStorage<string>(STORAGE_KEYS.signingTeacher, 'Mr. Magee');
     const loadedTheme = readLocalStorage<ThemeKey>(STORAGE_KEYS.theme, 'blue');
     const loadedThemeMode = readLocalStorage<ThemeMode>(STORAGE_KEYS.themeMode, 'light');
+    const loadedUiLanguage = readLocalStorage<Language>(STORAGE_KEYS.uiLanguage, 'english');
 
     setProfiles(loadedProfiles);
     setRecords(loadedRecords);
@@ -781,6 +1250,7 @@ export default function ParentLetterGenerator() {
     setSigningTeacher(loadedSigningTeacher);
     setSelectedTheme(loadedTheme);
     setThemeMode(loadedThemeMode);
+    setUiLanguage(loadedUiLanguage);
     setOpeningIndex(pickRandomIndex(openingStatements.english.length));
     setClosingIndex(0);
   }, []);
@@ -812,6 +1282,11 @@ export default function ParentLetterGenerator() {
     writeLocalStorage(STORAGE_KEYS.themeMode, nextMode);
   };
 
+  const handleUiLanguageChange = (next: Language) => {
+    setUiLanguage(next);
+    writeLocalStorage(STORAGE_KEYS.uiLanguage, next);
+  };
+
   const currentOpening = replaceStudentName(
     openingStatements[language][openingIndex],
     studentName.trim(),
@@ -821,8 +1296,8 @@ export default function ParentLetterGenerator() {
     studentName.trim(),
   );
 
-  const exemplaryParagraph = toParagraphList(selectedExemplary, language, '');
-  const misbehaviorParagraph = toParagraphList(selectedMisbehaviors, language, '');
+  const exemplaryParagraph = toParagraphListFromIds(selectedExemplary, language);
+  const misbehaviorParagraph = toParagraphListFromIds(selectedMisbehaviors, language);
 
   const letterText = useMemo(() => {
     const studentLabel =
@@ -839,7 +1314,7 @@ export default function ParentLetterGenerator() {
         : language === 'pashto'
           ? `${parentName.trim()} ګران/ګرانه،`
           : `Dear ${parentName.trim()},`
-      : t.greeting;
+      : staticText[language].greeting;
 
     const exemplaryLeadIn = hasExemplary
       ? language === 'spanish'
@@ -863,22 +1338,17 @@ export default function ParentLetterGenerator() {
             : `I have noticed that ${studentLabel} `
       : '';
 
-    const exemplarySection = hasExemplary
-      ? `${exemplaryLeadIn}${exemplaryParagraph}`
-      : '';
+    const exemplarySection = hasExemplary ? `${exemplaryLeadIn}${exemplaryParagraph}` : '';
+    const misbehaviorSection = hasMisbehaviors ? `${misbehaviorLeadIn}${misbehaviorParagraph}` : '';
 
-    const misbehaviorSection = hasMisbehaviors
-      ? `${misbehaviorLeadIn}${misbehaviorParagraph}`
-      : '';
-
-    const signatureTeacher = signingTeacher.trim() || 'Mr. Magee';
+    const signatureTeacher = signingTeacher.trim() || `${studentLabel}'s Teacher`;
 
     const signatureBlock =
       language === 'spanish'
-        ? `Atentamente,\n${signatureTeacher}\nMaestro/a de Tecnología en Clemente`
+        ? `Atentamente,\n${signatureTeacher}`
         : language === 'pashto'
-          ? `په درنښت،\n${signatureTeacher}\nپه Clemente کې د ټکنالوژۍ ښوونکی`
-          : `Sincerely,\n${signatureTeacher}\nTechnology Teacher at Clemente`;
+          ? `په درنښت،\n${signatureTeacher}`
+          : `Sincerely,\n${signatureTeacher}`;
 
     return [
       greetingLine,
@@ -906,7 +1376,6 @@ export default function ParentLetterGenerator() {
     parentName,
     signingTeacher,
     studentName,
-    t.greeting,
   ]);
 
   const copyLetter = async () => {
@@ -1092,28 +1561,56 @@ export default function ParentLetterGenerator() {
             </Box>
 
             <Stack alignItems={{ xs: 'flex-start', md: 'flex-end' }} spacing={1}>
-              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
-                {themeOrder.map((themeKey) => {
-                  const isSelected = selectedTheme === themeKey;
-                  return (
-                    <Tooltip key={themeKey} title={themePalette[themeKey][themeMode].label}>
-                      <Box
-                        component="button"
-                        type="button"
-                        onClick={() => handleThemeChange(themeKey)}
-                        sx={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: 1,
-                          border: isSelected ? `2px solid ${palette.text}` : `1px solid ${palette.border}`,
-                          backgroundColor: themePalette[themeKey][themeMode].accent,
-                          cursor: 'pointer',
-                          boxShadow: isSelected ? 2 : 0,
-                        }}
-                      />
-                    </Tooltip>
-                  );
-                })}
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <FormControl size="small" sx={{ minWidth: 140 }}>
+                  <InputLabel sx={{ color: palette.subtext }}>{t.uiLanguage}</InputLabel>
+                  <Select
+                    value={uiLanguage}
+                    label={t.uiLanguage}
+                    onChange={(e) => handleUiLanguageChange(e.target.value as Language)}
+                    sx={{
+                      bgcolor: palette.panelBg,
+                      color: palette.text,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.border,
+                      },
+                      '&:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.accent,
+                      },
+                      '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.accent,
+                      },
+                    }}
+                  >
+                    <MenuItem value="english">{staticText[uiLanguage].englishLabel}</MenuItem>
+                    <MenuItem value="spanish">{staticText[uiLanguage].spanishLabel}</MenuItem>
+                    <MenuItem value="pashto">{staticText[uiLanguage].pashtoLabel}</MenuItem>
+                  </Select>
+                </FormControl>
+
+                <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                  {themeOrder.map((themeKey) => {
+                    const isSelected = selectedTheme === themeKey;
+                    return (
+                      <Tooltip key={themeKey} title={themePalette[themeKey][themeMode].label}>
+                        <Box
+                          component="button"
+                          type="button"
+                          onClick={() => handleThemeChange(themeKey)}
+                          sx={{
+                            width: 24,
+                            height: 24,
+                            borderRadius: 1,
+                            border: isSelected ? `2px solid ${palette.text}` : `1px solid ${palette.border}`,
+                            backgroundColor: themePalette[themeKey][themeMode].accent,
+                            cursor: 'pointer',
+                            boxShadow: isSelected ? 2 : 0,
+                          }}
+                        />
+                      </Tooltip>
+                    );
+                  })}
+                </Stack>
               </Stack>
 
               <Button
@@ -1130,7 +1627,7 @@ export default function ParentLetterGenerator() {
                   },
                 }}
               >
-                {themeMode === 'light' ? 'Dark mode' : 'Light mode'}
+                {themeMode === 'light' ? t.darkMode : t.lightMode}
               </Button>
             </Stack>
           </Stack>
@@ -1198,10 +1695,10 @@ export default function ParentLetterGenerator() {
                   />
 
                   <FormControl fullWidth>
-                    <InputLabel sx={{ color: palette.subtext }}>{t.language}</InputLabel>
+                    <InputLabel sx={{ color: palette.subtext }}>{t.letterLanguage}</InputLabel>
                     <Select
                       value={language}
-                      label={t.language}
+                      label={t.letterLanguage}
                       onChange={(e) => setLanguage(e.target.value as Language)}
                       sx={{
                         bgcolor: palette.panelBg,
@@ -1267,16 +1764,16 @@ export default function ParentLetterGenerator() {
                     <Autocomplete
                       multiple
                       options={exemplaryOptions}
-                      value={exemplaryOptions.filter((option) => selectedExemplary.includes(option.label))}
-                      onChange={(_, value) => setSelectedExemplary(value.map((item) => item.label))}
+                      value={exemplaryOptions.filter((option) => selectedExemplary.includes(option.id))}
+                      onChange={(_, value) => setSelectedExemplary(value.map((item) => item.id))}
                       disableCloseOnSelect
                       filterSelectedOptions
-                      getOptionLabel={(option) => option.label}
+                      getOptionLabel={(option) => option.label[uiLanguage]}
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
-                            key={option.label}
-                            label={`${option.emoji} ${option.label}`}
+                            key={option.id}
+                            label={`${option.emoji} ${option.label[uiLanguage]}`}
                             {...getTagProps({ index })}
                             sx={{
                               bgcolor: palette.accentSoft,
@@ -1303,13 +1800,13 @@ export default function ParentLetterGenerator() {
                         }}
                       >
                         {exemplaryOptions.map((option) => {
-                          const selected = selectedExemplary.includes(option.label);
+                          const selected = selectedExemplary.includes(option.id);
                           return (
                             <Box
-                              key={option.label}
+                              key={option.id}
                               component="button"
                               type="button"
-                              onClick={() => setSelectedExemplary(toggleSelection(selectedExemplary, option.label))}
+                              onClick={() => setSelectedExemplary(toggleSelection(selectedExemplary, option.id))}
                               sx={{
                                 minHeight: 88,
                                 p: 1,
@@ -1329,7 +1826,7 @@ export default function ParentLetterGenerator() {
                             >
                               <Typography sx={{ fontSize: 28, lineHeight: 1 }}>{option.emoji}</Typography>
                               <Typography variant="caption" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-                                {option.short}
+                                {option.short[uiLanguage]}
                               </Typography>
                             </Box>
                           );
@@ -1342,16 +1839,16 @@ export default function ParentLetterGenerator() {
                     <Autocomplete
                       multiple
                       options={misbehaviorOptions}
-                      value={misbehaviorOptions.filter((option) => selectedMisbehaviors.includes(option.label))}
-                      onChange={(_, value) => setSelectedMisbehaviors(value.map((item) => item.label))}
+                      value={misbehaviorOptions.filter((option) => selectedMisbehaviors.includes(option.id))}
+                      onChange={(_, value) => setSelectedMisbehaviors(value.map((item) => item.id))}
                       disableCloseOnSelect
                       filterSelectedOptions
-                      getOptionLabel={(option) => option.label}
+                      getOptionLabel={(option) => option.label[uiLanguage]}
                       renderTags={(value, getTagProps) =>
                         value.map((option, index) => (
                           <Chip
-                            key={option.label}
-                            label={`${option.emoji} ${option.label}`}
+                            key={option.id}
+                            label={`${option.emoji} ${option.label[uiLanguage]}`}
                             {...getTagProps({ index })}
                             sx={{
                               bgcolor: palette.accentSoft,
@@ -1378,13 +1875,13 @@ export default function ParentLetterGenerator() {
                         }}
                       >
                         {misbehaviorOptions.map((option) => {
-                          const selected = selectedMisbehaviors.includes(option.label);
+                          const selected = selectedMisbehaviors.includes(option.id);
                           return (
                             <Box
-                              key={option.label}
+                              key={option.id}
                               component="button"
                               type="button"
-                              onClick={() => setSelectedMisbehaviors(toggleSelection(selectedMisbehaviors, option.label))}
+                              onClick={() => setSelectedMisbehaviors(toggleSelection(selectedMisbehaviors, option.id))}
                               sx={{
                                 minHeight: 88,
                                 p: 1,
@@ -1404,7 +1901,7 @@ export default function ParentLetterGenerator() {
                             >
                               <Typography sx={{ fontSize: 28, lineHeight: 1 }}>{option.emoji}</Typography>
                               <Typography variant="caption" sx={{ fontWeight: 700, lineHeight: 1.1 }}>
-                                {option.short}
+                                {option.short[uiLanguage]}
                               </Typography>
                             </Box>
                           );
@@ -1594,12 +2091,12 @@ export default function ParentLetterGenerator() {
 
                     <Stack spacing={1.25}>
                       {sortedCountEntries(currentStatsView.exemplary).length ? (
-                        sortedCountEntries(currentStatsView.exemplary).map(([label, count]) => {
+                        sortedCountEntries(currentStatsView.exemplary).map(([id, count]) => {
                           const widthPercent = Math.max(18, (count / exemplaryMax) * 100);
 
                           return (
                             <Box
-                              key={label}
+                              key={id}
                               sx={{
                                 width: '100%',
                                 bgcolor: palette.panelAlt,
@@ -1631,7 +2128,7 @@ export default function ParentLetterGenerator() {
                                     lineHeight: 1.2,
                                   }}
                                 >
-                                  {label}
+                                  {getOptionLabelById(id, uiLanguage)}
                                 </Typography>
 
                                 <Typography
@@ -1663,12 +2160,12 @@ export default function ParentLetterGenerator() {
 
                     <Stack spacing={1.25}>
                       {sortedCountEntries(currentStatsView.misbehaviors).length ? (
-                        sortedCountEntries(currentStatsView.misbehaviors).map(([label, count]) => {
+                        sortedCountEntries(currentStatsView.misbehaviors).map(([id, count]) => {
                           const widthPercent = Math.max(18, (count / misbehaviorMax) * 100);
 
                           return (
                             <Box
-                              key={label}
+                              key={id}
                               sx={{
                                 width: '100%',
                                 bgcolor: palette.panelAlt,
@@ -1700,7 +2197,7 @@ export default function ParentLetterGenerator() {
                                     lineHeight: 1.2,
                                   }}
                                 >
-                                  {label}
+                                  {getOptionLabelById(id, uiLanguage)}
                                 </Typography>
 
                                 <Typography
