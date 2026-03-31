@@ -1206,7 +1206,7 @@ export default function ParentLetterGenerator() {
   const [studentName, setStudentName] = useState('');
   const [parentName, setParentName] = useState('');
   const [hrTeacher, setHrTeacher] = useState('');
-  const [signingTeacher, setSigningTeacher] = useState('Mr. Magee');
+  const [signingTeacher, setSigningTeacher] = useState('Teacher');
   const [uiLanguage, setUiLanguage] = useState<Language>('english');
   const [language, setLanguage] = useState<Language>('english');
   const [selectedTheme, setSelectedTheme] = useState<ThemeKey>('blue');
@@ -1239,7 +1239,7 @@ export default function ParentLetterGenerator() {
     const loadedProfiles = readLocalStorage<StudentProfile[]>(STORAGE_KEYS.profiles, []);
     const loadedRecords = readLocalStorage<StudentRecord[]>(STORAGE_KEYS.records, []);
     const loadedStats = readLocalStorage<StatsShape>(STORAGE_KEYS.stats, emptyStats());
-    const loadedSigningTeacher = readLocalStorage<string>(STORAGE_KEYS.signingTeacher, 'Mr. Magee');
+    const loadedSigningTeacher = readLocalStorage<string>(STORAGE_KEYS.signingTeacher, 'Teacher');
     const loadedTheme = readLocalStorage<ThemeKey>(STORAGE_KEYS.theme, 'blue');
     const loadedThemeMode = readLocalStorage<ThemeMode>(STORAGE_KEYS.themeMode, 'light');
     const loadedUiLanguage = readLocalStorage<Language>(STORAGE_KEYS.uiLanguage, 'english');
@@ -1394,7 +1394,7 @@ export default function ParentLetterGenerator() {
 
     const trimmedParent = parentName.trim();
     const trimmedHr = hrTeacher.trim();
-    const trimmedSigningTeacher = signingTeacher.trim() || 'Mr. Magee';
+    const trimmedSigningTeacher = signingTeacher.trim() || 'Teacher';
     const now = new Date().toISOString();
 
     const newRecord: StudentRecord = {
@@ -1660,7 +1660,7 @@ export default function ParentLetterGenerator() {
                       if (matched) {
                         setParentName(matched.parentName || '');
                         setHrTeacher(matched.hrTeacher || '');
-                        setSigningTeacher(matched.signingTeacher || 'Mr. Magee');
+                        setSigningTeacher(matched.signingTeacher || 'Teacher');
                       } else {
                         setParentName('');
                       }
