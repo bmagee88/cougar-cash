@@ -6,7 +6,6 @@ import {
   CardContent,
   Chip,
   Divider,
-  Grid,
   Grid2,
   List,
   ListItem,
@@ -18,54 +17,52 @@ import {
   Typography,
 } from "@mui/material";
 
-// Phase 1 prototype goals:
-// - 2 local players
-// - 2 archetypes
-// - 3 stances each
-// - 6 moves per stance
-// - visible shared queue
-// - simultaneous move selection
-// - speed-based resolution
-// - persistent queue modifiers
-// - dequeue starts when queue reaches 6 cards
-// - dequeue 2 each round
-
-// ----------------------------
-// Types
-// ----------------------------
-
 type MoveType = "offense" | "defense" | "ability";
+type DamageType = "bludgeoning" | "cutting" | "piercing";
+type FluxKey =
+  | "balance"
+  | "grounding"
+  | "focus"
+  | "stamina"
+  | "fatigue"
+  | "pain"
+  | "adrenaline"
+  | "mentalFatigue"
+  | "magicPoints";
+type InnateKey =
+  | "strength"
+  | "knowledge"
+  | "agility"
+  | "endurance"
+  | "technique"
+  | "will";
+type CounterKey = "stagger" | "rattled" | "wounded" | "strained";
 
-type InnateStats = {
-  strength: number;
-  knowledge: number;
-  agility: number;
-  endurance: number;
-  technique: number;
-  will: number;
-};
+type InnateStats = Record<InnateKey, number>;
+type FluxStats = Record<FluxKey, number>;
+type Counters = Record<CounterKey, number>;
 
-type FluxStats = {
-  balance: number;
-  grounding: number;
-  focus: number;
-  stamina: number;
-  fatigue: number;
-  pain: number;
-  adrenaline: number;
-  mentalFatigue: number;
-  magicPoints: number;
-};
-
-type FluxKey = keyof FluxStats;
-type InnateKey = keyof InnateStats;
-
-type StatDelta = {
+type Delta = {
   selfFlux?: Partial<Record<FluxKey, number>>;
   targetFlux?: Partial<Record<FluxKey, number>>;
   selfInnate?: Partial<Record<InnateKey, number>>;
   targetInnate?: Partial<Record<InnateKey, number>>;
 };
+
+type DamageProfile = Record<DamageType, number>;
+
+type MoveTag =
+  | "pressure"
+  | "break"
+  | "convert"
+  | "stabilize"
+  | "recover"
+  | "scar"
+  | "sharp"
+  | "heavy"
+  | "anti-fallen"
+  | "anti-focus-broken"
+  | "anti-armor";
 
 type Move = {
   id: string;
@@ -75,10 +72,19 @@ type Move = {
   staminaCost: number;
   magicCost: number;
   hitBase: number;
-  power: number;
-  immediate: StatDelta;
-  persistent: StatDelta;
+  immediate: Delta;
+  persistent: Delta;
+  damage?: DamageProfile;
+  primaryType?: DamageType;
+  sharpBonus?: number;
+  tags: MoveTag[];
   description: string;
+};
+
+type Armor = {
+  name: string;
+  coverage: number;
+  resist: DamageProfile;
 };
 
 type Stance = {
@@ -88,28 +94,28 @@ type Stance = {
   resetBalanceTo: number;
   resetGroundingTo: number;
   bonuses: {
-    hitBonus: number;
-    evasionBonus: number;
-    speedBonus: number;
-    powerBonus: number;
+    hit: number;
+    evade: number;
+    speed: number;
+    power: number;
+    antiPiercing: number;
   };
   moveIds: string[];
 };
 
-type FighterTemplate = {
+type Fighter = {
   id: string;
   name: string;
   archetype: string;
   innate: InnateStats;
   flux: FluxStats;
-  stances: Stance[];
-};
-
-type FighterState = FighterTemplate & {
   currentInnate: InnateStats;
   currentFlux: FluxStats;
+  counters: Counters;
+  stances: Stance[];
   activeStanceId: string;
   hp: number;
+  armor: Armor;
 };
 
 type QueuedMove = {
@@ -121,9 +127,17 @@ type QueuedMove = {
   roundAdded: number;
 };
 
-type PendingChoice = {
-  stanceId: string;
-  moveId: string;
+type PendingChoice = { stanceId: string; moveId: string };
+
+type CrashState = {
+  fallen: boolean;
+  groundingBroken: boolean;
+  focusBroken: boolean;
+  exhausted: boolean;
+  overstrained: boolean;
+  overwhelmed: boolean;
+  mentallyBroken: boolean;
+  outOfMagic: boolean;
 };
 
 type ResolutionEntry = {
@@ -133,94 +147,52 @@ type ResolutionEntry = {
   speed: number;
   hitScore: number;
   evadeScore: number;
-  hit: boolean;
+  armorThreshold: number;
+  outcome: "miss" | "armor" | "flesh" | "support";
   damage: number;
   note: string;
+  breakdown: string;
 };
 
-// ----------------------------
-// Helpers
-// ----------------------------
+const clamp = (n: number, min = 0, max = 100) =>
+  Math.max(min, Math.min(max, n));
+const STANCE_SWITCH_STAMINA_COST = 6;
+const STANCE_SWITCH_SPEED_PENALTY = 2;
 
-const clamp = (n: number, min = 0, max = 999) => Math.max(min, Math.min(max, n));
+const addPatch = <K extends string>(
+  obj: Record<K, number>,
+  patch?: Partial<Record<K, number>>,
+): Record<K, number> => {
+  const next: Record<K, number> = { ...obj };
+  if (!patch) return next;
 
-const applyFluxPatch = (flux: FluxStats, patch?: Partial<Record<FluxKey, number>>) => {
-  if (!patch) return flux;
-  const next = { ...flux };
-  (Object.keys(patch) as FluxKey[]).forEach((key) => {
-    next[key] = clamp(next[key] + (patch[key] ?? 0), 0, 100);
-  });
+  for (const key of Object.keys(patch) as K[]) {
+    next[key] = clamp(next[key] + (patch[key] ?? 0));
+  }
+
   return next;
 };
 
-const applyInnatePatch = (
-  innate: InnateStats,
-  patch?: Partial<Record<InnateKey, number>>
-) => {
-  if (!patch) return innate;
-  const next = { ...innate };
-  (Object.keys(patch) as InnateKey[]).forEach((key) => {
-    next[key] = clamp(next[key] + (patch[key] ?? 0), 0, 100);
-  });
-  return next;
-};
-
-const getStance = (fighter: FighterState, stanceId: string) =>
-  fighter.stances.find((s) => s.id === stanceId)!;
-
-const sumPersistentEffects = (
-  fighter: FighterState,
-  opponent: FighterState,
-  queue: QueuedMove[]
-) => {
-  let innate = { ...fighter.innate };
-  let flux = { ...fighter.flux };
-
-  queue.forEach((q) => {
-    if (q.ownerId === fighter.id) {
-      innate = applyInnatePatch(innate, q.move.persistent.selfInnate);
-      flux = applyFluxPatch(flux, q.move.persistent.selfFlux);
-    }
-    if (q.targetId === fighter.id) {
-      innate = applyInnatePatch(innate, q.move.persistent.targetInnate);
-      flux = applyFluxPatch(flux, q.move.persistent.targetFlux);
-    }
-  });
-
-  // simple state conditions for phase 1
-  if (flux.balance === 0) {
-    flux.focus = clamp(flux.focus - 20, 0, 100);
-  }
-  if (flux.pain === 0) {
-    flux.focus = 0;
-    flux.stamina = clamp(flux.stamina - 20, 0, 100);
-  }
-  if (flux.fatigue === 0) {
-    innate.strength = clamp(innate.strength - 10, 0, 100);
-  }
-  if (flux.mentalFatigue === 0) {
-    innate.knowledge = clamp(innate.knowledge - 10, 0, 100);
-  }
-
-  return { innate, flux, opponentId: opponent.id };
-};
-
-const formatPatch = (patch?: Record<string, number>) => {
-  if (!patch) return "None";
-  const entries = Object.entries(patch);
-  if (!entries.length) return "None";
-  return entries
+const fmt = (patch?: Record<string, number>) => {
+  if (!patch || !Object.keys(patch).length) return "None";
+  return Object.entries(patch)
     .map(([k, v]) => `${k} ${v > 0 ? "+" : ""}${v}`)
     .join(", ");
 };
 
-// ----------------------------
-// Moves
-// ----------------------------
+const getStance = (f: Fighter, id: string) =>
+  f.stances.find((s) => s.id === id)!;
+
+const zeroDamage = (): DamageProfile => ({
+  bludgeoning: 0,
+  cutting: 0,
+  piercing: 0,
+});
+
+const makeMove = (args: Move): Move => args;
 
 const MOVES: Record<string, Move> = {
-  // Vanguard - Iron Guard
-  braceWall: {
+  braceWall: makeMove({
     id: "braceWall",
     name: "Brace Wall",
     type: "defense",
@@ -228,53 +200,49 @@ const MOVES: Record<string, Move> = {
     staminaCost: 8,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { grounding: 12, balance: 8, focus: 4 },
-    },
-    persistent: {
-      selfFlux: { grounding: 6, balance: 4 },
-      targetFlux: {},
-    },
+    immediate: { selfFlux: { grounding: 22, balance: 18, focus: 10 } },
+    persistent: { selfFlux: { grounding: 10, balance: 8 } },
+    tags: ["stabilize"],
     description: "Solid defensive posture that stabilizes future rounds.",
-  },
-  shieldCheck: {
+  }),
+  shieldCheck: makeMove({
     id: "shieldCheck",
     name: "Shield Check",
     type: "offense",
     speed: 4,
     staminaCost: 10,
     magicCost: 0,
-    hitBase: 12,
-    power: 10,
+    hitBase: 13,
     immediate: {
-      targetFlux: { balance: -10, grounding: -6 },
-      selfFlux: { fatigue: -4 },
+      targetFlux: { balance: -44, grounding: -26 },
+      selfFlux: { fatigue: -8 },
     },
-    persistent: {
-      targetFlux: { balance: -4 },
-    },
-    description: "Forward bash that pressures balance.",
-  },
-  punishingCut: {
+    persistent: { targetFlux: { balance: -12 } },
+    damage: { bludgeoning: 16, cutting: 0, piercing: 0 },
+    primaryType: "bludgeoning",
+    tags: ["pressure", "break", "heavy"],
+    description: "Forward bash that pressures balance hard.",
+  }),
+  punishingCut: makeMove({
     id: "punishingCut",
     name: "Punishing Cut",
     type: "offense",
     speed: 5,
     staminaCost: 14,
     magicCost: 0,
-    hitBase: 14,
-    power: 16,
+    hitBase: 15,
     immediate: {
-      targetFlux: { pain: -10, focus: -4 },
-      selfFlux: { stamina: -4 },
+      targetFlux: { pain: -32, focus: -16 },
+      selfFlux: { stamina: -8 },
     },
-    persistent: {
-      targetFlux: { pain: -4 },
-    },
+    persistent: { targetFlux: { pain: -10 } },
+    damage: { bludgeoning: 2, cutting: 24, piercing: 6 },
+    primaryType: "cutting",
+    sharpBonus: 18,
+    tags: ["pressure", "scar", "sharp"],
     description: "Heavy slash with lasting pressure.",
-  },
-  rallyBreath: {
+  }),
+  rallyBreath: makeMove({
     id: "rallyBreath",
     name: "Rally Breath",
     type: "ability",
@@ -282,16 +250,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { focus: 10, stamina: 8, adrenaline: 4 },
-    },
-    persistent: {
-      selfFlux: { focus: 3 },
-    },
+    immediate: { selfFlux: { focus: 20, stamina: 16, adrenaline: 12 } },
+    persistent: { selfFlux: { focus: 8 } },
+    tags: ["recover", "stabilize"],
     description: "Steadies breathing and restores composure.",
-  },
-  anchorStep: {
+  }),
+  anchorStep: makeMove({
     id: "anchorStep",
     name: "Anchor Step",
     type: "ability",
@@ -299,16 +263,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 6,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { balance: 10, grounding: 10 },
-    },
-    persistent: {
-      selfFlux: { balance: 2, grounding: 2 },
-    },
-    description: "Re-centers body position for upcoming exchanges.",
-  },
-  interceptGuard: {
+    immediate: { selfFlux: { balance: 24, grounding: 22 } },
+    persistent: { selfFlux: { balance: 10, grounding: 8 } },
+    tags: ["stabilize", "recover"],
+    description: "Re-centers body position.",
+  }),
+  interceptGuard: makeMove({
     id: "interceptGuard",
     name: "Intercept Guard",
     type: "defense",
@@ -316,19 +276,16 @@ const MOVES: Record<string, Move> = {
     staminaCost: 10,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
     immediate: {
-      selfFlux: { focus: 8, grounding: 8 },
-      targetFlux: { focus: -2 },
+      selfFlux: { focus: 16, grounding: 16 },
+      targetFlux: { focus: -8 },
     },
-    persistent: {
-      selfFlux: { focus: 3 },
-    },
-    description: "Fast defensive response that improves current round defense.",
-  },
+    persistent: { selfFlux: { focus: 6 } },
+    tags: ["stabilize", "pressure"],
+    description: "Fast defensive response.",
+  }),
 
-  // Vanguard - Forward Pressure
-  rushDrive: {
+  rushDrive: makeMove({
     id: "rushDrive",
     name: "Rush Drive",
     type: "offense",
@@ -336,35 +293,37 @@ const MOVES: Record<string, Move> = {
     staminaCost: 15,
     magicCost: 0,
     hitBase: 16,
-    power: 14,
     immediate: {
-      targetFlux: { balance: -8, pain: -8 },
-      selfFlux: { fatigue: -6, adrenaline: 4 },
+      targetFlux: { balance: -34, pain: -22 },
+      selfFlux: { fatigue: -12, adrenaline: 12 },
     },
-    persistent: {
-      targetFlux: { balance: -3 },
-    },
-    description: "Fast advancing strike that opens the opponent up.",
-  },
-  cleavingLine: {
+    persistent: { targetFlux: { balance: -10 } },
+    damage: { bludgeoning: 12, cutting: 14, piercing: 2 },
+    primaryType: "cutting",
+    sharpBonus: 10,
+    tags: ["pressure", "convert"],
+    description: "Fast advancing strike.",
+  }),
+  cleavingLine: makeMove({
     id: "cleavingLine",
     name: "Cleaving Line",
     type: "offense",
     speed: 6,
     staminaCost: 16,
     magicCost: 0,
-    hitBase: 15,
-    power: 18,
+    hitBase: 17,
     immediate: {
-      targetFlux: { pain: -12 },
-      selfFlux: { stamina: -6 },
+      targetFlux: { pain: -36, focus: -12 },
+      selfFlux: { stamina: -12 },
     },
-    persistent: {
-      targetFlux: { focus: -3 },
-    },
+    persistent: { targetFlux: { pain: -10 } },
+    damage: { bludgeoning: 0, cutting: 28, piercing: 4 },
+    primaryType: "cutting",
+    sharpBonus: 20,
+    tags: ["pressure", "scar", "sharp", "heavy"],
     description: "Forceful committed attack.",
-  },
-  forwardScreen: {
+  }),
+  forwardScreen: makeMove({
     id: "forwardScreen",
     name: "Forward Screen",
     type: "defense",
@@ -372,16 +331,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 9,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { balance: 6, focus: 6 },
-    },
-    persistent: {
-      selfFlux: { focus: 4 },
-    },
-    description: "Keeps pressure while guarding lanes.",
-  },
-  bloodUp: {
+    immediate: { selfFlux: { balance: 14, focus: 14 } },
+    persistent: { selfFlux: { focus: 8 } },
+    tags: ["stabilize"],
+    description: "Pressure-minded defense.",
+  }),
+  bloodUp: makeMove({
     id: "bloodUp",
     name: "Blood Up",
     type: "ability",
@@ -389,16 +344,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { adrenaline: 10, pain: 6 },
-    },
-    persistent: {
-      selfFlux: { adrenaline: 4 },
-    },
+    immediate: { selfFlux: { adrenaline: 20, pain: 14 } },
+    persistent: { selfFlux: { adrenaline: 10 } },
+    tags: ["recover", "stabilize"],
     description: "Raises aggression and pain tolerance.",
-  },
-  pressureBeat: {
+  }),
+  pressureBeat: makeMove({
     id: "pressureBeat",
     name: "Pressure Beat",
     type: "ability",
@@ -406,17 +357,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 5,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      targetFlux: { focus: -8 },
-      selfFlux: { focus: 4 },
-    },
-    persistent: {
-      targetFlux: { focus: -3 },
-    },
-    description: "Tempo disruption that affects later turns.",
-  },
-  hardCover: {
+    immediate: { targetFlux: { focus: -40 }, selfFlux: { focus: 12 } },
+    persistent: { targetFlux: { focus: -12 } },
+    tags: ["break", "pressure"],
+    description: "Tempo disruption.",
+  }),
+  hardCover: makeMove({
     id: "hardCover",
     name: "Hard Cover",
     type: "defense",
@@ -424,18 +370,13 @@ const MOVES: Record<string, Move> = {
     staminaCost: 10,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { grounding: 10, balance: 6 },
-    },
-    persistent: {
-      selfFlux: { grounding: 4 },
-    },
-    description: "Sturdy fallback against counter-pressure.",
-  },
+    immediate: { selfFlux: { grounding: 22, balance: 16 } },
+    persistent: { selfFlux: { grounding: 10 } },
+    tags: ["stabilize"],
+    description: "Sturdy fallback.",
+  }),
 
-  // Vanguard - Common Ground
-  groundLatch: {
+  groundLatch: makeMove({
     id: "groundLatch",
     name: "Ground Latch",
     type: "defense",
@@ -443,33 +384,27 @@ const MOVES: Record<string, Move> = {
     staminaCost: 8,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { grounding: 14, focus: 4 },
-    },
-    persistent: {
-      selfFlux: { grounding: 5 },
-    },
+    immediate: { selfFlux: { grounding: 24, focus: 10 } },
+    persistent: { selfFlux: { grounding: 12 } },
+    tags: ["stabilize"],
     description: "Defensive survival from the ground.",
-  },
-  heelKick: {
+  }),
+  heelKick: makeMove({
     id: "heelKick",
     name: "Heel Kick",
     type: "offense",
     speed: 7,
     staminaCost: 10,
     magicCost: 0,
-    hitBase: 13,
-    power: 11,
-    immediate: {
-      targetFlux: { balance: -7 },
-    },
-    persistent: {
-      targetFlux: { balance: -2 },
-    },
-    description: "Fast low strike from unstable footing.",
-  },
-  scrambleRise: {
+    hitBase: 14,
+    immediate: { targetFlux: { balance: -34 } },
+    persistent: { targetFlux: { balance: -10 } },
+    damage: { bludgeoning: 10, cutting: 0, piercing: 0 },
+    primaryType: "bludgeoning",
+    tags: ["pressure", "anti-fallen"],
+    description: "Fast low strike.",
+  }),
+  scrambleRise: makeMove({
     id: "scrambleRise",
     name: "Scramble Rise",
     type: "ability",
@@ -477,16 +412,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 8,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { balance: 12, grounding: 8 },
-    },
-    persistent: {
-      selfFlux: { balance: 3 },
-    },
-    description: "Recover position after being brought low.",
-  },
-  lowGuard: {
+    immediate: { selfFlux: { balance: 26, grounding: 16 } },
+    persistent: { selfFlux: { balance: 10 } },
+    tags: ["recover", "stabilize"],
+    description: "Recover position.",
+  }),
+  lowGuard: makeMove({
     id: "lowGuard",
     name: "Low Guard",
     type: "defense",
@@ -494,33 +425,27 @@ const MOVES: Record<string, Move> = {
     staminaCost: 7,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { focus: 8, grounding: 6 },
-    },
-    persistent: {
-      selfFlux: { focus: 3 },
-    },
-    description: "Grounded protection that stays relevant.",
-  },
-  snagAnkle: {
+    immediate: { selfFlux: { focus: 16, grounding: 14 } },
+    persistent: { selfFlux: { focus: 8 } },
+    tags: ["stabilize"],
+    description: "Grounded protection.",
+  }),
+  snagAnkle: makeMove({
     id: "snagAnkle",
     name: "Snag Ankle",
     type: "offense",
     speed: 5,
     staminaCost: 9,
     magicCost: 0,
-    hitBase: 11,
-    power: 10,
-    immediate: {
-      targetFlux: { balance: -9, grounding: -5 },
-    },
-    persistent: {
-      targetFlux: { balance: -3 },
-    },
+    hitBase: 12,
+    immediate: { targetFlux: { balance: -46, grounding: -20 } },
+    persistent: { targetFlux: { balance: -14 } },
+    damage: { bludgeoning: 8, cutting: 0, piercing: 4 },
+    primaryType: "bludgeoning",
+    tags: ["break", "anti-fallen"],
     description: "Drags the opponent into a worse next round.",
-  },
-  dirtRead: {
+  }),
+  dirtRead: makeMove({
     id: "dirtRead",
     name: "Dirt Read",
     type: "ability",
@@ -528,19 +453,13 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 4,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { focus: 10 },
-      targetFlux: { focus: -4 },
-    },
-    persistent: {
-      selfFlux: { focus: 4 },
-    },
-    description: "A tactical reset and read of the opponent.",
-  },
+    immediate: { selfFlux: { focus: 20 }, targetFlux: { focus: -16 } },
+    persistent: { selfFlux: { focus: 8 } },
+    tags: ["recover", "pressure"],
+    description: "Tactical reset and read.",
+  }),
 
-  // Arcanist - Veil Step
-  veilCut: {
+  veilCut: makeMove({
     id: "veilCut",
     name: "Veil Cut",
     type: "offense",
@@ -548,17 +467,18 @@ const MOVES: Record<string, Move> = {
     staminaCost: 8,
     magicCost: 4,
     hitBase: 18,
-    power: 13,
     immediate: {
-      targetFlux: { focus: -10, pain: -6 },
-      selfFlux: { magicPoints: -4 },
+      targetFlux: { focus: -34, pain: -20 },
+      selfFlux: { magicPoints: -8 },
     },
-    persistent: {
-      targetFlux: { focus: -4 },
-    },
-    description: "Fast precise attack from a mobile stance.",
-  },
-  feintNeedle: {
+    persistent: { targetFlux: { focus: -12 } },
+    damage: { bludgeoning: 0, cutting: 18, piercing: 10 },
+    primaryType: "cutting",
+    sharpBonus: 12,
+    tags: ["pressure", "sharp", "convert"],
+    description: "Fast precise attack.",
+  }),
+  feintNeedle: makeMove({
     id: "feintNeedle",
     name: "Feint Needle",
     type: "offense",
@@ -566,16 +486,14 @@ const MOVES: Record<string, Move> = {
     staminaCost: 6,
     magicCost: 5,
     hitBase: 19,
-    power: 9,
-    immediate: {
-      targetFlux: { balance: -6, focus: -8 },
-    },
-    persistent: {
-      targetFlux: { focus: -3 },
-    },
-    description: "Low power but high accuracy pressure.",
-  },
-  slipWard: {
+    immediate: { targetFlux: { balance: -22, focus: -36 } },
+    persistent: { targetFlux: { focus: -12 } },
+    damage: { bludgeoning: 0, cutting: 0, piercing: 24 },
+    primaryType: "piercing",
+    tags: ["break", "anti-focus-broken"],
+    description: "Low power, high accuracy pressure.",
+  }),
+  slipWard: makeMove({
     id: "slipWard",
     name: "Slip Ward",
     type: "defense",
@@ -583,16 +501,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 4,
     magicCost: 4,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { balance: 8, focus: 10 },
-    },
-    persistent: {
-      selfFlux: { focus: 4 },
-    },
+    immediate: { selfFlux: { balance: 18, focus: 20 } },
+    persistent: { selfFlux: { focus: 10 } },
+    tags: ["stabilize"],
     description: "Agile defensive response.",
-  },
-  glassMind: {
+  }),
+  glassMind: makeMove({
     id: "glassMind",
     name: "Glass Mind",
     type: "ability",
@@ -600,17 +514,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 7,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { focus: 12 },
-      targetFlux: { mentalFatigue: -8 },
-    },
-    persistent: {
-      targetFlux: { focus: -2 },
-    },
+    immediate: { selfFlux: { focus: 20 }, targetFlux: { mentalFatigue: -42 } },
+    persistent: { targetFlux: { focus: -8 } },
+    tags: ["break", "pressure"],
     description: "Attacks mental clarity over time.",
-  },
-  mirageLane: {
+  }),
+  mirageLane: makeMove({
     id: "mirageLane",
     name: "Mirage Lane",
     type: "ability",
@@ -618,18 +527,15 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 6,
     hitBase: 0,
-    power: 0,
     immediate: {
-      selfFlux: { balance: 6, grounding: 4 },
-      targetFlux: { focus: -5 },
+      selfFlux: { balance: 14, grounding: 10 },
+      targetFlux: { focus: -24 },
     },
-    persistent: {
-      selfFlux: { focus: 2 },
-      targetFlux: { focus: -2 },
-    },
-    description: "Distorts the rhythm of future exchanges.",
-  },
-  sidestepSeal: {
+    persistent: { selfFlux: { focus: 6 }, targetFlux: { focus: -8 } },
+    tags: ["pressure", "stabilize"],
+    description: "Distorts future exchanges.",
+  }),
+  sidestepSeal: makeMove({
     id: "sidestepSeal",
     name: "Sidestep Seal",
     type: "defense",
@@ -637,18 +543,13 @@ const MOVES: Record<string, Move> = {
     staminaCost: 5,
     magicCost: 3,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { balance: 10, focus: 6 },
-    },
-    persistent: {
-      selfFlux: { balance: 3 },
-    },
+    immediate: { selfFlux: { balance: 20, focus: 12 } },
+    persistent: { selfFlux: { balance: 10 } },
+    tags: ["stabilize"],
     description: "Fast protection that keeps mobility online.",
-  },
+  }),
 
-  // Arcanist - Channel Form
-  pulseBolt: {
+  pulseBolt: makeMove({
     id: "pulseBolt",
     name: "Pulse Bolt",
     type: "offense",
@@ -656,16 +557,14 @@ const MOVES: Record<string, Move> = {
     staminaCost: 2,
     magicCost: 10,
     hitBase: 16,
-    power: 15,
-    immediate: {
-      targetFlux: { pain: -9, grounding: -4 },
-    },
-    persistent: {
-      targetFlux: { pain: -3 },
-    },
-    description: "Reliable magical offense with lasting sting.",
-  },
-  lanceThread: {
+    immediate: { targetFlux: { pain: -28, grounding: -18 } },
+    persistent: { targetFlux: { pain: -12 } },
+    damage: { bludgeoning: 10, cutting: 0, piercing: 12 },
+    primaryType: "piercing",
+    tags: ["pressure", "anti-armor"],
+    description: "Reliable magical offense.",
+  }),
+  lanceThread: makeMove({
     id: "lanceThread",
     name: "Lance Thread",
     type: "offense",
@@ -673,16 +572,14 @@ const MOVES: Record<string, Move> = {
     staminaCost: 2,
     magicCost: 12,
     hitBase: 17,
-    power: 17,
-    immediate: {
-      targetFlux: { focus: -6, pain: -8 },
-    },
-    persistent: {
-      targetFlux: { mentalFatigue: -3 },
-    },
+    immediate: { targetFlux: { focus: -24, pain: -26 } },
+    persistent: { targetFlux: { mentalFatigue: -10 } },
+    damage: { bludgeoning: 0, cutting: 0, piercing: 28 },
+    primaryType: "piercing",
+    tags: ["convert", "anti-focus-broken"],
     description: "Focused magical strike.",
-  },
-  manaScreen: {
+  }),
+  manaScreen: makeMove({
     id: "manaScreen",
     name: "Mana Screen",
     type: "defense",
@@ -690,16 +587,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 8,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { grounding: 8, focus: 8 },
-    },
-    persistent: {
-      selfFlux: { grounding: 3, focus: 2 },
-    },
-    description: "Resource-backed defense that lingers.",
-  },
-  reservePulse: {
+    immediate: { selfFlux: { grounding: 18, focus: 18 } },
+    persistent: { selfFlux: { grounding: 8, focus: 6 } },
+    tags: ["stabilize"],
+    description: "Resource-backed defense.",
+  }),
+  reservePulse: makeMove({
     id: "reservePulse",
     name: "Reserve Pulse",
     type: "ability",
@@ -707,16 +600,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 0,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { magicPoints: 10, focus: 6 },
-    },
-    persistent: {
-      selfFlux: { magicPoints: 3 },
-    },
-    description: "Recovers magical resources for later turns.",
-  },
-  intentMark: {
+    immediate: { selfFlux: { magicPoints: 24, focus: 12 } },
+    persistent: { selfFlux: { magicPoints: 10 } },
+    tags: ["recover"],
+    description: "Recovers magical resources.",
+  }),
+  intentMark: makeMove({
     id: "intentMark",
     name: "Intent Mark",
     type: "ability",
@@ -724,16 +613,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 7,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      targetFlux: { focus: -7, balance: -4 },
-    },
-    persistent: {
-      targetFlux: { focus: -3 },
-    },
+    immediate: { targetFlux: { focus: -30, balance: -18 } },
+    persistent: { targetFlux: { focus: -10 } },
+    tags: ["pressure", "convert"],
     description: "Marks the opponent for future pressure.",
-  },
-  quietWard: {
+  }),
+  quietWard: makeMove({
     id: "quietWard",
     name: "Quiet Ward",
     type: "defense",
@@ -741,18 +626,13 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 6,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { focus: 10, grounding: 6 },
-    },
-    persistent: {
-      selfFlux: { focus: 3 },
-    },
+    immediate: { selfFlux: { focus: 20, grounding: 12 } },
+    persistent: { selfFlux: { focus: 8 } },
+    tags: ["stabilize", "recover"],
     description: "Stabilizes magical channeling.",
-  },
+  }),
 
-  // Arcanist - Common Ground
-  rootKnot: {
+  rootKnot: makeMove({
     id: "rootKnot",
     name: "Root Knot",
     type: "defense",
@@ -760,16 +640,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 2,
     magicCost: 5,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { grounding: 14, focus: 6 },
-    },
-    persistent: {
-      selfFlux: { grounding: 5 },
-    },
-    description: "Ground recovery for the arcanist.",
-  },
-  sparkHeel: {
+    immediate: { selfFlux: { grounding: 24, focus: 14 } },
+    persistent: { selfFlux: { grounding: 10 } },
+    tags: ["stabilize"],
+    description: "Ground recovery.",
+  }),
+  sparkHeel: makeMove({
     id: "sparkHeel",
     name: "Spark Heel",
     type: "offense",
@@ -777,16 +653,14 @@ const MOVES: Record<string, Move> = {
     staminaCost: 5,
     magicCost: 4,
     hitBase: 14,
-    power: 10,
-    immediate: {
-      targetFlux: { balance: -7, pain: -5 },
-    },
-    persistent: {
-      targetFlux: { balance: -2 },
-    },
-    description: "A quick low strike to create space.",
-  },
-  groundCipher: {
+    immediate: { targetFlux: { balance: -36, pain: -16 } },
+    persistent: { targetFlux: { balance: -10 } },
+    damage: { bludgeoning: 8, cutting: 4, piercing: 8 },
+    primaryType: "bludgeoning",
+    tags: ["pressure", "anti-fallen"],
+    description: "Quick low strike.",
+  }),
+  groundCipher: makeMove({
     id: "groundCipher",
     name: "Ground Cipher",
     type: "ability",
@@ -794,17 +668,15 @@ const MOVES: Record<string, Move> = {
     staminaCost: 0,
     magicCost: 5,
     hitBase: 0,
-    power: 0,
     immediate: {
-      selfFlux: { focus: 10, grounding: 6 },
-      targetFlux: { focus: -4 },
+      selfFlux: { focus: 20, grounding: 12 },
+      targetFlux: { focus: -16 },
     },
-    persistent: {
-      selfFlux: { focus: 3 },
-    },
+    persistent: { selfFlux: { focus: 8 } },
+    tags: ["recover", "pressure"],
     description: "Rebuilds control from a poor position.",
-  },
-  turtleVeil: {
+  }),
+  turtleVeil: makeMove({
     id: "turtleVeil",
     name: "Turtle Veil",
     type: "defense",
@@ -812,16 +684,12 @@ const MOVES: Record<string, Move> = {
     staminaCost: 1,
     magicCost: 4,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { balance: 8, grounding: 10 },
-    },
-    persistent: {
-      selfFlux: { grounding: 4 },
-    },
+    immediate: { selfFlux: { balance: 16, grounding: 20 } },
+    persistent: { selfFlux: { grounding: 8 } },
+    tags: ["stabilize"],
     description: "Slow but reliable ground defense.",
-  },
-  elbowSpark: {
+  }),
+  elbowSpark: makeMove({
     id: "elbowSpark",
     name: "Elbow Spark",
     type: "offense",
@@ -829,16 +697,14 @@ const MOVES: Record<string, Move> = {
     staminaCost: 6,
     magicCost: 3,
     hitBase: 13,
-    power: 12,
-    immediate: {
-      targetFlux: { pain: -8, focus: -4 },
-    },
-    persistent: {
-      targetFlux: { pain: -2 },
-    },
-    description: "Close-range burst from grounded posture.",
-  },
-  riseThread: {
+    immediate: { targetFlux: { pain: -28, focus: -14 } },
+    persistent: { targetFlux: { pain: -8 } },
+    damage: { bludgeoning: 12, cutting: 0, piercing: 6 },
+    primaryType: "bludgeoning",
+    tags: ["pressure", "scar"],
+    description: "Close-range burst.",
+  }),
+  riseThread: makeMove({
     id: "riseThread",
     name: "Rise Thread",
     type: "ability",
@@ -846,31 +712,47 @@ const MOVES: Record<string, Move> = {
     staminaCost: 2,
     magicCost: 5,
     hitBase: 0,
-    power: 0,
-    immediate: {
-      selfFlux: { balance: 12, focus: 6 },
-    },
-    persistent: {
-      selfFlux: { balance: 3 },
-    },
-    description: "Starts the recovery back to mobile play.",
-  },
+    immediate: { selfFlux: { balance: 24, focus: 12 } },
+    persistent: { selfFlux: { balance: 10 } },
+    tags: ["recover", "stabilize"],
+    description: "Starts recovery back to mobile play.",
+  }),
 };
 
-// ----------------------------
-// Fighters and Stances
-// ----------------------------
+const makeStance = (
+  id: string,
+  name: string,
+  description: string,
+  resetBalanceTo: number,
+  resetGroundingTo: number,
+  bonuses: Stance["bonuses"],
+  moveIds: string[],
+): Stance => ({
+  id,
+  name,
+  description,
+  resetBalanceTo,
+  resetGroundingTo,
+  bonuses,
+  moveIds,
+});
 
-const createVanguard = (): FighterState => {
-  const stances: Stance[] = [
-    {
-      id: "ironGuard",
-      name: "Iron Guard",
-      description: "High grounding, measured defense, reliable counter setup.",
-      resetBalanceTo: 70,
-      resetGroundingTo: 80,
-      bonuses: { hitBonus: 2, evasionBonus: 6, speedBonus: -1, powerBonus: 3 },
-      moveIds: [
+const makeArmor = (
+  name: string,
+  coverage: number,
+  resist: DamageProfile,
+): Armor => ({ name, coverage, resist });
+
+const createVanguard = (): Fighter => {
+  const stances = [
+    makeStance(
+      "ironGuard",
+      "Iron Guard",
+      "High grounding, measured defense, reliable counter setup.",
+      70,
+      82,
+      { hit: 2, evade: 6, speed: -1, power: 3, antiPiercing: 4 },
+      [
         "braceWall",
         "shieldCheck",
         "punishingCut",
@@ -878,15 +760,15 @@ const createVanguard = (): FighterState => {
         "anchorStep",
         "interceptGuard",
       ],
-    },
-    {
-      id: "forwardPressure",
-      name: "Forward Pressure",
-      description: "Attack-forward stance with better tempo and adrenaline.",
-      resetBalanceTo: 60,
-      resetGroundingTo: 55,
-      bonuses: { hitBonus: 5, evasionBonus: 1, speedBonus: 2, powerBonus: 4 },
-      moveIds: [
+    ),
+    makeStance(
+      "forwardPressure",
+      "Forward Pressure",
+      "Attack-forward stance with better tempo and adrenaline.",
+      60,
+      55,
+      { hit: 5, evade: 1, speed: 2, power: 4, antiPiercing: 1 },
+      [
         "rushDrive",
         "cleavingLine",
         "forwardScreen",
@@ -894,15 +776,15 @@ const createVanguard = (): FighterState => {
         "pressureBeat",
         "hardCover",
       ],
-    },
-    {
-      id: "commonGroundV",
-      name: "Common Ground",
-      description: "Fallback stance used when fighting from the ground.",
-      resetBalanceTo: 45,
-      resetGroundingTo: 75,
-      bonuses: { hitBonus: 1, evasionBonus: 3, speedBonus: 0, powerBonus: 1 },
-      moveIds: [
+    ),
+    makeStance(
+      "commonGroundV",
+      "Common Ground",
+      "Fallback stance used when fighting from the ground.",
+      45,
+      76,
+      { hit: 1, evade: 3, speed: 0, power: 1, antiPiercing: 2 },
+      [
         "groundLatch",
         "heelKick",
         "scrambleRise",
@@ -910,10 +792,9 @@ const createVanguard = (): FighterState => {
         "snagAnkle",
         "dirtRead",
       ],
-    },
+    ),
   ];
-
-  const innate: InnateStats = {
+  const innate = {
     strength: 18,
     knowledge: 10,
     agility: 11,
@@ -921,10 +802,9 @@ const createVanguard = (): FighterState => {
     technique: 13,
     will: 15,
   };
-
-  const flux: FluxStats = {
+  const flux = {
     balance: 70,
-    grounding: 80,
+    grounding: 82,
     focus: 58,
     stamina: 62,
     fatigue: 64,
@@ -933,7 +813,6 @@ const createVanguard = (): FighterState => {
     mentalFatigue: 55,
     magicPoints: 20,
   };
-
   return {
     id: "p1",
     name: "Player 1",
@@ -942,22 +821,28 @@ const createVanguard = (): FighterState => {
     flux,
     currentInnate: { ...innate },
     currentFlux: { ...flux },
-    activeStanceId: "ironGuard",
+    counters: { stagger: 0, rattled: 0, wounded: 0, strained: 0 },
     stances,
+    activeStanceId: "ironGuard",
     hp: 100,
+    armor: makeArmor("Half Plate", 11, {
+      bludgeoning: 8,
+      cutting: 12,
+      piercing: 7,
+    }),
   };
 };
 
-const createArcanist = (): FighterState => {
-  const stances: Stance[] = [
-    {
-      id: "veilStep",
-      name: "Veil Step",
-      description: "Mobile stance with speed and accuracy pressure.",
-      resetBalanceTo: 78,
-      resetGroundingTo: 50,
-      bonuses: { hitBonus: 6, evasionBonus: 5, speedBonus: 3, powerBonus: 1 },
-      moveIds: [
+const createArcanist = (): Fighter => {
+  const stances = [
+    makeStance(
+      "veilStep",
+      "Veil Step",
+      "Mobile stance with speed and accuracy pressure.",
+      78,
+      50,
+      { hit: 6, evade: 5, speed: 3, power: 1, antiPiercing: 6 },
+      [
         "veilCut",
         "feintNeedle",
         "slipWard",
@@ -965,15 +850,15 @@ const createArcanist = (): FighterState => {
         "mirageLane",
         "sidestepSeal",
       ],
-    },
-    {
-      id: "channelForm",
-      name: "Channel Form",
-      description: "Resource-heavy magical posture with strong control.",
-      resetBalanceTo: 62,
-      resetGroundingTo: 60,
-      bonuses: { hitBonus: 4, evasionBonus: 2, speedBonus: 0, powerBonus: 5 },
-      moveIds: [
+    ),
+    makeStance(
+      "channelForm",
+      "Channel Form",
+      "Resource-heavy magical posture with strong control.",
+      62,
+      60,
+      { hit: 4, evade: 2, speed: 0, power: 5, antiPiercing: 2 },
+      [
         "pulseBolt",
         "lanceThread",
         "manaScreen",
@@ -981,15 +866,15 @@ const createArcanist = (): FighterState => {
         "intentMark",
         "quietWard",
       ],
-    },
-    {
-      id: "commonGroundA",
-      name: "Common Ground",
-      description: "Ground recovery posture for the arcanist.",
-      resetBalanceTo: 48,
-      resetGroundingTo: 72,
-      bonuses: { hitBonus: 1, evasionBonus: 3, speedBonus: 0, powerBonus: 1 },
-      moveIds: [
+    ),
+    makeStance(
+      "commonGroundA",
+      "Common Ground",
+      "Ground recovery posture for the arcanist.",
+      48,
+      72,
+      { hit: 1, evade: 3, speed: 0, power: 1, antiPiercing: 3 },
+      [
         "rootKnot",
         "sparkHeel",
         "groundCipher",
@@ -997,10 +882,9 @@ const createArcanist = (): FighterState => {
         "elbowSpark",
         "riseThread",
       ],
-    },
+    ),
   ];
-
-  const innate: InnateStats = {
+  const innate = {
     strength: 9,
     knowledge: 19,
     agility: 16,
@@ -1008,8 +892,7 @@ const createArcanist = (): FighterState => {
     technique: 17,
     will: 16,
   };
-
-  const flux: FluxStats = {
+  const flux = {
     balance: 78,
     grounding: 50,
     focus: 68,
@@ -1020,7 +903,6 @@ const createArcanist = (): FighterState => {
     mentalFatigue: 64,
     magicPoints: 72,
   };
-
   return {
     id: "p2",
     name: "Player 2",
@@ -1029,26 +911,198 @@ const createArcanist = (): FighterState => {
     flux,
     currentInnate: { ...innate },
     currentFlux: { ...flux },
-    activeStanceId: "veilStep",
+    counters: { stagger: 0, rattled: 0, wounded: 0, strained: 0 },
     stances,
+    activeStanceId: "veilStep",
     hp: 100,
+    armor: makeArmor("Layered Robes", 6, {
+      bludgeoning: 4,
+      cutting: 5,
+      piercing: 3,
+    }),
   };
 };
 
-// ----------------------------
-// Main component
-// ----------------------------
+const getMoveList = (fighter: Fighter, stanceId: string) =>
+  getStance(fighter, stanceId).moveIds.map((id) => MOVES[id]);
 
-export default function Phase1BattlePrototype() {
-  const [fighterA, setFighterA] = useState<FighterState>(() => createVanguard());
-  const [fighterB, setFighterB] = useState<FighterState>(() => createArcanist());
+const deriveCrashState = (flux: FluxStats): CrashState => ({
+  fallen: flux.balance <= 0,
+  groundingBroken: flux.grounding <= 0,
+  focusBroken: flux.focus <= 0,
+  exhausted: flux.stamina <= 0,
+  overstrained: flux.fatigue <= 0,
+  overwhelmed: flux.pain <= 0,
+  mentallyBroken: flux.mentalFatigue <= 0,
+  outOfMagic: flux.magicPoints <= 0,
+});
+
+const applyCounterDecay = (counters: Counters): Counters => ({
+  stagger: Math.max(0, counters.stagger - 1),
+  rattled: Math.max(0, counters.rattled - 1),
+  wounded: Math.max(0, counters.wounded - 1),
+  strained: Math.max(0, counters.strained - 1),
+});
+
+const applyPersistentState = (fighter: Fighter, queue: QueuedMove[]) => {
+  let currentInnate = { ...fighter.innate };
+  let currentFlux = { ...fighter.flux };
+
+  for (const q of queue) {
+    if (q.ownerId === fighter.id) {
+      currentInnate = addPatch(
+        currentInnate,
+        q.move.persistent.selfInnate,
+      ) as InnateStats;
+      currentFlux = addPatch(
+        currentFlux,
+        q.move.persistent.selfFlux,
+      ) as FluxStats;
+    }
+    if (q.targetId === fighter.id) {
+      currentInnate = addPatch(
+        currentInnate,
+        q.move.persistent.targetInnate,
+      ) as InnateStats;
+      currentFlux = addPatch(
+        currentFlux,
+        q.move.persistent.targetFlux,
+      ) as FluxStats;
+    }
+  }
+
+  const crash = deriveCrashState(currentFlux);
+  const counters = { ...fighter.counters };
+
+  if (crash.fallen) currentFlux.focus = clamp(currentFlux.focus - 25);
+  if (crash.groundingBroken)
+    currentFlux.balance = clamp(currentFlux.balance - 10);
+  if (crash.focusBroken) currentFlux.stamina = clamp(currentFlux.stamina - 8);
+  if (crash.exhausted) currentFlux.focus = clamp(currentFlux.focus - 12);
+  if (crash.overstrained)
+    currentInnate.strength = clamp(currentInnate.strength - 3);
+  if (crash.overwhelmed) currentFlux.focus = 0;
+  if (crash.mentallyBroken)
+    currentInnate.knowledge = clamp(currentInnate.knowledge - 3);
+  if (crash.outOfMagic) currentFlux.focus = clamp(currentFlux.focus - 8);
+
+  currentInnate.agility = clamp(currentInnate.agility - counters.stagger);
+  currentInnate.technique = clamp(currentInnate.technique - counters.rattled);
+  currentInnate.endurance = clamp(currentInnate.endurance - counters.wounded);
+  currentInnate.will = clamp(currentInnate.will - counters.strained);
+
+  return { currentInnate, currentFlux, crash };
+};
+
+const getCounterChipsFromFluxCrash = (
+  before: FluxStats,
+  after: FluxStats,
+): Partial<Counters> => {
+  const chips: Partial<Counters> = {};
+  if (before.balance > 0 && after.balance <= 0) chips.stagger = 2;
+  if (before.focus > 0 && after.focus <= 0) chips.rattled = 2;
+  if (before.pain > 0 && after.pain <= 0) chips.wounded = 1;
+  if (
+    (before.stamina > 0 && after.stamina <= 0) ||
+    (before.fatigue > 0 && after.fatigue <= 0)
+  )
+    chips.strained = 2;
+  return chips;
+};
+
+const addCounters = (counters: Counters, patch: Partial<Counters>) => ({
+  stagger: clamp(counters.stagger + (patch.stagger ?? 0), 0, 6),
+  rattled: clamp(counters.rattled + (patch.rattled ?? 0), 0, 6),
+  wounded: clamp(counters.wounded + (patch.wounded ?? 0), 0, 6),
+  strained: clamp(counters.strained + (patch.strained ?? 0), 0, 6),
+});
+
+const applyInnateAttrition = (
+  fighter: Fighter,
+  move: Move,
+  outcome: "armor" | "flesh",
+  crashBefore: CrashState,
+  crashAfter: CrashState,
+) => {
+  let nextInnate = { ...fighter.innate };
+  let notes: string[] = [];
+
+  if (outcome === "flesh") {
+    if (move.primaryType === "cutting") {
+      nextInnate.strength = clamp(nextInnate.strength - 1);
+      notes.push("strength -1");
+    }
+    if (move.primaryType === "piercing") {
+      nextInnate.technique = clamp(nextInnate.technique - 1);
+      notes.push("technique -1");
+    }
+    if (move.primaryType === "bludgeoning") {
+      nextInnate.endurance = clamp(nextInnate.endurance - 1);
+      notes.push("endurance -1");
+    }
+  }
+
+  if (!crashBefore.fallen && crashAfter.fallen) {
+    nextInnate.agility = clamp(nextInnate.agility - 1);
+    notes.push("agility -1");
+  }
+  if (!crashBefore.focusBroken && crashAfter.focusBroken) {
+    nextInnate.will = clamp(nextInnate.will - 1);
+    notes.push("will -1");
+  }
+  if (!crashBefore.mentallyBroken && crashAfter.mentallyBroken) {
+    nextInnate.knowledge = clamp(nextInnate.knowledge - 1);
+    notes.push("knowledge -1");
+  }
+
+  return { nextInnate, notes };
+};
+
+const damageVsArmor = (
+  move: Move,
+  outcome: "armor" | "flesh",
+  target: Fighter,
+  targetStance: Stance,
+  targetCrash: CrashState,
+) => {
+  const damage = move.damage ?? zeroDamage();
+  const primary = move.primaryType ?? "bludgeoning";
+  const armorResist =
+    target.armor.resist[primary] +
+    (primary === "piercing" ? targetStance.bonuses.antiPiercing : 0);
+
+  const armorHit = Math.max(
+    0,
+    Math.floor(damage.bludgeoning * 1.0) +
+      Math.floor(damage.cutting * 0.4) +
+      Math.floor(damage.piercing * 0.25) -
+      armorResist,
+  );
+
+  let fleshHit =
+    Math.floor(damage.bludgeoning * 1.15) +
+    Math.floor(damage.cutting * 1.35) +
+    Math.floor(damage.piercing * 2.1);
+
+  if (move.tags.includes("anti-fallen") && targetCrash.fallen) fleshHit += 10;
+  if (move.tags.includes("anti-focus-broken") && targetCrash.focusBroken)
+    fleshHit += 12;
+  if (move.tags.includes("anti-armor") && outcome === "armor") fleshHit += 8;
+  if (primary === "cutting" && outcome === "flesh")
+    fleshHit += move.sharpBonus ?? 0;
+
+  return outcome === "armor" ? armorHit : fleshHit;
+};
+
+export default function Phase2BattlePrototype() {
+  const [fighterA, setFighterA] = useState<Fighter>(() => createVanguard());
+  const [fighterB, setFighterB] = useState<Fighter>(() => createArcanist());
   const [queue, setQueue] = useState<QueuedMove[]>([]);
   const [round, setRound] = useState(1);
-  const [combatLog, setCombatLog] = useState<string[]>([
-    "Phase 1 ready. Pick a visible stance for each player, then choose one move each.",
+  const [log, setLog] = useState<string[]>([
+    "Phase 2 ready. Pick visible stances and one move each.",
   ]);
   const [lastResolution, setLastResolution] = useState<ResolutionEntry[]>([]);
-
   const [pendingA, setPendingA] = useState<PendingChoice>({
     stanceId: fighterA.activeStanceId,
     moveId: getStance(fighterA, fighterA.activeStanceId).moveIds[0],
@@ -1058,231 +1112,388 @@ export default function Phase1BattlePrototype() {
     moveId: getStance(fighterB, fighterB.activeStanceId).moveIds[0],
   });
 
-  const previewA = useMemo(() => {
-    return sumPersistentEffects(fighterA, fighterB, queue);
-  }, [fighterA, fighterB, queue]);
+  const previewA = useMemo(
+    () => applyPersistentState(fighterA, queue),
+    [fighterA, queue],
+  );
+  const previewB = useMemo(
+    () => applyPersistentState(fighterB, queue),
+    [fighterB, queue],
+  );
 
-  const previewB = useMemo(() => {
-    return sumPersistentEffects(fighterB, fighterA, queue);
-  }, [fighterA, fighterB, queue]);
-
-  const getMoveList = (fighter: FighterState, stanceId: string) => {
+  const applyStartOfRoundState = (
+    fighter: Fighter,
+    stanceId: string,
+    switched: boolean,
+    queueNow: QueuedMove[],
+  ) => {
     const stance = getStance(fighter, stanceId);
-    return stance.moveIds.map((id) => MOVES[id]);
-  };
-
-  const applyImmediateEffects = (
-    actor: FighterState,
-    target: FighterState,
-    move: Move
-  ): { actor: FighterState; target: FighterState } => {
-    const nextActor: FighterState = {
-      ...actor,
-      currentFlux: applyFluxPatch(actor.currentFlux, move.immediate.selfFlux),
-      currentInnate: applyInnatePatch(actor.currentInnate, move.immediate.selfInnate),
+    const baseFlux = {
+      ...fighter.flux,
+      balance: stance.resetBalanceTo,
+      grounding: stance.resetGroundingTo,
+      stamina: clamp(
+        fighter.flux.stamina - (switched ? STANCE_SWITCH_STAMINA_COST : 0),
+      ),
     };
 
-    const nextTarget: FighterState = {
-      ...target,
-      currentFlux: applyFluxPatch(target.currentFlux, move.immediate.targetFlux),
-      currentInnate: applyInnatePatch(target.currentInnate, move.immediate.targetInnate),
+    let next: Fighter = {
+      ...fighter,
+      activeStanceId: stanceId,
+      flux: baseFlux,
+      counters: applyCounterDecay(fighter.counters),
     };
 
-    return { actor: nextActor, target: nextTarget };
-  };
+    const persisted = applyPersistentState(next, queueNow);
+    next = {
+      ...next,
+      currentInnate: persisted.currentInnate,
+      currentFlux: persisted.currentFlux,
+    };
 
-  const resolveMove = (
-    actor: FighterState,
-    target: FighterState,
-    move: Move,
-    stance: Stance,
-    defenderChosenMove: Move,
-    defenderStance: Stance
-  ): {
-    actor: FighterState;
-    target: FighterState;
-    entry: ResolutionEntry;
-  } => {
-    const attackHit =
-      move.hitBase +
-      move.speed +
-      actor.currentInnate.agility +
-      actor.currentInnate.technique +
-      actor.currentFlux.focus +
-      stance.bonuses.hitBonus +
-      stance.bonuses.speedBonus -
-      Math.max(0, 20 - actor.currentFlux.stamina);
-
-    const defenseBonusFromChosenMove =
-      defenderChosenMove.type === "defense" ? 8 : defenderChosenMove.type === "ability" ? 2 : 0;
-
-    const evade =
-      target.currentInnate.agility +
-      target.currentFlux.balance +
-      target.currentFlux.focus +
-      target.currentFlux.grounding +
-      defenderStance.bonuses.evasionBonus +
-      defenseBonusFromChosenMove;
-
-    const isHit = move.type === "offense" && attackHit > evade;
-
-    const baseDamage = isHit
-      ? Math.max(
-          0,
-          move.power +
-            actor.currentInnate.strength +
-            actor.currentInnate.technique +
-            stance.bonuses.powerBonus -
-            Math.max(0, 20 - actor.currentFlux.fatigue) -
-            Math.floor(target.currentInnate.endurance / 2)
-        )
-      : 0;
-
-    let updatedActor = actor;
-    let updatedTarget = target;
-
-    if (move.type === "offense") {
-      const applied = applyImmediateEffects(updatedActor, updatedTarget, move);
-      updatedActor = applied.actor;
-      updatedTarget = applied.target;
-
-      if (isHit) {
-        updatedTarget = {
-          ...updatedTarget,
-          hp: clamp(updatedTarget.hp - baseDamage, 0, 100),
-          currentFlux: applyFluxPatch(updatedTarget.currentFlux, {
-            pain: -Math.max(2, Math.floor(baseDamage / 3)),
-          }),
-        };
-      }
-    } else {
-      const applied = applyImmediateEffects(updatedActor, updatedTarget, move);
-      updatedActor = applied.actor;
-      updatedTarget = applied.target;
+    if (persisted.crash.fallen) {
+      const forced = next.stances.find((s) => s.name === "Common Ground");
+      if (forced) next.activeStanceId = forced.id;
     }
 
-    const note =
-      move.type === "offense"
-        ? isHit
-          ? `Hit for ${baseDamage}.`
-          : "Missed."
-        : move.type === "defense"
-        ? "Defensive move applied current-round protection and queued effects."
-        : "Ability move applied immediate and queued effects.";
+    return next;
+  };
+
+  const resolveSupportMove = (
+    actor: Fighter,
+    target: Fighter,
+    move: Move,
+  ): { actor: Fighter; target: Fighter; note: string } => {
+    const actorBefore = actor.currentFlux;
+    const targetBefore = target.currentFlux;
+    let nextActor: Fighter = {
+      ...actor,
+      currentFlux: addPatch(
+        actor.currentFlux,
+        move.immediate.selfFlux,
+      ) as FluxStats,
+      currentInnate: addPatch(
+        actor.currentInnate,
+        move.immediate.selfInnate,
+      ) as InnateStats,
+      flux: addPatch(actor.flux, move.immediate.selfFlux) as FluxStats,
+      innate: addPatch(actor.innate, move.immediate.selfInnate) as InnateStats,
+    };
+    let nextTarget: Fighter = {
+      ...target,
+      currentFlux: addPatch(
+        target.currentFlux,
+        move.immediate.targetFlux,
+      ) as FluxStats,
+      currentInnate: addPatch(
+        target.currentInnate,
+        move.immediate.targetInnate,
+      ) as InnateStats,
+      flux: addPatch(target.flux, move.immediate.targetFlux) as FluxStats,
+      innate: addPatch(
+        target.innate,
+        move.immediate.targetInnate,
+      ) as InnateStats,
+    };
+
+    nextActor = {
+      ...nextActor,
+      counters: addCounters(
+        nextActor.counters,
+        getCounterChipsFromFluxCrash(actorBefore, nextActor.currentFlux),
+      ),
+    };
+    nextTarget = {
+      ...nextTarget,
+      counters: addCounters(
+        nextTarget.counters,
+        getCounterChipsFromFluxCrash(targetBefore, nextTarget.currentFlux),
+      ),
+    };
 
     return {
-      actor: updatedActor,
-      target: updatedTarget,
+      actor: nextActor,
+      target: nextTarget,
+      note: move.type === "defense" ? "Defense applied." : "Ability applied.",
+    };
+  };
+
+  const resolveOffenseMove = (
+    actor: Fighter,
+    target: Fighter,
+    move: Move,
+    stance: Stance,
+    targetStance: Stance,
+    defenderMove: Move,
+    switched: boolean,
+  ): { actor: Fighter; target: Fighter; entry: ResolutionEntry } => {
+    const actorCrash = deriveCrashState(actor.currentFlux);
+    const targetCrashBefore = deriveCrashState(target.currentFlux);
+
+    const speedPenalty = switched ? STANCE_SWITCH_SPEED_PENALTY : 0;
+    const hitScore =
+      move.hitBase * 2 +
+      move.speed +
+      stance.bonuses.speed -
+      speedPenalty +
+      actor.currentInnate.agility +
+      actor.currentInnate.technique +
+      Math.floor(actor.currentFlux.focus * 0.22) +
+      Math.floor(actor.currentFlux.balance * 0.08) +
+      stance.bonuses.hit -
+      (actorCrash.focusBroken ? 12 : 0) -
+      (actorCrash.exhausted ? 10 : 0) -
+      (actorCrash.overwhelmed ? 20 : 0) -
+      actor.counters.rattled * 2;
+
+    const defenseBonus =
+      defenderMove.type === "defense"
+        ? 4 + Math.floor(targetStance.bonuses.evade * 0.5)
+        : defenderMove.type === "ability"
+          ? 1
+          : 0;
+
+    const evadeScore =
+      target.currentInnate.agility * 2 +
+      Math.floor(target.currentFlux.balance * 0.18) +
+      Math.floor(target.currentFlux.focus * 0.18) +
+      Math.floor(target.currentFlux.grounding * 0.14) +
+      targetStance.bonuses.evade +
+      defenseBonus -
+      target.counters.stagger * 2 -
+      target.counters.rattled;
+
+    const primary = move.primaryType ?? "bludgeoning";
+    const armorThreshold =
+      evadeScore +
+      target.armor.coverage +
+      target.armor.resist[primary] +
+      (primary === "piercing" ? targetStance.bonuses.antiPiercing : 0);
+
+    const outcome: ResolutionEntry["outcome"] =
+      hitScore <= evadeScore
+        ? "miss"
+        : hitScore <= armorThreshold
+          ? "armor"
+          : "flesh";
+
+    let nextActor = { ...actor };
+    let nextTarget = { ...target };
+
+    nextActor.currentFlux = addPatch(
+      nextActor.currentFlux,
+      move.immediate.selfFlux,
+    ) as FluxStats;
+    nextActor.currentInnate = addPatch(
+      nextActor.currentInnate,
+      move.immediate.selfInnate,
+    ) as InnateStats;
+    nextActor.flux = addPatch(
+      nextActor.flux,
+      move.immediate.selfFlux,
+    ) as FluxStats;
+    nextActor.innate = addPatch(
+      nextActor.innate,
+      move.immediate.selfInnate,
+    ) as InnateStats;
+
+    nextTarget.currentFlux = addPatch(
+      nextTarget.currentFlux,
+      move.immediate.targetFlux,
+    ) as FluxStats;
+    nextTarget.currentInnate = addPatch(
+      nextTarget.currentInnate,
+      move.immediate.targetInnate,
+    ) as InnateStats;
+    nextTarget.flux = addPatch(
+      nextTarget.flux,
+      move.immediate.targetFlux,
+    ) as FluxStats;
+    nextTarget.innate = addPatch(
+      nextTarget.innate,
+      move.immediate.targetInnate,
+    ) as InnateStats;
+
+    const targetCrashAfterFlux = deriveCrashState(nextTarget.currentFlux);
+    const crashCounters = getCounterChipsFromFluxCrash(
+      target.currentFlux,
+      nextTarget.currentFlux,
+    );
+    nextTarget.counters = addCounters(nextTarget.counters, crashCounters);
+
+    let rawDamage = 0;
+    let note = "Missed.";
+
+    if (outcome !== "miss") {
+      rawDamage = damageVsArmor(
+        move,
+        outcome,
+        target,
+        targetStance,
+        targetCrashBefore,
+      );
+      rawDamage +=
+        stance.bonuses.power +
+        nextActor.currentInnate.strength +
+        Math.floor(nextActor.currentInnate.technique / 2);
+      rawDamage -= Math.floor(nextTarget.currentInnate.endurance / 2);
+      rawDamage -= actorCrash.overstrained ? 10 : 0;
+      rawDamage = Math.max(0, rawDamage);
+      nextTarget.hp = clamp(nextTarget.hp - rawDamage, 0, 100);
+      const attrition = applyInnateAttrition(
+        nextTarget,
+        move,
+        outcome as "armor" | "flesh",
+        targetCrashBefore,
+        targetCrashAfterFlux,
+      );
+      nextTarget.innate = attrition.nextInnate;
+      nextTarget.currentInnate = addPatch(
+        nextTarget.currentInnate,
+        {},
+      ) as InnateStats;
+      if (outcome === "armor") note = `Hit armor for ${rawDamage}.`;
+      if (outcome === "flesh")
+        note = `Hit flesh for ${rawDamage}.${attrition.notes.length ? ` Attrition: ${attrition.notes.join(", ")}.` : ""}`;
+    }
+
+    const breakdown = `Hit ${hitScore} vs Evade ${evadeScore}; Armor threshold ${armorThreshold}; outcome ${outcome}.`;
+
+    return {
+      actor: nextActor,
+      target: nextTarget,
       entry: {
         actorName: actor.name,
         targetName: target.name,
         moveName: move.name,
-        speed: move.speed + stance.bonuses.speedBonus,
-        hitScore: move.type === "offense" ? attackHit : 0,
-        evadeScore: move.type === "offense" ? evade : 0,
-        hit: isHit,
-        damage: baseDamage,
+        speed: move.speed + stance.bonuses.speed - speedPenalty,
+        hitScore,
+        evadeScore,
+        armorThreshold,
+        outcome,
+        damage: rawDamage,
         note,
+        breakdown,
       },
     };
   };
 
-  const recalcPersistentStates = (
-    nextA: FighterState,
-    nextB: FighterState,
-    nextQueue: QueuedMove[]
-  ) => {
-    const a = sumPersistentEffects(nextA, nextB, nextQueue);
-    const b = sumPersistentEffects(nextB, nextA, nextQueue);
+  const resolveRound = () => {
+    const switchedA = fighterA.activeStanceId !== pendingA.stanceId;
+    const switchedB = fighterB.activeStanceId !== pendingB.stanceId;
 
-    return {
-      a: {
-        ...nextA,
-        currentInnate: a.innate,
-        currentFlux: a.flux,
-      },
-      b: {
-        ...nextB,
-        currentInnate: b.innate,
-        currentFlux: b.flux,
-      },
-    };
-  };
+    let nextA = applyStartOfRoundState(
+      fighterA,
+      pendingA.stanceId,
+      switchedA,
+      queue,
+    );
+    let nextB = applyStartOfRoundState(
+      fighterB,
+      pendingB.stanceId,
+      switchedB,
+      queue,
+    );
 
-  const beginRound = () => {
-    let nextA: FighterState = {
-      ...fighterA,
-      activeStanceId: pendingA.stanceId,
-      currentFlux: {
-        ...fighterA.currentFlux,
-        balance: getStance(fighterA, pendingA.stanceId).resetBalanceTo,
-        grounding: getStance(fighterA, pendingA.stanceId).resetGroundingTo,
-      },
-    };
-
-    let nextB: FighterState = {
-      ...fighterB,
-      activeStanceId: pendingB.stanceId,
-      currentFlux: {
-        ...fighterB.currentFlux,
-        balance: getStance(fighterB, pendingB.stanceId).resetBalanceTo,
-        grounding: getStance(fighterB, pendingB.stanceId).resetGroundingTo,
-      },
-    };
-
+    const stanceA = getStance(nextA, nextA.activeStanceId);
+    const stanceB = getStance(nextB, nextB.activeStanceId);
     const moveA = MOVES[pendingA.moveId];
     const moveB = MOVES[pendingB.moveId];
-    const stanceA = getStance(nextA, pendingA.stanceId);
-    const stanceB = getStance(nextB, pendingB.stanceId);
 
-    const order = [
+    const steps = [
       {
-        actorKey: "A" as const,
-        speed: moveA.speed + stanceA.bonuses.speedBonus,
+        key: "A" as const,
+        speed:
+          moveA.speed +
+          stanceA.bonuses.speed -
+          (switchedA ? STANCE_SWITCH_SPEED_PENALTY : 0),
         move: moveA,
-        stance: stanceA,
-        defenderMove: moveB,
-        defenderStance: stanceB,
       },
       {
-        actorKey: "B" as const,
-        speed: moveB.speed + stanceB.bonuses.speedBonus,
+        key: "B" as const,
+        speed:
+          moveB.speed +
+          stanceB.bonuses.speed -
+          (switchedB ? STANCE_SWITCH_SPEED_PENALTY : 0),
         move: moveB,
-        stance: stanceB,
-        defenderMove: moveA,
-        defenderStance: stanceA,
       },
-    ].sort((x, y) => y.speed - x.speed);
+    ].sort((a, b) => b.speed - a.speed);
 
-    const resolutionEntries: ResolutionEntry[] = [];
+    const entries: ResolutionEntry[] = [];
 
-    order.forEach((step) => {
-      if (step.actorKey === "A") {
-        const resolved = resolveMove(
-          nextA,
-          nextB,
-          step.move,
-          step.stance,
-          step.defenderMove,
-          step.defenderStance
-        );
-        nextA = resolved.actor;
-        nextB = resolved.target;
-        resolutionEntries.push(resolved.entry);
+    for (const step of steps) {
+      if (step.key === "A") {
+        if (moveA.type === "offense") {
+          const resolved = resolveOffenseMove(
+            nextA,
+            nextB,
+            moveA,
+            stanceA,
+            stanceB,
+            moveB,
+            switchedA,
+          );
+          nextA = resolved.actor;
+          nextB = resolved.target;
+          entries.push(resolved.entry);
+        } else {
+          const support = resolveSupportMove(nextA, nextB, moveA);
+          nextA = support.actor;
+          nextB = support.target;
+          entries.push({
+            actorName: nextA.name,
+            targetName: nextB.name,
+            moveName: moveA.name,
+            speed:
+              moveA.speed +
+              stanceA.bonuses.speed -
+              (switchedA ? STANCE_SWITCH_SPEED_PENALTY : 0),
+            hitScore: 0,
+            evadeScore: 0,
+            armorThreshold: 0,
+            outcome: "support",
+            damage: 0,
+            note: support.note,
+            breakdown: `${moveA.type} move; immediate and queued effects only.`,
+          });
+        }
       } else {
-        const resolved = resolveMove(
-          nextB,
-          nextA,
-          step.move,
-          step.stance,
-          step.defenderMove,
-          step.defenderStance
-        );
-        nextB = resolved.actor;
-        nextA = resolved.target;
-        resolutionEntries.push(resolved.entry);
+        if (moveB.type === "offense") {
+          const resolved = resolveOffenseMove(
+            nextB,
+            nextA,
+            moveB,
+            stanceB,
+            stanceA,
+            moveA,
+            switchedB,
+          );
+          nextB = resolved.actor;
+          nextA = resolved.target;
+          entries.push(resolved.entry);
+        } else {
+          const support = resolveSupportMove(nextB, nextA, moveB);
+          nextB = support.actor;
+          nextA = support.target;
+          entries.push({
+            actorName: nextB.name,
+            targetName: nextA.name,
+            moveName: moveB.name,
+            speed:
+              moveB.speed +
+              stanceB.bonuses.speed -
+              (switchedB ? STANCE_SWITCH_SPEED_PENALTY : 0),
+            hitScore: 0,
+            evadeScore: 0,
+            armorThreshold: 0,
+            outcome: "support",
+            damage: 0,
+            note: support.note,
+            breakdown: `${moveB.type} move; immediate and queued effects only.`,
+          });
+        }
       }
-    });
+    }
 
     let nextQueue = [
       ...queue,
@@ -1304,39 +1515,63 @@ export default function Phase1BattlePrototype() {
       },
     ];
 
-    const logBits: string[] = [];
-    logBits.push(
-      `Round ${round}: ${nextA.name} used ${moveA.name} from ${stanceA.name}; ${nextB.name} used ${moveB.name} from ${stanceB.name}.`
-    );
-    resolutionEntries.forEach((r) => {
-      logBits.push(
-        `${r.actorName} -> ${r.moveName} (spd ${r.speed}) | ${r.note}${
-          r.hitScore ? ` Hit ${r.hitScore} vs Evade ${r.evadeScore}.` : ""
-        }`
-      );
-    });
+    const addedLines: string[] = [
+      `Round ${round}: ${nextA.name} used ${moveA.name}; ${nextB.name} used ${moveB.name}.`,
+      ...(switchedA
+        ? [
+            `${nextA.name} switched stance: stamina -${STANCE_SWITCH_STAMINA_COST}, speed -${STANCE_SWITCH_SPEED_PENALTY}.`,
+          ]
+        : []),
+      ...(switchedB
+        ? [
+            `${nextB.name} switched stance: stamina -${STANCE_SWITCH_STAMINA_COST}, speed -${STANCE_SWITCH_SPEED_PENALTY}.`,
+          ]
+        : []),
+      ...entries.map(
+        (e) => `${e.actorName} -> ${e.moveName}: ${e.note} ${e.breakdown}`,
+      ),
+    ];
 
     if (nextQueue.length >= 6) {
       const removed = nextQueue.slice(0, 2);
       nextQueue = nextQueue.slice(2);
-      logBits.push(
-        `Dequeued: ${removed.map((m) => `${m.move.name} (${m.ownerId === nextA.id ? nextA.name : nextB.name})`).join(", ")}.`
+      addedLines.push(
+        `Dequeued: ${removed.map((m) => m.move.name).join(", ")}.`,
       );
     } else {
-      logBits.push(`Queue building: ${nextQueue.length}/6 before dequeue begins.`);
+      addedLines.push(
+        `Queue building: ${nextQueue.length}/6 before dequeue begins.`,
+      );
     }
 
-    const recalculated = recalcPersistentStates(nextA, nextB, nextQueue);
-    nextA = recalculated.a;
-    nextB = recalculated.b;
+    const persistedA = applyPersistentState(nextA, nextQueue);
+    const persistedB = applyPersistentState(nextB, nextQueue);
+    nextA = {
+      ...nextA,
+      currentInnate: persistedA.currentInnate,
+      currentFlux: persistedA.currentFlux,
+    };
+    nextB = {
+      ...nextB,
+      currentInnate: persistedB.currentInnate,
+      currentFlux: persistedB.currentFlux,
+    };
+
+    if (persistedA.crash.fallen) {
+      const forced = nextA.stances.find((s) => s.name === "Common Ground");
+      if (forced) nextA.activeStanceId = forced.id;
+    }
+    if (persistedB.crash.fallen) {
+      const forced = nextB.stances.find((s) => s.name === "Common Ground");
+      if (forced) nextB.activeStanceId = forced.id;
+    }
 
     setFighterA(nextA);
     setFighterB(nextB);
     setQueue(nextQueue);
-    setLastResolution(resolutionEntries);
-    setCombatLog((prev) => [...logBits, ...prev].slice(0, 18));
+    setLastResolution(entries);
+    setLog((prev) => [...addedLines, ...prev].slice(0, 24));
     setRound((r) => r + 1);
-
     setPendingA({
       stanceId: nextA.activeStanceId,
       moveId: getStance(nextA, nextA.activeStanceId).moveIds[0],
@@ -1354,21 +1589,45 @@ export default function Phase1BattlePrototype() {
     setFighterB(b);
     setQueue([]);
     setRound(1);
+    setLog(["Phase 2 ready. Pick visible stances and one move each."]);
     setLastResolution([]);
-    setCombatLog(["Phase 1 ready. Pick a visible stance for each player, then choose one move each."]);
-    setPendingA({ stanceId: a.activeStanceId, moveId: getStance(a, a.activeStanceId).moveIds[0] });
-    setPendingB({ stanceId: b.activeStanceId, moveId: getStance(b, b.activeStanceId).moveIds[0] });
+    setPendingA({
+      stanceId: a.activeStanceId,
+      moveId: getStance(a, a.activeStanceId).moveIds[0],
+    });
+    setPendingB({
+      stanceId: b.activeStanceId,
+      moveId: getStance(b, b.activeStanceId).moveIds[0],
+    });
   };
 
-  const renderFighterCard = (
-    fighter: FighterState,
-    opponent: FighterState,
+  const renderCrashChips = (crash: CrashState) => {
+    const chips = [
+      crash.fallen && "Fallen",
+      crash.groundingBroken && "Grounding Broken",
+      crash.focusBroken && "Focus Broken",
+      crash.exhausted && "Exhausted",
+      crash.overstrained && "Overstrained",
+      crash.overwhelmed && "Overwhelmed",
+      crash.mentallyBroken && "Mental Break",
+      crash.outOfMagic && "No Magic",
+    ].filter(Boolean) as string[];
+    return chips.length ? (
+      chips.map((c) => <Chip key={c} size="small" label={c} />)
+    ) : (
+      <Typography variant="caption">No crash states</Typography>
+    );
+  };
+
+  const renderFighter = (
+    fighter: Fighter,
     pending: PendingChoice,
     setPending: React.Dispatch<React.SetStateAction<PendingChoice>>,
-    preview: { innate: InnateStats; flux: FluxStats }
+    preview: ReturnType<typeof applyPersistentState>,
   ) => {
     const stance = getStance(fighter, pending.stanceId);
     const moves = getMoveList(fighter, pending.stanceId);
+    const selectedMove = MOVES[pending.moveId];
 
     return (
       <Card sx={{ height: "100%" }}>
@@ -1378,21 +1637,23 @@ export default function Phase1BattlePrototype() {
               <Typography variant="h5">{fighter.name}</Typography>
               <Typography variant="subtitle1">{fighter.archetype}</Typography>
               <Typography variant="body2">HP: {fighter.hp}</Typography>
-              <Typography variant="body2">Opponent: {opponent.archetype}</Typography>
+              <Typography variant="body2">
+                Armor: {fighter.armor.name}
+              </Typography>
             </Box>
 
             <Box>
-              <Typography variant="subtitle1">Visible stance choice</Typography>
+              <Typography variant="subtitle2">Visible stance choice</Typography>
               <Select
                 fullWidth
                 size="small"
                 value={pending.stanceId}
                 onChange={(e) => {
-                  const stanceId = e.target.value;
-                  setPending((prev) => ({
+                  const stanceId = e.target.value as string;
+                  setPending({
                     stanceId,
                     moveId: getStance(fighter, stanceId).moveIds[0],
-                  }));
+                  });
                 }}
               >
                 {fighter.stances.map((s) => (
@@ -1404,22 +1665,37 @@ export default function Phase1BattlePrototype() {
               <Typography variant="caption" display="block" sx={{ mt: 1 }}>
                 {stance.description}
               </Typography>
-              <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: "wrap" }}>
-                <Chip label={`Hit ${stance.bonuses.hitBonus >= 0 ? "+" : ""}${stance.bonuses.hitBonus}`} size="small" />
-                <Chip label={`Evade ${stance.bonuses.evasionBonus >= 0 ? "+" : ""}${stance.bonuses.evasionBonus}`} size="small" />
-                <Chip label={`Speed ${stance.bonuses.speedBonus >= 0 ? "+" : ""}${stance.bonuses.speedBonus}`} size="small" />
-                <Chip label={`Power ${stance.bonuses.powerBonus >= 0 ? "+" : ""}${stance.bonuses.powerBonus}`} size="small" />
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Chip
+                  size="small"
+                  label={`Hit ${stance.bonuses.hit >= 0 ? "+" : ""}${stance.bonuses.hit}`}
+                />
+                <Chip
+                  size="small"
+                  label={`Evade ${stance.bonuses.evade >= 0 ? "+" : ""}${stance.bonuses.evade}`}
+                />
+                <Chip
+                  size="small"
+                  label={`Speed ${stance.bonuses.speed >= 0 ? "+" : ""}${stance.bonuses.speed}`}
+                />
+                <Chip
+                  size="small"
+                  label={`Power ${stance.bonuses.power >= 0 ? "+" : ""}${stance.bonuses.power}`}
+                />
               </Stack>
             </Box>
 
             <Box>
-              <Typography variant="subtitle1">Move choice</Typography>
+              <Typography variant="subtitle2">Move choice</Typography>
               <Select
                 fullWidth
                 size="small"
                 value={pending.moveId}
                 onChange={(e) =>
-                  setPending((prev) => ({ ...prev, moveId: e.target.value }))
+                  setPending((p) => ({
+                    ...p,
+                    moveId: e.target.value as string,
+                  }))
                 }
               >
                 {moves.map((m) => (
@@ -1429,48 +1705,107 @@ export default function Phase1BattlePrototype() {
                 ))}
               </Select>
               <Paper variant="outlined" sx={{ p: 1.5, mt: 1 }}>
-                {(() => {
-                  const move = MOVES[pending.moveId];
-                  return (
-                    <Stack spacing={0.5}>
-                      <Typography variant="body2"><strong>{move.name}</strong> • {move.type}</Typography>
-                      <Typography variant="body2">{move.description}</Typography>
-                      <Typography variant="caption">Speed {move.speed} | Hit {move.hitBase} | Power {move.power}</Typography>
-                      <Typography variant="caption">Stamina {move.staminaCost} | Magic {move.magicCost}</Typography>
-                      <Typography variant="caption">Immediate self: {formatPatch(move.immediate.selfFlux as Record<string, number>)}</Typography>
-                      <Typography variant="caption">Immediate target: {formatPatch(move.immediate.targetFlux as Record<string, number>)}</Typography>
-                      <Typography variant="caption">Queued self: {formatPatch(move.persistent.selfFlux as Record<string, number>)}</Typography>
-                      <Typography variant="caption">Queued target: {formatPatch(move.persistent.targetFlux as Record<string, number>)}</Typography>
-                    </Stack>
-                  );
-                })()}
+                <Typography variant="body2">
+                  <strong>{selectedMove.name}</strong> • {selectedMove.type}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  {selectedMove.description}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Speed {selectedMove.speed} | Hit {selectedMove.hitBase} |
+                  Stamina {selectedMove.staminaCost} | Magic{" "}
+                  {selectedMove.magicCost}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Immediate self:{" "}
+                  {fmt(
+                    selectedMove.immediate.selfFlux as Record<string, number>,
+                  )}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Immediate target:{" "}
+                  {fmt(
+                    selectedMove.immediate.targetFlux as Record<string, number>,
+                  )}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Queued self:{" "}
+                  {fmt(
+                    selectedMove.persistent.selfFlux as Record<string, number>,
+                  )}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Queued target:{" "}
+                  {fmt(
+                    selectedMove.persistent.targetFlux as Record<
+                      string,
+                      number
+                    >,
+                  )}
+                </Typography>
+                <Typography variant="caption" display="block">
+                  Tags: {selectedMove.tags.join(", ")}
+                </Typography>
               </Paper>
             </Box>
 
             <Divider />
 
-            <Grid2 container spacing={1}>
-              <Grid2 size={6 as any}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 1,
+              }}
+            >
+              <Box sx={{ gridColumn: "1 / -1" }}>
                 <Paper variant="outlined" sx={{ p: 1.5 }}>
-                  <Typography variant="subtitle2">Innate preview</Typography>
-                  {Object.entries(preview.innate).map(([k, v]) => (
+                  <Typography variant="subtitle2">Crash states</Typography>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    flexWrap="wrap"
+                    useFlexGap
+                    sx={{ mt: 1 }}
+                  >
+                    {renderCrashChips(preview.crash)}
+                  </Stack>
+                </Paper>
+              </Box>
+
+              <Box>
+                <Paper variant="outlined" sx={{ p: 1.5 }}>
+                  <Typography variant="subtitle2">Innate</Typography>
+                  {Object.entries(preview.currentInnate).map(([k, v]) => (
                     <Typography key={k} variant="body2">
                       {k}: {v}
                     </Typography>
                   ))}
                 </Paper>
-              </Grid2>
-              <Grid2 size={6 as any}>
+              </Box>
+
+              <Box>
                 <Paper variant="outlined" sx={{ p: 1.5 }}>
-                  <Typography variant="subtitle2">Flux preview</Typography>
-                  {Object.entries(preview.flux).map(([k, v]) => (
+                  <Typography variant="subtitle2">Flux</Typography>
+                  {Object.entries(preview.currentFlux).map(([k, v]) => (
                     <Typography key={k} variant="body2">
                       {k}: {v}
                     </Typography>
                   ))}
                 </Paper>
-              </Grid2>
-            </Grid2>
+              </Box>
+
+              <Box sx={{ gridColumn: "1 / -1" }}>
+                <Paper variant="outlined" sx={{ p: 1.5 }}>
+                  <Typography variant="subtitle2">Counters</Typography>
+                  {Object.entries(fighter.counters).map(([k, v]) => (
+                    <Typography key={k} variant="body2">
+                      {k}: {v}
+                    </Typography>
+                  ))}
+                </Paper>
+              </Box>
+            </Box>
           </Stack>
         </CardContent>
       </Card>
@@ -1481,60 +1816,98 @@ export default function Phase1BattlePrototype() {
     <Box sx={{ p: 2 }}>
       <Stack spacing={2}>
         <Box>
-          <Typography variant="h4">Queued Stance Battle Prototype</Typography>
+          <Typography variant="h4">
+            Queued Stance Battle Prototype - Phase 2
+          </Typography>
           <Typography variant="body1">
-            Phase 1: visible stance choice, simultaneous move selection, shared queue, persistent queued effects, dequeue after 6 cards.
+            Crash states, armor vs flesh routing, damage identities, counters,
+            and innate attrition.
           </Typography>
         </Box>
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
-          <Box sx={{ flex: 1 }}>
-            {renderFighterCard(fighterA, fighterB, pendingA, setPendingA, previewA)}
-          </Box>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" },
+            gap: 2,
+          }}
+        >
+          <Box>{renderFighter(fighterA, pendingA, setPendingA, previewA)}</Box>
 
-          <Box sx={{ width: { xs: "100%", md: 430 } }}>
+          <Box>
             <Card>
               <CardContent>
                 <Stack spacing={2}>
                   <Typography variant="h6">Round {round}</Typography>
-                  <Typography variant="body2">Queue size: {queue.length}</Typography>
-
-                  <Box>
-                    <Typography variant="subtitle1">Shared queue</Typography>
-                    <Stack spacing={1} sx={{ mt: 1, maxHeight: 360, overflow: "auto" }}>
-                      {queue.length === 0 ? (
-                        <Paper variant="outlined" sx={{ p: 1.5 }}>
-                          <Typography variant="body2">No queued moves yet.</Typography>
-                        </Paper>
-                      ) : (
-                        queue.map((q, index) => (
-                          <Paper key={q.queueId} variant="outlined" sx={{ p: 1.5 }}>
-                            <Typography variant="body2">
-                              #{index + 1} {q.ownerId === fighterA.id ? fighterA.name : fighterB.name} • {q.move.name}
-                            </Typography>
-                            <Typography variant="caption" display="block">
-                              {q.move.type} | speed {q.move.speed} | round {q.roundAdded}
-                            </Typography>
-                            <Typography variant="caption" display="block">
-                              Queued self: {formatPatch(q.move.persistent.selfFlux as Record<string, number>)}
-                            </Typography>
-                            <Typography variant="caption" display="block">
-                              Queued target: {formatPatch(q.move.persistent.targetFlux as Record<string, number>)}
-                            </Typography>
-                          </Paper>
-                        ))
-                      )}
-                    </Stack>
-                  </Box>
+                  <Typography variant="body2">
+                    Queue size: {queue.length}
+                  </Typography>
 
                   <Stack direction="row" spacing={1}>
-                    <Button fullWidth variant="contained" onClick={beginRound}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={resolveRound}
+                    >
                       Resolve Round
                     </Button>
                     <Button fullWidth variant="outlined" onClick={resetBattle}>
                       Reset
                     </Button>
                   </Stack>
+
+                  <Box>
+                    <Typography variant="subtitle1">Shared queue</Typography>
+                    <Stack
+                      spacing={1}
+                      sx={{ mt: 1, maxHeight: 280, overflow: "auto" }}
+                    >
+                      {queue.length === 0 ? (
+                        <Paper variant="outlined" sx={{ p: 1.5 }}>
+                          <Typography variant="body2">
+                            No queued moves yet.
+                          </Typography>
+                        </Paper>
+                      ) : (
+                        queue.map((q, i) => (
+                          <Paper
+                            key={q.queueId}
+                            variant="outlined"
+                            sx={{ p: 1.5 }}
+                          >
+                            <Typography variant="body2">
+                              #{i + 1}{" "}
+                              {q.ownerId === fighterA.id
+                                ? fighterA.name
+                                : fighterB.name}{" "}
+                              • {q.move.name}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              {q.move.type} | round {q.roundAdded}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              Queued self:{" "}
+                              {fmt(
+                                q.move.persistent.selfFlux as Record<
+                                  string,
+                                  number
+                                >,
+                              )}
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                              Queued target:{" "}
+                              {fmt(
+                                q.move.persistent.targetFlux as Record<
+                                  string,
+                                  number
+                                >,
+                              )}
+                            </Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Stack>
+                  </Box>
 
                   <Box>
                     <Typography variant="subtitle1">Last resolution</Typography>
@@ -1544,11 +1917,11 @@ export default function Phase1BattlePrototype() {
                           <ListItemText primary="No round resolved yet." />
                         </ListItem>
                       ) : (
-                        lastResolution.map((r, i) => (
-                          <ListItem key={`${r.actorName}-${r.moveName}-${i}`}>
+                        lastResolution.map((e, i) => (
+                          <ListItem key={`${e.moveName}-${i}`}>
                             <ListItemText
-                              primary={`${r.actorName}: ${r.moveName}`}
-                              secondary={`${r.note} ${r.hitScore ? `Hit ${r.hitScore} vs Evade ${r.evadeScore}.` : ""}`}
+                              primary={`${e.actorName}: ${e.moveName} -> ${e.outcome}`}
+                              secondary={`${e.note} ${e.breakdown}`}
                             />
                           </ListItem>
                         ))
@@ -1558,9 +1931,9 @@ export default function Phase1BattlePrototype() {
 
                   <Box>
                     <Typography variant="subtitle1">Combat log</Typography>
-                    <List dense>
-                      {combatLog.map((line, i) => (
-                        <ListItem key={`${line}-${i}`}>
+                    <List dense sx={{ maxHeight: 240, overflow: "auto" }}>
+                      {log.map((line, i) => (
+                        <ListItem key={`${i}-${line}`}>
                           <ListItemText primary={line} />
                         </ListItem>
                       ))}
@@ -1571,10 +1944,8 @@ export default function Phase1BattlePrototype() {
             </Card>
           </Box>
 
-          <Box sx={{ flex: 1 }}>
-            {renderFighterCard(fighterB, fighterA, pendingB, setPendingB, previewB)}
-          </Box>
-        </Stack>
+          <Box>{renderFighter(fighterB, pendingB, setPendingB, previewB)}</Box>
+        </Box>
       </Stack>
     </Box>
   );
