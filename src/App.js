@@ -22,6 +22,7 @@ import OneWordTenSeconds from "./OneWordTenSeconds/OneWordTenSeconds";
 import TypingPong from "./TypingPong/TypingPong";
 import MultipleChoiceQuiz from "./MultipleChoiceQuiz/MultipleChoiceQuiz";
 import ParentLetter from "./ParentLetter/ParentLetter";
+import Parmazi from "./Parmazi/Parmazi";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -58,6 +59,7 @@ function App() {
           <Route path="/hall-pass/*" element={<HallPassRoutes />} />
           <Route path="/mc-quiz" element={<MultipleChoiceQuiz />} />
           <Route path="/parent-letter" element={<ParentLetter />} />
+          <Route path="/parmazi" element={<Parmazi />} />
         </Routes>
       </Router>
     </Box>
