@@ -1,11 +1,13 @@
 import React, { useMemo, useState } from "react";
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
   Divider,
+  FormControlLabel,
   LinearProgress,
   List,
   ListItem,
@@ -14,6 +16,7 @@ import {
   Paper,
   Select,
   Stack,
+  Switch,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -157,6 +160,15 @@ type ResolutionEntry = {
   breakdown: string;
 };
 
+type OutcomePreview = {
+  hitScore: number;
+  evadeScore: number;
+  armorThreshold: number;
+  outcome: "miss" | "armor" | "flesh" | "support";
+  speed: number;
+  warnings: string[];
+};
+
 const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
 const STANCE_SWITCH_STAMINA_COST = 6;
 const STANCE_SWITCH_SPEED_PENALTY = 2;
@@ -180,30 +192,36 @@ const CRASH_LABELS: Record<keyof CrashState, string> = {
   mentallyBroken: "Mental Break",
   outOfMagic: "No Magic",
 };
+const MOVE_TAG_COLORS: Record<MoveTag, "default" | "primary" | "secondary" | "success" | "warning" | "error" | "info"> = {
+  pressure: "warning",
+  break: "error",
+  convert: "secondary",
+  stabilize: "success",
+  recover: "info",
+  scar: "error",
+  sharp: "primary",
+  heavy: "warning",
+  "anti-fallen": "secondary",
+  "anti-focus-broken": "secondary",
+  "anti-armor": "primary",
+};
+const TYPE_ICON: Record<MoveType, string> = {
+  offense: "⚔️",
+  defense: "🛡️",
+  ability: "✦",
+};
+const DAMAGE_ICON: Record<DamageType, string> = {
+  bludgeoning: "🔨",
+  cutting: "🗡️",
+  piercing: "➤",
+};
 
 const emptyChanges = (): StatChanges => ({ hp: 0, innate: {}, flux: {} });
 
-const addPatch = <K extends string>(
-  obj: Record<K, number>,
-  patch?: Partial<Record<K, number>>
-): Record<K, number> => {
+const addPatch = <K extends string>(obj: Record<K, number>, patch?: Partial<Record<K, number>>): Record<K, number> => {
   const next: Record<K, number> = { ...obj };
   if (!patch) return next;
-  for (const key of Object.keys(patch) as K[]) {
-    next[key] = clamp(next[key] + (patch[key] ?? 0));
-  }
-  return next;
-};
-
-const addDeltaPatch = <K extends string>(
-  deltas: Partial<Record<K, number>>,
-  patch?: Partial<Record<K, number>>
-): Partial<Record<K, number>> => {
-  const next = { ...deltas };
-  if (!patch) return next;
-  for (const key of Object.keys(patch) as K[]) {
-    next[key] = (next[key] ?? 0) + (patch[key] ?? 0);
-  }
+  for (const key of Object.keys(patch) as K[]) next[key] = clamp(next[key] + (patch[key] ?? 0));
   return next;
 };
 
@@ -257,16 +275,7 @@ const MOVES: Record<string, Move> = {
   riseThread: makeMove({ id: "riseThread", name: "Rise Thread", type: "ability", speed: 6, staminaCost: 2, magicCost: 5, hitBase: 0, immediate: { selfFlux: { balance: 24, focus: 12 } }, persistent: { selfFlux: { balance: 10 } }, tags: ["recover", "stabilize"], description: "Starts recovery back to mobile play." }),
 };
 
-const makeStance = (
-  id: string,
-  name: string,
-  description: string,
-  resetBalanceTo: number,
-  resetGroundingTo: number,
-  bonuses: Stance["bonuses"],
-  moveIds: string[]
-): Stance => ({ id, name, description, resetBalanceTo, resetGroundingTo, bonuses, moveIds });
-
+const makeStance = (id: string, name: string, description: string, resetBalanceTo: number, resetGroundingTo: number, bonuses: Stance["bonuses"], moveIds: string[]): Stance => ({ id, name, description, resetBalanceTo, resetGroundingTo, bonuses, moveIds });
 const makeArmor = (name: string, coverage: number, resist: DamageProfile): Armor => ({ name, coverage, resist });
 
 const createVanguard = (): Fighter => {
@@ -277,21 +286,7 @@ const createVanguard = (): Fighter => {
   ];
   const innate = { strength: 18, knowledge: 10, agility: 11, endurance: 18, technique: 13, will: 15 };
   const flux = { balance: 70, grounding: 82, focus: 58, stamina: 62, fatigue: 64, pain: 60, adrenaline: 30, mentalFatigue: 55, magicPoints: 20 };
-  return {
-    id: "p1",
-    name: "Player 1",
-    archetype: "Vanguard",
-    innate,
-    flux,
-    currentInnate: { ...innate },
-    currentFlux: { ...flux },
-    counters: { stagger: 0, rattled: 0, wounded: 0, strained: 0 },
-    stances,
-    activeStanceId: "ironGuard",
-    hp: 100,
-    armor: makeArmor("Half Plate", 11, { bludgeoning: 8, cutting: 12, piercing: 7 }),
-    lastRoundChanges: emptyChanges(),
-  };
+  return { id: "p1", name: "Player 1", archetype: "Vanguard", innate, flux, currentInnate: { ...innate }, currentFlux: { ...flux }, counters: { stagger: 0, rattled: 0, wounded: 0, strained: 0 }, stances, activeStanceId: "ironGuard", hp: 100, armor: makeArmor("Half Plate", 11, { bludgeoning: 8, cutting: 12, piercing: 7 }), lastRoundChanges: { hp: 0, innate: {}, flux: {} } };
 };
 
 const createArcanist = (): Fighter => {
@@ -302,21 +297,7 @@ const createArcanist = (): Fighter => {
   ];
   const innate = { strength: 9, knowledge: 19, agility: 16, endurance: 10, technique: 17, will: 16 };
   const flux = { balance: 78, grounding: 50, focus: 68, stamina: 40, fatigue: 42, pain: 52, adrenaline: 24, mentalFatigue: 64, magicPoints: 72 };
-  return {
-    id: "p2",
-    name: "Player 2",
-    archetype: "Arcanist",
-    innate,
-    flux,
-    currentInnate: { ...innate },
-    currentFlux: { ...flux },
-    counters: { stagger: 0, rattled: 0, wounded: 0, strained: 0 },
-    stances,
-    activeStanceId: "veilStep",
-    hp: 100,
-    armor: makeArmor("Layered Robes", 6, { bludgeoning: 4, cutting: 5, piercing: 3 }),
-    lastRoundChanges: emptyChanges(),
-  };
+  return { id: "p2", name: "Player 2", archetype: "Arcanist", innate, flux, currentInnate: { ...innate }, currentFlux: { ...flux }, counters: { stagger: 0, rattled: 0, wounded: 0, strained: 0 }, stances, activeStanceId: "veilStep", hp: 100, armor: makeArmor("Layered Robes", 6, { bludgeoning: 4, cutting: 5, piercing: 3 }), lastRoundChanges: { hp: 0, innate: {}, flux: {} } };
 };
 
 const getMoveList = (fighter: Fighter, stanceId: string) => getStance(fighter, stanceId).moveIds.map((id) => MOVES[id]);
@@ -356,7 +337,6 @@ const applyPersistentState = (fighter: Fighter, queue: QueuedMove[]) => {
 
   const crash = deriveCrashState(currentFlux);
   const counters = { ...fighter.counters };
-
   if (crash.fallen) currentFlux.focus = clamp(currentFlux.focus - 25);
   if (crash.groundingBroken) currentFlux.balance = clamp(currentFlux.balance - 10);
   if (crash.focusBroken) currentFlux.stamina = clamp(currentFlux.stamina - 8);
@@ -393,7 +373,6 @@ const addCounters = (counters: Counters, patch: Partial<Counters>) => ({
 const applyInnateAttrition = (fighter: Fighter, move: Move, outcome: "armor" | "flesh", crashBefore: CrashState, crashAfter: CrashState) => {
   let nextInnate = { ...fighter.innate };
   const notes: string[] = [];
-
   if (outcome === "flesh") {
     if (move.primaryType === "cutting") {
       nextInnate.strength = clamp(nextInnate.strength - 1);
@@ -420,7 +399,6 @@ const applyInnateAttrition = (fighter: Fighter, move: Move, outcome: "armor" | "
     nextInnate.knowledge = clamp(nextInnate.knowledge - 1);
     notes.push("knowledge -1");
   }
-
   return { nextInnate, notes };
 };
 
@@ -430,23 +408,17 @@ const damageVsArmor = (move: Move, outcome: "armor" | "flesh", target: Fighter, 
   const armorResist = target.armor.resist[primary] + (primary === "piercing" ? targetStance.bonuses.antiPiercing : 0);
   const armorHit = Math.max(0, Math.floor(damage.bludgeoning * 1.0) + Math.floor(damage.cutting * 0.4) + Math.floor(damage.piercing * 0.25) - armorResist);
 
-  let fleshHit =
-    Math.floor(damage.bludgeoning * 1.15) +
-    Math.floor(damage.cutting * 1.35) +
-    Math.floor(damage.piercing * 2.1);
-
+  let fleshHit = Math.floor(damage.bludgeoning * 1.15) + Math.floor(damage.cutting * 1.35) + Math.floor(damage.piercing * 2.1);
   if (move.tags.includes("anti-fallen") && targetCrash.fallen) fleshHit += 10;
   if (move.tags.includes("anti-focus-broken") && targetCrash.focusBroken) fleshHit += 12;
   if (move.tags.includes("anti-armor") && outcome === "armor") fleshHit += 8;
   if (primary === "cutting" && outcome === "flesh") fleshHit += move.sharpBonus ?? 0;
-
   return outcome === "armor" ? armorHit : fleshHit;
 };
 
 const buildLastRoundChanges = (before: Fighter, after: Fighter): StatChanges => {
   const innate: Partial<Record<InnateKey, number>> = {};
   const flux: Partial<Record<FluxKey, number>> = {};
-
   (Object.keys(before.currentInnate) as InnateKey[]).forEach((key) => {
     const diff = after.currentInnate[key] - before.currentInnate[key];
     if (diff !== 0) innate[key] = diff;
@@ -455,8 +427,67 @@ const buildLastRoundChanges = (before: Fighter, after: Fighter): StatChanges => 
     const diff = after.currentFlux[key] - before.currentFlux[key];
     if (diff !== 0) flux[key] = diff;
   });
-
   return { hp: after.hp - before.hp, innate, flux };
+};
+
+const getOutcomePreview = (
+  actor: Fighter,
+  target: Fighter,
+  move: Move,
+  stance: Stance,
+  targetStance: Stance,
+  defenderMove: Move,
+  switched: boolean
+): OutcomePreview => {
+  if (move.type !== "offense") {
+    const warnings: string[] = [];
+    if (move.staminaCost > actor.currentFlux.stamina) warnings.push("Stamina is already below this move's cost.");
+    if (move.magicCost > actor.currentFlux.magicPoints) warnings.push("Magic points are already below this move's cost.");
+    return { hitScore: 0, evadeScore: 0, armorThreshold: 0, outcome: "support", speed: move.speed + stance.bonuses.speed - (switched ? STANCE_SWITCH_SPEED_PENALTY : 0), warnings };
+  }
+
+  const actorCrash = deriveCrashState(actor.currentFlux);
+  const speedPenalty = switched ? STANCE_SWITCH_SPEED_PENALTY : 0;
+  const hitScore =
+    move.hitBase * 2 +
+    move.speed +
+    stance.bonuses.speed -
+    speedPenalty +
+    actor.currentInnate.agility +
+    actor.currentInnate.technique +
+    Math.floor(actor.currentFlux.focus * 0.22) +
+    Math.floor(actor.currentFlux.balance * 0.08) +
+    stance.bonuses.hit -
+    (actorCrash.focusBroken ? 12 : 0) -
+    (actorCrash.exhausted ? 10 : 0) -
+    (actorCrash.overwhelmed ? 20 : 0) -
+    actor.counters.rattled * 2;
+
+  const defenseBonus = defenderMove.type === "defense" ? 4 + Math.floor(targetStance.bonuses.evade * 0.5) : defenderMove.type === "ability" ? 1 : 0;
+  const evadeScore =
+    target.currentInnate.agility * 2 +
+    Math.floor(target.currentFlux.balance * 0.18) +
+    Math.floor(target.currentFlux.focus * 0.18) +
+    Math.floor(target.currentFlux.grounding * 0.14) +
+    targetStance.bonuses.evade +
+    defenseBonus -
+    target.counters.stagger * 2 -
+    target.counters.rattled;
+
+  const primary = move.primaryType ?? "bludgeoning";
+  const armorThreshold = evadeScore + target.armor.coverage + target.armor.resist[primary] + (primary === "piercing" ? targetStance.bonuses.antiPiercing : 0);
+  const outcome = hitScore <= evadeScore ? "miss" : hitScore <= armorThreshold ? "armor" : "flesh";
+  const warnings: string[] = [];
+  if (move.staminaCost > actor.currentFlux.stamina) warnings.push("Stamina is already below this move's cost.");
+  if (move.magicCost > actor.currentFlux.magicPoints) warnings.push("Magic points are already below this move's cost.");
+  if (switched) warnings.push(`Stance switch will cost ${STANCE_SWITCH_STAMINA_COST} stamina and ${STANCE_SWITCH_SPEED_PENALTY} speed this round.`);
+  if ((move.immediate.selfFlux?.stamina ?? 0) < 0 && actor.currentFlux.stamina + (move.immediate.selfFlux?.stamina ?? 0) <= 0) warnings.push("This move may crash your stamina.");
+  if ((move.immediate.selfFlux?.fatigue ?? 0) < 0 && actor.currentFlux.fatigue + (move.immediate.selfFlux?.fatigue ?? 0) <= 0) warnings.push("This move may crash your fatigue.");
+  if ((move.immediate.targetFlux?.balance ?? 0) < 0 && target.currentFlux.balance + (move.immediate.targetFlux?.balance ?? 0) <= 0) warnings.push("This move is likely to crash the target's balance.");
+  if ((move.immediate.targetFlux?.focus ?? 0) < 0 && target.currentFlux.focus + (move.immediate.targetFlux?.focus ?? 0) <= 0) warnings.push("This move is likely to crash the target's focus.");
+  if ((move.immediate.targetFlux?.pain ?? 0) < 0 && target.currentFlux.pain + (move.immediate.targetFlux?.pain ?? 0) <= 0) warnings.push("This move is likely to overwhelm the target's pain threshold.");
+
+  return { hitScore, evadeScore, armorThreshold, outcome, speed: move.speed + stance.bonuses.speed - speedPenalty, warnings };
 };
 
 const StatBar = ({ label, value, delta, max = 100 }: { label: string; value: number; delta?: number; max?: number }) => {
@@ -480,13 +511,19 @@ const StatBar = ({ label, value, delta, max = 100 }: { label: string; value: num
   );
 };
 
-export default function Phase2BattlePrototype() {
+const OutcomeChip = ({ outcome }: { outcome: OutcomePreview["outcome"] }) => {
+  const color = outcome === "flesh" ? "error" : outcome === "armor" ? "warning" : outcome === "miss" ? "default" : "info";
+  return <Chip size="small" color={color} label={`Preview: ${outcome}`} />;
+};
+
+export default function Phase3BattlePrototype() {
   const [fighterA, setFighterA] = useState<Fighter>(() => createVanguard());
   const [fighterB, setFighterB] = useState<Fighter>(() => createArcanist());
   const [queue, setQueue] = useState<QueuedMove[]>([]);
   const [round, setRound] = useState(1);
-  const [log, setLog] = useState<string[]>(["Phase 2 ready. Pick visible stances and one move each."]);
+  const [log, setLog] = useState<string[]>(["Phase 3 ready. Pick visible stances and one move each."]);
   const [lastResolution, setLastResolution] = useState<ResolutionEntry[]>([]);
+  const [showDebug, setShowDebug] = useState(false);
   const [pendingA, setPendingA] = useState<PendingChoice>({ stanceId: fighterA.activeStanceId, moveId: getStance(fighterA, fighterA.activeStanceId).moveIds[0] });
   const [pendingB, setPendingB] = useState<PendingChoice>({ stanceId: fighterB.activeStanceId, moveId: getStance(fighterB, fighterB.activeStanceId).moveIds[0] });
 
@@ -501,113 +538,53 @@ export default function Phase2BattlePrototype() {
       grounding: stance.resetGroundingTo,
       stamina: clamp(fighter.flux.stamina - (switched ? STANCE_SWITCH_STAMINA_COST : 0)),
     };
-
-    let next: Fighter = {
-      ...fighter,
-      activeStanceId: stanceId,
-      flux: baseFlux,
-      counters: applyCounterDecay(fighter.counters),
-    };
-
+    let next: Fighter = { ...fighter, activeStanceId: stanceId, flux: baseFlux, counters: applyCounterDecay(fighter.counters) };
     const persisted = applyPersistentState(next, queueNow);
     next = { ...next, currentInnate: persisted.currentInnate, currentFlux: persisted.currentFlux };
-
     if (persisted.crash.fallen) {
       const forced = next.stances.find((s) => s.name === "Common Ground");
       if (forced) next.activeStanceId = forced.id;
     }
-
     return next;
   };
 
   const resolveSupportMove = (actor: Fighter, target: Fighter, move: Move) => {
     const actorBefore = actor.currentFlux;
     const targetBefore = target.currentFlux;
-
-    let nextActor: Fighter = {
-      ...actor,
-      currentFlux: addPatch(actor.currentFlux, move.immediate.selfFlux) as FluxStats,
-      currentInnate: addPatch(actor.currentInnate, move.immediate.selfInnate) as InnateStats,
-      flux: addPatch(actor.flux, move.immediate.selfFlux) as FluxStats,
-      innate: addPatch(actor.innate, move.immediate.selfInnate) as InnateStats,
-    };
-    let nextTarget: Fighter = {
-      ...target,
-      currentFlux: addPatch(target.currentFlux, move.immediate.targetFlux) as FluxStats,
-      currentInnate: addPatch(target.currentInnate, move.immediate.targetInnate) as InnateStats,
-      flux: addPatch(target.flux, move.immediate.targetFlux) as FluxStats,
-      innate: addPatch(target.innate, move.immediate.targetInnate) as InnateStats,
-    };
-
+    let nextActor: Fighter = { ...actor, currentFlux: addPatch(actor.currentFlux, move.immediate.selfFlux) as FluxStats, currentInnate: addPatch(actor.currentInnate, move.immediate.selfInnate) as InnateStats, flux: addPatch(actor.flux, move.immediate.selfFlux) as FluxStats, innate: addPatch(actor.innate, move.immediate.selfInnate) as InnateStats };
+    let nextTarget: Fighter = { ...target, currentFlux: addPatch(target.currentFlux, move.immediate.targetFlux) as FluxStats, currentInnate: addPatch(target.currentInnate, move.immediate.targetInnate) as InnateStats, flux: addPatch(target.flux, move.immediate.targetFlux) as FluxStats, innate: addPatch(target.innate, move.immediate.targetInnate) as InnateStats };
     nextActor.counters = addCounters(nextActor.counters, getCounterChipsFromFluxCrash(actorBefore, nextActor.currentFlux));
     nextTarget.counters = addCounters(nextTarget.counters, getCounterChipsFromFluxCrash(targetBefore, nextTarget.currentFlux));
-
     return { actor: nextActor, target: nextTarget, note: move.type === "defense" ? "Defense applied." : "Ability applied." };
   };
 
-  const resolveOffenseMove = (
-    actor: Fighter,
-    target: Fighter,
-    move: Move,
-    stance: Stance,
-    targetStance: Stance,
-    defenderMove: Move,
-    switched: boolean
-  ) => {
+  const resolveOffenseMove = (actor: Fighter, target: Fighter, move: Move, stance: Stance, targetStance: Stance, defenderMove: Move, switched: boolean) => {
     const actorCrash = deriveCrashState(actor.currentFlux);
     const targetCrashBefore = deriveCrashState(target.currentFlux);
-
     const speedPenalty = switched ? STANCE_SWITCH_SPEED_PENALTY : 0;
-    const hitScore =
-      move.hitBase * 2 +
-      move.speed +
-      stance.bonuses.speed -
-      speedPenalty +
-      actor.currentInnate.agility +
-      actor.currentInnate.technique +
-      Math.floor(actor.currentFlux.focus * 0.22) +
-      Math.floor(actor.currentFlux.balance * 0.08) +
-      stance.bonuses.hit -
-      (actorCrash.focusBroken ? 12 : 0) -
-      (actorCrash.exhausted ? 10 : 0) -
-      (actorCrash.overwhelmed ? 20 : 0) -
-      actor.counters.rattled * 2;
-
+    const hitScore = move.hitBase * 2 + move.speed + stance.bonuses.speed - speedPenalty + actor.currentInnate.agility + actor.currentInnate.technique + Math.floor(actor.currentFlux.focus * 0.22) + Math.floor(actor.currentFlux.balance * 0.08) + stance.bonuses.hit - (actorCrash.focusBroken ? 12 : 0) - (actorCrash.exhausted ? 10 : 0) - (actorCrash.overwhelmed ? 20 : 0) - actor.counters.rattled * 2;
     const defenseBonus = defenderMove.type === "defense" ? 4 + Math.floor(targetStance.bonuses.evade * 0.5) : defenderMove.type === "ability" ? 1 : 0;
-    const evadeScore =
-      target.currentInnate.agility * 2 +
-      Math.floor(target.currentFlux.balance * 0.18) +
-      Math.floor(target.currentFlux.focus * 0.18) +
-      Math.floor(target.currentFlux.grounding * 0.14) +
-      targetStance.bonuses.evade +
-      defenseBonus -
-      target.counters.stagger * 2 -
-      target.counters.rattled;
-
+    const evadeScore = target.currentInnate.agility * 2 + Math.floor(target.currentFlux.balance * 0.18) + Math.floor(target.currentFlux.focus * 0.18) + Math.floor(target.currentFlux.grounding * 0.14) + targetStance.bonuses.evade + defenseBonus - target.counters.stagger * 2 - target.counters.rattled;
     const primary = move.primaryType ?? "bludgeoning";
     const armorThreshold = evadeScore + target.armor.coverage + target.armor.resist[primary] + (primary === "piercing" ? targetStance.bonuses.antiPiercing : 0);
     const outcome: ResolutionEntry["outcome"] = hitScore <= evadeScore ? "miss" : hitScore <= armorThreshold ? "armor" : "flesh";
 
     let nextActor = { ...actor };
     let nextTarget = { ...target };
-
     nextActor.currentFlux = addPatch(nextActor.currentFlux, move.immediate.selfFlux) as FluxStats;
     nextActor.currentInnate = addPatch(nextActor.currentInnate, move.immediate.selfInnate) as InnateStats;
     nextActor.flux = addPatch(nextActor.flux, move.immediate.selfFlux) as FluxStats;
     nextActor.innate = addPatch(nextActor.innate, move.immediate.selfInnate) as InnateStats;
-
     nextTarget.currentFlux = addPatch(nextTarget.currentFlux, move.immediate.targetFlux) as FluxStats;
     nextTarget.currentInnate = addPatch(nextTarget.currentInnate, move.immediate.targetInnate) as InnateStats;
     nextTarget.flux = addPatch(nextTarget.flux, move.immediate.targetFlux) as FluxStats;
     nextTarget.innate = addPatch(nextTarget.innate, move.immediate.targetInnate) as InnateStats;
 
     const targetCrashAfterFlux = deriveCrashState(nextTarget.currentFlux);
-    const crashCounters = getCounterChipsFromFluxCrash(target.currentFlux, nextTarget.currentFlux);
-    nextTarget.counters = addCounters(nextTarget.counters, crashCounters);
+    nextTarget.counters = addCounters(nextTarget.counters, getCounterChipsFromFluxCrash(target.currentFlux, nextTarget.currentFlux));
 
     let rawDamage = 0;
     let note = "Missed.";
-
     if (outcome !== "miss") {
       rawDamage = damageVsArmor(move, outcome, target, targetStance, targetCrashBefore);
       rawDamage += stance.bonuses.power + nextActor.currentInnate.strength + Math.floor(nextActor.currentInnate.technique / 2);
@@ -623,48 +600,26 @@ export default function Phase2BattlePrototype() {
     }
 
     const breakdown = `Hit ${hitScore} vs Evade ${evadeScore}; Armor threshold ${armorThreshold}; outcome ${outcome}.`;
-
-    return {
-      actor: nextActor,
-      target: nextTarget,
-      entry: {
-        actorName: actor.name,
-        targetName: target.name,
-        moveName: move.name,
-        speed: move.speed + stance.bonuses.speed - speedPenalty,
-        hitScore,
-        evadeScore,
-        armorThreshold,
-        outcome,
-        damage: rawDamage,
-        note,
-        breakdown,
-      },
-    };
+    return { actor: nextActor, target: nextTarget, entry: { actorName: actor.name, targetName: target.name, moveName: move.name, speed: move.speed + stance.bonuses.speed - speedPenalty, hitScore, evadeScore, armorThreshold, outcome, damage: rawDamage, note, breakdown } };
   };
 
   const resolveRound = () => {
     const beforeA = { ...fighterA, currentInnate: { ...fighterA.currentInnate }, currentFlux: { ...fighterA.currentFlux }, innate: { ...fighterA.innate }, flux: { ...fighterA.flux } };
     const beforeB = { ...fighterB, currentInnate: { ...fighterB.currentInnate }, currentFlux: { ...fighterB.currentFlux }, innate: { ...fighterB.innate }, flux: { ...fighterB.flux } };
-
     const switchedA = fighterA.activeStanceId !== pendingA.stanceId;
     const switchedB = fighterB.activeStanceId !== pendingB.stanceId;
-
     let nextA = applyStartOfRoundState(fighterA, pendingA.stanceId, switchedA, queue);
     let nextB = applyStartOfRoundState(fighterB, pendingB.stanceId, switchedB, queue);
-
     const stanceA = getStance(nextA, nextA.activeStanceId);
     const stanceB = getStance(nextB, nextB.activeStanceId);
     const moveA = MOVES[pendingA.moveId];
     const moveB = MOVES[pendingB.moveId];
-
     const steps = [
       { key: "A" as const, speed: moveA.speed + stanceA.bonuses.speed - (switchedA ? STANCE_SWITCH_SPEED_PENALTY : 0), move: moveA },
       { key: "B" as const, speed: moveB.speed + stanceB.bonuses.speed - (switchedB ? STANCE_SWITCH_SPEED_PENALTY : 0), move: moveB },
     ].sort((a, b) => b.speed - a.speed);
 
     const entries: ResolutionEntry[] = [];
-
     for (const step of steps) {
       if (step.key === "A") {
         if (moveA.type === "offense") {
@@ -718,7 +673,6 @@ export default function Phase2BattlePrototype() {
     const persistedB = applyPersistentState(nextB, nextQueue);
     nextA = { ...nextA, currentInnate: persistedA.currentInnate, currentFlux: persistedA.currentFlux };
     nextB = { ...nextB, currentInnate: persistedB.currentInnate, currentFlux: persistedB.currentFlux };
-
     if (persistedA.crash.fallen) {
       const forced = nextA.stances.find((s) => s.name === "Common Ground");
       if (forced) nextA.activeStanceId = forced.id;
@@ -735,7 +689,7 @@ export default function Phase2BattlePrototype() {
     setFighterB(nextB);
     setQueue(nextQueue);
     setLastResolution(entries);
-    setLog((prev) => [...addedLines, ...prev].slice(0, 24));
+    setLog((prev) => [...addedLines, ...prev].slice(0, 30));
     setRound((r) => r + 1);
     setPendingA({ stanceId: nextA.activeStanceId, moveId: getStance(nextA, nextA.activeStanceId).moveIds[0] });
     setPendingB({ stanceId: nextB.activeStanceId, moveId: getStance(nextB, nextB.activeStanceId).moveIds[0] });
@@ -748,7 +702,7 @@ export default function Phase2BattlePrototype() {
     setFighterB(b);
     setQueue([]);
     setRound(1);
-    setLog(["Phase 2 ready. Pick visible stances and one move each."]);
+    setLog(["Phase 3 ready. Pick visible stances and one move each."]);
     setLastResolution([]);
     setPendingA({ stanceId: a.activeStanceId, moveId: getStance(a, a.activeStanceId).moveIds[0] });
     setPendingB({ stanceId: b.activeStanceId, moveId: getStance(b, b.activeStanceId).moveIds[0] });
@@ -759,17 +713,12 @@ export default function Phase2BattlePrototype() {
     if (!active.length) return <Typography variant="caption">No crash states</Typography>;
     return active.map((key) => (
       <Tooltip key={key} title={CRASH_TOOLTIPS[key]} arrow>
-        <Chip size="small" label={CRASH_LABELS[key]} />
+        <Chip size="small" color="warning" label={CRASH_LABELS[key]} />
       </Tooltip>
     ));
   };
 
-  const renderStatsSection = <K extends string>(
-    title: string,
-    stats: Record<K, number>,
-    deltas: Partial<Record<K, number>>,
-    max = 100
-  ) => (
+  const renderStatsSection = <K extends string>(title: string, stats: Record<K, number>, deltas: Partial<Record<K, number>>, max = 100) => (
     <Paper variant="outlined" sx={{ p: 1.5 }}>
       <Typography variant="subtitle2" sx={{ mb: 1 }}>{title}</Typography>
       {(Object.keys(stats) as K[]).map((key) => (
@@ -778,9 +727,55 @@ export default function Phase2BattlePrototype() {
     </Paper>
   );
 
+  const renderMovePreview = (fighter: Fighter, opponent: Fighter, pending: PendingChoice, opponentPending: PendingChoice) => {
+    const stance = getStance(fighter, pending.stanceId);
+    const move = MOVES[pending.moveId];
+    const opponentStance = getStance(opponent, opponentPending.stanceId);
+    const opponentMove = MOVES[opponentPending.moveId];
+    const switched = fighter.activeStanceId !== pending.stanceId;
+    const preview = getOutcomePreview(fighter, opponent, move, stance, opponentStance, opponentMove, switched);
+
+    return (
+      <Paper variant="outlined" sx={{ p: 1.5 }}>
+        <Stack spacing={1}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle2">Move preview</Typography>
+            <OutcomeChip outcome={preview.outcome} />
+          </Stack>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Chip size="small" icon={<span>{TYPE_ICON[move.type]}</span> as any} label={`${move.type}`} />
+            {move.primaryType && <Chip size="small" label={`${DAMAGE_ICON[move.primaryType]} ${move.primaryType}`} />}
+            <Chip size="small" label={`Speed ${preview.speed}`} />
+            {move.type === "offense" && (
+              <>
+                <Chip size="small" label={`Hit ${preview.hitScore}`} />
+                <Chip size="small" label={`Evade ${preview.evadeScore}`} />
+                <Chip size="small" label={`Armor ${preview.armorThreshold}`} />
+              </>
+            )}
+          </Stack>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            {move.tags.map((tag) => (
+              <Chip key={tag} size="small" color={MOVE_TAG_COLORS[tag]} label={tag} />
+            ))}
+          </Stack>
+          {preview.warnings.length > 0 && (
+            <Stack spacing={1}>
+              {preview.warnings.map((warning, i) => (
+                <Alert key={i} severity="warning" sx={{ py: 0 }}>{warning}</Alert>
+              ))}
+            </Stack>
+          )}
+        </Stack>
+      </Paper>
+    );
+  };
+
   const renderFighter = (
     fighter: Fighter,
+    opponent: Fighter,
     pending: PendingChoice,
+    opponentPending: PendingChoice,
     setPending: React.Dispatch<React.SetStateAction<PendingChoice>>,
     preview: ReturnType<typeof applyPersistentState>
   ) => {
@@ -803,18 +798,8 @@ export default function Phase2BattlePrototype() {
 
             <Box>
               <Typography variant="subtitle2">Visible stance choice</Typography>
-              <Select
-                fullWidth
-                size="small"
-                value={pending.stanceId}
-                onChange={(e) => {
-                  const stanceId = e.target.value as string;
-                  setPending({ stanceId, moveId: getStance(fighter, stanceId).moveIds[0] });
-                }}
-              >
-                {fighter.stances.map((s) => (
-                  <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-                ))}
+              <Select fullWidth size="small" value={pending.stanceId} onChange={(e) => { const stanceId = e.target.value as string; setPending({ stanceId, moveId: getStance(fighter, stanceId).moveIds[0] }); }}>
+                {fighter.stances.map((s) => <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>)}
               </Select>
               <Typography variant="caption" display="block" sx={{ mt: 1 }}>{stance.description}</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -828,21 +813,20 @@ export default function Phase2BattlePrototype() {
             <Box>
               <Typography variant="subtitle2">Move choice</Typography>
               <Select fullWidth size="small" value={pending.moveId} onChange={(e) => setPending((p) => ({ ...p, moveId: e.target.value as string }))}>
-                {moves.map((m) => (
-                  <MenuItem key={m.id} value={m.id}>{m.name} ({m.type})</MenuItem>
-                ))}
+                {moves.map((m) => <MenuItem key={m.id} value={m.id}>{TYPE_ICON[m.type]} {m.name}</MenuItem>)}
               </Select>
               <Paper variant="outlined" sx={{ p: 1.5, mt: 1 }}>
-                <Typography variant="body2"><strong>{selectedMove.name}</strong> • {selectedMove.type}</Typography>
+                <Typography variant="body2"><strong>{TYPE_ICON[selectedMove.type]} {selectedMove.name}</strong></Typography>
                 <Typography variant="caption" display="block">{selectedMove.description}</Typography>
                 <Typography variant="caption" display="block">Speed {selectedMove.speed} | Hit {selectedMove.hitBase} | Stamina {selectedMove.staminaCost} | Magic {selectedMove.magicCost}</Typography>
                 <Typography variant="caption" display="block">Immediate self: {fmt(selectedMove.immediate.selfFlux as DeltaMap)}</Typography>
                 <Typography variant="caption" display="block">Immediate target: {fmt(selectedMove.immediate.targetFlux as DeltaMap)}</Typography>
                 <Typography variant="caption" display="block">Queued self: {fmt(selectedMove.persistent.selfFlux as DeltaMap)}</Typography>
                 <Typography variant="caption" display="block">Queued target: {fmt(selectedMove.persistent.targetFlux as DeltaMap)}</Typography>
-                <Typography variant="caption" display="block">Tags: {selectedMove.tags.join(", ")}</Typography>
               </Paper>
             </Box>
+
+            {renderMovePreview(fighter, opponent, pending, opponentPending)}
 
             <Divider />
 
@@ -860,9 +844,7 @@ export default function Phase2BattlePrototype() {
               <Box sx={{ gridColumn: "1 / -1" }}>
                 <Paper variant="outlined" sx={{ p: 1.5 }}>
                   <Typography variant="subtitle2">Counters</Typography>
-                  {Object.entries(fighter.counters).map(([k, v]) => (
-                    <Typography key={k} variant="body2">{k}: {v}</Typography>
-                  ))}
+                  {Object.entries(fighter.counters).map(([k, v]) => <Typography key={k} variant="body2">{k}: {v}</Typography>)}
                 </Paper>
               </Box>
             </Box>
@@ -876,19 +858,22 @@ export default function Phase2BattlePrototype() {
     <Box sx={{ p: 2 }}>
       <Stack spacing={2}>
         <Box>
-          <Typography variant="h4">Queued Stance Battle Prototype - Phase 2</Typography>
-          <Typography variant="body1">Crash states, armor vs flesh routing, damage identities, counters, innate attrition, bars, tooltips, and recent stat deltas.</Typography>
+          <Typography variant="h4">Queued Stance Battle Prototype - Phase 3</Typography>
+          <Typography variant="body1">Polished combat view with previews, warnings, richer queue cards, clearer outcome feedback, and a debug panel.</Typography>
         </Box>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" }, gap: 2 }}>
-          <Box>{renderFighter(fighterA, pendingA, setPendingA, previewA)}</Box>
+        <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" alignItems={{ xs: "flex-start", md: "center" }}>
+          <Typography variant="body2">Round {round} • Queue size {queue.length}</Typography>
+          <FormControlLabel control={<Switch checked={showDebug} onChange={(e) => setShowDebug(e.target.checked)} />} label="Show debug panel" />
+        </Stack>
+
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: showDebug ? "1.1fr 1fr 1.1fr 0.9fr" : "1fr 1fr 1fr" }, gap: 2 }}>
+          <Box>{renderFighter(fighterA, fighterB, pendingA, pendingB, setPendingA, previewA)}</Box>
 
           <Box>
             <Card>
               <CardContent>
                 <Stack spacing={2}>
-                  <Typography variant="h6">Round {round}</Typography>
-                  <Typography variant="body2">Queue size: {queue.length}</Typography>
                   <Stack direction="row" spacing={1}>
                     <Button fullWidth variant="contained" onClick={resolveRound}>Resolve Round</Button>
                     <Button fullWidth variant="outlined" onClick={resetBattle}>Reset</Button>
@@ -896,15 +881,21 @@ export default function Phase2BattlePrototype() {
 
                   <Box>
                     <Typography variant="subtitle1">Shared queue</Typography>
-                    <Stack spacing={1} sx={{ mt: 1, maxHeight: 280, overflow: "auto" }}>
+                    <Stack spacing={1} sx={{ mt: 1, maxHeight: 320, overflow: "auto" }}>
                       {queue.length === 0 ? (
                         <Paper variant="outlined" sx={{ p: 1.5 }}><Typography variant="body2">No queued moves yet.</Typography></Paper>
                       ) : (
                         queue.map((q, i) => (
                           <Paper key={q.queueId} variant="outlined" sx={{ p: 1.5 }}>
-                            <Typography variant="body2">#{i + 1} {q.ownerId === fighterA.id ? fighterA.name : fighterB.name} • {q.move.name}</Typography>
-                            <Typography variant="caption" display="block">{q.move.type} | round {q.roundAdded}</Typography>
-                            <Typography variant="caption" display="block">Queued self: {fmt(q.move.persistent.selfFlux as DeltaMap)}</Typography>
+                            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                              <Typography variant="body2">#{i + 1} {q.ownerId === fighterA.id ? fighterA.name : fighterB.name}</Typography>
+                              <Chip size="small" label={`Round ${q.roundAdded}`} />
+                            </Stack>
+                            <Typography variant="body2" sx={{ mt: 0.5 }}>{TYPE_ICON[q.move.type]} {q.move.name}</Typography>
+                            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1 }}>
+                              {q.move.tags.map((tag) => <Chip key={tag} size="small" color={MOVE_TAG_COLORS[tag]} label={tag} />)}
+                            </Stack>
+                            <Typography variant="caption" display="block" sx={{ mt: 1 }}>Queued self: {fmt(q.move.persistent.selfFlux as DeltaMap)}</Typography>
                             <Typography variant="caption" display="block">Queued target: {fmt(q.move.persistent.targetFlux as DeltaMap)}</Typography>
                           </Paper>
                         ))
@@ -929,7 +920,7 @@ export default function Phase2BattlePrototype() {
 
                   <Box>
                     <Typography variant="subtitle1">Combat log</Typography>
-                    <List dense sx={{ maxHeight: 240, overflow: "auto" }}>
+                    <List dense sx={{ maxHeight: 260, overflow: "auto" }}>
                       {log.map((line, i) => (
                         <ListItem key={`${i}-${line}`}>
                           <ListItemText primary={line} />
@@ -942,7 +933,46 @@ export default function Phase2BattlePrototype() {
             </Card>
           </Box>
 
-          <Box>{renderFighter(fighterB, pendingB, setPendingB, previewB)}</Box>
+          <Box>{renderFighter(fighterB, fighterA, pendingB, pendingA, setPendingB, previewB)}</Box>
+
+          {showDebug && (
+            <Box>
+              <Card>
+                <CardContent>
+                  <Stack spacing={2}>
+                    <Typography variant="h6">Debug</Typography>
+                    <Paper variant="outlined" sx={{ p: 1.5 }}>
+                      <Typography variant="subtitle2">Player 1 preview</Typography>
+                      {(() => {
+                        const stance = getStance(fighterA, pendingA.stanceId);
+                        const targetStance = getStance(fighterB, pendingB.stanceId);
+                        const move = MOVES[pendingA.moveId];
+                        const defenderMove = MOVES[pendingB.moveId];
+                        const preview = getOutcomePreview(fighterA, fighterB, move, stance, targetStance, defenderMove, fighterA.activeStanceId !== pendingA.stanceId);
+                        return <Typography variant="body2">Outcome {preview.outcome} | Speed {preview.speed} | Hit {preview.hitScore} | Evade {preview.evadeScore} | Armor {preview.armorThreshold}</Typography>;
+                      })()}
+                    </Paper>
+                    <Paper variant="outlined" sx={{ p: 1.5 }}>
+                      <Typography variant="subtitle2">Player 2 preview</Typography>
+                      {(() => {
+                        const stance = getStance(fighterB, pendingB.stanceId);
+                        const targetStance = getStance(fighterA, pendingA.stanceId);
+                        const move = MOVES[pendingB.moveId];
+                        const defenderMove = MOVES[pendingA.moveId];
+                        const preview = getOutcomePreview(fighterB, fighterA, move, stance, targetStance, defenderMove, fighterB.activeStanceId !== pendingB.stanceId);
+                        return <Typography variant="body2">Outcome {preview.outcome} | Speed {preview.speed} | Hit {preview.hitScore} | Evade {preview.evadeScore} | Armor {preview.armorThreshold}</Typography>;
+                      })()}
+                    </Paper>
+                    <Paper variant="outlined" sx={{ p: 1.5 }}>
+                      <Typography variant="subtitle2">Current formulas</Typography>
+                      <Typography variant="caption" display="block">Hit = hitBase*2 + moveSpeed + stanceSpeed + agility + technique + focus*0.22 + balance*0.08 + stanceHit - crash penalties</Typography>
+                      <Typography variant="caption" display="block">Evade = agility*2 + balance*0.18 + focus*0.18 + grounding*0.14 + stanceEvade + defense bonus - counter penalties</Typography>
+                    </Paper>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Box>
+          )}
         </Box>
       </Stack>
     </Box>
