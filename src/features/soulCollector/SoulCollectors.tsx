@@ -33,7 +33,7 @@ import {
   rollGrowth,
 } from "./battleMath";
 import { runSelfTests } from "./selfTests";
-import { StyledBattleText } from "./uiHelpers";
+import { StyledBattleText, getTraitLabel } from "./uiHelpers";
 import { BattleTextBox } from "./components/BattleTextBox";
 import { CreatureCard } from "./components/CreatureCard";
 import { CreatureStatsDialog } from "./components/CreatureStatsDialog";
@@ -163,6 +163,8 @@ export default function SoulCollectorBattlePrototype() {
     const usableDefenseSkill = Math.floor(defenseSkill?.current ?? 250);
     const attackTrait = attackSkill?.trait ?? "normal";
     const defenseTrait = defenseSkill?.trait ?? "normal";
+    const attackTraitLabel = getTraitLabel(attackTrait);
+    const defenseTraitLabel = getTraitLabel(defenseTrait);
 
     const attackRoll = rollForTrait(attackTrait);
     const attackEffectiveness = getEffectiveness(
@@ -171,12 +173,11 @@ export default function SoulCollectorBattlePrototype() {
     );
     const attackMultiplier = getAttackMultiplier(attackEffectiveness);
     const defenseRoll = rollForTrait(defenseTrait);
-    const defenseEffectiveness = defenseRoll.isImmune
-      ? "Super Effective"
-      : getEffectiveness(usableDefenseSkill, defenseRoll.roll);
-    const defenseReduction = defenseRoll.isImmune
-      ? 0
-      : getDefenseReduction(defenseEffectiveness);
+    const defenseEffectiveness = getEffectiveness(
+      usableDefenseSkill,
+      defenseRoll.roll,
+    );
+    const defenseReduction = getDefenseReduction(defenseEffectiveness);
     const rawDamage = Math.max(
       1,
       Math.floor(move.basePower * attackMultiplier),
@@ -184,7 +185,7 @@ export default function SoulCollectorBattlePrototype() {
     const damage = Math.max(0, Math.floor(rawDamage * defenseReduction));
     const didAttackSkillGrow = attackSkill ? rollGrowth(attackSkill) : false;
     const defendedSuccessfully =
-      defenseRoll.isImmune || defenseEffectiveness !== "Not Effective";
+      defenseEffectiveness !== "Not Effective";
 
     const didDefenseSkillGrow = defenseSkill ? rollGrowth(defenseSkill) : false;
 
@@ -234,13 +235,11 @@ export default function SoulCollectorBattlePrototype() {
         `${attacker.emoji} ${attacker.name} used ${move.name} on ${defender.emoji} ${defender.name}.`,
       ),
       makeBattleMessage(
-        `ATTACK: ${move.skillUsed} was ${attackSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableAttackSkill}. ${describeBand(usableAttackSkill)} Trait: ${attackTrait}. Outcome: ${attackEffectiveness}. Base power ${move.basePower} × ${attackMultiplier} = ${rawDamage} raw damage.`,
+        `ATTACK: ${move.skillUsed} was ${attackSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableAttackSkill}. ${describeBand(usableAttackSkill)} Trait: ${attackTraitLabel}. Outcome: ${attackEffectiveness}. Base power ${move.basePower} × ${attackMultiplier} = ${rawDamage} raw damage.`,
         attackRollBar,
       ),
       makeBattleMessage(
-        defenseRoll.isImmune
-          ? `DEFENSE: ${move.resistedBy} was ${defenseSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableDefenseSkill}. Trait: ${defenseTrait}. Ace in the Hole gave immunity, so raw damage ${rawDamage} became 0 final damage.`
-          : `DEFENSE: ${move.resistedBy} was ${defenseSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableDefenseSkill}. ${describeBand(usableDefenseSkill)} Trait: ${defenseTrait}. Outcome: ${defenseEffectiveness}. Raw damage ${rawDamage} × defense multiplier ${defenseReduction} = ${damage} final damage.`,
+        `DEFENSE: ${move.resistedBy} was ${defenseSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableDefenseSkill}. ${describeBand(usableDefenseSkill)} Trait: ${defenseTraitLabel}. Outcome: ${defenseEffectiveness}. Raw damage ${rawDamage} × defense multiplier ${defenseReduction} = ${damage} final damage.`,
         defenseRollBar,
       ),
       makeBattleMessage(
@@ -267,9 +266,7 @@ export default function SoulCollectorBattlePrototype() {
         `${attacker.emoji} ${attacker.name} used ${move.name}!`,
       ),
       makeBattleMessage(
-        defenseRoll.isImmune
-          ? `${defender.emoji} ${defender.name} was immune!`
-          : `It was ${attackEffectiveness}. ${defender.name} took ${damage} damage.`,
+        `It was ${attackEffectiveness}. ${defender.name} took ${damage} damage.`,
       ),
       makeBattleMessage(
         `${defender.name} HP: ${defender.hp} -> ${updatedDefender.hp}.`,

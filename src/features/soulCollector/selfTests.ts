@@ -2,6 +2,11 @@ import { calculateCreatureLevel } from "./creatureGeneration";
 import { getAttackMultiplier, getBandThresholds, getDefenseReduction, rollForTrait } from "./battleMath";
 
 export function runSelfTests() {
+  const adeptRoll = rollForTrait("adept");
+  const resistanceRoll = rollForTrait("resistance");
+  const masteryRoll = rollForTrait("mastery");
+  const weaknessRoll = rollForTrait("weakness");
+
   return [
     {
       name: "skill 600 creates expected bands",
@@ -20,8 +25,20 @@ export function runSelfTests() {
       pass: getAttackMultiplier("Not Effective") === 0.75,
     },
     {
-      name: "ace in the hole is immunity",
-      pass: rollForTrait("aceInTheHole").isImmune === true,
+      name: "adept rolls three and takes lowest",
+      pass: adeptRoll.rolls.length === 3 && adeptRoll.roll === Math.min(...adeptRoll.rolls),
+    },
+    {
+      name: "resistance and mastery use three-roll low rule",
+      pass:
+        resistanceRoll.rolls.length === 3 &&
+        masteryRoll.rolls.length === 3 &&
+        resistanceRoll.roll === Math.min(...resistanceRoll.rolls) &&
+        masteryRoll.roll === Math.min(...masteryRoll.rolls),
+    },
+    {
+      name: "weakness rolls three and takes highest",
+      pass: weaknessRoll.rolls.length === 3 && weaknessRoll.roll === Math.max(...weaknessRoll.rolls),
     },
   ];
 }

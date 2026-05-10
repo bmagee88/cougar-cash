@@ -1,11 +1,15 @@
 import React from "react";
 import { Box } from "@mui/material";
-import type { Trait } from "./types";
+import { TRAIT_LABELS, type Trait } from "./types";
+
+export function getTraitLabel(trait: Trait) {
+  return TRAIT_LABELS[trait];
+}
 
 export function getTraitSx(trait: Trait) {
+  if (trait === "adept" || trait === "resistance" || trait === "mastery") return { color: "info.main", fontWeight: 800 };
   if (trait === "proficient") return { color: "success.main", fontWeight: 800 };
   if (trait === "struggle") return { color: "error.main", fontWeight: 800 };
-  if (trait === "aceInTheHole") return { color: "info.main", fontWeight: 800 };
   if (trait === "weakness") return { color: "error.dark", fontWeight: 800 };
   return { color: "text.primary" };
 }

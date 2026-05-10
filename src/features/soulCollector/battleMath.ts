@@ -1,22 +1,64 @@
-import type { Creature, Effectiveness, HiddenSkill, RollResult, Trait } from "./types";
+import {
+  TRAIT_LABELS,
+  type Creature,
+  type Effectiveness,
+  type HiddenSkill,
+  type RollResult,
+  type Trait,
+} from "./types";
 import { randomInt } from "./random";
 import { calculateCreatureLevel, growthChance } from "./creatureGeneration";
 
 export function rollForTrait(trait: Trait): RollResult {
-  if (trait === "aceInTheHole") return { roll: 1, rolls: [], note: "Ace in the Hole: immunity. No roll was needed.", isImmune: true, isWeakness: false };
-  if (trait === "weakness") return { roll: 1000, rolls: [], note: "Weakness: automatic failure. No roll was needed.", isImmune: false, isWeakness: true };
-
   const first = randomInt(1, 1000);
-  if (trait === "normal") return { roll: first, rolls: [first], note: `Normal trait: rolled ${first}.`, isImmune: false, isWeakness: false };
+  if (trait === "normal") {
+    return {
+      roll: first,
+      rolls: [first],
+      note: `Normal trait: rolled ${first}.`,
+      isWeakness: false,
+    };
+  }
 
   const second = randomInt(1, 1000);
   if (trait === "proficient") {
     const lower = Math.min(first, second);
-    return { roll: lower, rolls: [first, second], note: `Proficient trait: rolled ${first} and ${second}, then took the lower roll: ${lower}.`, isImmune: false, isWeakness: false };
+    return {
+      roll: lower,
+      rolls: [first, second],
+      note: `Proficient trait: rolled ${first} and ${second}, then took the lower roll: ${lower}.`,
+      isWeakness: false,
+    };
   }
 
-  const higher = Math.max(first, second);
-  return { roll: higher, rolls: [first, second], note: `Struggle trait: rolled ${first} and ${second}, then took the higher roll: ${higher}.`, isImmune: false, isWeakness: false };
+  if (trait === "struggle") {
+    const higher = Math.max(first, second);
+    return {
+      roll: higher,
+      rolls: [first, second],
+      note: `Struggle trait: rolled ${first} and ${second}, then took the higher roll: ${higher}.`,
+      isWeakness: false,
+    };
+  }
+
+  const third = randomInt(1, 1000);
+  if (trait === "weakness") {
+    const highest = Math.max(first, second, third);
+    return {
+      roll: highest,
+      rolls: [first, second, third],
+      note: `Weakness trait: rolled ${first}, ${second}, and ${third}, then took the highest roll: ${highest}.`,
+      isWeakness: true,
+    };
+  }
+
+  const lowest = Math.min(first, second, third);
+  return {
+    roll: lowest,
+    rolls: [first, second, third],
+    note: `${TRAIT_LABELS[trait]} trait: rolled ${first}, ${second}, and ${third}, then took the lowest roll: ${lowest}.`,
+    isWeakness: false,
+  };
 }
 
 export function getEffectiveness(skillValue: number, roll: number): Effectiveness {

@@ -1,4 +1,21 @@
-export type Trait = "aceInTheHole" | "proficient" | "normal" | "struggle" | "weakness";
+export type Trait =
+  | "adept"
+  | "resistance"
+  | "mastery"
+  | "proficient"
+  | "normal"
+  | "struggle"
+  | "weakness";
+
+export const TRAIT_LABELS: Record<Trait, string> = {
+  adept: "Adept",
+  resistance: "Resistance",
+  mastery: "Mastery",
+  proficient: "Proficient",
+  normal: "Normal",
+  struggle: "Struggle",
+  weakness: "Weakness",
+};
 export type Effectiveness = "Super Effective" | "Effective" | "Not Effective";
 export type BattlePhase = "idle" | "menu" | "fight" | "switch" | "item" | "ended";
 
@@ -36,7 +53,6 @@ export type RollResult = {
   roll: number;
   rolls: number[];
   note: string;
-  isImmune: boolean;
   isWeakness: boolean;
 };
 

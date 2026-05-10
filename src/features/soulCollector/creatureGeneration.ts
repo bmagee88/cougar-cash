@@ -21,14 +21,14 @@ export function chooseGeneratedTrait(options: {
     return chooseWeighted<Trait>(
       isPrimaryType
         ? [
-            { value: "aceInTheHole", weight: 7 },
+            { value: "adept", weight: 7 },
             { value: "proficient", weight: 22 },
             { value: "normal", weight: 61 },
             { value: "struggle", weight: 7 },
             { value: "weakness", weight: 3 },
           ]
         : [
-            { value: "aceInTheHole", weight: 3 },
+            { value: "adept", weight: 3 },
             { value: "proficient", weight: 10 },
             { value: "normal", weight: 74 },
             { value: "struggle", weight: 9 },
@@ -41,14 +41,14 @@ export function chooseGeneratedTrait(options: {
     return chooseWeighted<Trait>(
       isPrimaryType
         ? [
-            { value: "aceInTheHole", weight: 7 },
+            { value: "resistance", weight: 7 },
             { value: "proficient", weight: 22 },
             { value: "normal", weight: 61 },
             { value: "struggle", weight: 7 },
             { value: "weakness", weight: 3 },
           ]
         : [
-            { value: "aceInTheHole", weight: 3 },
+            { value: "resistance", weight: 3 },
             { value: "proficient", weight: 10 },
             { value: "normal", weight: 74 },
             { value: "struggle", weight: 9 },
@@ -58,7 +58,7 @@ export function chooseGeneratedTrait(options: {
   }
 
   return chooseWeighted<Trait>([
-    { value: "aceInTheHole", weight: 4 },
+    { value: "mastery", weight: 4 },
     { value: "proficient", weight: 19 },
     { value: "normal", weight: 69 },
     { value: "struggle", weight: 6 },

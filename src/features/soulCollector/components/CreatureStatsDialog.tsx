@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import type { Creature, HiddenSkill } from "../types";
-import { getTraitSx } from "../uiHelpers";
+import { getTraitLabel, getTraitSx } from "../uiHelpers";
 import { LevelDisplay } from "./LevelDisplay";
 
 function normalizeValue(value: number, min: number, max: number) {
@@ -217,7 +217,7 @@ export function CreatureStatsDialog({
                               variant="body2"
                               sx={getTraitSx(skill.trait)}
                             >
-                              {skill.trait}
+                              {getTraitLabel(skill.trait)}
                             </Typography>
                           </TableCell>
                         </TableRow>

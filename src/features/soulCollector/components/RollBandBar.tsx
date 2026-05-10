@@ -1,6 +1,7 @@
 import { Box, Stack, Typography } from "@mui/material";
 import type { RollBandData } from "../types";
 import { getBandThresholds } from "../battleMath";
+import { getTraitLabel } from "../uiHelpers";
 
 export function RollBandBar({ data }: { data: RollBandData }) {
   const bands = getBandThresholds(data.skillValue);
@@ -13,7 +14,7 @@ export function RollBandBar({ data }: { data: RollBandData }) {
     <Box sx={{ mt: 1.5 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
         <Typography variant="caption" fontWeight={800}>{data.title}: {data.skillName}</Typography>
-        <Typography variant="caption">Roll {data.roll} | Skill {data.skillValue} | Trait {data.trait}</Typography>
+        <Typography variant="caption">Roll {data.roll} | Skill {data.skillValue} | Trait {getTraitLabel(data.trait)}</Typography>
       </Stack>
       <Box sx={{ position: "relative", pt: 2, pb: 0.5 }}>
         <Box sx={{ position: "absolute", left: `${rollLeft}%`, top: 0, transform: "translateX(-50%)", fontSize: 18, lineHeight: 1 }}>▼</Box>

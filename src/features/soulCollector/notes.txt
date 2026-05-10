@@ -1,11 +1,6 @@
-ace in the hole for attacks should be specific to certina types of defenses.
+Adept is the rare strong trait for attack stats.
+Resistance is the rare strong trait for defense stats.
+Mastery is the rare strong trait for utility stats.
 
-maybe ace in the hole is roll 3 and take lowest?
-and weakness is roll 3 take highest.
-
-a weakness attack should be roll 3 take highest
-a weakness defense should be roll 3 take highest
-
-an ace attack should be roll 3 take lowest
-an ace defense should be roll 3 take lowest
-
+Adept, Resistance, and Mastery roll 3 dice and take the lowest.
+Weakness rolls 3 dice and takes the highest.
