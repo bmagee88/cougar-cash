@@ -1,0 +1,11 @@
+ace in the hole for attacks should be specific to certina types of defenses.
+
+maybe ace in the hole is roll 3 and take lowest?
+and weakness is roll 3 take highest.
+
+a weakness attack should be roll 3 take highest
+a weakness defense should be roll 3 take highest
+
+an ace attack should be roll 3 take lowest
+an ace defense should be roll 3 take lowest
+

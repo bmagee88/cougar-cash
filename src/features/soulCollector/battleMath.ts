@@ -64,10 +64,11 @@ export function rollGrowth(skill: HiddenSkill) {
 export function applySkillUse(
   creature: Creature,
   usedSkillName: string,
-  didGrowUsedSkill: boolean
+  didGrowUsedSkill: boolean,
+  growthAmount = 1
 ) {
   const totalSkills = Object.keys(creature.hiddenSkills).length || 1;
-  const decayAmount = 1 / totalSkills;
+  const decayAmount = (1 / totalSkills) * 8;
   const updatedSkills: Record<string, HiddenSkill> = {};
 
   Object.entries(creature.hiddenSkills).forEach(([skillName, skill]) => {
@@ -78,12 +79,11 @@ export function applySkillUse(
       if (current < maxReached) {
         const catchUpStrength = 4;
         const catchUpMultiplier = 1 + (maxReached / 1000) * catchUpStrength;
-        current = Math.min(1000, current + catchUpMultiplier);
+        current = Math.min(1000, current + growthAmount * catchUpMultiplier);
       } else {
-        current = Math.min(1000, current + 1);
+        current = Math.min(1000, current + growthAmount);
       }
 
-      // Important: after any growth, check whether current passed the old max.
       maxReached = Math.max(maxReached, current);
     }
 

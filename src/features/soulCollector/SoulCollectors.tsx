@@ -14,7 +14,13 @@ import {
   Switch,
   Typography,
 } from "@mui/material";
-import type { BattleMessage, BattlePhase, Creature, Move, RollBandData } from "./types";
+import type {
+  BattleMessage,
+  BattlePhase,
+  Creature,
+  Move,
+  RollBandData,
+} from "./types";
 import { safeRandomId, chooseOne } from "./random";
 import { generateCreature } from "./creatureGeneration";
 import {
@@ -38,7 +44,9 @@ export default function SoulCollectorBattlePrototype() {
   const [wildCreatures, setWildCreatures] = useState<Creature[]>([]);
   const [necklace, setNecklace] = useState<Creature[]>([]);
   const [playerCreature, setPlayerCreature] = useState<Creature | null>(null);
-  const [opponentCreature, setOpponentCreature] = useState<Creature | null>(null);
+  const [opponentCreature, setOpponentCreature] = useState<Creature | null>(
+    null,
+  );
   const [phase, setPhase] = useState<BattlePhase>("idle");
   const [battleLog, setBattleLog] = useState<BattleMessage[]>([]);
   const [selectedSwitchId, setSelectedSwitchId] = useState("");
@@ -50,15 +58,37 @@ export default function SoulCollectorBattlePrototype() {
   const battleReady = Boolean(playerCreature && opponentCreature);
   const selfTests = useMemo(() => runSelfTests(), []);
 
-  const makeBattleMessage = (text: string, rollBar?: RollBandData): BattleMessage => ({ id: safeRandomId(), text, rollBar });
+  const makeBattleMessage = (
+    text: string,
+    rollBar?: RollBandData,
+  ): BattleMessage => ({ id: safeRandomId(), text, rollBar });
+
+  const restoreNecklaceSouls = () => {
+    if (necklace.length === 0) {
+      addLog("There are no souls in the necklace to restore.");
+      return;
+    }
+
+    setNecklace((prev) =>
+      prev.map((creature) => ({
+        ...creature,
+        hp: creature.maxHp,
+      })),
+    );
+
+    addLog("All souls in the necklace were restored to full HP.");
+  };
 
   const addLog = (message: string | BattleMessage) => {
-    const entry = typeof message === "string" ? makeBattleMessage(message) : message;
+    const entry =
+      typeof message === "string" ? makeBattleMessage(message) : message;
     setBattleLog((prev) => [entry, ...prev].slice(0, 30));
   };
 
   const addBattleMessages = (messages: Array<string | BattleMessage>) => {
-    const normalizedMessages = messages.map((message) => (typeof message === "string" ? makeBattleMessage(message) : message));
+    const normalizedMessages = messages.map((message) =>
+      typeof message === "string" ? makeBattleMessage(message) : message,
+    );
     normalizedMessages.forEach(addLog);
     setBattleMessages((prev) => [...prev, ...normalizedMessages]);
   };
@@ -80,7 +110,9 @@ export default function SoulCollectorBattlePrototype() {
 
   const moveWildToNecklace = (creature: Creature) => {
     if (!necklaceHasSpace) {
-      addLog("The soul necklace is full. Release a soul before collecting another.");
+      addLog(
+        "The soul necklace is full. Release a soul before collecting another.",
+      );
       return;
     }
     setWildCreatures((prev) => prev.filter((item) => item.id !== creature.id));
@@ -108,15 +140,23 @@ export default function SoulCollectorBattlePrototype() {
     if (!playerCreature) return;
     if (necklace.length < 6) {
       setNecklace((prev) => [...prev, playerCreature]);
-      addLog(`${playerCreature.name} returned to the necklace. You ran from battle.`);
+      addLog(
+        `${playerCreature.name} returned to the necklace. You ran from battle.`,
+      );
     } else {
-      addLog(`${playerCreature.name} left the battle slot, but the necklace is full. The soul disperses.`);
+      addLog(
+        `${playerCreature.name} left the battle slot, but the necklace is full. The soul disperses.`,
+      );
     }
     setPlayerCreature(null);
     setPhase("idle");
   };
 
-  const performAttack = (attacker: Creature, defender: Creature, move: Move) => {
+  const performAttack = (
+    attacker: Creature,
+    defender: Creature,
+    move: Move,
+  ) => {
     const attackSkill = attacker.hiddenSkills[move.skillUsed];
     const defenseSkill = defender.hiddenSkills[move.resistedBy];
     const usableAttackSkill = Math.floor(attackSkill?.current ?? 250);
@@ -125,47 +165,115 @@ export default function SoulCollectorBattlePrototype() {
     const defenseTrait = defenseSkill?.trait ?? "normal";
 
     const attackRoll = rollForTrait(attackTrait);
-    const attackEffectiveness = getEffectiveness(usableAttackSkill, attackRoll.roll);
+    const attackEffectiveness = getEffectiveness(
+      usableAttackSkill,
+      attackRoll.roll,
+    );
     const attackMultiplier = getAttackMultiplier(attackEffectiveness);
     const defenseRoll = rollForTrait(defenseTrait);
-    const defenseEffectiveness = defenseRoll.isImmune ? "Super Effective" : getEffectiveness(usableDefenseSkill, defenseRoll.roll);
-    const defenseReduction = defenseRoll.isImmune ? 0 : getDefenseReduction(defenseEffectiveness);
-    const rawDamage = Math.max(1, Math.floor(move.basePower * attackMultiplier));
+    const defenseEffectiveness = defenseRoll.isImmune
+      ? "Super Effective"
+      : getEffectiveness(usableDefenseSkill, defenseRoll.roll);
+    const defenseReduction = defenseRoll.isImmune
+      ? 0
+      : getDefenseReduction(defenseEffectiveness);
+    const rawDamage = Math.max(
+      1,
+      Math.floor(move.basePower * attackMultiplier),
+    );
     const damage = Math.max(0, Math.floor(rawDamage * defenseReduction));
     const didAttackSkillGrow = attackSkill ? rollGrowth(attackSkill) : false;
-    const defendedSuccessfully = defenseRoll.isImmune || defenseEffectiveness !== "Not Effective";
-    const didDefenseSkillGrow = defenseSkill && defendedSuccessfully ? rollGrowth(defenseSkill) : false;
-    const updatedAttacker = applySkillUse(attacker, move.skillUsed, didAttackSkillGrow);
-    const defenderAfterGrowth = defenseSkill ? applySkillUse(defender, move.resistedBy, Boolean(didDefenseSkillGrow)) : defender;
-    const updatedDefender = { ...defenderAfterGrowth, hp: Math.max(0, defenderAfterGrowth.hp - damage) };
+    const defendedSuccessfully =
+      defenseRoll.isImmune || defenseEffectiveness !== "Not Effective";
 
-    const attackRollBar: RollBandData = { title: "Attack Roll", skillName: move.skillUsed, skillValue: usableAttackSkill, trait: attackTrait, roll: attackRoll.roll, note: attackRoll.note, effectiveness: attackEffectiveness };
-    const defenseRollBar: RollBandData = { title: "Defense Roll", skillName: move.resistedBy, skillValue: usableDefenseSkill, trait: defenseTrait, roll: defenseRoll.roll, note: defenseRoll.note, effectiveness: defenseEffectiveness };
+    const didDefenseSkillGrow = defenseSkill ? rollGrowth(defenseSkill) : false;
+
+    const defenseGrowthAmount = defendedSuccessfully ? 3 : 15;
+
+    const updatedAttacker = applySkillUse(
+      attacker,
+      move.skillUsed,
+      didAttackSkillGrow,
+      3,
+    );
+
+    const defenderAfterGrowth = defenseSkill
+      ? applySkillUse(
+          defender,
+          move.resistedBy,
+          Boolean(didDefenseSkillGrow),
+          defenseGrowthAmount,
+        )
+      : defender;
+    const updatedDefender = {
+      ...defenderAfterGrowth,
+      hp: Math.max(0, defenderAfterGrowth.hp - damage),
+    };
+
+    const attackRollBar: RollBandData = {
+      title: "Attack Roll",
+      skillName: move.skillUsed,
+      skillValue: usableAttackSkill,
+      trait: attackTrait,
+      roll: attackRoll.roll,
+      note: attackRoll.note,
+      effectiveness: attackEffectiveness,
+    };
+    const defenseRollBar: RollBandData = {
+      title: "Defense Roll",
+      skillName: move.resistedBy,
+      skillValue: usableDefenseSkill,
+      trait: defenseTrait,
+      roll: defenseRoll.roll,
+      note: defenseRoll.note,
+      effectiveness: defenseEffectiveness,
+    };
 
     const devMessages: BattleMessage[] = [
-      makeBattleMessage(`${attacker.emoji} ${attacker.name} used ${move.name} on ${defender.emoji} ${defender.name}.`),
-      makeBattleMessage(`ATTACK: ${move.skillUsed} was ${attackSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableAttackSkill}. ${describeBand(usableAttackSkill)} Trait: ${attackTrait}. Outcome: ${attackEffectiveness}. Base power ${move.basePower} × ${attackMultiplier} = ${rawDamage} raw damage.`, attackRollBar),
+      makeBattleMessage(
+        `${attacker.emoji} ${attacker.name} used ${move.name} on ${defender.emoji} ${defender.name}.`,
+      ),
+      makeBattleMessage(
+        `ATTACK: ${move.skillUsed} was ${attackSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableAttackSkill}. ${describeBand(usableAttackSkill)} Trait: ${attackTrait}. Outcome: ${attackEffectiveness}. Base power ${move.basePower} × ${attackMultiplier} = ${rawDamage} raw damage.`,
+        attackRollBar,
+      ),
       makeBattleMessage(
         defenseRoll.isImmune
           ? `DEFENSE: ${move.resistedBy} was ${defenseSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableDefenseSkill}. Trait: ${defenseTrait}. Ace in the Hole gave immunity, so raw damage ${rawDamage} became 0 final damage.`
           : `DEFENSE: ${move.resistedBy} was ${defenseSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableDefenseSkill}. ${describeBand(usableDefenseSkill)} Trait: ${defenseTrait}. Outcome: ${defenseEffectiveness}. Raw damage ${rawDamage} × defense multiplier ${defenseReduction} = ${damage} final damage.`,
-        defenseRollBar
+        defenseRollBar,
       ),
-      makeBattleMessage(`${defender.name} HP: ${defender.hp} -> ${updatedDefender.hp}.`),
-      makeBattleMessage(didAttackSkillGrow ? `${attacker.name}'s ${move.skillUsed} improved after the attempt. New level display: ${updatedAttacker.level}.` : `${attacker.name}'s ${move.skillUsed} did not improve this time. New level display after decay: ${updatedAttacker.level}.`),
       makeBattleMessage(
-        defendedSuccessfully
-          ? didDefenseSkillGrow
-            ? `${defender.name} successfully defended, so ${move.resistedBy} was eligible for growth and improved. New level display: ${updatedDefender.level}.`
-            : `${defender.name} successfully defended, so ${move.resistedBy} was eligible for growth, but it did not improve. New level display after decay: ${updatedDefender.level}.`
-          : `${defender.name} did not successfully defend, so ${move.resistedBy} was not eligible for growth.`
+        `${defender.name} HP: ${defender.hp} -> ${updatedDefender.hp}.`,
+      ),
+      makeBattleMessage(
+        didAttackSkillGrow
+          ? `${attacker.name}'s ${move.skillUsed} improved after the attempt. New level display: ${updatedAttacker.level}.`
+          : `${attacker.name}'s ${move.skillUsed} did not improve this time. New level display after decay: ${updatedAttacker.level}.`,
+      ),
+      makeBattleMessage(
+        didDefenseSkillGrow
+          ? defendedSuccessfully
+            ? `${defender.name} successfully defended, so ${move.resistedBy} improved by 3. New level display: ${updatedDefender.level}.`
+            : `${defender.name} failed to defend, but learned from the failure. ${move.resistedBy} improved by 15. New level display: ${updatedDefender.level}.`
+          : defendedSuccessfully
+            ? `${defender.name} successfully defended, but ${move.resistedBy} did not improve. New level display after decay: ${updatedDefender.level}.`
+            : `${defender.name} failed to defend, and ${move.resistedBy} did not improve.`,
       ),
     ];
 
     const userMessages: BattleMessage[] = [
-      makeBattleMessage(`${attacker.emoji} ${attacker.name} used ${move.name}!`),
-      makeBattleMessage(defenseRoll.isImmune ? `${defender.emoji} ${defender.name} was immune!` : `It was ${attackEffectiveness}. ${defender.name} took ${damage} damage.`),
-      makeBattleMessage(`${defender.name} HP: ${defender.hp} -> ${updatedDefender.hp}.`),
+      makeBattleMessage(
+        `${attacker.emoji} ${attacker.name} used ${move.name}!`,
+      ),
+      makeBattleMessage(
+        defenseRoll.isImmune
+          ? `${defender.emoji} ${defender.name} was immune!`
+          : `It was ${attackEffectiveness}. ${defender.name} took ${damage} damage.`,
+      ),
+      makeBattleMessage(
+        `${defender.name} HP: ${defender.hp} -> ${updatedDefender.hp}.`,
+      ),
     ];
 
     const messages = devMode ? devMessages : userMessages;
@@ -186,8 +294,15 @@ export default function SoulCollectorBattlePrototype() {
     }
 
     const opponentMove = chooseOne(playerResult.updatedDefender.moves);
-    const opponentResult = performAttack(playerResult.updatedDefender, playerResult.updatedAttacker, opponentMove);
-    addBattleMessages([`${playerResult.updatedDefender.name} chose ${opponentMove.name}.`, ...opponentResult.messages]);
+    const opponentResult = performAttack(
+      playerResult.updatedDefender,
+      playerResult.updatedAttacker,
+      opponentMove,
+    );
+    addBattleMessages([
+      `${playerResult.updatedDefender.name} chose ${opponentMove.name}.`,
+      ...opponentResult.messages,
+    ]);
 
     if (opponentResult.updatedDefender.hp <= 0) {
       addBattleMessages([`${playerCreature.name} fainted.`]);
@@ -197,7 +312,9 @@ export default function SoulCollectorBattlePrototype() {
         setPlayerCreature(nextCreature);
         setOpponentCreature(opponentResult.updatedAttacker);
         setPhase("menu");
-        addBattleMessages([`${nextCreature.name} was pulled from the necklace into battle.`]);
+        addBattleMessages([
+          `${nextCreature.name} was pulled from the necklace into battle.`,
+        ]);
       } else {
         setPlayerCreature(null);
         setOpponentCreature(opponentResult.updatedAttacker);
@@ -214,9 +331,14 @@ export default function SoulCollectorBattlePrototype() {
 
   const confirmSwitch = () => {
     if (!selectedSwitchId || !playerCreature) return;
-    const incoming = necklace.find((creature) => creature.id === selectedSwitchId);
+    const incoming = necklace.find(
+      (creature) => creature.id === selectedSwitchId,
+    );
     if (!incoming) return;
-    setNecklace((prev) => [...prev.filter((creature) => creature.id !== selectedSwitchId), playerCreature]);
+    setNecklace((prev) => [
+      ...prev.filter((creature) => creature.id !== selectedSwitchId),
+      playerCreature,
+    ]);
     setPlayerCreature(incoming);
     setSelectedSwitchId("");
     setPhase("menu");
@@ -225,9 +347,12 @@ export default function SoulCollectorBattlePrototype() {
 
   const menuDisabled = !battleReady || phase === "ended";
   const battleStatus = useMemo(() => {
-    if (!playerCreature && necklace.length === 0) return "You need a soul creature in your necklace or battle slot.";
-    if (!playerCreature) return "Choose a creature from your necklace for your battle slot.";
-    if (!opponentCreature) return "Choose a wild creature for the opponent slot.";
+    if (!playerCreature && necklace.length === 0)
+      return "You need a soul creature in your necklace or battle slot.";
+    if (!playerCreature)
+      return "Choose a creature from your necklace for your battle slot.";
+    if (!opponentCreature)
+      return "Choose a wild creature for the opponent slot.";
     if (phase === "ended") return "Battle ended.";
     return "Choose an action.";
   }, [playerCreature, opponentCreature, necklace.length, phase]);
@@ -236,76 +361,198 @@ export default function SoulCollectorBattlePrototype() {
     <Box sx={{ p: 2, maxWidth: 1300, mx: "auto" }}>
       <Stack spacing={2}>
         <Paper sx={{ p: 2, borderRadius: 3 }}>
-          <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={2}>
+          <Stack
+            direction={{ xs: "column", md: "row" }}
+            justifyContent="space-between"
+            gap={2}
+          >
             <Box>
-              <Typography variant="h4" fontWeight={800}>Soul Collector Battle Prototype</Typography>
-              <Typography color="text.secondary">Generate wild creatures, collect up to 6 soul stones, and battle with detailed hidden-stat rolls.</Typography>
+              <Typography variant="h4" fontWeight={800}>
+                Soul Collector Battle Prototype
+              </Typography>
+              <Typography color="text.secondary">
+                Generate wild creatures, collect up to 6 soul stones, and battle
+                with detailed hidden-stat rolls.
+              </Typography>
             </Box>
             <Stack direction="row" alignItems="center" gap={2}>
-              <FormControlLabel control={<Switch checked={devMode} onChange={(event) => setDevMode(event.target.checked)} />} label={devMode ? "Dev Mode" : "User Mode"} />
-              <Button variant="contained" size="large" onClick={generateWildCreature}>Generate Wild Creature</Button>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={devMode}
+                    onChange={(event) => setDevMode(event.target.checked)}
+                  />
+                }
+                label={devMode ? "Dev Mode" : "User Mode"}
+              />
+              <Button
+                variant="contained"
+                size="large"
+                onClick={generateWildCreature}
+              >
+                Generate Wild Creature
+              </Button>
             </Stack>
           </Stack>
         </Paper>
 
         {devMode && (
           <Paper sx={{ p: 2, borderRadius: 3 }}>
-            <Typography variant="subtitle1" fontWeight={800}>Calculation Check</Typography>
-            <Typography variant="body2" color="text.secondary">Damage order: base power × attack effectiveness = raw damage, then raw damage × defense effectiveness = final damage.</Typography>
+            <Typography variant="subtitle1" fontWeight={800}>
+              Calculation Check
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Damage order: base power × attack effectiveness = raw damage, then
+              raw damage × defense effectiveness = final damage.
+            </Typography>
             <Stack direction="row" gap={1} flexWrap="wrap" sx={{ mt: 1 }}>
-              {selfTests.map((test) => <Chip key={test.name} color={test.pass ? "success" : "error"} label={`${test.pass ? "PASS" : "FAIL"}: ${test.name}`} />)}
+              {selfTests.map((test) => (
+                <Chip
+                  key={test.name}
+                  color={test.pass ? "success" : "error"}
+                  label={`${test.pass ? "PASS" : "FAIL"}: ${test.name}`}
+                />
+              ))}
             </Stack>
           </Paper>
         )}
 
         <Grid container spacing={2}>
-          <Grid item xs={12} md={6}><CreatureCard title="Your Battle Slot" creature={playerCreature} onViewStats={setStatsCreature} devMode={devMode} /></Grid>
-          <Grid item xs={12} md={6}><CreatureCard title="Opponent Slot" creature={opponentCreature} onViewStats={setStatsCreature} devMode={devMode} /></Grid>
+          <Grid item xs={12} md={6}>
+            <CreatureCard
+              title="Your Battle Slot"
+              creature={playerCreature}
+              onViewStats={setStatsCreature}
+              devMode={devMode}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <CreatureCard
+              title="Opponent Slot"
+              creature={opponentCreature}
+              onViewStats={setStatsCreature}
+              devMode={devMode}
+            />
+          </Grid>
         </Grid>
 
-        <BattleTextBox messages={battleMessages} onAdvance={advanceBattleMessage} devMode={devMode} />
+        <BattleTextBox
+          messages={battleMessages}
+          onAdvance={advanceBattleMessage}
+          devMode={devMode}
+        />
 
         <Paper sx={{ p: 2, borderRadius: 3 }}>
-          <Typography variant="h6" gutterBottom>Battle Menu</Typography>
-          <Typography color="text.secondary" sx={{ mb: 2 }}>{battleStatus}</Typography>
+          <Typography variant="h6" gutterBottom>
+            Battle Menu
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            {battleStatus}
+          </Typography>
 
           {phase !== "fight" && phase !== "switch" && (
             <Stack direction="row" flexWrap="wrap" gap={1}>
-              <Button variant="contained" disabled={menuDisabled} onClick={() => setPhase("fight")}>Fight</Button>
-              <Button variant="outlined" disabled={!playerCreature || necklace.length === 0} onClick={() => setPhase("switch")}>Switch</Button>
-              <Button variant="outlined" disabled={!playerCreature} onClick={runFromBattle}>Run</Button>
-              <Button variant="outlined" disabled={menuDisabled} onClick={() => { setPhase("item"); addLog("Items do nothing yet."); }}>Item</Button>
+              <Button
+                variant="contained"
+                disabled={menuDisabled}
+                onClick={() => setPhase("fight")}
+              >
+                Fight
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={!playerCreature || necklace.length === 0}
+                onClick={() => setPhase("switch")}
+              >
+                Switch
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={!playerCreature}
+                onClick={runFromBattle}
+              >
+                Run
+              </Button>
+              <Button
+                variant="outlined"
+                disabled={menuDisabled}
+                onClick={() => {
+                  setPhase("item");
+                  addLog("Items do nothing yet.");
+                }}
+              >
+                Item
+              </Button>
             </Stack>
           )}
 
           {phase === "fight" && playerCreature && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1" fontWeight={700}>Choose a move</Typography>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Choose a move
+              </Typography>
               <Grid container spacing={1} sx={{ mt: 1 }}>
                 {playerCreature.moves.map((move) => (
                   <Grid item xs={12} sm={6} md={3} key={move.id}>
-                    <Button fullWidth variant="contained" onClick={() => handlePlayerMove(move)} sx={{ minHeight: 84, alignItems: "flex-start", justifyContent: "flex-start", textAlign: "left" }}>
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      onClick={() => handlePlayerMove(move)}
+                      sx={{
+                        minHeight: 84,
+                        alignItems: "flex-start",
+                        justifyContent: "flex-start",
+                        textAlign: "left",
+                      }}
+                    >
                       <Box>
                         <Typography fontWeight={800}>{move.name}</Typography>
-                        <Typography variant="caption">Power {move.basePower}</Typography>
+                        <Typography variant="caption">
+                          Power {move.basePower}
+                        </Typography>
                       </Box>
                     </Button>
                   </Grid>
                 ))}
               </Grid>
-              <Button sx={{ mt: 1 }} onClick={() => setPhase("menu")}>Back</Button>
+              <Button sx={{ mt: 1 }} onClick={() => setPhase("menu")}>
+                Back
+              </Button>
             </Box>
           )}
 
           {phase === "switch" && (
             <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1" fontWeight={700}>Choose a soul to switch in</Typography>
-              <Stack direction={{ xs: "column", sm: "row" }} gap={1} sx={{ mt: 1 }}>
-                <Select value={selectedSwitchId} displayEmpty onChange={(event) => setSelectedSwitchId(event.target.value)} sx={{ minWidth: 280 }}>
-                  <MenuItem value="" disabled>Select creature</MenuItem>
-                  {necklace.map((creature) => <MenuItem key={creature.id} value={creature.id}>{creature.emoji} {creature.name} | {creature.level}</MenuItem>)}
+              <Typography variant="subtitle1" fontWeight={700}>
+                Choose a soul to switch in
+              </Typography>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                gap={1}
+                sx={{ mt: 1 }}
+              >
+                <Select
+                  value={selectedSwitchId}
+                  displayEmpty
+                  onChange={(event) => setSelectedSwitchId(event.target.value)}
+                  sx={{ minWidth: 280 }}
+                >
+                  <MenuItem value="" disabled>
+                    Select creature
+                  </MenuItem>
+                  {necklace.map((creature) => (
+                    <MenuItem key={creature.id} value={creature.id}>
+                      {creature.emoji} {creature.name} | {creature.level}
+                    </MenuItem>
+                  ))}
                 </Select>
-                <Button variant="contained" disabled={!selectedSwitchId} onClick={confirmSwitch}>Confirm Switch</Button>
+                <Button
+                  variant="contained"
+                  disabled={!selectedSwitchId}
+                  onClick={confirmSwitch}
+                >
+                  Confirm Switch
+                </Button>
                 <Button onClick={() => setPhase("menu")}>Cancel</Button>
               </Stack>
             </Box>
@@ -315,14 +562,28 @@ export default function SoulCollectorBattlePrototype() {
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Paper sx={{ p: 2, borderRadius: 3 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center">
+              <Stack
+                direction="row"
+                justifyContent="space-between"
+                alignItems="center"
+              >
                 <Typography variant="h6">Soul Necklace</Typography>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  disabled={necklace.length === 0}
+                  onClick={restoreNecklaceSouls}
+                >
+                  Restore All
+                </Button>
                 <Chip label={`${necklace.length}/6 soul stones`} />
               </Stack>
               <Divider sx={{ my: 1 }} />
 
               {necklace.length === 0 ? (
-                <Typography color="text.secondary">No souls collected yet.</Typography>
+                <Typography color="text.secondary">
+                  No souls collected yet.
+                </Typography>
               ) : (
                 <List dense>
                   {necklace.map((creature) => (
@@ -333,8 +594,19 @@ export default function SoulCollectorBattlePrototype() {
                       devMode={devMode}
                       actions={
                         <>
-                          <Button size="small" onClick={() => moveNecklaceToPlayerSlot(creature)}>Use</Button>
-                          <Button size="small" color="error" onClick={() => releaseSoul(creature)}>Release</Button>
+                          <Button
+                            size="small"
+                            onClick={() => moveNecklaceToPlayerSlot(creature)}
+                          >
+                            Use
+                          </Button>
+                          <Button
+                            size="small"
+                            color="error"
+                            onClick={() => releaseSoul(creature)}
+                          >
+                            Release
+                          </Button>
                         </>
                       }
                     />
@@ -350,7 +622,9 @@ export default function SoulCollectorBattlePrototype() {
               <Divider sx={{ my: 1 }} />
 
               {wildCreatures.length === 0 ? (
-                <Typography color="text.secondary">No wild creatures generated.</Typography>
+                <Typography color="text.secondary">
+                  No wild creatures generated.
+                </Typography>
               ) : (
                 <List dense>
                   {wildCreatures.map((creature) => (
@@ -361,8 +635,19 @@ export default function SoulCollectorBattlePrototype() {
                       devMode={devMode}
                       actions={
                         <>
-                          <Button size="small" onClick={() => moveWildToOpponent(creature)}>Battle</Button>
-                          <Button size="small" disabled={!necklaceHasSpace} onClick={() => moveWildToNecklace(creature)}>Collect</Button>
+                          <Button
+                            size="small"
+                            onClick={() => moveWildToOpponent(creature)}
+                          >
+                            Battle
+                          </Button>
+                          <Button
+                            size="small"
+                            disabled={!necklaceHasSpace}
+                            onClick={() => moveWildToNecklace(creature)}
+                          >
+                            Collect
+                          </Button>
                         </>
                       }
                     />
@@ -382,8 +667,17 @@ export default function SoulCollectorBattlePrototype() {
           ) : (
             <Stack spacing={1}>
               {battleLog.map((entry) => (
-                <Box key={entry.id} sx={{ borderBottom: "1px solid", borderColor: "divider", pb: 1 }}>
-                  <Typography variant="body2">• <StyledBattleText text={entry.text} /></Typography>
+                <Box
+                  key={entry.id}
+                  sx={{
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    pb: 1,
+                  }}
+                >
+                  <Typography variant="body2">
+                    • <StyledBattleText text={entry.text} />
+                  </Typography>
                   {entry.rollBar && <RollBandBar data={entry.rollBar} />}
                 </Box>
               ))}
@@ -392,7 +686,10 @@ export default function SoulCollectorBattlePrototype() {
         </Paper>
       </Stack>
 
-      <CreatureStatsDialog creature={statsCreature} onClose={() => setStatsCreature(null)} />
+      <CreatureStatsDialog
+        creature={statsCreature}
+        onClose={() => setStatsCreature(null)}
+      />
     </Box>
   );
 }
