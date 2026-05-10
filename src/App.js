@@ -23,6 +23,8 @@ import TypingPong from "./TypingPong/TypingPong";
 import MultipleChoiceQuiz from "./MultipleChoiceQuiz/MultipleChoiceQuiz";
 import ParentLetter from "./ParentLetter/ParentLetter";
 import SoundButton from "./SoundButton/SoundButton";
+// import SoulCollectors from "./SoulCollectors/SoulCollectors";
+import SoulCollectorBattlePrototype from "./features/soulCollector";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -60,6 +62,8 @@ function App() {
           <Route path="/mc-quiz" element={<MultipleChoiceQuiz />} />
           <Route path="/parent-letter" element={<ParentLetter />} />
           <Route path="/sound" element={<SoundButton />} />
+          {/* <Route path="/soul-collector" element={<SoulCollectors />} /> */}
+          <Route path="/soul-collector" element={<SoulCollectorBattlePrototype />} />
         </Routes>
       </Router>
     </Box>
