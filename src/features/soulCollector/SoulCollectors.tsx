@@ -15,8 +15,10 @@ import {
   Typography,
 } from "@mui/material";
 import type {
+  BattleAnimation,
   BattleMessage,
   BattlePhase,
+  CombatSide,
   Creature,
   Move,
   RollBandData,
@@ -61,7 +63,8 @@ export default function SoulCollectorBattlePrototype() {
   const makeBattleMessage = (
     text: string,
     rollBar?: RollBandData,
-  ): BattleMessage => ({ id: safeRandomId(), text, rollBar });
+    animation?: BattleAnimation,
+  ): BattleMessage => ({ id: safeRandomId(), text, rollBar, animation });
 
   const restoreNecklaceSouls = () => {
     if (necklace.length === 0) {
@@ -85,12 +88,17 @@ export default function SoulCollectorBattlePrototype() {
     setBattleLog((prev) => [entry, ...prev].slice(0, 30));
   };
 
-  const addBattleMessages = (messages: Array<string | BattleMessage>) => {
+  const addBattleMessages = (
+    messages: Array<string | BattleMessage>,
+    options: { replace?: boolean } = {},
+  ) => {
     const normalizedMessages = messages.map((message) =>
       typeof message === "string" ? makeBattleMessage(message) : message,
     );
     normalizedMessages.forEach(addLog);
-    setBattleMessages((prev) => [...prev, ...normalizedMessages]);
+    setBattleMessages((prev) =>
+      options.replace ? normalizedMessages : [...prev, ...normalizedMessages],
+    );
   };
 
   const advanceBattleMessage = () => setBattleMessages((prev) => prev.slice(1));
@@ -138,6 +146,7 @@ export default function SoulCollectorBattlePrototype() {
 
   const runFromBattle = () => {
     if (!playerCreature) return;
+    setBattleMessages([]);
     if (necklace.length < 6) {
       setNecklace((prev) => [...prev, playerCreature]);
       addLog(
@@ -156,6 +165,7 @@ export default function SoulCollectorBattlePrototype() {
     attacker: Creature,
     defender: Creature,
     move: Move,
+    attackerSide: CombatSide,
   ) => {
     const attackSkill = attacker.hiddenSkills[move.skillUsed];
     const defenseSkill = defender.hiddenSkills[move.resistedBy];
@@ -230,20 +240,54 @@ export default function SoulCollectorBattlePrototype() {
       effectiveness: defenseEffectiveness,
     };
 
+    const baseAnimation = {
+      attackerSide,
+      attackerName: attacker.name,
+      attackerEmoji: attacker.emoji,
+      defenderName: defender.name,
+      defenderEmoji: defender.emoji,
+      moveName: move.name,
+      moveEmoji: move.emoji,
+    };
+    const attackAnimation: BattleAnimation = {
+      ...baseAnimation,
+      kind: "attack",
+      effectiveness: attackEffectiveness,
+      roll: attackRoll.roll,
+    };
+    const defenseAnimation: BattleAnimation = {
+      ...baseAnimation,
+      kind: "defense",
+      effectiveness: defenseEffectiveness,
+      roll: defenseRoll.roll,
+    };
+    const impactAnimation: BattleAnimation = {
+      ...baseAnimation,
+      kind: "impact",
+      effectiveness: attackEffectiveness,
+      damage,
+    };
+
     const devMessages: BattleMessage[] = [
       makeBattleMessage(
         `${attacker.emoji} ${attacker.name} used ${move.name} on ${defender.emoji} ${defender.name}.`,
+        undefined,
+        attackAnimation,
       ),
       makeBattleMessage(
         `ATTACK: ${move.skillUsed} was ${attackSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableAttackSkill}. ${describeBand(usableAttackSkill)} Trait: ${attackTraitLabel}. Outcome: ${attackEffectiveness}. Base power ${move.basePower} × ${attackMultiplier} = ${rawDamage} raw damage.`,
         attackRollBar,
+        attackAnimation,
       ),
       makeBattleMessage(
         `DEFENSE: ${move.resistedBy} was ${defenseSkill?.current.toFixed(2) ?? "missing"}, so the battle value was ${usableDefenseSkill}. ${describeBand(usableDefenseSkill)} Trait: ${defenseTraitLabel}. Outcome: ${defenseEffectiveness}. Raw damage ${rawDamage} × defense multiplier ${defenseReduction} = ${damage} final damage.`,
         defenseRollBar,
+        defenseAnimation,
       ),
       makeBattleMessage(
         `${defender.name} HP: ${defender.hp} -> ${updatedDefender.hp}.`,
+        undefined,
+        impactAnimation,
       ),
       makeBattleMessage(
         didAttackSkillGrow
@@ -264,9 +308,18 @@ export default function SoulCollectorBattlePrototype() {
     const userMessages: BattleMessage[] = [
       makeBattleMessage(
         `${attacker.emoji} ${attacker.name} used ${move.name}!`,
+        undefined,
+        attackAnimation,
+      ),
+      makeBattleMessage(
+        `${defender.emoji} ${defender.name}'s defense was ${defenseEffectiveness}.`,
+        undefined,
+        defenseAnimation,
       ),
       makeBattleMessage(
         `It was ${attackEffectiveness}. ${defender.name} took ${damage} damage.`,
+        undefined,
+        impactAnimation,
       ),
       makeBattleMessage(
         `${defender.name} HP: ${defender.hp} -> ${updatedDefender.hp}.`,
@@ -279,8 +332,13 @@ export default function SoulCollectorBattlePrototype() {
 
   const handlePlayerMove = (move: Move) => {
     if (!playerCreature || !opponentCreature) return;
-    const playerResult = performAttack(playerCreature, opponentCreature, move);
-    addBattleMessages(playerResult.messages);
+    const playerResult = performAttack(
+      playerCreature,
+      opponentCreature,
+      move,
+      "player",
+    );
+    addBattleMessages(playerResult.messages, { replace: true });
 
     if (playerResult.updatedDefender.hp <= 0) {
       setPlayerCreature(playerResult.updatedAttacker);
@@ -295,6 +353,7 @@ export default function SoulCollectorBattlePrototype() {
       playerResult.updatedDefender,
       playerResult.updatedAttacker,
       opponentMove,
+      "opponent",
     );
     addBattleMessages([
       `${playerResult.updatedDefender.name} chose ${opponentMove.name}.`,
@@ -452,14 +511,20 @@ export default function SoulCollectorBattlePrototype() {
               <Button
                 variant="contained"
                 disabled={menuDisabled}
-                onClick={() => setPhase("fight")}
+                onClick={() => {
+                  setBattleMessages([]);
+                  setPhase("fight");
+                }}
               >
                 Fight
               </Button>
               <Button
                 variant="outlined"
                 disabled={!playerCreature || necklace.length === 0}
-                onClick={() => setPhase("switch")}
+                onClick={() => {
+                  setBattleMessages([]);
+                  setPhase("switch");
+                }}
               >
                 Switch
               </Button>
@@ -474,6 +539,7 @@ export default function SoulCollectorBattlePrototype() {
                 variant="outlined"
                 disabled={menuDisabled}
                 onClick={() => {
+                  setBattleMessages([]);
                   setPhase("item");
                   addLog("Items do nothing yet.");
                 }}

@@ -18,6 +18,7 @@ export const TRAIT_LABELS: Record<Trait, string> = {
 };
 export type Effectiveness = "Super Effective" | "Effective" | "Not Effective";
 export type BattlePhase = "idle" | "menu" | "fight" | "switch" | "item" | "ended";
+export type CombatSide = "player" | "opponent";
 
 export type HiddenSkill = {
   current: number;
@@ -70,6 +71,21 @@ export type BattleMessage = {
   id: string;
   text: string;
   rollBar?: RollBandData;
+  animation?: BattleAnimation;
 };
 
 export type BattleLogEntry = BattleMessage;
+
+export type BattleAnimation = {
+  kind: "attack" | "defense" | "impact";
+  attackerSide: CombatSide;
+  attackerName: string;
+  attackerEmoji: string;
+  defenderName: string;
+  defenderEmoji: string;
+  moveName?: string;
+  moveEmoji?: string;
+  effectiveness?: Effectiveness;
+  damage?: number;
+  roll?: number;
+};
