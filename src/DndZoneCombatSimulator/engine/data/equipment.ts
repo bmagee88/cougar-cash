@@ -98,9 +98,9 @@ export const fullHelm: ArmorPiece = {
   name: "Full Helm",
   weight: 2,
   clunk: 1,
-  sharpMitigation: 8,
-  pierceMitigation: 7,
-  bluntMitigation: 4,
+  sharpMitigation: 92,
+  pierceMitigation: 88,
+  bluntMitigation: 82,
   coverageRanges: [{ start: 138, end: 150 }],
 };
 
@@ -109,9 +109,9 @@ export const cap: ArmorPiece = {
   name: "Cap",
   weight: 1,
   clunk: 0,
-  sharpMitigation: 3,
-  pierceMitigation: 2,
-  bluntMitigation: 1,
+  sharpMitigation: 78,
+  pierceMitigation: 75,
+  bluntMitigation: 75,
   coverageRanges: [{ start: 145, end: 150 }],
 };
 
@@ -120,9 +120,9 @@ export const breastplate: ArmorPiece = {
   name: "Breastplate",
   weight: 5,
   clunk: 2,
-  sharpMitigation: 12,
-  pierceMitigation: 10,
-  bluntMitigation: 6,
+  sharpMitigation: 95,
+  pierceMitigation: 90,
+  bluntMitigation: 85,
   coverageRanges: [{ start: 98, end: 107 }],
 };
 
@@ -131,9 +131,9 @@ export const shoulderGuards: ArmorPiece = {
   name: "Shoulder Guards",
   weight: 2,
   clunk: 1,
-  sharpMitigation: 7,
-  pierceMitigation: 5,
-  bluntMitigation: 4,
+  sharpMitigation: 88,
+  pierceMitigation: 82,
+  bluntMitigation: 78,
   coverageRanges: [{ start: 118, end: 127 }],
 };
 
@@ -142,9 +142,9 @@ export const greaves: ArmorPiece = {
   name: "Greaves",
   weight: 3,
   clunk: 1,
-  sharpMitigation: 7,
-  pierceMitigation: 5,
-  bluntMitigation: 4,
+  sharpMitigation: 86,
+  pierceMitigation: 82,
+  bluntMitigation: 78,
   coverageRanges: [{ start: 15, end: 59 }],
 };
 
@@ -153,9 +153,9 @@ export const armWraps: ArmorPiece = {
   name: "Arm Wraps",
   weight: 1,
   clunk: 0,
-  sharpMitigation: 3,
-  pierceMitigation: 2,
-  bluntMitigation: 2,
+  sharpMitigation: 78,
+  pierceMitigation: 75,
+  bluntMitigation: 75,
   coverageRanges: [{ start: 80, end: 97 }],
 };
 

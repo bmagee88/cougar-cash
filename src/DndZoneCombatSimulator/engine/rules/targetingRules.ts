@@ -1,4 +1,4 @@
-import type { ArmorPiece, AttackMove, BodyPart, Combatant, HitKind, Weapon } from "../types/combat";
+import type { ArmorPiece, AttackMove, BattleState, BodyPart, Combatant, HitKind, RowIndex, Team, Weapon } from "../types/combat";
 import { BODY_SCALE_MAX, BODY_SCALE_MIN, bodyMap, missZones, moveAllowedInitialParts, moveTargetRanges } from "../data/bodyMap";
 import { clamp, inRange } from "../utils/math";
 import { randomInt } from "../utils/random";
@@ -81,13 +81,37 @@ export function rollInitialMarkerForMove(move: AttackMove): { marker: number; bo
   return { marker, bodyPart: getBodyPart(marker) };
 }
 
-export function canMeleeAttack(attacker: Combatant, defender: Combatant, weapon: Weapon): boolean {
+function frontRowForTeam(team: Team): RowIndex {
+  return team === "heroes" ? 1 : 2;
+}
+
+function hasLivingFrontRow(state: BattleState | undefined, team: Team): boolean {
+  if (!state) return true;
+  const frontRow = frontRowForTeam(team);
+
+  return state.groups[0].combatantIds.some((id) => {
+    const character = state.combatants[id];
+    return character?.team === team && character.row === frontRow && character.fight > 0;
+  });
+}
+
+function effectiveRowForReach(character: Combatant, state?: BattleState): RowIndex {
+  const frontRow = frontRowForTeam(character.team);
+  const backRow = character.team === "heroes" ? 0 : 3;
+
+  if (character.row === backRow && !hasLivingFrontRow(state, character.team)) return frontRow;
+  return character.row;
+}
+
+export function canMeleeAttack(attacker: Combatant, defender: Combatant, weapon: Weapon, state?: BattleState): boolean {
   if (attacker.team === defender.team) return false;
 
-  const attackerFront = attacker.row === 1 || attacker.row === 2;
-  const attackerBack = attacker.row === 0 || attacker.row === 3;
-  const defenderFront = defender.row === 1 || defender.row === 2;
-  const defenderBack = defender.row === 0 || defender.row === 3;
+  const attackerRow = effectiveRowForReach(attacker, state);
+  const defenderRow = effectiveRowForReach(defender, state);
+  const attackerFront = attackerRow === 1 || attackerRow === 2;
+  const attackerBack = attackerRow === 0 || attackerRow === 3;
+  const defenderFront = defenderRow === 1 || defenderRow === 2;
+  const defenderBack = defenderRow === 0 || defenderRow === 3;
 
   if (attackerFront && defenderFront) return true;
   if (attackerFront && defenderBack) return weapon.reach === "reach" || weapon.reach === "doubleReach";

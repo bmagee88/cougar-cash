@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Card, CardContent, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Box, Typography } from "@mui/material";
 
 function renderLogEntry(entry: string) {
   const parts = entry.split(/(\*\*.*?\*\*)/g);
@@ -14,9 +14,11 @@ function renderLogEntry(entry: string) {
 
 export function CombatLog({ log }: { log: string[] }) {
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h6" fontWeight={800} gutterBottom>Combat Log</Typography>
+    <Accordion disableGutters>
+      <AccordionSummary expandIcon={<Box component="span">v</Box>}>
+        <Typography fontWeight={900}>Combat Log</Typography>
+      </AccordionSummary>
+      <AccordionDetails>
         <Box sx={{ maxHeight: 360, overflowY: "auto", bgcolor: "#020617", color: "grey.100", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2 }}>
           {log.map((entry, index) => (
             <Box key={`${entry}-${index}`} sx={{ borderBottom: "1px solid", borderColor: "grey.800", py: 1, fontSize: 14 }}>
@@ -24,7 +26,7 @@ export function CombatLog({ log }: { log: string[] }) {
             </Box>
           ))}
         </Box>
-      </CardContent>
-    </Card>
+      </AccordionDetails>
+    </Accordion>
   );
 }

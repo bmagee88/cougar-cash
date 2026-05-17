@@ -6,6 +6,7 @@ export function RosterPanel({
   title,
   ids,
   state,
+  selectedId,
   onGenerate,
   onSwapIn,
   onStats,
@@ -13,6 +14,7 @@ export function RosterPanel({
   title: string;
   ids: string[];
   state: BattleState;
+  selectedId?: string | null;
   onGenerate: () => void;
   onSwapIn: (id: string) => void;
   onStats: (c: Combatant) => void;
@@ -37,17 +39,28 @@ export function RosterPanel({
             if (!c) return null;
 
             return (
-              <Box key={id} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.5, bgcolor: "action.hover" }}>
+              <Box
+                key={id}
+                sx={{
+                  border: "1px solid",
+                  borderColor: selectedId === id ? "primary.main" : "divider",
+                  borderRadius: 2,
+                  p: 1.5,
+                  bgcolor: selectedId === id ? "rgba(125, 211, 252, 0.14)" : "action.hover",
+                }}
+              >
                 <Stack direction="row" justifyContent="space-between" gap={1} alignItems="flex-start">
                   <Box>
                     <Typography fontWeight={800}>{c.name}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      {c.weapons[0].name} · Fight {c.fight}/{c.maxFight}
+                      {c.weapons[0].name} - Fight {c.fight}/{c.maxFight}
                     </Typography>
                   </Box>
                   <Stack direction="row" gap={1}>
                     <Button size="small" variant="outlined" onClick={() => onStats(c)}>Stats</Button>
-                    <Button size="small" variant="contained" onClick={() => onSwapIn(id)}>Swap In</Button>
+                    <Button size="small" variant={selectedId === id ? "contained" : "outlined"} onClick={() => onSwapIn(id)}>
+                      {selectedId === id ? "Placing" : "Place"}
+                    </Button>
                   </Stack>
                 </Stack>
               </Box>

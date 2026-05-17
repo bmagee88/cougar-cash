@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Box, Button, Container, CssBaseline, Grid, Paper, Stack, Typography } from "@mui/material";
+import { Box, Button, Card, CardContent, Container, CssBaseline, Grid, Paper, Stack, Typography } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import type { AttackPlan, AttackStep, BattleState, Combatant, RowIndex, Team } from "./engine/types/combat";
 import { createInitialState } from "./engine/data/initialState";
@@ -12,6 +12,131 @@ import { BodyCoverageView } from "./components/BodyCoverageView";
 import { CombatLog } from "./components/CombatLog";
 import { RosterPanel } from "./components/RosterPanel";
 import { StatsModal } from "./components/StatsModal";
+
+type FieldSlots = Record<string, number>;
+
+function slotToRow(slot: number): RowIndex {
+  return (slot % 4) as RowIndex;
+}
+
+function teamCanUseSlot(team: Team, slot: number): boolean {
+  const col = slot % 4;
+  return team === "heroes" ? col === 0 || col === 1 : col === 2 || col === 3;
+}
+
+function firstOpenSlotForRow(row: RowIndex, occupied: Set<number>): number | undefined {
+  for (let visualRow = 0; visualRow < 4; visualRow++) {
+    const slot = visualRow * 4 + row;
+    if (!occupied.has(slot)) return slot;
+  }
+  return undefined;
+}
+
+function buildInitialFieldSlots(state: BattleState): FieldSlots {
+  const slots: FieldSlots = {};
+  const occupied = new Set<number>();
+
+  state.groups[0].combatantIds.forEach((id) => {
+    const character = state.combatants[id];
+    if (!character) return;
+    const slot = firstOpenSlotForRow(character.row, occupied);
+    if (slot === undefined) return;
+    slots[id] = slot;
+    occupied.add(slot);
+  });
+
+  return slots;
+}
+
+function normalizeFieldSlots(state: BattleState, current: FieldSlots): FieldSlots {
+  const activeIds = state.groups[0].combatantIds;
+  const activeSet = new Set(activeIds);
+  const next: FieldSlots = {};
+  const occupied = new Set<number>();
+  let changed = false;
+
+  activeIds.forEach((id) => {
+    const character = state.combatants[id];
+    const currentSlot = current[id];
+    const currentIsValid =
+      character &&
+      currentSlot !== undefined &&
+      slotToRow(currentSlot) === character.row &&
+      !occupied.has(currentSlot) &&
+      teamCanUseSlot(character.team, currentSlot);
+
+    if (character && currentIsValid) {
+      next[id] = currentSlot;
+      occupied.add(currentSlot);
+      return;
+    }
+
+    if (character) {
+      const fallbackSlot = firstOpenSlotForRow(character.row, occupied);
+      if (fallbackSlot !== undefined) {
+        next[id] = fallbackSlot;
+        occupied.add(fallbackSlot);
+      }
+    }
+    changed = true;
+  });
+
+  Object.keys(current).forEach((id) => {
+    if (!activeSet.has(id)) changed = true;
+  });
+
+  return changed ? next : current;
+}
+
+function characterIcon(character: Combatant): string {
+  if (character.team === "monsters") return character.name.toLowerCase().includes("bone") ? "💀" : "👹";
+  if (character.name.toLowerCase().includes("borin")) return "🛡️";
+  return "🧝";
+}
+
+function GraveyardPanel({
+  ids,
+  state,
+  onRevive,
+}: {
+  ids: string[];
+  state: BattleState;
+  onRevive: (id: string) => void;
+}) {
+  return (
+    <Card>
+      <CardContent>
+        <Typography variant="h6" fontWeight={900} gutterBottom>Graveyard</Typography>
+        <Stack gap={1} sx={{ maxHeight: 220, overflowY: "auto" }}>
+          {ids.length === 0 && (
+            <Box sx={{ border: "1px dashed", borderColor: "divider", borderRadius: 2, p: 2, textAlign: "center", color: "text.secondary" }}>
+              Empty
+            </Box>
+          )}
+
+          {ids.map((id) => {
+            const character = state.combatants[id];
+            if (!character) return null;
+
+            return (
+              <Box key={id} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.25, bgcolor: "action.hover" }}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" gap={1}>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography fontWeight={900} noWrap>{characterIcon(character)} {character.name}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Returns to {character.team === "heroes" ? "Tavern" : "Lair"}
+                    </Typography>
+                  </Box>
+                  <Button size="small" variant="contained" onClick={() => onRevive(id)}>Revive</Button>
+                </Stack>
+              </Box>
+            );
+          })}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
 
 const combatTheme = createTheme({
   palette: {
@@ -101,6 +226,8 @@ export default function DndZoneCombatSimulator() {
   const [step, setStep] = useState<AttackStep>("idle");
   const [turnIndex, setTurnIndex] = useState(0);
   const [unreachableTargetId, setUnreachableTargetId] = useState<string | null>(null);
+  const [fieldSlots, setFieldSlots] = useState<FieldSlots>(() => buildInitialFieldSlots(createInitialState()));
+  const [placingCharacterId, setPlacingCharacterId] = useState<string | null>(null);
 
   const activeIds = state.groups[0].combatantIds;
   const selectedDefender = state.combatants[selectedDefenderId] ?? state.combatants[activeIds[0]];
@@ -136,10 +263,18 @@ export default function DndZoneCombatSimulator() {
     () => Object.values(state.combatants).filter((c) => c.fight > 0 && activeIds.includes(c.id)).length,
     [state, activeIds],
   );
+  const graveyardIds = useMemo(
+    () => Object.values(state.combatants).filter((character) => character.fight <= 0).map((character) => character.id),
+    [state.combatants],
+  );
 
   useEffect(() => {
     if (initiativeOrder.length > 0 && turnIndex >= initiativeOrder.length) setTurnIndex(0);
   }, [initiativeOrder.length, turnIndex]);
+
+  useEffect(() => {
+    setFieldSlots((current) => normalizeFieldSlots(state, current));
+  }, [state]);
 
   useEffect(() => {
     if (activeTurnId) setSelectedAttackerId(activeTurnId);
@@ -178,7 +313,7 @@ export default function DndZoneCombatSimulator() {
 
     if (!attacker || !defender || !weapon || attacker.team === defender.team) return;
 
-    if (canMeleeAttack(attacker, defender, weapon)) {
+    if (canMeleeAttack(attacker, defender, weapon, state)) {
       setSelectedDefenderId(id);
       setUnreachableTargetId(null);
       resetStepAttack();
@@ -245,40 +380,143 @@ export default function DndZoneCombatSimulator() {
     });
   };
 
-  const swapIn = (id: string) => {
+  const placeCharacterOnSlot = (slot: number) => {
+    if (!placingCharacterId) return;
+    const incoming = state.combatants[placingCharacterId];
+    if (!incoming || !teamCanUseSlot(incoming.team, slot)) return;
+
+    const occupantId = activeIds.find((id) => fieldSlots[id] === slot);
+
     setState((current) => {
-      const incoming = current.combatants[id];
-      if (!incoming) return current;
+      const currentIncoming = current.combatants[placingCharacterId];
+      const occupant = occupantId ? current.combatants[occupantId] : undefined;
+      if (!currentIncoming) return current;
 
-      const activeSameTeam = current.groups[0].combatantIds.filter((cid) => current.combatants[cid]?.team === incoming.team);
-      const outgoingId = activeSameTeam[0];
-      const newActive = current.groups[0].combatantIds.filter((cid) => cid !== outgoingId).concat(id);
+      const activeWithoutOccupant = current.groups[0].combatantIds.filter((id) => id !== occupantId && id !== placingCharacterId);
+      const nextActiveIds = occupantId
+        ? current.groups[0].combatantIds.map((id) => (id === occupantId ? placingCharacterId : id)).filter((id, index, list) => list.indexOf(id) === index)
+        : [...activeWithoutOccupant, placingCharacterId];
 
-      const newTavern =
-        incoming.team === "heroes"
-          ? current.tavernIds.filter((x) => x !== id).concat(outgoingId ? [outgoingId] : [])
-          : current.tavernIds;
-
-      const newLair =
-        incoming.team === "monsters"
-          ? current.lairIds.filter((x) => x !== id).concat(outgoingId ? [outgoingId] : [])
-          : current.lairIds;
-
-      const row: RowIndex = incoming.team === "heroes" ? 1 : 2;
+      const nextTavernIds = current.tavernIds
+        .filter((id) => id !== placingCharacterId)
+        .concat(occupant?.team === "heroes" ? [occupant.id] : []);
+      const nextLairIds = current.lairIds
+        .filter((id) => id !== placingCharacterId)
+        .concat(occupant?.team === "monsters" ? [occupant.id] : []);
 
       return {
         ...current,
-        combatants: { ...current.combatants, [id]: { ...incoming, row } },
-        groups: [{ ...current.groups[0], combatantIds: newActive }],
-        tavernIds: newTavern,
-        lairIds: newLair,
+        combatants: {
+          ...current.combatants,
+          [placingCharacterId]: { ...currentIncoming, row: slotToRow(slot) },
+        },
+        groups: [{ ...current.groups[0], combatantIds: nextActiveIds }],
+        tavernIds: nextTavernIds,
+        lairIds: nextLairIds,
         log: [
-          `${incoming.name} enters the play area${outgoingId ? `, replacing ${current.combatants[outgoingId].name}` : ""}.`,
+          `${currentIncoming.name} takes a battlefield tile${occupant ? `, sending ${occupant.name} back to the ${occupant.team === "heroes" ? "Tavern" : "Lair"}` : ""}.`,
           ...current.log,
         ],
       };
     });
+    setFieldSlots((current) => {
+      const next = { ...current, [placingCharacterId]: slot };
+      if (occupantId) delete next[occupantId];
+      return next;
+    });
+    setPlacingCharacterId(null);
     setTurnIndex(0);
+    setUnreachableTargetId(null);
+    resetStepAttack();
+  };
+
+  const swapIn = (id: string) => {
+    setPlacingCharacterId(id);
+    setUnreachableTargetId(null);
+  };
+
+  const swapWithAlly = (allyId: string) => {
+    const activeSlot = fieldSlots[activeTurnId];
+    const allySlot = fieldSlots[allyId];
+
+    setState((current) => {
+      const active = current.combatants[activeTurnId];
+      const ally = current.combatants[allyId];
+      if (!active || !ally || active.team !== ally.team) return current;
+      const nextActiveSlot = allySlot ?? fieldSlots[active.id];
+      const nextAllySlot = activeSlot ?? fieldSlots[ally.id];
+
+      return {
+        ...current,
+        combatants: {
+          ...current.combatants,
+          [active.id]: { ...active, row: nextActiveSlot !== undefined ? slotToRow(nextActiveSlot) : ally.row },
+          [ally.id]: { ...ally, row: nextAllySlot !== undefined ? slotToRow(nextAllySlot) : active.row },
+        },
+        log: [`${active.name} shifts positions with ${ally.name}.`, ...current.log],
+      };
+    });
+    if (activeSlot !== undefined && allySlot !== undefined) {
+      setFieldSlots((current) => ({ ...current, [activeTurnId]: allySlot, [allyId]: activeSlot }));
+    }
+    setUnreachableTargetId(null);
+    resetStepAttack();
+    nextTurn();
+  };
+
+  const moveToSlot = (slot: number) => {
+    const active = state.combatants[activeTurnId];
+    if (!active || !teamCanUseSlot(active.team, slot) || Object.values(fieldSlots).includes(slot)) return;
+
+    setState((current) => {
+      const currentActive = current.combatants[activeTurnId];
+      if (!currentActive) return current;
+      return {
+        ...current,
+        combatants: {
+          ...current.combatants,
+          [activeTurnId]: { ...currentActive, row: slotToRow(slot) },
+        },
+        log: [`${currentActive.name} moves to an open ${slotToRow(slot) === (currentActive.team === "heroes" ? 1 : 2) ? "front" : "back"} tile.`, ...current.log],
+      };
+    });
+    setFieldSlots((current) => ({ ...current, [activeTurnId]: slot }));
+    setUnreachableTargetId(null);
+    resetStepAttack();
+    nextTurn();
+  };
+
+  const reviveToBench = (id: string) => {
+    setState((current) => {
+      const character = current.combatants[id];
+      if (!character) return current;
+      const destination = character.team === "heroes" ? "Tavern" : "Lair";
+      const tavernIds = character.team === "heroes" && !current.tavernIds.includes(id) ? [id, ...current.tavernIds] : current.tavernIds;
+      const lairIds = character.team === "monsters" && !current.lairIds.includes(id) ? [id, ...current.lairIds] : current.lairIds;
+
+      return {
+        ...current,
+        combatants: {
+          ...current.combatants,
+          [id]: {
+            ...character,
+            fight: character.maxFight,
+            blood: character.maxBlood,
+            concussion: character.maxConcussion,
+            statuses: [],
+          },
+        },
+        groups: [{ ...current.groups[0], combatantIds: current.groups[0].combatantIds.filter((activeId) => activeId !== id) }],
+        tavernIds,
+        lairIds,
+        log: [`${character.name} is revived and returns to the ${destination}.`, ...current.log],
+      };
+    });
+    setFieldSlots((current) => {
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
     resetStepAttack();
   };
 
@@ -295,7 +533,7 @@ export default function DndZoneCombatSimulator() {
           py: 3,
         }}
       >
-        <StatsModal character={statsCharacter} onClose={() => setStatsCharacter(null)} />
+        <StatsModal character={statsCharacter} initiative={statsCharacter ? initiativeScores[statsCharacter.id] : undefined} onClose={() => setStatsCharacter(null)} />
         <Container maxWidth="xl">
           <Stack gap={2.5}>
             <Paper sx={{ p: 3, borderRadius: 2, border: "1px solid", borderColor: "divider", bgcolor: "background.paper" }}>
@@ -312,11 +550,14 @@ export default function DndZoneCombatSimulator() {
                   <Button
                     variant="outlined"
                     onClick={() => {
-                      setState(createInitialState());
+                      const nextInitialState = createInitialState();
+                      setState(nextInitialState);
+                      setFieldSlots(buildInitialFieldSlots(nextInitialState));
                       setSelectedAttackerId("aria");
                       setSelectedDefenderId("goblin");
                       setTurnIndex(0);
                       setUnreachableTargetId(null);
+                      setPlacingCharacterId(null);
                       resetStepAttack();
                     }}
                   >
@@ -327,34 +568,26 @@ export default function DndZoneCombatSimulator() {
             </Paper>
 
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <RosterPanel title="Tavern" ids={state.tavernIds} state={state} onGenerate={() => generate("heroes")} onSwapIn={swapIn} onStats={setStatsCharacter} />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <RosterPanel title="Lair" ids={state.lairIds} state={state} onGenerate={() => generate("monsters")} onSwapIn={swapIn} onStats={setStatsCharacter} />
-              </Grid>
-            </Grid>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} lg={7}>
+              <Grid item xs={12} lg={8}>
                 <Stack gap={2}>
                   <BattleGroupView
                     state={state}
+                    fieldSlots={fieldSlots}
+                    placingCharacterId={placingCharacterId}
                     selectedDefenderId={selectedDefenderId}
                     activeTurnId={activeTurnId}
                     initiativeOrder={initiativeOrder}
                     initiativeScores={initiativeScores}
                     unreachableTargetId={unreachableTargetId}
+                    plan={plan}
+                    step={step}
+                    onTileClick={placeCharacterOnSlot}
+                    onCancelPlacement={() => setPlacingCharacterId(null)}
                     onNextTurn={nextTurn}
                     onAttemptTarget={attemptTarget}
                     onStats={setStatsCharacter}
                     onHeal={healCharacter}
                   />
-                  <CombatLog log={state.log} />
-                </Stack>
-              </Grid>
-              <Grid item xs={12} lg={5}>
-                <Stack gap={2}>
                   <AttackPanel
                     state={state}
                     setState={setState}
@@ -364,8 +597,20 @@ export default function DndZoneCombatSimulator() {
                     setPlan={setPlan}
                     step={step}
                     setStep={setStep}
+                    fieldSlots={fieldSlots}
+                    onSwapWithAlly={swapWithAlly}
+                    onMoveToSlot={moveToSlot}
+                    onTurnComplete={nextTurn}
                   />
+                </Stack>
+              </Grid>
+              <Grid item xs={12} lg={4}>
+                <Stack gap={2}>
+                  <RosterPanel title="Tavern" ids={state.tavernIds} state={state} selectedId={placingCharacterId} onGenerate={() => generate("heroes")} onSwapIn={swapIn} onStats={setStatsCharacter} />
+                  <RosterPanel title="Lair" ids={state.lairIds} state={state} selectedId={placingCharacterId} onGenerate={() => generate("monsters")} onSwapIn={swapIn} onStats={setStatsCharacter} />
+                  <GraveyardPanel ids={graveyardIds} state={state} onRevive={reviveToBench} />
                   {selectedDefender && <BodyCoverageView defender={selectedDefender} plan={plan} step={step} />}
+                  <CombatLog log={state.log} />
                 </Stack>
               </Grid>
             </Grid>

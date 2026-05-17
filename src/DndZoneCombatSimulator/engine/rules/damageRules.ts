@@ -34,8 +34,8 @@ export function calculateDamageDetails(
     mitigation: getArmorMitigation(piece, damageType),
   }));
 
-  const totalMitigation = mitigationDetails.reduce((sum, detail) => sum + detail.mitigation, 0);
-  const finalDamage = Math.round(Math.max(0, rawDamage - totalMitigation));
+  const totalMitigation = Math.min(100, mitigationDetails.reduce((sum, detail) => sum + detail.mitigation, 0));
+  const finalDamage = Math.round(Math.max(0, rawDamage * (1 - totalMitigation / 100)));
 
   return { force, multiplier, rawDamage, mitigationDetails, totalMitigation, finalDamage };
 }

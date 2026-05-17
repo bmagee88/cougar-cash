@@ -2,12 +2,30 @@ import React from "react";
 import { Box, Button, Card, CardContent, Dialog, DialogContent, DialogTitle, Grid, Stack, Typography } from "@mui/material";
 import type { Combatant } from "../engine/types/combat";
 import { getEvasion, getMovementCategory, getTotalWeight } from "../engine/rules/characterRules";
-import { rowLabel } from "../engine/rules/labels";
 import { ProgressBar, StatPill } from "./SmallBits";
 
-export function StatsModal({ character, onClose }: { character: Combatant | null; onClose: () => void }) {
+const statLabels: Record<string, string> = {
+  physicalStrength: "STR",
+  dexterity: "DEX",
+  balance: "BAL",
+  magicka: "MAG",
+  willpower: "WIL",
+  intellect: "INT",
+  charisma: "CHA",
+  guts: "GUT",
+  toughness: "CON",
+};
+
+export function StatsModal({ character, initiative, onClose }: { character: Combatant | null; initiative?: number; onClose: () => void }) {
   if (!character) return null;
   const weapon = character.weapons[0];
+  const statRows = [
+    ...Object.entries(character.stats).map(([key, value]) => ({ label: statLabels[key] ?? key, value })),
+    { label: "WT", value: getTotalWeight(character) },
+    { label: "EVA", value: getEvasion(character) },
+    { label: "MOV", value: getMovementCategory(character) },
+    { label: "INIT", value: initiative ?? character.stats.physicalStrength + character.stats.toughness - getTotalWeight(character) },
+  ];
 
   return (
     <Dialog open={!!character} onClose={onClose} fullWidth maxWidth="md">
@@ -15,7 +33,7 @@ export function StatsModal({ character, onClose }: { character: Combatant | null
         <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
           <Box>
             <Typography variant="h5" fontWeight={900}>{character.name}</Typography>
-            <Typography variant="body2" color="text.secondary">{character.team} · {rowLabel(character.row)}</Typography>
+            <Typography variant="body2" color="text.secondary">{character.team}</Typography>
           </Box>
           <Button variant="outlined" onClick={onClose}>Close</Button>
         </Stack>
@@ -24,17 +42,32 @@ export function StatsModal({ character, onClose }: { character: Combatant | null
         <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <Card variant="outlined"><CardContent>
-              <Typography fontWeight={800} gutterBottom>Stats</Typography>
-              <Grid container spacing={1}>
-                {Object.entries(character.stats).map(([key, value]) => (
-                  <Grid item xs={6} key={key}>
-                    <Box sx={{ bgcolor: "action.hover", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1 }}>
-                      <Typography variant="caption" color="text.secondary">{key}</Typography>
-                      <Typography fontWeight={800}>{value}</Typography>
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
+              <Typography fontWeight={900} gutterBottom>Stats</Typography>
+              <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "hidden" }}>
+                <Grid container>
+                  {statRows.map((stat) => (
+                    <Grid item xs={4} key={stat.label}>
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "1fr auto",
+                          alignItems: "center",
+                          gap: 0.5,
+                          bgcolor: "action.hover",
+                          borderRight: "1px solid",
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
+                          px: 1,
+                          py: 0.75,
+                        }}
+                      >
+                        <Typography variant="caption" fontWeight={900} color="text.secondary">{stat.label}</Typography>
+                        <Typography fontWeight={900}>{stat.value}</Typography>
+                      </Box>
+                    </Grid>
+                  ))}
+                </Grid>
+              </Box>
             </CardContent></Card>
           </Grid>
           <Grid item xs={12} md={6}>
@@ -72,7 +105,7 @@ export function StatsModal({ character, onClose }: { character: Combatant | null
                   <Box key={armor.id} sx={{ bgcolor: "action.hover", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1 }}>
                     <Typography fontWeight={800}>{armor.name}</Typography>
                     <Typography variant="body2">Ranges: {armor.coverageRanges.map((r) => `${r.start}-${r.end}`).join(", ")}</Typography>
-                    <Typography variant="body2">Mitigation S/P/B: {armor.sharpMitigation}/{armor.pierceMitigation}/{armor.bluntMitigation}</Typography>
+                    <Typography variant="body2">Mitigation S/P/B: {armor.sharpMitigation}%/{armor.pierceMitigation}%/{armor.bluntMitigation}%</Typography>
                   </Box>
                 ))}
               </Stack>

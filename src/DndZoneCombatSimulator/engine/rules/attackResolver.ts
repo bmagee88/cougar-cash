@@ -59,7 +59,7 @@ export function buildAttackPlan(
   const messages: string[] = [];
   messages.push(`${attacker.name} attacks ${defender.name} with ${weapon.name} using ${moveLabel(move).toLowerCase()}.`);
 
-  if (!canMeleeAttack(attacker, defender, weapon)) {
+  if (!canMeleeAttack(attacker, defender, weapon, state)) {
     messages.push(`The attack cannot reach from row ${attacker.row} to row ${defender.row}.`);
     return null;
   }
@@ -119,11 +119,11 @@ export function buildAttackPlan(
       `${attacker.name}'s Strength ${attacker.stats.physicalStrength} using ${weapon.name}, whose weight is ${weapon.weight}, would strike with a force of ${damageDetails.force}. The ${damageType} multiplier is ${damageDetails.multiplier.toFixed(1)}, but the attack misses and ${defender.name} takes 0 damage.`,
     );
   } else if (evaluation.kind === "armor") {
-    const mitigationText = damageDetails.mitigationDetails.map((detail) => `${detail.armorName} mitigates ${detail.mitigation}`).join("; ");
+    const mitigationText = damageDetails.mitigationDetails.map((detail) => `${detail.armorName} mitigates ${detail.mitigation}%`).join("; ");
     messages.push(
       `${attacker.name}'s Strength ${attacker.stats.physicalStrength} using ${weapon.name}, whose weight is ${weapon.weight}, strikes ${defender.name}'s ${evaluation.bodyPart} with a force of ${damageDetails.force}. The ${damageType} multiplier is ${damageDetails.multiplier.toFixed(1)}, making raw damage ${damageDetails.rawDamage.toFixed(1)} before armor.`,
     );
-    messages.push(`${defender.name}'s armor is ${armorNames.join(", ")} and mitigates ${damageDetails.totalMitigation} total (${mitigationText}).`);
+    messages.push(`${defender.name}'s armor is ${armorNames.join(", ")} and mitigates ${damageDetails.totalMitigation}% total (${mitigationText}).`);
     messages.push(`${defender.name} takes ${damageDetails.finalDamage}, lowering their Fight to ${fightAfterDamage}.`);
     if (critEffect) messages.push(`Armor crit effect: ${critEffect}.`);
   } else {
