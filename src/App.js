@@ -23,6 +23,7 @@ import TypingPong from "./TypingPong/TypingPong";
 import MultipleChoiceQuiz from "./MultipleChoiceQuiz/MultipleChoiceQuiz";
 import ParentLetter from "./ParentLetter/ParentLetter";
 import SoundButton from "./SoundButton/SoundButton";
+import DndZoneCombatSimulator from "./DndZoneCombatSimulator";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -60,6 +61,7 @@ function App() {
           <Route path="/mc-quiz" element={<MultipleChoiceQuiz />} />
           <Route path="/parent-letter" element={<ParentLetter />} />
           <Route path="/sound" element={<SoundButton />} />
+          <Route path="/combat-sim" element={<DndZoneCombatSimulator />} />
         </Routes>
       </Router>
     </Box>
