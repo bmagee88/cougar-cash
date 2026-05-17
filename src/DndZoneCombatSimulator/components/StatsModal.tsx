@@ -28,7 +28,7 @@ export function StatsModal({ character, onClose }: { character: Combatant | null
               <Grid container spacing={1}>
                 {Object.entries(character.stats).map(([key, value]) => (
                   <Grid item xs={6} key={key}>
-                    <Box sx={{ bgcolor: "grey.100", borderRadius: 2, p: 1 }}>
+                    <Box sx={{ bgcolor: "action.hover", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1 }}>
                       <Typography variant="caption" color="text.secondary">{key}</Typography>
                       <Typography fontWeight={800}>{value}</Typography>
                     </Box>
@@ -69,7 +69,7 @@ export function StatsModal({ character, onClose }: { character: Combatant | null
               <Typography fontWeight={800} gutterBottom>Armor</Typography>
               <Stack gap={1}>
                 {character.armor.map((armor) => (
-                  <Box key={armor.id} sx={{ bgcolor: "grey.100", borderRadius: 2, p: 1 }}>
+                  <Box key={armor.id} sx={{ bgcolor: "action.hover", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1 }}>
                     <Typography fontWeight={800}>{armor.name}</Typography>
                     <Typography variant="body2">Ranges: {armor.coverageRanges.map((r) => `${r.start}-${r.end}`).join(", ")}</Typography>
                     <Typography variant="body2">Mitigation S/P/B: {armor.sharpMitigation}/{armor.pierceMitigation}/{armor.bluntMitigation}</Typography>

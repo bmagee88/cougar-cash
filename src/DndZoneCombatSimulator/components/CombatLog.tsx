@@ -17,7 +17,7 @@ export function CombatLog({ log }: { log: string[] }) {
     <Card>
       <CardContent>
         <Typography variant="h6" fontWeight={800} gutterBottom>Combat Log</Typography>
-        <Box sx={{ maxHeight: 360, overflowY: "auto", bgcolor: "grey.950", color: "grey.100", borderRadius: 2, p: 2 }}>
+        <Box sx={{ maxHeight: 360, overflowY: "auto", bgcolor: "#020617", color: "grey.100", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2 }}>
           {log.map((entry, index) => (
             <Box key={`${entry}-${index}`} sx={{ borderBottom: "1px solid", borderColor: "grey.800", py: 1, fontSize: 14 }}>
               {renderLogEntry(entry)}

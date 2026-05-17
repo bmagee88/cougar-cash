@@ -23,7 +23,7 @@ import TypingPong from "./TypingPong/TypingPong";
 import MultipleChoiceQuiz from "./MultipleChoiceQuiz/MultipleChoiceQuiz";
 import ParentLetter from "./ParentLetter/ParentLetter";
 import SoundButton from "./SoundButton/SoundButton";
-import DndZoneCombatSimulator from "./DndZoneCombatSimulator";
+import DndZoneCombatSimulator from "./DndZoneCombatSimulator/DndZoneCombatSimulator";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 

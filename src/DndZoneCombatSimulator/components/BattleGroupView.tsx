@@ -39,7 +39,7 @@ export function BattleGroupView({
             const rowCombatants = combatants.filter((c) => c.row === row);
 
             return (
-              <Box key={row} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, bgcolor: "grey.50", p: 1.5 }}>
+              <Box key={row} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, bgcolor: "action.hover", p: 1.5 }}>
                 <Typography variant="caption" fontWeight={900} color="text.secondary">
                   Row {row}: {rowLabel(row)}
                 </Typography>

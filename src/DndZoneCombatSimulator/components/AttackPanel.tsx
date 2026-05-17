@@ -55,13 +55,13 @@ export function AttackPanel({
       <CardContent>
         <Typography variant="h6" fontWeight={900} gutterBottom>Attack Controls</Typography>
 
-        <Box sx={{ bgcolor: "grey.50", borderRadius: 2, p: 1.5, mb: 2 }}>
+        <Box sx={{ bgcolor: "action.hover", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.5, mb: 2 }}>
           <Typography variant="body2"><b>Attacker:</b> {attacker?.name}</Typography>
           <Typography variant="body2"><b>Target:</b> {defender?.name}</Typography>
           <Typography variant="body2"><b>Weapon:</b> {weapon?.name} · reach: {weapon?.reach}</Typography>
           <Typography variant="body2"><b>Can reach?</b> <Box component="span" sx={{ color: reachable ? "success.main" : "error.main" }}>{reachable ? "Yes" : "No"}</Box></Typography>
           {plan && (
-            <Box sx={{ mt: 1, bgcolor: "background.paper", borderRadius: 2, p: 1 }}>
+            <Box sx={{ mt: 1, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1 }}>
               <Typography variant="body2"><b>Step:</b> {step}</Typography>
               <Typography variant="caption">Initial {plan.initialMarker} → Evade {plan.afterDefenderMarker} → Final {plan.finalMarker}</Typography>
             </Box>

@@ -37,7 +37,7 @@ export function RosterPanel({
             if (!c) return null;
 
             return (
-              <Box key={id} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.5, bgcolor: "background.paper" }}>
+              <Box key={id} sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 1.5, bgcolor: "action.hover" }}>
                 <Stack direction="row" justifyContent="space-between" gap={1} alignItems="flex-start">
                   <Box>
                     <Typography fontWeight={800}>{c.name}</Typography>

@@ -26,18 +26,18 @@ export function BodyCoverageView({ defender, plan, step }: { defender: Combatant
     <Card>
       <CardContent>
         <Typography variant="h6" fontWeight={800} gutterBottom>Body Coverage: {defender.name}</Typography>
-        <Box sx={{ border: "1px solid", borderColor: "divider", bgcolor: "grey.50", borderRadius: 2, p: 2 }}>
+        <Box sx={{ border: "1px solid", borderColor: "divider", bgcolor: "action.hover", borderRadius: 2, p: 2 }}>
           <Box sx={{ position: "relative", height: 620, maxWidth: 520, mx: "auto" }}>
-            <Box sx={{ position: "absolute", left: 32, top: 0, height: "100%", width: 96, overflow: "hidden", borderRadius: 2, border: "2px solid", borderColor: "grey.900", bgcolor: "white" }}>
+            <Box sx={{ position: "absolute", left: 32, top: 0, height: "100%", width: 96, overflow: "hidden", borderRadius: 2, border: "2px solid", borderColor: "grey.500", bgcolor: "grey.900" }}>
               {bodyMap.map((range) => {
                 const bottom = (range.start / BODY_SCALE_MAX) * 100;
                 const height = ((range.end - range.start + 1) / (BODY_SCALE_MAX + 1)) * 100;
-                return <Box key={range.part} title={`${range.label}: ${range.start}-${range.end}`} sx={{ position: "absolute", left: 0, right: 0, borderTop: "2px solid", borderColor: "grey.800", bgcolor: "grey.300", bottom: `${bottom}%`, height: `${height}%` }} />;
+                return <Box key={range.part} title={`${range.label}: ${range.start}-${range.end}`} sx={{ position: "absolute", left: 0, right: 0, borderTop: "2px solid", borderColor: "grey.600", bgcolor: "grey.800", bottom: `${bottom}%`, height: `${height}%` }} />;
               })}
               {missZones.map((zone) => {
                 const bottom = (zone.start / BODY_SCALE_MAX) * 100;
                 const height = ((zone.end - zone.start + 1) / (BODY_SCALE_MAX + 1)) * 100;
-                return <Box key={zone.label} title={`${zone.label}: ${zone.start}-${zone.end}`} sx={{ position: "absolute", left: 0, right: 0, borderY: "1px solid", borderColor: "error.main", bgcolor: "error.light", opacity: .55, bottom: `${bottom}%`, height: `${height}%` }} />;
+                return <Box key={zone.label} title={`${zone.label}: ${zone.start}-${zone.end}`} sx={{ position: "absolute", left: 0, right: 0, borderY: "1px solid", borderColor: "error.main", bgcolor: "rgba(251, 113, 133, 0.34)", bottom: `${bottom}%`, height: `${height}%` }} />;
               })}
             </Box>
 
@@ -45,14 +45,14 @@ export function BodyCoverageView({ defender, plan, step }: { defender: Combatant
               {armorSegments.map((segment, index) => {
                 const bottom = (segment.start / BODY_SCALE_MAX) * 100;
                 const height = ((segment.end - segment.start + 1) / (BODY_SCALE_MAX + 1)) * 100;
-                return <Box key={`${segment.piece.id}-${index}`} title={`${segment.piece.name}: ${segment.start}-${segment.end}`} sx={{ position: "absolute", left: 4, right: 4, bgcolor: "grey.900", opacity: .9, border: "1px solid black", bottom: `${bottom}%`, height: `${height}%` }} />;
+                return <Box key={`${segment.piece.id}-${index}`} title={`${segment.piece.name}: ${segment.start}-${segment.end}`} sx={{ position: "absolute", left: 4, right: 4, bgcolor: "primary.dark", opacity: .9, border: "1px solid", borderColor: "primary.light", bottom: `${bottom}%`, height: `${height}%` }} />;
               })}
             </Box>
 
             {visibleMarkers.map((m) => (
               <Box key={m.label} sx={{ position: "absolute", left: 8, zIndex: 20, display: "flex", alignItems: "center", gap: .5, bottom: `calc(${markerBottom(m.value)} - 8px)` }}>
                 <Box sx={{ height: 16, width: 130, borderRadius: 999, bgcolor: m.color, border: `2px solid ${m.border}` }} />
-                <Box sx={{ bgcolor: "white", borderRadius: 1, px: .5, boxShadow: 1, fontSize: 12, fontWeight: 800 }}>{m.label}: {m.value}</Box>
+                <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1, px: .5, boxShadow: 1, fontSize: 12, fontWeight: 800 }}>{m.label}: {m.value}</Box>
               </Box>
             ))}
 
@@ -63,7 +63,7 @@ export function BodyCoverageView({ defender, plan, step }: { defender: Combatant
                 return (
                   <Box key={range.part} sx={{ position: "absolute", left: 0, right: 0, display: "flex", alignItems: "flex-start", gap: 1, top: `${top}%`, fontSize: 12 }}>
                     <Box sx={{ mt: 1, height: 1, width: 32, bgcolor: "grey.500" }} />
-                    <Box sx={{ border: "1px solid", borderColor: "divider", bgcolor: "white", borderRadius: 2, px: 1, py: .5, boxShadow: 1 }}>
+                    <Box sx={{ border: "1px solid", borderColor: "divider", bgcolor: "background.paper", borderRadius: 2, px: 1, py: .5, boxShadow: 1 }}>
                       <Typography variant="caption" fontWeight={900}>{range.label}: {range.start}-{range.end}</Typography>
                       {protectedSegments.length > 0 ? protectedSegments.map((segment, index) => (
                         <Typography key={`${range.part}-${segment.piece.id}-${index}`} variant="caption" display="block" color="text.secondary">
@@ -76,7 +76,7 @@ export function BodyCoverageView({ defender, plan, step }: { defender: Combatant
               })}
               {missZones.map((zone) => {
                 const top = 100 - (zone.end / BODY_SCALE_MAX) * 100;
-                return <Box key={zone.label} sx={{ position: "absolute", left: 0, display: "flex", alignItems: "center", gap: 1, color: "error.dark", top: `${top}%` }}><Box sx={{ height: 1, width: 20, bgcolor: "error.main" }} /><Typography variant="caption" sx={{ bgcolor: "error.50", borderRadius: 999, px: 1 }}>miss {zone.start}-{zone.end}</Typography></Box>;
+                return <Box key={zone.label} sx={{ position: "absolute", left: 0, display: "flex", alignItems: "center", gap: 1, color: "error.light", top: `${top}%` }}><Box sx={{ height: 1, width: 20, bgcolor: "error.main" }} /><Typography variant="caption" sx={{ bgcolor: "rgba(251, 113, 133, 0.16)", border: "1px solid", borderColor: "error.main", borderRadius: 999, px: 1 }}>miss {zone.start}-{zone.end}</Typography></Box>;
               })}
             </Box>
 

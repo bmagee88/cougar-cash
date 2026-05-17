@@ -29,8 +29,8 @@ export function CombatantCard({
     <Card
       variant="outlined"
       sx={{
-        borderColor: selected ? "grey.900" : targetSelected ? "error.main" : "divider",
-        bgcolor: selected ? "grey.100" : targetSelected ? "error.50" : "background.paper",
+        borderColor: selected ? "primary.main" : targetSelected ? "error.main" : "divider",
+        bgcolor: selected ? "rgba(125, 211, 252, 0.14)" : targetSelected ? "rgba(251, 113, 133, 0.14)" : "background.paper",
       }}
     >
       <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
