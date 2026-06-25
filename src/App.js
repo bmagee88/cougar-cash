@@ -24,6 +24,7 @@ import MultipleChoiceQuiz from "./MultipleChoiceQuiz/MultipleChoiceQuiz";
 import ParentLetter from "./ParentLetter/ParentLetter";
 import SoundButton from "./SoundButton/SoundButton";
 import DndZoneCombatSimulator from "./DndZoneCombatSimulator/DndZoneCombatSimulator";
+import CuriosityApp from "./Curiosity App/CuriosityApp";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -62,6 +63,7 @@ function App() {
           <Route path="/parent-letter" element={<ParentLetter />} />
           <Route path="/sound" element={<SoundButton />} />
           <Route path="/combat-sim" element={<DndZoneCombatSimulator />} />
+          <Route path="/curiosity" element={<CuriosityApp />} />
         </Routes>
       </Router>
     </Box>
