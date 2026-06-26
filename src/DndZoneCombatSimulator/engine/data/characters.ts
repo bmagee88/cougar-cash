@@ -1,4 +1,4 @@
-import type { ArmorPiece, Combatant, RowIndex, Stats, Team, Weapon } from "../types/combat";
+import type { ArmorPiece, Combatant, Stats, Team, Weapon } from "../types/combat";
 import { randomInt, roll3d6, uid } from "../utils/random";
 import { armorPool, cap, fullHelm, breastplate, shoulderGuards, greaves, heavyAxe, ironSword, longSpear, dagger, weaponPool } from "./equipment";
 
