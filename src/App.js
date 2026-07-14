@@ -25,6 +25,7 @@ import ParentLetter from "./ParentLetter/ParentLetter";
 import SoundButton from "./SoundButton/SoundButton";
 import DndZoneCombatSimulator from "./DndZoneCombatSimulator/DndZoneCombatSimulator";
 import CuriosityApp from "./Curiosity App/CuriosityApp";
+import PadletSessionApp from "./PadletSessions/PadletSessionApp";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -64,6 +65,7 @@ function App() {
           <Route path="/sound" element={<SoundButton />} />
           <Route path="/combat-sim" element={<DndZoneCombatSimulator />} />
           <Route path="/curiosity" element={<CuriosityApp />} />
+          <Route path="/padlet/*" element={<PadletSessionApp />} />
         </Routes>
       </Router>
     </Box>
