@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS cquiz2_quizzes (
   section_id uuid NOT NULL REFERENCES cquiz2_sections(id) ON DELETE RESTRICT,
   quiz_name text NOT NULL,
   quiz_number integer NOT NULL,
+  grade_level integer CHECK (grade_level BETWEEN 0 AND 12),
   active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
@@ -121,6 +122,23 @@ CREATE INDEX IF NOT EXISTS cquiz2_attempts_user_quiz_date_idx
   ON cquiz2_attempts(user_id, quiz_id, attempt_date, created_at);
 CREATE INDEX IF NOT EXISTS cquiz2_attempts_user_date_idx
   ON cquiz2_attempts(user_id, attempt_date);
+
+CREATE TABLE IF NOT EXISTS cquiz2_user_question_state (
+  user_id uuid NOT NULL REFERENCES cquiz2_users(id) ON DELETE CASCADE,
+  quiz_id uuid NOT NULL REFERENCES cquiz2_quizzes(id) ON DELETE CASCADE,
+  question_id uuid NOT NULL REFERENCES cquiz2_questions(id) ON DELETE CASCADE,
+  is_correct boolean NOT NULL DEFAULT false,
+  last_attempt_id uuid REFERENCES cquiz2_attempts(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, question_id)
+);
+
+COMMENT ON TABLE cquiz2_user_question_state IS
+  'Persistent per-user master correctness list used to choose future C-Quiz-2 rounds without exposing identity or answer keys to the browser.';
+
+CREATE INDEX IF NOT EXISTS cquiz2_user_question_state_user_quiz_idx
+  ON cquiz2_user_question_state(user_id, quiz_id, is_correct);
 
 CREATE TABLE IF NOT EXISTS cquiz2_attempt_answers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

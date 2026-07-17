@@ -61,6 +61,7 @@ const buildQuizSummaries = (quizzes, attempts, today) => {
       id: quiz.id,
       quizName: quiz.quiz_name,
       quizNumber: quiz.quiz_number,
+      gradeLevel: quiz.grade_level == null ? null : Number(quiz.grade_level),
       teacher: quiz.teacher,
       unit: quiz.unit,
       section: quiz.section,
@@ -87,6 +88,7 @@ const getQuizRows = async () => {
       q.id,
       q.quiz_name,
       q.quiz_number,
+      q.grade_level,
       t.display_name AS teacher,
       u.name AS unit,
       s.name AS section,
@@ -99,7 +101,7 @@ const getQuizRows = async () => {
       ON qq.quiz_id = q.id
      AND qq.active = true
     WHERE q.active = true
-    GROUP BY q.id, q.quiz_name, q.quiz_number, t.display_name, u.name, s.name
+    GROUP BY q.id, q.quiz_name, q.quiz_number, q.grade_level, t.display_name, u.name, s.name
     ORDER BY t.display_name, u.name, s.name, q.quiz_number, q.quiz_name
   `);
   return result.rows;
@@ -205,6 +207,7 @@ const getQuizMeta = async (quizId) => {
         q.id,
         q.quiz_name,
         q.quiz_number,
+        q.grade_level,
         t.display_name AS teacher,
         u.name AS unit,
         s.name AS section
@@ -217,7 +220,17 @@ const getQuizMeta = async (quizId) => {
     `,
     [quizId],
   );
-  return result.rows[0];
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    id: row.id,
+    quizName: row.quiz_name,
+    quizNumber: row.quiz_number,
+    gradeLevel: row.grade_level == null ? null : Number(row.grade_level),
+    teacher: row.teacher,
+    unit: row.unit,
+    section: row.section,
+  };
 };
 
 const countAttemptsToday = async (userId, quizId, today) => {
@@ -234,7 +247,28 @@ const countAttemptsToday = async (userId, quizId, today) => {
   return Number(result.rows[0]?.count || 0);
 };
 
-const ensureAttemptSession = async ({ userId, quizId, attemptSessionId }) => {
+const getPersistedQuestionState = async (userId, quizId) => {
+  const result = await getPool().query(
+    `
+      SELECT question_id, is_correct
+      FROM cquiz2_user_question_state
+      WHERE user_id = $1
+        AND quiz_id = $2
+    `,
+    [userId, quizId],
+  );
+
+  return Object.fromEntries(
+    result.rows.map((row) => [row.question_id, row.is_correct]),
+  );
+};
+
+const ensureAttemptSession = async ({
+  userId,
+  quizId,
+  attemptSessionId,
+  initialQuestionState = {},
+}) => {
   if (attemptSessionId) {
     const existing = await getPool().query(
       `
@@ -267,13 +301,13 @@ const ensureAttemptSession = async ({ userId, quizId, attemptSessionId }) => {
       VALUES (
         $1,
         $2,
-        '{}'::jsonb,
+        $3::jsonb,
         '[]'::jsonb,
-        now() + ($3 || ' seconds')::interval
+        now() + ($4 || ' seconds')::interval
       )
       RETURNING *
     `,
-    [userId, quizId, ROUND_TTL_SECONDS],
+    [userId, quizId, JSON.stringify(initialQuestionState), ROUND_TTL_SECONDS],
   );
   return inserted.rows[0];
 };
@@ -356,10 +390,18 @@ const handleStartRound = async (event, headers) => {
     );
   }
 
+  const attemptSessionId = body.attemptSessionId
+    ? String(body.attemptSessionId)
+    : "";
+  const initialQuestionState = attemptSessionId
+    ? {}
+    : await getPersistedQuestionState(session.user.id, quizId);
+
   const attemptSession = await ensureAttemptSession({
     userId: session.user.id,
     quizId,
-    attemptSessionId: body.attemptSessionId,
+    attemptSessionId,
+    initialQuestionState,
   });
 
   const round = createRound(questions, attemptSession.question_state || {});
@@ -453,9 +495,6 @@ const handleSubmitRound = async (event, headers) => {
     );
   }
 
-  const questionByPublicId = new Map(
-    roundPayload.map((item) => [item.questionPublicId, item]),
-  );
   const answerByPublicId = new Map(
     roundPayload.map((item) => [item.answerPublicId, item]),
   );
@@ -465,7 +504,6 @@ const handleSubmitRound = async (event, headers) => {
 
   const questionState = { ...(attemptSession.question_state || {}) };
   const answerRows = [];
-  const results = [];
 
   for (const roundItem of roundPayload) {
     const submittedAnswerPublicId = pairByQuestionId.get(
@@ -483,10 +521,6 @@ const handleSubmitRound = async (event, headers) => {
       checked: !!pairs.find(
         (pair) => String(pair.questionId || "") === roundItem.questionPublicId,
       )?.checked,
-    });
-    results.push({
-      questionId: roundItem.questionPublicId,
-      correct: isCorrect,
     });
   }
 
@@ -545,6 +579,32 @@ const handleSubmitRound = async (event, headers) => {
           answer.checked,
         ],
       );
+
+      await client.query(
+        `
+          INSERT INTO cquiz2_user_question_state (
+            user_id,
+            quiz_id,
+            question_id,
+            is_correct,
+            last_attempt_id
+          )
+          VALUES ($1, $2, $3, $4, $5)
+          ON CONFLICT (user_id, question_id)
+          DO UPDATE SET
+            quiz_id = EXCLUDED.quiz_id,
+            is_correct = EXCLUDED.is_correct,
+            last_attempt_id = EXCLUDED.last_attempt_id,
+            updated_at = now()
+        `,
+        [
+          session.user.id,
+          attemptSession.quiz_id,
+          answer.questionId,
+          answer.isCorrect,
+          attemptId,
+        ],
+      );
     }
 
     await client.query(
@@ -588,7 +648,7 @@ const handleSubmitRound = async (event, headers) => {
       score,
       correctCount,
       totalCount,
-      results,
+      results: [],
       status,
       attemptsToday: attemptsAfterSubmit,
       maxAttemptsPerDay: maxToday,

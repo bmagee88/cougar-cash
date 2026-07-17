@@ -29,17 +29,19 @@ quiz_row AS (
     unit_id,
     section_id,
     quiz_name,
-    quiz_number
+    quiz_number,
+    grade_level
   )
   SELECT
     teacher.id,
     unit_row.id,
     section_row.id,
     'Cloud Computing 1',
-    1
+    1,
+    6
   FROM teacher, unit_row, section_row
   ON CONFLICT (teacher_id, unit_id, section_id, quiz_number, quiz_name)
-  DO UPDATE SET active = true, updated_at = now()
+  DO UPDATE SET grade_level = EXCLUDED.grade_level, active = true, updated_at = now()
   RETURNING id
 )
 INSERT INTO cquiz2_questions (quiz_id, position, prompt, answer)

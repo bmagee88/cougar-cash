@@ -166,16 +166,42 @@ const makeAnonId = (prefix, googleSub, offset = 0) => {
   return `${prefix}-${String(numeric).padStart(3, "0")}`;
 };
 
-const cookieOptions = () => {
+const isLocalRequest = (event) => {
+  const host = String(event?.headers?.host || event?.headers?.Host || "")
+    .toLowerCase()
+    .trim();
+  return (
+    host.startsWith("localhost") ||
+    host.startsWith("127.0.0.1") ||
+    host.startsWith("[::1]")
+  );
+};
+
+const requestLooksSecure = (event) => {
+  const proto = String(
+    event?.headers?.["x-forwarded-proto"] ||
+      event?.headers?.["X-Forwarded-Proto"] ||
+      "",
+  )
+    .toLowerCase()
+    .trim();
+  if (proto) return proto === "https";
+  return !isLocalRequest(event);
+};
+
+const cookieOptions = (event) => {
   const sameSite = process.env.CQUIZ2_COOKIE_SAMESITE || "Lax";
-  const secure = shouldUseSecureCookies() ? "; Secure" : "";
+  const secure = shouldUseSecureCookies(event) ? "; Secure" : "";
   return `HttpOnly; Path=/; SameSite=${sameSite}; Max-Age=${SESSION_TTL_SECONDS}${secure}`;
 };
 
-const shouldUseSecureCookies = () => {
+const shouldUseSecureCookies = (event) => {
+  if (isLocalRequest(event)) return false;
   if (process.env.CQUIZ2_COOKIE_SECURE) {
     return process.env.CQUIZ2_COOKIE_SECURE !== "false";
   }
+
+  if (!requestLooksSecure(event)) return false;
 
   return (
     process.env.CONTEXT === "production" ||
@@ -183,12 +209,12 @@ const shouldUseSecureCookies = () => {
   );
 };
 
-const makeSessionCookie = (sessionToken) =>
-  `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions()}`;
+const makeSessionCookie = (sessionToken, event) =>
+  `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; ${cookieOptions(event)}`;
 
-const makeCsrfCookie = (csrfToken) => {
+const makeCsrfCookie = (csrfToken, event) => {
   const sameSite = process.env.CQUIZ2_COOKIE_SAMESITE || "Lax";
-  const secure = shouldUseSecureCookies() ? "; Secure" : "";
+  const secure = shouldUseSecureCookies(event) ? "; Secure" : "";
   return `${CSRF_COOKIE}=${encodeURIComponent(csrfToken)}; Path=/; SameSite=${sameSite}; Max-Age=${SESSION_TTL_SECONDS}${secure}`;
 };
 

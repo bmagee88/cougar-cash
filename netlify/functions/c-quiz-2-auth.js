@@ -217,8 +217,8 @@ exports.handler = async (event) => {
     const { sessionToken, csrfToken } = await createSession(user, event);
 
     return redirect(getRedirectTarget(), [
-      makeSessionCookie(sessionToken),
-      makeCsrfCookie(csrfToken),
+      makeSessionCookie(sessionToken, event),
+      makeCsrfCookie(csrfToken, event),
     ]);
   } catch (err) {
     console.error("C-Quiz-2 auth failed", err);

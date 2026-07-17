@@ -25,6 +25,7 @@ export type QuizSummary = {
   id: string;
   quizName: string;
   quizNumber: number;
+  gradeLevel: number | null;
   teacher: string;
   unit: string;
   section: string;
@@ -67,7 +68,7 @@ export type RoundAnswer = {
 export type RoundResponse = {
   attemptSessionId: string;
   roundNumber: number;
-  quiz: Pick<QuizSummary, "id" | "quizName" | "quizNumber" | "teacher" | "unit" | "section">;
+  quiz: Pick<QuizSummary, "id" | "quizName" | "quizNumber" | "gradeLevel" | "teacher" | "unit" | "section">;
   questions: RoundQuestion[];
   answers: RoundAnswer[];
   questionWindowSize: number;
@@ -79,7 +80,7 @@ export type RoundResponse = {
 
 export type SubmitRoundResponse = {
   attemptId: string;
-  quiz: Pick<QuizSummary, "id" | "quizName" | "quizNumber" | "teacher" | "unit" | "section">;
+  quiz: Pick<QuizSummary, "id" | "quizName" | "quizNumber" | "gradeLevel" | "teacher" | "unit" | "section">;
   score: number;
   correctCount: number;
   totalCount: number;

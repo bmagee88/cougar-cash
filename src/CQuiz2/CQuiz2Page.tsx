@@ -9,7 +9,6 @@ import {
   CssBaseline,
   Divider,
   FormControl,
-  IconButton,
   InputLabel,
   LinearProgress,
   List,
@@ -27,6 +26,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   Tabs,
   TextField,
   ThemeProvider,
@@ -45,8 +45,6 @@ import QuizIcon from "@mui/icons-material/Quiz";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import SettingsIcon from "@mui/icons-material/Settings";
 import TodayIcon from "@mui/icons-material/Today";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import {
   DndContext,
   DragEndEvent,
@@ -65,7 +63,7 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
-  Cell,
+  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -143,6 +141,9 @@ const unique = <T,>(values: T[]) =>
 const formatQuizNumber = (value: number | null | undefined) =>
   value == null ? "" : String(value);
 
+const formatGradeLevel = (value: number | null | undefined) =>
+  value == null ? "Unassigned" : `Grade ${value}`;
+
 const formatDateTime = (value: string) =>
   new Date(value).toLocaleString([], {
     month: "short",
@@ -179,6 +180,51 @@ const groupGreenChecks = (
   return Array.from(counts.entries())
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([period, checks]) => ({ period, checks }));
+};
+
+const formatChartDate = (value: string) =>
+  new Date(`${value}T12:00:00`).toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
+
+const totalGreenChecks = (quizzes: QuizSummary[]) =>
+  quizzes.reduce((total, quiz) => total + quiz.greenChecks, 0);
+
+const buildCheckStatusHistory = (quizzes: QuizSummary[], today: string) => {
+  const dates = new Set<string>([today]);
+
+  quizzes.forEach((quiz) => {
+    if (quiz.dueDate) {
+      const dueDate = quiz.dueDate.slice(0, 10);
+      if (dueDate <= today) dates.add(dueDate);
+    }
+    quiz.attempts.forEach((attempt) => dates.add(attempt.attemptDate));
+  });
+
+  return Array.from(dates)
+    .filter((date) => Boolean(date) && date <= today)
+    .sort((a, b) => a.localeCompare(b))
+    .map((date) => {
+      let grey = 0;
+      let yellow = 0;
+      let green = 0;
+
+      quizzes.forEach((quiz) => {
+        const attemptsOnDate = quiz.attempts.filter(
+          (attempt) => attempt.attemptDate === date,
+        );
+        if (attemptsOnDate.some((attempt) => attempt.score === 100)) {
+          green += 1;
+        } else if (attemptsOnDate.length) {
+          yellow += 1;
+        } else if (quiz.dueDate && quiz.dueDate.slice(0, 10) <= date) {
+          grey += 1;
+        }
+      });
+
+      return { date, grey, yellow, green };
+    });
 };
 
 const GoogleSignInButton: React.FC<{ signedIn: boolean }> = ({ signedIn }) => {
@@ -248,31 +294,37 @@ const GoogleSignInButton: React.FC<{ signedIn: boolean }> = ({ signedIn }) => {
   return <Box ref={buttonRef} sx={{ minWidth: 190, minHeight: 40 }} />;
 };
 
-const CheckPills: React.FC<{ quiz: QuizSummary }> = ({ quiz }) => (
-  <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
-    <Chip
-      size="small"
-      icon={<CheckCircleIcon />}
-      label={quiz.greenChecks}
-      color="success"
-      variant={quiz.greenChecks ? "filled" : "outlined"}
-    />
-    {!!quiz.yellowCheck && (
-      <Chip
-        size="small"
-        icon={<WarningAmberIcon />}
-        label="yellow"
-        color="warning"
-      />
+const CheckSymbols: React.FC<{ count: number }> = ({ count }) => (
+  <Stack
+    direction="row"
+    spacing={1}
+    alignItems="center"
+    justifyContent="flex-end"
+    aria-label={`${count} total checks`}
+  >
+    {!!count && (
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "flex-end",
+          gap: 0.25,
+          maxWidth: { xs: 150, sm: 220, lg: 280 },
+          lineHeight: 0,
+        }}
+      >
+        {Array.from({ length: count }).map((_, index) => (
+          <CheckCircleIcon
+            key={index}
+            color="success"
+            sx={{ fontSize: 16, flex: "0 0 auto" }}
+          />
+        ))}
+      </Box>
     )}
-    {!!quiz.greyCheck && (
-      <Chip
-        size="small"
-        icon={<RadioButtonUncheckedIcon />}
-        label="due"
-        variant="outlined"
-      />
-    )}
+    <Typography component="span" sx={{ minWidth: 24, fontWeight: 800 }}>
+      {count}
+    </Typography>
   </Stack>
 );
 
@@ -285,11 +337,84 @@ const EmptyState: React.FC<{ title: string; detail: string }> = ({ title, detail
   </Paper>
 );
 
-const SummaryBand: React.FC<{ dashboard: DashboardResponse }> = ({ dashboard }) => {
-  const chartData = [
-    { label: "Green", value: dashboard.totals.greenChecks, fill: "#16803c" },
-    { label: "Yellow", value: dashboard.totals.yellowChecks, fill: "#b77905" },
-  ];
+const CheckStatusChart: React.FC<{
+  title: string;
+  data: Array<{ date: string; grey: number; yellow: number; green: number }>;
+  dueCount: number;
+  totalChecks: number;
+}> = ({ title, data, dueCount, totalChecks }) => (
+  <Paper elevation={0} sx={{ p: 2, minHeight: 240 }}>
+    <Stack direction="row" justifyContent="space-between" alignItems="center">
+      <Typography variant="h6">{title}</Typography>
+      <Stack direction="row" spacing={0.75} alignItems="center">
+        <Chip size="small" icon={<TodayIcon />} label={`${dueCount} due`} />
+        <Chip
+          size="small"
+          icon={<CheckCircleIcon />}
+          color="success"
+          variant="outlined"
+          label={`${totalChecks} total`}
+        />
+      </Stack>
+    </Stack>
+    <Box sx={{ height: 170, mt: 1 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="date" tickFormatter={formatChartDate} minTickGap={24} />
+          <YAxis allowDecimals={false} />
+          <RechartsTooltip labelFormatter={(label) => formatChartDate(String(label))} />
+          <Legend verticalAlign="top" height={28} />
+          <Line
+            type="monotone"
+            dataKey="grey"
+            name="Not attempted / decline"
+            stroke="#64748b"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="yellow"
+            name="Attempted, not 100%"
+            stroke="#b77905"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+          />
+          <Line
+            type="monotone"
+            dataKey="green"
+            name="Attempted, 100%"
+            stroke="#16803c"
+            strokeWidth={2}
+            dot={{ r: 3 }}
+          />
+        </LineChart>
+      </ResponsiveContainer>
+    </Box>
+  </Paper>
+);
+
+const SummaryBand: React.FC<{
+  dashboard: DashboardResponse;
+  filteredQuizzes: QuizSummary[];
+}> = ({ dashboard, filteredQuizzes }) => {
+  const chartData = useMemo(
+    () => buildCheckStatusHistory(dashboard.quizzes, dashboard.today),
+    [dashboard.quizzes, dashboard.today],
+  );
+  const filteredChartData = useMemo(
+    () => buildCheckStatusHistory(filteredQuizzes, dashboard.today),
+    [dashboard.today, filteredQuizzes],
+  );
+  const filteredTotalChecks = useMemo(
+    () => totalGreenChecks(filteredQuizzes),
+    [filteredQuizzes],
+  );
+  const filteredDueCount = useMemo(
+    () => filteredQuizzes.filter((quiz) => quiz.due).length,
+    [filteredQuizzes],
+  );
 
   return (
     <Box
@@ -300,27 +425,20 @@ const SummaryBand: React.FC<{ dashboard: DashboardResponse }> = ({ dashboard }) 
         mb: 2,
       }}
     >
-      <Paper elevation={0} sx={{ p: 2, minHeight: 180 }}>
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">Checks</Typography>
-          <Chip size="small" icon={<TodayIcon />} label={`${dashboard.totals.dueToday} due`} />
-        </Stack>
-        <Box sx={{ height: 130, mt: 1 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 18 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" allowDecimals={false} />
-              <YAxis type="category" dataKey="label" width={70} />
-              <RechartsTooltip />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]}>
-                {chartData.map((entry) => (
-                  <Cell key={entry.label} fill={entry.fill} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Box>
-      </Paper>
+      <Stack spacing={2}>
+        <CheckStatusChart
+          title="Total checks"
+          data={chartData}
+          dueCount={dashboard.totals.dueToday}
+          totalChecks={dashboard.totals.greenChecks}
+        />
+        <CheckStatusChart
+          title="Filtered total checks"
+          data={filteredChartData}
+          dueCount={filteredDueCount}
+          totalChecks={filteredTotalChecks}
+        />
+      </Stack>
 
       <Paper
         elevation={0}
@@ -339,145 +457,443 @@ const SummaryBand: React.FC<{ dashboard: DashboardResponse }> = ({ dashboard }) 
           <Typography variant="h4" sx={{ fontWeight: 900 }}>
             {dashboard.totals.greenChecks}
           </Typography>
-          <Typography color="text.secondary">green checks</Typography>
+          <Typography color="text.secondary">total checks</Typography>
         </Box>
       </Paper>
     </Box>
   );
 };
 
+type QuizSortKey =
+  | "quizNumber"
+  | "quizName"
+  | "teacher"
+  | "unit"
+  | "section"
+  | "gradeLevel"
+  | "greenChecks";
+type QuizSortDirection = "asc" | "desc";
+
+const quizTableColumns: Array<{
+  key: QuizSortKey;
+  label: string;
+  align?: "right";
+  width: number;
+}> = [
+  { key: "quizNumber", label: "Quiz #", width: 92 },
+  { key: "quizName", label: "Quiz name", width: 270 },
+  { key: "teacher", label: "Teacher", width: 150 },
+  { key: "gradeLevel", label: "Grade", width: 120 },
+  { key: "unit", label: "Unit", width: 150 },
+  { key: "section", label: "Section", width: 150 },
+  { key: "greenChecks", label: "Total checks", align: "right", width: 190 },
+];
+const quizTableGridTemplate = quizTableColumns
+  .map((column) => `${column.width}px`)
+  .join(" ");
+const quizTableMinWidth = quizTableColumns.reduce(
+  (total, column) => total + column.width,
+  0,
+);
+const quizTableFilterCellSx = { px: { lg: 2 }, minWidth: 0 };
+
+type StoredQuizFilters = {
+  teacher: string | null;
+  gradeLevel: number | null;
+  unit: string | null;
+  section: string | null;
+  quizNumber: number | null;
+  quizName: string | null;
+};
+
+const emptyQuizFilters: StoredQuizFilters = {
+  teacher: null,
+  gradeLevel: null,
+  unit: null,
+  section: null,
+  quizNumber: null,
+  quizName: null,
+};
+
+const readQuizFilters = (storageKey: string): StoredQuizFilters => {
+  const parse = (raw: string | null) => {
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as Partial<StoredQuizFilters>;
+      return {
+        teacher: typeof parsed.teacher === "string" ? parsed.teacher : null,
+        gradeLevel:
+          typeof parsed.gradeLevel === "number" ? parsed.gradeLevel : null,
+        unit: typeof parsed.unit === "string" ? parsed.unit : null,
+        section: typeof parsed.section === "string" ? parsed.section : null,
+        quizNumber:
+          typeof parsed.quizNumber === "number" ? parsed.quizNumber : null,
+        quizName: typeof parsed.quizName === "string" ? parsed.quizName : null,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  try {
+    const saved = parse(window.localStorage.getItem(storageKey));
+    if (saved) return saved;
+  } catch {
+    // Fall back to session storage below.
+  }
+
+  try {
+    const saved = parse(window.sessionStorage.getItem(storageKey));
+    if (saved) return saved;
+  } catch {
+    // Ignore unavailable browser storage.
+  }
+
+  return emptyQuizFilters;
+};
+
+const writeQuizFilters = (storageKey: string, filters: StoredQuizFilters) => {
+  const payload = JSON.stringify(filters);
+  try {
+    window.localStorage.setItem(storageKey, payload);
+    return;
+  } catch {
+    // Fall back to session storage below.
+  }
+
+  try {
+    window.sessionStorage.setItem(storageKey, payload);
+  } catch {
+    // Ignore unavailable browser storage.
+  }
+};
+
+const hasStoredOption = <T,>(options: T[], value: T | null) =>
+  value == null || options.some((option) => Object.is(option, value));
+
 const QuizTable: React.FC<{
   quizzes: QuizSummary[];
   onOpenQuiz: (quiz: QuizSummary) => void;
-}> = ({ quizzes, onOpenQuiz }) => (
-  <TableContainer component={Paper} elevation={0}>
-    <Table size="small">
-      <TableHead>
-        <TableRow>
-          <TableCell>Quiz name</TableCell>
-          <TableCell>Teacher</TableCell>
-          <TableCell>Unit</TableCell>
-          <TableCell>Section</TableCell>
-          <TableCell align="right">Number of checks</TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {quizzes.map((quiz) => (
-          <TableRow key={quiz.id} hover>
-            <TableCell>
-              <Button
-                variant="text"
-                startIcon={<PlayArrowIcon />}
-                onClick={() => onOpenQuiz(quiz)}
-                sx={{ justifyContent: "flex-start", px: 0 }}
+}> = ({ quizzes, onOpenQuiz }) => {
+  const [sortKey, setSortKey] = useState<QuizSortKey>("quizName");
+  const [sortDirection, setSortDirection] = useState<QuizSortDirection>("asc");
+
+  const sortedQuizzes = useMemo(() => {
+    const directionMultiplier = sortDirection === "asc" ? 1 : -1;
+
+    return [...quizzes].sort((left, right) => {
+      if (
+        sortKey === "greenChecks" ||
+        sortKey === "gradeLevel" ||
+        sortKey === "quizNumber"
+      ) {
+        const leftValue = Number(left[sortKey] ?? -1);
+        const rightValue = Number(right[sortKey] ?? -1);
+        const difference = leftValue - rightValue;
+        if (difference !== 0) return difference * directionMultiplier;
+      } else {
+        const difference = String(left[sortKey] || "").localeCompare(
+          String(right[sortKey] || ""),
+          undefined,
+          { numeric: true, sensitivity: "base" },
+        );
+        if (difference !== 0) return difference * directionMultiplier;
+      }
+
+      return left.quizName.localeCompare(right.quizName, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+  }, [quizzes, sortDirection, sortKey]);
+
+  const handleSort = (key: QuizSortKey) => {
+    if (sortKey === key) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortKey(key);
+    setSortDirection("asc");
+  };
+
+  return (
+    <TableContainer component={Paper} elevation={0}>
+      <Table size="small" sx={{ minWidth: quizTableMinWidth, tableLayout: "fixed" }}>
+        <TableHead>
+          <TableRow>
+            {quizTableColumns.map((column) => (
+              <TableCell
+                key={column.key}
+                align={column.align}
+                sortDirection={sortKey === column.key ? sortDirection : false}
+                sx={{ width: column.width }}
               >
-                {quiz.quizName}
-              </Button>
-            </TableCell>
-            <TableCell>{quiz.teacher}</TableCell>
-            <TableCell>{quiz.unit}</TableCell>
-            <TableCell>{quiz.section}</TableCell>
-            <TableCell align="right">
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                <CheckPills quiz={quiz} />
-              </Box>
-            </TableCell>
+                <TableSortLabel
+                  active={sortKey === column.key}
+                  direction={sortKey === column.key ? sortDirection : "asc"}
+                  onClick={() => handleSort(column.key)}
+                >
+                  {column.label}
+                </TableSortLabel>
+              </TableCell>
+            ))}
           </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </TableContainer>
-);
+        </TableHead>
+        <TableBody>
+          {sortedQuizzes.map((quiz) => (
+            <TableRow key={quiz.id} hover>
+              <TableCell>{formatQuizNumber(quiz.quizNumber)}</TableCell>
+              <TableCell>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                  {quiz.due && (
+                    <Chip
+                      size="small"
+                      icon={<TodayIcon />}
+                      label="Due"
+                      color="primary"
+                      variant="outlined"
+                    />
+                  )}
+                  <Button
+                    variant="text"
+                    startIcon={<PlayArrowIcon />}
+                    onClick={() => onOpenQuiz(quiz)}
+                    sx={{ justifyContent: "flex-start", px: 0 }}
+                  >
+                    {quiz.quizName}
+                  </Button>
+                </Stack>
+              </TableCell>
+              <TableCell>{quiz.teacher}</TableCell>
+              <TableCell>{formatGradeLevel(quiz.gradeLevel)}</TableCell>
+              <TableCell>{quiz.unit}</TableCell>
+              <TableCell>{quiz.section}</TableCell>
+              <TableCell align="right">
+                <CheckSymbols count={quiz.greenChecks} />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
 
 const QuizzesView: React.FC<{
   dashboard: DashboardResponse;
   onOpenQuiz: (quiz: QuizSummary) => void;
 }> = ({ dashboard, onOpenQuiz }) => {
-  const [teacher, setTeacher] = useState<string | null>(null);
-  const [unit, setUnit] = useState<string | null>(null);
-  const [section, setSection] = useState<string | null>(null);
-  const [quizNumber, setQuizNumber] = useState<number | null>(null);
-  const [quizName, setQuizName] = useState<string | null>(null);
+  const filterStorageKey = `cquiz2.quizFilters.${dashboard.user.anonId}`;
+  const storedFilters = useMemo(
+    () => readQuizFilters(filterStorageKey),
+    [filterStorageKey],
+  );
+  const teacherOptions = useMemo(
+    () => unique(dashboard.quizzes.map((quiz) => quiz.teacher)),
+    [dashboard.quizzes],
+  );
+  const gradeOptions = useMemo(
+    () => unique(dashboard.quizzes.map((quiz) => quiz.gradeLevel)),
+    [dashboard.quizzes],
+  );
+  const unitOptions = useMemo(
+    () => unique(dashboard.quizzes.map((quiz) => quiz.unit)),
+    [dashboard.quizzes],
+  );
+  const sectionOptions = useMemo(
+    () => unique(dashboard.quizzes.map((quiz) => quiz.section)),
+    [dashboard.quizzes],
+  );
+  const quizNumberOptions = useMemo(
+    () => unique(dashboard.quizzes.map((quiz) => quiz.quizNumber)),
+    [dashboard.quizzes],
+  );
+  const quizNameOptions = useMemo(
+    () => unique(dashboard.quizzes.map((quiz) => quiz.quizName)),
+    [dashboard.quizzes],
+  );
+
+  const [teacher, setTeacher] = useState<string | null>(() =>
+    hasStoredOption(teacherOptions, storedFilters.teacher)
+      ? storedFilters.teacher
+      : null,
+  );
+  const [gradeLevel, setGradeLevel] = useState<number | null>(() =>
+    hasStoredOption(gradeOptions, storedFilters.gradeLevel)
+      ? storedFilters.gradeLevel
+      : null,
+  );
+  const [unit, setUnit] = useState<string | null>(() =>
+    hasStoredOption(unitOptions, storedFilters.unit) ? storedFilters.unit : null,
+  );
+  const [section, setSection] = useState<string | null>(() =>
+    hasStoredOption(sectionOptions, storedFilters.section)
+      ? storedFilters.section
+      : null,
+  );
+  const [quizNumber, setQuizNumber] = useState<number | null>(() =>
+    hasStoredOption(quizNumberOptions, storedFilters.quizNumber)
+      ? storedFilters.quizNumber
+      : null,
+  );
+  const [quizName, setQuizName] = useState<string | null>(() =>
+    hasStoredOption(quizNameOptions, storedFilters.quizName)
+      ? storedFilters.quizName
+      : null,
+  );
+
+  useEffect(() => {
+    writeQuizFilters(filterStorageKey, {
+      teacher,
+      gradeLevel,
+      unit,
+      section,
+      quizNumber,
+      quizName,
+    });
+  }, [filterStorageKey, gradeLevel, quizName, quizNumber, section, teacher, unit]);
+
+  useEffect(() => {
+    if (!hasStoredOption(teacherOptions, teacher)) setTeacher(null);
+    if (!hasStoredOption(gradeOptions, gradeLevel)) setGradeLevel(null);
+    if (!hasStoredOption(unitOptions, unit)) setUnit(null);
+    if (!hasStoredOption(sectionOptions, section)) setSection(null);
+    if (!hasStoredOption(quizNumberOptions, quizNumber)) setQuizNumber(null);
+    if (!hasStoredOption(quizNameOptions, quizName)) setQuizName(null);
+  }, [
+    gradeLevel,
+    gradeOptions,
+    quizName,
+    quizNameOptions,
+    quizNumber,
+    quizNumberOptions,
+    section,
+    sectionOptions,
+    teacher,
+    teacherOptions,
+    unit,
+    unitOptions,
+  ]);
 
   const filtered = useMemo(
     () =>
       dashboard.quizzes.filter(
         (quiz) =>
           (!teacher || quiz.teacher === teacher) &&
+          (gradeLevel == null || quiz.gradeLevel === gradeLevel) &&
           (!unit || quiz.unit === unit) &&
           (!section || quiz.section === section) &&
-          (!quizNumber || quiz.quizNumber === quizNumber) &&
+          (quizNumber == null || quiz.quizNumber === quizNumber) &&
           (!quizName || quiz.quizName === quizName),
       ),
-    [dashboard.quizzes, quizName, quizNumber, section, teacher, unit],
+    [dashboard.quizzes, gradeLevel, quizName, quizNumber, section, teacher, unit],
   );
 
   return (
     <Box>
-      <SummaryBand dashboard={dashboard} />
+      <SummaryBand dashboard={dashboard} filteredQuizzes={filtered} />
 
-      <Paper elevation={0} sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+      <Paper elevation={0} sx={{ mb: 2, overflow: "visible" }}>
+        <Stack direction="row" alignItems="center" spacing={1} sx={{ p: 2, pb: 1 }}>
           <FilterAltIcon color="primary" />
           <Typography variant="h6">Filters</Typography>
           <Box sx={{ flex: 1 }} />
-          <Tooltip title="Clear filters">
-            <IconButton
-              onClick={() => {
-                setTeacher(null);
-                setUnit(null);
-                setSection(null);
-                setQuizNumber(null);
-                setQuizName(null);
-              }}
-            >
-              <RestartAltIcon />
-            </IconButton>
-          </Tooltip>
+          <Button
+            variant="outlined"
+            startIcon={<RestartAltIcon />}
+            onClick={() => {
+              setTeacher(null);
+              setUnit(null);
+              setSection(null);
+              setGradeLevel(null);
+              setQuizNumber(null);
+              setQuizName(null);
+            }}
+          >
+            Clear filters
+          </Button>
         </Stack>
 
         <Box
           sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, minmax(0, 1fr))",
-              lg: "repeat(5, minmax(0, 1fr))",
-            },
-            gap: 1.5,
+            overflowX: { xs: "visible", lg: "auto" },
+            overflowY: "visible",
+            px: { xs: 2, lg: 0 },
+            pt: 1.25,
+            pb: 2,
           }}
         >
-          <Autocomplete
-            options={unique(dashboard.quizzes.map((quiz) => quiz.teacher))}
-            value={teacher}
-            onChange={(_, value) => setTeacher(value)}
-            renderInput={(params) => <TextField {...params} label="Teacher" size="small" />}
-          />
-          <Autocomplete
-            options={unique(dashboard.quizzes.map((quiz) => quiz.unit))}
-            value={unit}
-            onChange={(_, value) => setUnit(value)}
-            renderInput={(params) => <TextField {...params} label="Unit" size="small" />}
-          />
-          <Autocomplete
-            options={unique(dashboard.quizzes.map((quiz) => quiz.section))}
-            value={section}
-            onChange={(_, value) => setSection(value)}
-            renderInput={(params) => <TextField {...params} label="Section" size="small" />}
-          />
-          <Autocomplete
-            options={unique(dashboard.quizzes.map((quiz) => quiz.quizNumber))}
-            value={quizNumber}
-            onChange={(_, value) => setQuizNumber(value)}
-            getOptionLabel={formatQuizNumber}
-            renderInput={(params) => <TextField {...params} label="Quiz number" size="small" />}
-          />
-          <Autocomplete
-            options={unique(dashboard.quizzes.map((quiz) => quiz.quizName))}
-            value={quizName}
-            onChange={(_, value) => setQuizName(value)}
-            renderInput={(params) => <TextField {...params} label="Quiz name" size="small" />}
-          />
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(2, minmax(0, 1fr))",
+                lg: quizTableGridTemplate,
+              },
+              gap: { xs: 1.5, lg: 0 },
+              minWidth: { lg: quizTableMinWidth },
+              alignItems: "start",
+            }}
+          >
+            <Box sx={quizTableFilterCellSx}>
+              <Autocomplete
+                fullWidth
+                options={quizNumberOptions}
+                value={quizNumber}
+                onChange={(_, value) => setQuizNumber(value)}
+                getOptionLabel={formatQuizNumber}
+                renderInput={(params) => <TextField {...params} label="Quiz #" size="small" />}
+              />
+            </Box>
+            <Box sx={quizTableFilterCellSx}>
+              <Autocomplete
+                fullWidth
+                options={quizNameOptions}
+                value={quizName}
+                onChange={(_, value) => setQuizName(value)}
+                renderInput={(params) => <TextField {...params} label="Quiz name" size="small" />}
+              />
+            </Box>
+            <Box sx={quizTableFilterCellSx}>
+              <Autocomplete
+                fullWidth
+                options={teacherOptions}
+                value={teacher}
+                onChange={(_, value) => setTeacher(value)}
+                renderInput={(params) => <TextField {...params} label="Teacher" size="small" />}
+              />
+            </Box>
+            <Box sx={quizTableFilterCellSx}>
+              <Autocomplete
+                fullWidth
+                options={gradeOptions}
+                value={gradeLevel}
+                onChange={(_, value) => setGradeLevel(value)}
+                getOptionLabel={formatGradeLevel}
+                renderInput={(params) => <TextField {...params} label="Grade" size="small" />}
+              />
+            </Box>
+            <Box sx={quizTableFilterCellSx}>
+              <Autocomplete
+                fullWidth
+                options={unitOptions}
+                value={unit}
+                onChange={(_, value) => setUnit(value)}
+                renderInput={(params) => <TextField {...params} label="Unit" size="small" />}
+              />
+            </Box>
+            <Box sx={quizTableFilterCellSx}>
+              <Autocomplete
+                fullWidth
+                options={sectionOptions}
+                value={section}
+                onChange={(_, value) => setSection(value)}
+                renderInput={(params) => <TextField {...params} label="Section" size="small" />}
+              />
+            </Box>
+            <Box sx={{ ...quizTableFilterCellSx, display: { xs: "none", lg: "block" } }} />
+          </Box>
         </Box>
       </Paper>
 
@@ -583,7 +999,7 @@ const ScoresView: React.FC<{ dashboard: DashboardResponse }> = ({ dashboard }) =
             value={selectedQuiz || null}
             onChange={(_, value) => setQuizId(value?.id || "")}
             getOptionLabel={(quiz) =>
-              `${quiz.quizName} (${quiz.teacher}, ${quiz.unit})`
+              `${quiz.quizName} (${quiz.teacher}, ${formatGradeLevel(quiz.gradeLevel)}, ${quiz.unit})`
             }
             renderInput={(params) => <TextField {...params} label="Quiz" size="small" />}
           />
@@ -767,7 +1183,8 @@ const QuizRunner: React.FC<{
           <Box sx={{ flex: 1 }}>
             <Typography variant="h6">{quiz.quizName}</Typography>
             <Typography color="text.secondary">
-              {quiz.teacher} / {quiz.unit} / {quiz.section} / Quiz {quiz.quizNumber}
+              {quiz.teacher} / {formatGradeLevel(quiz.gradeLevel)} /{" "}
+              {quiz.unit} / {quiz.section} / Quiz {quiz.quizNumber}
             </Typography>
           </Box>
           <Chip label={`${quiz.greenChecks} green`} color="success" variant="outlined" />
@@ -830,9 +1247,6 @@ const QuizRunner: React.FC<{
                 <Stack spacing={1.25}>
                   {round.questions.map((question: RoundQuestion, index: number) => {
                     const answer = answers[index];
-                    const questionResult = result?.results.find(
-                      (item) => item.questionId === question.id,
-                    );
                     return (
                       <Box
                         key={question.id}
@@ -847,12 +1261,7 @@ const QuizRunner: React.FC<{
                           elevation={0}
                           sx={{
                             p: 1.25,
-                            bgcolor:
-                              questionResult == null
-                                ? "background.paper"
-                                : questionResult.correct
-                                  ? alpha(theme.palette.success.main, 0.12)
-                                  : alpha(theme.palette.error.main, 0.08),
+                            bgcolor: "background.paper",
                           }}
                         >
                           <Typography variant="body2">{question.text}</Typography>
@@ -1039,6 +1448,7 @@ const CQuiz2Page: React.FC = () => {
     () => dashboard?.quizzes.find((quiz) => quiz.id === selectedQuizId) || null,
     [dashboard?.quizzes, selectedQuizId],
   );
+  const dueTodayCount = dashboard?.totals.dueToday ?? 0;
 
   const openQuiz = (quiz: QuizSummary) => {
     setSelectedQuizId(quiz.id);
@@ -1141,18 +1551,57 @@ const CQuiz2Page: React.FC = () => {
             }}
           >
             <List dense>
-              {navItems.map((item) => (
-                <ListItemButton
-                  key={item.id}
-                  selected={activeView === item.id}
-                  onClick={() => setActiveView(item.id)}
-                  disabled={!session.signedIn && item.id !== "account"}
-                  sx={{ borderRadius: 1, mb: 0.5 }}
-                >
-                  <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
-                  <ListItemText primary={item.label} />
-                </ListItemButton>
-              ))}
+              {navItems.map((item) => {
+                const shouldPulseDue =
+                  item.id === "due" && session.signedIn && dueTodayCount > 0;
+
+                return (
+                  <ListItemButton
+                    key={item.id}
+                    selected={activeView === item.id}
+                    onClick={() => setActiveView(item.id)}
+                    disabled={!session.signedIn && item.id !== "account"}
+                    sx={{
+                      borderRadius: 1,
+                      mb: 0.5,
+                      ...(shouldPulseDue
+                        ? {
+                            "@keyframes cquiz2DuePulse": {
+                              "0%, 100%": {
+                                backgroundColor: alpha(
+                                  theme.palette.error.main,
+                                  0.06,
+                                ),
+                                boxShadow: `0 0 0 0 ${alpha(
+                                  theme.palette.error.main,
+                                  0.28,
+                                )}`,
+                              },
+                              "50%": {
+                                backgroundColor: alpha(
+                                  theme.palette.error.main,
+                                  0.15,
+                                ),
+                                boxShadow: `0 0 0 4px ${alpha(
+                                  theme.palette.error.main,
+                                  0,
+                                )}`,
+                              },
+                            },
+                            animation: "cquiz2DuePulse 1.8s ease-in-out infinite",
+                            color: "error.main",
+                            "& .MuiListItemIcon-root": {
+                              color: "error.main",
+                            },
+                          }
+                        : {}),
+                    }}
+                  >
+                    <ListItemIcon sx={{ minWidth: 36 }}>{item.icon}</ListItemIcon>
+                    <ListItemText primary={item.label} />
+                  </ListItemButton>
+                );
+              })}
             </List>
           </Box>
 

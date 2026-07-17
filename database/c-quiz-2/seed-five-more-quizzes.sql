@@ -29,17 +29,19 @@ quiz_row AS (
     unit_id,
     section_id,
     quiz_name,
-    quiz_number
+    quiz_number,
+    grade_level
   )
   SELECT
     teacher.id,
     unit_row.id,
     section_row.id,
     'Hardware Basics',
-    2
+    2,
+    6
   FROM teacher, unit_row, section_row
   ON CONFLICT (teacher_id, unit_id, section_id, quiz_number, quiz_name)
-  DO UPDATE SET active = true, updated_at = now()
+  DO UPDATE SET grade_level = EXCLUDED.grade_level, active = true, updated_at = now()
   RETURNING id
 )
 INSERT INTO cquiz2_questions (quiz_id, position, prompt, answer)
@@ -94,17 +96,19 @@ quiz_row AS (
     unit_id,
     section_id,
     quiz_name,
-    quiz_number
+    quiz_number,
+    grade_level
   )
   SELECT
     teacher.id,
     unit_row.id,
     section_row.id,
     'Cables and Ports',
-    3
+    3,
+    6
   FROM teacher, unit_row, section_row
   ON CONFLICT (teacher_id, unit_id, section_id, quiz_number, quiz_name)
-  DO UPDATE SET active = true, updated_at = now()
+  DO UPDATE SET grade_level = EXCLUDED.grade_level, active = true, updated_at = now()
   RETURNING id
 )
 INSERT INTO cquiz2_questions (quiz_id, position, prompt, answer)
@@ -159,17 +163,19 @@ quiz_row AS (
     unit_id,
     section_id,
     quiz_name,
-    quiz_number
+    quiz_number,
+    grade_level
   )
   SELECT
     teacher.id,
     unit_row.id,
     section_row.id,
     'Corporate Control',
-    4
+    4,
+    6
   FROM teacher, unit_row, section_row
   ON CONFLICT (teacher_id, unit_id, section_id, quiz_number, quiz_name)
-  DO UPDATE SET active = true, updated_at = now()
+  DO UPDATE SET grade_level = EXCLUDED.grade_level, active = true, updated_at = now()
   RETURNING id
 )
 INSERT INTO cquiz2_questions (quiz_id, position, prompt, answer)
@@ -224,17 +230,19 @@ quiz_row AS (
     unit_id,
     section_id,
     quiz_name,
-    quiz_number
+    quiz_number,
+    grade_level
   )
   SELECT
     teacher.id,
     unit_row.id,
     section_row.id,
     'Chromebook Care',
-    5
+    5,
+    6
   FROM teacher, unit_row, section_row
   ON CONFLICT (teacher_id, unit_id, section_id, quiz_number, quiz_name)
-  DO UPDATE SET active = true, updated_at = now()
+  DO UPDATE SET grade_level = EXCLUDED.grade_level, active = true, updated_at = now()
   RETURNING id
 )
 INSERT INTO cquiz2_questions (quiz_id, position, prompt, answer)
@@ -289,17 +297,19 @@ quiz_row AS (
     unit_id,
     section_id,
     quiz_name,
-    quiz_number
+    quiz_number,
+    grade_level
   )
   SELECT
     teacher.id,
     unit_row.id,
     section_row.id,
     'Careers in Tech',
+    6,
     6
   FROM teacher, unit_row, section_row
   ON CONFLICT (teacher_id, unit_id, section_id, quiz_number, quiz_name)
-  DO UPDATE SET active = true, updated_at = now()
+  DO UPDATE SET grade_level = EXCLUDED.grade_level, active = true, updated_at = now()
   RETURNING id
 )
 INSERT INTO cquiz2_questions (quiz_id, position, prompt, answer)
