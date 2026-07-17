@@ -40,6 +40,9 @@ CREATE TABLE IF NOT EXISTS cquiz2_teachers (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE INDEX IF NOT EXISTS cquiz2_teachers_user_idx
+  ON cquiz2_teachers(user_id);
+
 CREATE TABLE IF NOT EXISTS cquiz2_units (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   teacher_id uuid NOT NULL REFERENCES cquiz2_teachers(id) ON DELETE CASCADE,
@@ -122,6 +125,8 @@ CREATE INDEX IF NOT EXISTS cquiz2_attempts_user_quiz_date_idx
   ON cquiz2_attempts(user_id, quiz_id, attempt_date, created_at);
 CREATE INDEX IF NOT EXISTS cquiz2_attempts_user_date_idx
   ON cquiz2_attempts(user_id, attempt_date);
+CREATE INDEX IF NOT EXISTS cquiz2_attempts_quiz_user_date_idx
+  ON cquiz2_attempts(quiz_id, user_id, attempt_date, created_at);
 
 CREATE TABLE IF NOT EXISTS cquiz2_user_question_state (
   user_id uuid NOT NULL REFERENCES cquiz2_users(id) ON DELETE CASCADE,

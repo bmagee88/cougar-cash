@@ -1,4 +1,12 @@
-export type CQuiz2View = "account" | "due" | "quizzes" | "scores" | "settings" | "quiz";
+export type CQuiz2View =
+  | "account"
+  | "due"
+  | "quizzes"
+  | "scores"
+  | "settings"
+  | "quiz"
+  | "teacher-create"
+  | "teacher-data";
 
 export type SessionUser = {
   id: string;
@@ -53,6 +61,59 @@ export type DashboardResponse = {
     yellowChecks: number;
     dueToday: number;
   };
+};
+
+export type TeacherStudentQuizSummary = {
+  id: string;
+  quizName: string;
+  quizNumber: number;
+  gradeLevel: number | null;
+  teacher: string;
+  unit: string;
+  section: string;
+  greenChecks: number;
+  yellowChecks: number;
+  greyChecks: number;
+  due: boolean;
+  dueDate: string;
+  daysUntilDue: number;
+  maxChecks: number;
+  attempts: QuizAttempt[];
+};
+
+export type TeacherStudentSummary = {
+  anonId: string;
+  totalChecks: number;
+  quizCount: number;
+  quizzes: TeacherStudentQuizSummary[];
+};
+
+export type TeacherQuizStudentSummary = {
+  anonId: string;
+  currentChecks: number;
+  maxChecks: number;
+  attempts: QuizAttempt[];
+};
+
+export type TeacherQuizSummary = {
+  id: string;
+  quizName: string;
+  quizNumber: number;
+  gradeLevel: number | null;
+  teacher: string;
+  unit: string;
+  section: string;
+  totalUniqueStudentsAttempted: number;
+  totalChecksCurrently: number;
+  highestChecksToDate: number;
+  students: TeacherQuizStudentSummary[];
+};
+
+export type TeacherDashboardResponse = {
+  today: string;
+  user: SessionUser;
+  students: TeacherStudentSummary[];
+  quizzes: TeacherQuizSummary[];
 };
 
 export type RoundQuestion = {

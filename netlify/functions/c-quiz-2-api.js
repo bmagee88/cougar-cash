@@ -33,6 +33,15 @@ const toAttemptDto = (row) => ({
   createdAt: row.created_at,
 });
 
+const toTeacherAttemptDto = (row) => ({
+  id: row.attempt_id,
+  score: Number(row.score),
+  correctCount: Number(row.correct_count),
+  totalCount: Number(row.total_count),
+  attemptDate: dateValueToKey(row.attempt_date),
+  createdAt: row.created_at,
+});
+
 const buildQuizSummaries = (quizzes, attempts, today) => {
   const attemptsByQuiz = new Map();
   for (const attempt of attempts) {
@@ -80,6 +89,253 @@ const buildQuizSummaries = (quizzes, attempts, today) => {
       attempts: quizAttempts,
     };
   });
+};
+
+const isTeacherRole = (user) => user?.role === "teacher" || user?.role === "admin";
+
+const requireTeacherSession = async (event) => {
+  const session = await requireSession(event);
+  if (!isTeacherRole(session.user)) {
+    const err = new Error("Teacher access required.");
+    err.statusCode = 403;
+    throw err;
+  }
+  return session;
+};
+
+const toTeacherQuizMeta = (row) => ({
+  id: row.id || row.quiz_id,
+  quizName: row.quiz_name,
+  quizNumber: row.quiz_number,
+  gradeLevel: row.grade_level == null ? null : Number(row.grade_level),
+  teacher: row.teacher,
+  unit: row.unit,
+  section: row.section,
+});
+
+const getStatusMetrics = (attempts, today) => {
+  const streakInput = attempts.map((attempt) => ({
+    score: attempt.score,
+    attempt_date: attempt.attemptDate,
+  }));
+  const status = computeStreakStatus(streakInput, today).status;
+  let maxChecks = 0;
+
+  for (let index = 0; index < streakInput.length; index += 1) {
+    const slice = streakInput.slice(0, index + 1);
+    const historicalToday = slice[index].attempt_date || today;
+    const historicalStatus = computeStreakStatus(slice, historicalToday).status;
+    maxChecks = Math.max(maxChecks, historicalStatus.green);
+  }
+
+  return {
+    greenChecks: status.green,
+    yellowChecks: status.cap === "yellow" ? 1 : 0,
+    greyChecks: status.cap === "grey" ? 1 : 0,
+    due: status.due,
+    dueDate: status.dueDate,
+    daysUntilDue: status.daysUntilDue,
+    maxChecks,
+  };
+};
+
+const getHighestAggregateChecks = (studentQuizzes, today) => {
+  const dates = new Set([today]);
+  for (const studentQuiz of studentQuizzes) {
+    for (const attempt of studentQuiz.attempts) {
+      if (attempt.attemptDate <= today) dates.add(attempt.attemptDate);
+    }
+  }
+
+  let highest = 0;
+  for (const date of Array.from(dates).sort()) {
+    const total = studentQuizzes.reduce((sum, studentQuiz) => {
+      const attemptsThroughDate = studentQuiz.attempts.filter(
+        (attempt) => attempt.attemptDate <= date,
+      );
+      if (!attemptsThroughDate.length) return sum;
+      const streakInput = attemptsThroughDate.map((attempt) => ({
+        score: attempt.score,
+        attempt_date: attempt.attemptDate,
+      }));
+      return sum + computeStreakStatus(streakInput, date).status.green;
+    }, 0);
+    highest = Math.max(highest, total);
+  }
+
+  return highest;
+};
+
+const getTeacherQuizRows = async (session) => {
+  const isAdmin = session.user.role === "admin";
+  const params = isAdmin ? [] : [session.user.id];
+  const teacherPredicate = isAdmin ? "" : "AND t.user_id = $1";
+  const result = await getPool().query(
+    `
+      SELECT
+        q.id,
+        q.quiz_name,
+        q.quiz_number,
+        q.grade_level,
+        t.display_name AS teacher,
+        u.name AS unit,
+        s.name AS section
+      FROM cquiz2_quizzes q
+      JOIN cquiz2_teachers t ON t.id = q.teacher_id
+      JOIN cquiz2_units u ON u.id = q.unit_id
+      JOIN cquiz2_sections s ON s.id = q.section_id
+      WHERE q.active = true
+        ${teacherPredicate}
+      ORDER BY q.quiz_number, q.quiz_name, q.grade_level, u.name, s.name
+    `,
+    params,
+  );
+  return result.rows;
+};
+
+const getTeacherAttemptRows = async (session) => {
+  const isAdmin = session.user.role === "admin";
+  const params = isAdmin ? [] : [session.user.id];
+  const teacherPredicate = isAdmin ? "" : "AND t.user_id = $1";
+  const result = await getPool().query(
+    `
+      SELECT
+        a.id AS attempt_id,
+        a.quiz_id,
+        a.score,
+        a.correct_count,
+        a.total_count,
+        a.attempt_date,
+        a.created_at,
+        u.anon_id,
+        q.quiz_name,
+        q.quiz_number,
+        q.grade_level,
+        t.display_name AS teacher,
+        unit.name AS unit,
+        section.name AS section
+      FROM cquiz2_attempts a
+      JOIN cquiz2_users u ON u.id = a.user_id
+      JOIN cquiz2_quizzes q ON q.id = a.quiz_id
+      JOIN cquiz2_teachers t ON t.id = q.teacher_id
+      JOIN cquiz2_units unit ON unit.id = q.unit_id
+      JOIN cquiz2_sections section ON section.id = q.section_id
+      WHERE q.active = true
+        ${teacherPredicate}
+      ORDER BY u.anon_id, q.quiz_number, q.quiz_name, a.created_at
+    `,
+    params,
+  );
+  return result.rows;
+};
+
+const buildTeacherSummaries = (quizzes, attemptRows, today) => {
+  const pairMap = new Map();
+
+  for (const row of attemptRows) {
+    const key = `${row.anon_id}:${row.quiz_id}`;
+    if (!pairMap.has(key)) {
+      pairMap.set(key, {
+        anonId: row.anon_id,
+        quiz: toTeacherQuizMeta(row),
+        attempts: [],
+      });
+    }
+    pairMap.get(key).attempts.push(toTeacherAttemptDto(row));
+  }
+
+  const studentQuizSummaries = Array.from(pairMap.values()).map((pair) => {
+    const attempts = pair.attempts.sort(
+      (left, right) => new Date(left.createdAt) - new Date(right.createdAt),
+    );
+    const metrics = getStatusMetrics(attempts, today);
+    return {
+      ...pair.quiz,
+      anonId: pair.anonId,
+      greenChecks: metrics.greenChecks,
+      yellowChecks: metrics.yellowChecks,
+      greyChecks: metrics.greyChecks,
+      due: metrics.due,
+      dueDate: metrics.dueDate,
+      daysUntilDue: metrics.daysUntilDue,
+      maxChecks: metrics.maxChecks,
+      attempts,
+    };
+  });
+
+  const studentsByAlias = new Map();
+  for (const quizSummary of studentQuizSummaries) {
+    if (!studentsByAlias.has(quizSummary.anonId)) {
+      studentsByAlias.set(quizSummary.anonId, {
+        anonId: quizSummary.anonId,
+        totalChecks: 0,
+        quizCount: 0,
+        quizzes: [],
+      });
+    }
+    const student = studentsByAlias.get(quizSummary.anonId);
+    student.totalChecks += quizSummary.greenChecks;
+    student.quizCount += 1;
+    student.quizzes.push(quizSummary);
+  }
+
+  const students = Array.from(studentsByAlias.values())
+    .map((student) => ({
+      ...student,
+      quizzes: student.quizzes.sort((left, right) => {
+        const byNumber = Number(left.quizNumber ?? -1) - Number(right.quizNumber ?? -1);
+        if (byNumber !== 0) return byNumber;
+        return left.quizName.localeCompare(right.quizName, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
+      }),
+    }))
+    .sort((left, right) =>
+      left.anonId.localeCompare(right.anonId, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      }),
+    );
+
+  const studentQuizzesByQuizId = new Map();
+  for (const quizSummary of studentQuizSummaries) {
+    const quizStudents = studentQuizzesByQuizId.get(quizSummary.id) || [];
+    quizStudents.push(quizSummary);
+    studentQuizzesByQuizId.set(quizSummary.id, quizStudents);
+  }
+
+  const quizSummaries = quizzes.map((quizRow) => {
+    const quiz = toTeacherQuizMeta(quizRow);
+    const quizStudents = studentQuizzesByQuizId.get(quiz.id) || [];
+    const totalChecksCurrently = quizStudents.reduce(
+      (sum, studentQuiz) => sum + studentQuiz.greenChecks,
+      0,
+    );
+    const studentsForQuiz = quizStudents
+      .map((studentQuiz) => ({
+        anonId: studentQuiz.anonId,
+        currentChecks: studentQuiz.greenChecks,
+        maxChecks: studentQuiz.maxChecks,
+        attempts: studentQuiz.attempts,
+      }))
+      .sort((left, right) =>
+        left.anonId.localeCompare(right.anonId, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        }),
+      );
+
+    return {
+      ...quiz,
+      totalUniqueStudentsAttempted: studentsForQuiz.length,
+      totalChecksCurrently,
+      highestChecksToDate: getHighestAggregateChecks(quizStudents, today),
+      students: studentsForQuiz,
+    };
+  });
+
+  return { students, quizzes: quizSummaries };
 };
 
 const getQuizRows = async () => {
@@ -181,6 +437,27 @@ const handleDashboard = async (event, headers) => {
         ),
         dueToday: quizSummaries.filter((quiz) => quiz.due).length,
       },
+    },
+    headers,
+  );
+};
+
+const handleTeacherDashboard = async (event, headers) => {
+  const session = await requireTeacherSession(event);
+  const today = getTodayKey();
+  const [quizzes, attemptRows] = await Promise.all([
+    getTeacherQuizRows(session),
+    getTeacherAttemptRows(session),
+  ]);
+  const summaries = buildTeacherSummaries(quizzes, attemptRows, today);
+
+  return json(
+    200,
+    {
+      today,
+      user: session.user,
+      students: summaries.students,
+      quizzes: summaries.quizzes,
     },
     headers,
   );
@@ -696,6 +973,9 @@ exports.handler = async (event) => {
   try {
     if (action === "session") return handleSession(event, headers);
     if (action === "dashboard") return handleDashboard(event, headers);
+    if (action === "teacher-dashboard") {
+      return handleTeacherDashboard(event, headers);
+    }
     if (action === "start-round") return handleStartRound(event, headers);
     if (action === "submit-round") return handleSubmitRound(event, headers);
     if (action === "touch") return handleTouch(event, headers);
