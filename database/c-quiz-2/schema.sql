@@ -91,6 +91,67 @@ CREATE TABLE IF NOT EXISTS cquiz2_questions (
 CREATE INDEX IF NOT EXISTS cquiz2_questions_quiz_idx
   ON cquiz2_questions(quiz_id, active, position);
 
+CREATE TABLE IF NOT EXISTS cquiz2_concepts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_id uuid NOT NULL REFERENCES cquiz2_quizzes(id) ON DELETE CASCADE,
+  concept_key text NOT NULL,
+  concept_name text NOT NULL,
+  position integer NOT NULL,
+  confusability_group text,
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (quiz_id, concept_key),
+  UNIQUE (quiz_id, position)
+);
+
+COMMENT ON TABLE cquiz2_concepts IS
+  'Concepts assessed by a quiz. Each concept can have many question and answer variants, but a quiz round displays one answer variant per selected concept.';
+
+CREATE INDEX IF NOT EXISTS cquiz2_concepts_quiz_idx
+  ON cquiz2_concepts(quiz_id, active, position);
+CREATE INDEX IF NOT EXISTS cquiz2_concepts_confusability_idx
+  ON cquiz2_concepts(quiz_id, confusability_group);
+
+CREATE TABLE IF NOT EXISTS cquiz2_question_variants (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  concept_id uuid NOT NULL REFERENCES cquiz2_concepts(id) ON DELETE CASCADE,
+  question_text text NOT NULL,
+  relationship_type text NOT NULL DEFAULT 'direct',
+  difficulty integer,
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (concept_id, question_text)
+);
+
+CREATE INDEX IF NOT EXISTS cquiz2_question_variants_concept_idx
+  ON cquiz2_question_variants(concept_id, active);
+
+CREATE TABLE IF NOT EXISTS cquiz2_answer_variants (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  concept_id uuid NOT NULL REFERENCES cquiz2_concepts(id) ON DELETE CASCADE,
+  answer_text text NOT NULL,
+  difficulty integer,
+  active boolean NOT NULL DEFAULT true,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (concept_id, answer_text)
+);
+
+CREATE INDEX IF NOT EXISTS cquiz2_answer_variants_concept_idx
+  ON cquiz2_answer_variants(concept_id, active);
+
+CREATE TABLE IF NOT EXISTS cquiz2_valid_matches (
+  question_variant_id uuid NOT NULL REFERENCES cquiz2_question_variants(id) ON DELETE CASCADE,
+  answer_variant_id uuid NOT NULL REFERENCES cquiz2_answer_variants(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (question_variant_id, answer_variant_id)
+);
+
+CREATE INDEX IF NOT EXISTS cquiz2_valid_matches_answer_idx
+  ON cquiz2_valid_matches(answer_variant_id);
+
 CREATE TABLE IF NOT EXISTS cquiz2_attempt_sessions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL REFERENCES cquiz2_users(id) ON DELETE CASCADE,
@@ -128,6 +189,23 @@ CREATE INDEX IF NOT EXISTS cquiz2_attempts_user_date_idx
 CREATE INDEX IF NOT EXISTS cquiz2_attempts_quiz_user_date_idx
   ON cquiz2_attempts(quiz_id, user_id, attempt_date, created_at);
 
+CREATE TABLE IF NOT EXISTS cquiz2_user_concept_state (
+  user_id uuid NOT NULL REFERENCES cquiz2_users(id) ON DELETE CASCADE,
+  quiz_id uuid NOT NULL REFERENCES cquiz2_quizzes(id) ON DELETE CASCADE,
+  concept_id uuid NOT NULL REFERENCES cquiz2_concepts(id) ON DELETE CASCADE,
+  is_correct boolean NOT NULL DEFAULT false,
+  last_attempt_id uuid REFERENCES cquiz2_attempts(id) ON DELETE SET NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (user_id, concept_id)
+);
+
+COMMENT ON TABLE cquiz2_user_concept_state IS
+  'Persistent per-user master correctness list by concept. Variants change across rounds while mastery stays tied to the concept.';
+
+CREATE INDEX IF NOT EXISTS cquiz2_user_concept_state_user_quiz_idx
+  ON cquiz2_user_concept_state(user_id, quiz_id, is_correct);
+
 CREATE TABLE IF NOT EXISTS cquiz2_user_question_state (
   user_id uuid NOT NULL REFERENCES cquiz2_users(id) ON DELETE CASCADE,
   quiz_id uuid NOT NULL REFERENCES cquiz2_quizzes(id) ON DELETE CASCADE,
@@ -148,8 +226,12 @@ CREATE INDEX IF NOT EXISTS cquiz2_user_question_state_user_quiz_idx
 CREATE TABLE IF NOT EXISTS cquiz2_attempt_answers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   attempt_id uuid NOT NULL REFERENCES cquiz2_attempts(id) ON DELETE CASCADE,
-  question_id uuid NOT NULL REFERENCES cquiz2_questions(id) ON DELETE CASCADE,
+  question_id uuid REFERENCES cquiz2_questions(id) ON DELETE CASCADE,
   selected_question_id uuid REFERENCES cquiz2_questions(id) ON DELETE SET NULL,
+  concept_id uuid REFERENCES cquiz2_concepts(id) ON DELETE SET NULL,
+  question_variant_id uuid REFERENCES cquiz2_question_variants(id) ON DELETE SET NULL,
+  answer_variant_id uuid REFERENCES cquiz2_answer_variants(id) ON DELETE SET NULL,
+  selected_answer_variant_id uuid REFERENCES cquiz2_answer_variants(id) ON DELETE SET NULL,
   is_correct boolean NOT NULL,
   checked_by_student boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now()

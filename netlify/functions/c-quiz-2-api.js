@@ -348,11 +348,17 @@ const getQuizRows = async () => {
       t.display_name AS teacher,
       u.name AS unit,
       s.name AS section,
-      COUNT(qq.id)::int AS question_count
+      COALESCE(
+        NULLIF(COUNT(DISTINCT c.id), 0),
+        COUNT(DISTINCT qq.id)
+      )::int AS question_count
     FROM cquiz2_quizzes q
     JOIN cquiz2_teachers t ON t.id = q.teacher_id
     JOIN cquiz2_units u ON u.id = q.unit_id
     JOIN cquiz2_sections s ON s.id = q.section_id
+    LEFT JOIN cquiz2_concepts c
+      ON c.quiz_id = q.id
+     AND c.active = true
     LEFT JOIN cquiz2_questions qq
       ON qq.quiz_id = q.id
      AND qq.active = true
@@ -463,18 +469,219 @@ const handleTeacherDashboard = async (event, headers) => {
   );
 };
 
-const getQuizQuestions = async (quizId) => {
-  const result = await getPool().query(
+const backfillLegacyConceptsForQuiz = async (quizId) => {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `
+        INSERT INTO cquiz2_concepts (
+          quiz_id,
+          concept_key,
+          concept_name,
+          position,
+          active,
+          created_at,
+          updated_at
+        )
+        SELECT
+          q.quiz_id,
+          'legacy-' || q.position::text,
+          left(q.prompt, 160),
+          q.position,
+          q.active,
+          q.created_at,
+          q.updated_at
+        FROM cquiz2_questions q
+        WHERE q.quiz_id = $1
+        ON CONFLICT (quiz_id, concept_key)
+        DO UPDATE SET
+          concept_name = EXCLUDED.concept_name,
+          position = EXCLUDED.position,
+          active = EXCLUDED.active,
+          updated_at = now()
+      `,
+      [quizId],
+    );
+    await client.query(
+      `
+        INSERT INTO cquiz2_question_variants (
+          concept_id,
+          question_text,
+          relationship_type,
+          active,
+          created_at,
+          updated_at
+        )
+        SELECT
+          c.id,
+          q.prompt,
+          'direct',
+          q.active,
+          q.created_at,
+          q.updated_at
+        FROM cquiz2_questions q
+        JOIN cquiz2_concepts c
+          ON c.quiz_id = q.quiz_id
+         AND c.concept_key = 'legacy-' || q.position::text
+        WHERE q.quiz_id = $1
+        ON CONFLICT (concept_id, question_text)
+        DO UPDATE SET
+          active = EXCLUDED.active,
+          updated_at = now()
+      `,
+      [quizId],
+    );
+    await client.query(
+      `
+        INSERT INTO cquiz2_answer_variants (
+          concept_id,
+          answer_text,
+          active,
+          created_at,
+          updated_at
+        )
+        SELECT
+          c.id,
+          q.answer,
+          q.active,
+          q.created_at,
+          q.updated_at
+        FROM cquiz2_questions q
+        JOIN cquiz2_concepts c
+          ON c.quiz_id = q.quiz_id
+         AND c.concept_key = 'legacy-' || q.position::text
+        WHERE q.quiz_id = $1
+        ON CONFLICT (concept_id, answer_text)
+        DO UPDATE SET
+          active = EXCLUDED.active,
+          updated_at = now()
+      `,
+      [quizId],
+    );
+    await client.query(
+      `
+        INSERT INTO cquiz2_valid_matches (question_variant_id, answer_variant_id)
+        SELECT qv.id, av.id
+        FROM cquiz2_questions q
+        JOIN cquiz2_concepts c
+          ON c.quiz_id = q.quiz_id
+         AND c.concept_key = 'legacy-' || q.position::text
+        JOIN cquiz2_question_variants qv
+          ON qv.concept_id = c.id
+         AND qv.question_text = q.prompt
+        JOIN cquiz2_answer_variants av
+          ON av.concept_id = c.id
+         AND av.answer_text = q.answer
+        WHERE q.quiz_id = $1
+        ON CONFLICT (question_variant_id, answer_variant_id)
+        DO NOTHING
+      `,
+      [quizId],
+    );
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+const getQuizConcepts = async (quizId, { allowBackfill = true } = {}) => {
+  const conceptResult = await getPool().query(
     `
-      SELECT id, prompt, answer
-      FROM cquiz2_questions
+      SELECT id, concept_key, concept_name, position, confusability_group
+      FROM cquiz2_concepts
       WHERE quiz_id = $1
         AND active = true
       ORDER BY position, id
     `,
     [quizId],
   );
-  return result.rows;
+
+  if (!conceptResult.rows.length && allowBackfill) {
+    await backfillLegacyConceptsForQuiz(quizId);
+    return getQuizConcepts(quizId, { allowBackfill: false });
+  }
+
+  const concepts = conceptResult.rows.map((row) => ({
+    id: row.id,
+    conceptKey: row.concept_key,
+    conceptName: row.concept_name,
+    position: Number(row.position),
+    confusabilityGroup: row.confusability_group,
+    questionVariants: [],
+    answerVariants: [],
+  }));
+
+  if (!concepts.length) return [];
+
+  const conceptIds = concepts.map((concept) => concept.id);
+  const [questionResult, answerResult] = await Promise.all([
+    getPool().query(
+      `
+        SELECT id, concept_id, question_text, relationship_type
+        FROM cquiz2_question_variants
+        WHERE concept_id = ANY($1::uuid[])
+          AND active = true
+        ORDER BY concept_id, id
+      `,
+      [conceptIds],
+    ),
+    getPool().query(
+      `
+        SELECT id, concept_id, answer_text
+        FROM cquiz2_answer_variants
+        WHERE concept_id = ANY($1::uuid[])
+          AND active = true
+        ORDER BY concept_id, id
+      `,
+      [conceptIds],
+    ),
+  ]);
+
+  const conceptById = new Map(concepts.map((concept) => [concept.id, concept]));
+  const questionById = new Map();
+  for (const row of questionResult.rows) {
+    const questionVariant = {
+      id: row.id,
+      text: row.question_text,
+      relationshipType: row.relationship_type,
+      validAnswerIds: [],
+    };
+    questionById.set(row.id, questionVariant);
+    conceptById.get(row.concept_id)?.questionVariants.push(questionVariant);
+  }
+
+  for (const row of answerResult.rows) {
+    conceptById.get(row.concept_id)?.answerVariants.push({
+      id: row.id,
+      text: row.answer_text,
+    });
+  }
+
+  if (questionById.size) {
+    const matchResult = await getPool().query(
+      `
+        SELECT vm.question_variant_id, vm.answer_variant_id
+        FROM cquiz2_valid_matches vm
+        JOIN cquiz2_answer_variants av ON av.id = vm.answer_variant_id
+        WHERE vm.question_variant_id = ANY($1::uuid[])
+          AND av.active = true
+      `,
+      [Array.from(questionById.keys())],
+    );
+    for (const row of matchResult.rows) {
+      questionById
+        .get(row.question_variant_id)
+        ?.validAnswerIds.push(row.answer_variant_id);
+    }
+  }
+
+  return concepts.filter(
+    (concept) => concept.questionVariants.length && concept.answerVariants.length,
+  );
 };
 
 const getQuizMeta = async (quizId) => {
@@ -524,11 +731,11 @@ const countAttemptsToday = async (userId, quizId, today) => {
   return Number(result.rows[0]?.count || 0);
 };
 
-const getPersistedQuestionState = async (userId, quizId) => {
+const getPersistedConceptState = async (userId, quizId) => {
   const result = await getPool().query(
     `
-      SELECT question_id, is_correct
-      FROM cquiz2_user_question_state
+      SELECT concept_id, is_correct
+      FROM cquiz2_user_concept_state
       WHERE user_id = $1
         AND quiz_id = $2
     `,
@@ -536,7 +743,7 @@ const getPersistedQuestionState = async (userId, quizId) => {
   );
 
   return Object.fromEntries(
-    result.rows.map((row) => [row.question_id, row.is_correct]),
+    result.rows.map((row) => [row.concept_id, row.is_correct]),
   );
 };
 
@@ -589,48 +796,66 @@ const ensureAttemptSession = async ({
   return inserted.rows[0];
 };
 
-const createRound = (questions, questionState) => {
-  const normalizedState = { ...questionState };
-  for (const question of questions) {
-    if (normalizedState[question.id] == null) normalizedState[question.id] = false;
+const chooseOne = (items) => shuffle(items)[0];
+
+const getCompatibleAnswerVariants = (concept, questionVariant) => {
+  if (!questionVariant.validAnswerIds.length) return concept.answerVariants;
+  const compatible = concept.answerVariants.filter((answerVariant) =>
+    questionVariant.validAnswerIds.includes(answerVariant.id),
+  );
+  return compatible.length ? compatible : concept.answerVariants;
+};
+
+const createRound = (concepts, conceptState) => {
+  const normalizedState = { ...conceptState };
+  for (const concept of concepts) {
+    if (normalizedState[concept.id] == null) normalizedState[concept.id] = false;
   }
 
-  const incorrect = questions.filter((question) => !normalizedState[question.id]);
-  const correct = questions.filter((question) => normalizedState[question.id]);
-  const targetCount = Math.min(QUESTION_WINDOW_SIZE, questions.length);
-  const basePool = incorrect.length ? incorrect : questions;
+  const incorrect = concepts.filter((concept) => !normalizedState[concept.id]);
+  const correct = concepts.filter((concept) => normalizedState[concept.id]);
+  const targetCount = Math.min(QUESTION_WINDOW_SIZE, concepts.length);
+  const basePool = incorrect.length ? incorrect : concepts;
   const remainingSlots = Math.max(0, targetCount - basePool.length);
   const sampledCorrect = shuffle(correct).slice(0, remainingSlots);
-  const selectedQuestions = shuffle([...basePool, ...sampledCorrect]).slice(
+  const selectedConcepts = shuffle([...basePool, ...sampledCorrect]).slice(
     0,
     targetCount,
   );
-  const selectedAnswers = shuffle(selectedQuestions);
+  const selectedPairs = selectedConcepts.map((concept) => {
+    const questionVariant = chooseOne(concept.questionVariants);
+    const answerVariant = chooseOne(
+      getCompatibleAnswerVariants(concept, questionVariant),
+    );
+    return { concept, questionVariant, answerVariant };
+  });
+  const selectedAnswers = shuffle(selectedPairs);
 
   const questionPublicIds = new Map(
-    selectedQuestions.map((question) => [question.id, randomToken(12)]),
+    selectedPairs.map((pair) => [pair.concept.id, randomToken(12)]),
   );
   const answerPublicIds = new Map(
-    selectedAnswers.map((question) => [question.id, randomToken(12)]),
+    selectedAnswers.map((pair) => [pair.answerVariant.id, randomToken(12)]),
   );
 
-  const roundPayload = selectedQuestions.map((question) => ({
-    questionPublicId: questionPublicIds.get(question.id),
-    questionId: question.id,
-    answerPublicId: answerPublicIds.get(question.id),
-    answerQuestionId: question.id,
+  const roundPayload = selectedPairs.map((pair) => ({
+    questionPublicId: questionPublicIds.get(pair.concept.id),
+    conceptId: pair.concept.id,
+    questionVariantId: pair.questionVariant.id,
+    answerVariantId: pair.answerVariant.id,
+    answerPublicId: answerPublicIds.get(pair.answerVariant.id),
   }));
 
   return {
     normalizedState,
     roundPayload,
-    clientQuestions: selectedQuestions.map((question) => ({
-      id: questionPublicIds.get(question.id),
-      text: question.prompt,
+    clientQuestions: selectedPairs.map((pair) => ({
+      id: questionPublicIds.get(pair.concept.id),
+      text: pair.questionVariant.text,
     })),
-    clientAnswers: selectedAnswers.map((question) => ({
-      id: answerPublicIds.get(question.id),
-      text: question.answer,
+    clientAnswers: selectedAnswers.map((pair) => ({
+      id: answerPublicIds.get(pair.answerVariant.id),
+      text: pair.answerVariant.text,
     })),
   };
 };
@@ -642,18 +867,18 @@ const handleStartRound = async (event, headers) => {
   const quizId = String(body.quizId || "");
   if (!quizId) return json(400, { error: "Missing quiz id." }, headers);
 
-  const [quiz, questions] = await Promise.all([
+  const [quiz, concepts] = await Promise.all([
     getQuizMeta(quizId),
-    getQuizQuestions(quizId),
+    getQuizConcepts(quizId),
   ]);
 
   if (!quiz) return json(404, { error: "Quiz not found." }, headers);
-  if (!questions.length) {
-    return json(400, { error: "This quiz has no active questions." }, headers);
+  if (!concepts.length) {
+    return json(400, { error: "This quiz has no active concepts." }, headers);
   }
 
   const today = getTodayKey();
-  const maxToday = maxAttemptsPerDay(questions.length);
+  const maxToday = maxAttemptsPerDay(concepts.length);
   const attemptsToday = await countAttemptsToday(session.user.id, quizId, today);
   if (attemptsToday >= maxToday) {
     return json(
@@ -672,7 +897,7 @@ const handleStartRound = async (event, headers) => {
     : "";
   const initialQuestionState = attemptSessionId
     ? {}
-    : await getPersistedQuestionState(session.user.id, quizId);
+    : await getPersistedConceptState(session.user.id, quizId);
 
   const attemptSession = await ensureAttemptSession({
     userId: session.user.id,
@@ -681,7 +906,7 @@ const handleStartRound = async (event, headers) => {
     initialQuestionState,
   });
 
-  const round = createRound(questions, attemptSession.question_state || {});
+  const round = createRound(concepts, attemptSession.question_state || {});
   const updated = await getPool().query(
     `
       UPDATE cquiz2_attempt_sessions
@@ -710,7 +935,7 @@ const handleStartRound = async (event, headers) => {
       questions: round.clientQuestions,
       answers: round.clientAnswers,
       questionWindowSize: QUESTION_WINDOW_SIZE,
-      totalQuestions: questions.length,
+      totalQuestions: concepts.length,
       attemptsToday,
       maxAttemptsPerDay: maxToday,
       attemptsRemainingToday: Math.max(0, maxToday - attemptsToday),
@@ -750,10 +975,10 @@ const handleSubmitRound = async (event, headers) => {
     return json(409, { error: "This round was already submitted." }, headers);
   }
 
-  const questions = await getQuizQuestions(attemptSession.quiz_id);
+  const concepts = await getQuizConcepts(attemptSession.quiz_id);
   const quiz = await getQuizMeta(attemptSession.quiz_id);
   const today = getTodayKey();
-  const maxToday = maxAttemptsPerDay(questions.length);
+  const maxToday = maxAttemptsPerDay(concepts.length);
   const attemptsToday = await countAttemptsToday(
     session.user.id,
     attemptSession.quiz_id,
@@ -779,7 +1004,7 @@ const handleSubmitRound = async (event, headers) => {
     pairs.map((pair) => [String(pair.questionId || ""), String(pair.answerId || "")]),
   );
 
-  const questionState = { ...(attemptSession.question_state || {}) };
+  const conceptState = { ...(attemptSession.question_state || {}) };
   const answerRows = [];
 
   for (const roundItem of roundPayload) {
@@ -787,13 +1012,14 @@ const handleSubmitRound = async (event, headers) => {
       roundItem.questionPublicId,
     );
     const answerItem = answerByPublicId.get(submittedAnswerPublicId);
-    const isCorrect =
-      !!answerItem && answerItem.answerQuestionId === roundItem.questionId;
+    const isCorrect = !!answerItem && answerItem.conceptId === roundItem.conceptId;
 
-    questionState[roundItem.questionId] = isCorrect;
+    conceptState[roundItem.conceptId] = isCorrect;
     answerRows.push({
-      questionId: roundItem.questionId,
-      selectedQuestionId: answerItem?.answerQuestionId || null,
+      conceptId: roundItem.conceptId,
+      questionVariantId: roundItem.questionVariantId,
+      answerVariantId: roundItem.answerVariantId,
+      selectedAnswerVariantId: answerItem?.answerVariantId || null,
       isCorrect,
       checked: !!pairs.find(
         (pair) => String(pair.questionId || "") === roundItem.questionPublicId,
@@ -801,8 +1027,8 @@ const handleSubmitRound = async (event, headers) => {
     });
   }
 
-  const totalCount = questions.length;
-  const correctCount = questions.filter((question) => questionState[question.id])
+  const totalCount = concepts.length;
+  const correctCount = concepts.filter((concept) => conceptState[concept.id])
     .length;
   const score = Math.round((correctCount / Math.max(1, totalCount)) * 100);
 
@@ -841,17 +1067,21 @@ const handleSubmitRound = async (event, headers) => {
         `
           INSERT INTO cquiz2_attempt_answers (
             attempt_id,
-            question_id,
-            selected_question_id,
+            concept_id,
+            question_variant_id,
+            answer_variant_id,
+            selected_answer_variant_id,
             is_correct,
             checked_by_student
           )
-          VALUES ($1, $2, $3, $4, $5)
+          VALUES ($1, $2, $3, $4, $5, $6, $7)
         `,
         [
           attemptId,
-          answer.questionId,
-          answer.selectedQuestionId,
+          answer.conceptId,
+          answer.questionVariantId,
+          answer.answerVariantId,
+          answer.selectedAnswerVariantId,
           answer.isCorrect,
           answer.checked,
         ],
@@ -859,15 +1089,15 @@ const handleSubmitRound = async (event, headers) => {
 
       await client.query(
         `
-          INSERT INTO cquiz2_user_question_state (
+          INSERT INTO cquiz2_user_concept_state (
             user_id,
             quiz_id,
-            question_id,
+            concept_id,
             is_correct,
             last_attempt_id
           )
           VALUES ($1, $2, $3, $4, $5)
-          ON CONFLICT (user_id, question_id)
+          ON CONFLICT (user_id, concept_id)
           DO UPDATE SET
             quiz_id = EXCLUDED.quiz_id,
             is_correct = EXCLUDED.is_correct,
@@ -877,7 +1107,7 @@ const handleSubmitRound = async (event, headers) => {
         [
           session.user.id,
           attemptSession.quiz_id,
-          answer.questionId,
+          answer.conceptId,
           answer.isCorrect,
           attemptId,
         ],
@@ -893,7 +1123,7 @@ const handleSubmitRound = async (event, headers) => {
             updated_at = now()
         WHERE id = $1
       `,
-      [attemptSession.id, JSON.stringify(questionState), ROUND_TTL_SECONDS],
+      [attemptSession.id, JSON.stringify(conceptState), ROUND_TTL_SECONDS],
     );
 
     await client.query("COMMIT");
