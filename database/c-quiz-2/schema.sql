@@ -43,6 +43,14 @@ CREATE TABLE IF NOT EXISTS cquiz2_teachers (
 CREATE INDEX IF NOT EXISTS cquiz2_teachers_user_idx
   ON cquiz2_teachers(user_id);
 
+CREATE TABLE IF NOT EXISTS cquiz2_user_settings (
+  user_id uuid PRIMARY KEY REFERENCES cquiz2_users(id) ON DELETE CASCADE,
+  dark_theme boolean NOT NULL DEFAULT false,
+  teacher_grade_levels integer[] NOT NULL DEFAULT '{}'::integer[],
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS cquiz2_units (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   teacher_id uuid NOT NULL REFERENCES cquiz2_teachers(id) ON DELETE CASCADE,
@@ -179,6 +187,7 @@ CREATE TABLE IF NOT EXISTS cquiz2_attempts (
   correct_count integer NOT NULL CHECK (correct_count >= 0),
   total_count integer NOT NULL CHECK (total_count > 0),
   attempt_date date NOT NULL,
+  check_eligible boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
