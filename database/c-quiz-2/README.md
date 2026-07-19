@@ -5,7 +5,20 @@ Run these against the Postgres database on your server:
 ```sql
 \i database/c-quiz-2/schema.sql
 \i database/c-quiz-2/seed-sample.sql
+\i database/c-quiz-2/seed-five-more-quizzes.sql
+\i database/c-quiz-2/seed-digital-citizenship-concepts.sql
 ```
+
+For an existing database created before the concept-variant question bank,
+run `database/c-quiz-2/migration-concept-variant-bank.sql` before loading
+`seed-digital-citizenship-concepts.sql`.
+
+For an existing database created before teacher settings/dark theme support,
+run `database/c-quiz-2/migration-user-settings.sql`.
+
+The digital citizenship seed is test data. Rerunning it labels each active
+question and answer variant with its concept and variant number, then disables
+older unlabeled variants for that quiz.
 
 Netlify environment variables needed by the backend:
 

@@ -31,6 +31,7 @@ const toAttemptDto = (row) => ({
   totalCount: Number(row.total_count),
   attemptDate: dateValueToKey(row.attempt_date),
   createdAt: row.created_at,
+  checkEligible: row.check_eligible !== false,
 });
 
 const toTeacherAttemptDto = (row) => ({
@@ -40,6 +41,7 @@ const toTeacherAttemptDto = (row) => ({
   totalCount: Number(row.total_count),
   attemptDate: dateValueToKey(row.attempt_date),
   createdAt: row.created_at,
+  checkEligible: row.check_eligible !== false,
 });
 
 const buildQuizSummaries = (quizzes, attempts, today) => {
@@ -52,7 +54,10 @@ const buildQuizSummaries = (quizzes, attempts, today) => {
 
   return quizzes.map((quiz) => {
     const quizAttempts = (attemptsByQuiz.get(quiz.id) || []).map(toAttemptDto);
-    const streakInput = quizAttempts.map((attempt) => ({
+    const checkEligibleAttempts = quizAttempts.filter(
+      (attempt) => attempt.checkEligible,
+    );
+    const streakInput = checkEligibleAttempts.map((attempt) => ({
       score: attempt.score,
       attempt_date: attempt.attemptDate,
     }));
@@ -93,14 +98,102 @@ const buildQuizSummaries = (quizzes, attempts, today) => {
 
 const isTeacherRole = (user) => user?.role === "teacher" || user?.role === "admin";
 
-const requireTeacherSession = async (event) => {
-  const session = await requireSession(event);
+const requireTeacherSession = async (event, options = {}) => {
+  const session = await requireSession(event, options);
   if (!isTeacherRole(session.user)) {
     const err = new Error("Teacher access required.");
     err.statusCode = 403;
     throw err;
   }
   return session;
+};
+
+const cleanText = (value, maxLength = 500) =>
+  String(value || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, maxLength);
+
+const slugify = (value, fallback = "concept") => {
+  const slug = String(value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/_/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 64);
+  return slug || fallback;
+};
+
+const normalizeGradeLevels = (value) =>
+  Array.from(
+    new Set(
+      (Array.isArray(value) ? value : [])
+        .map((grade) => Number.parseInt(String(grade), 10))
+        .filter((grade) => Number.isInteger(grade) && grade >= 0 && grade <= 12),
+    ),
+  ).sort((left, right) => left - right);
+
+const getUserSettings = async (userId) => {
+  const result = await getPool().query(
+    `
+      INSERT INTO cquiz2_user_settings (user_id)
+      VALUES ($1)
+      ON CONFLICT (user_id)
+      DO UPDATE SET user_id = EXCLUDED.user_id
+      RETURNING dark_theme, teacher_grade_levels
+    `,
+    [userId],
+  );
+  const row = result.rows[0] || {};
+  return {
+    darkTheme: row.dark_theme === true,
+    teacherGradeLevels: normalizeGradeLevels(row.teacher_grade_levels || []),
+  };
+};
+
+const getLinkedTeacher = async (client, userId) => {
+  const result = await client.query(
+    `
+      SELECT id, display_name
+      FROM cquiz2_teachers
+      WHERE user_id = $1
+      ORDER BY created_at ASC
+      LIMIT 1
+    `,
+    [userId],
+  );
+  return result.rows[0] || null;
+};
+
+const getOrCreateTeacherForSession = async (client, session, displayName) => {
+  const linked = await getLinkedTeacher(client, session.user.id);
+  if (linked) return linked;
+
+  const safeDisplayName =
+    cleanText(displayName, 80) || `Teacher ${session.user.anonId}`;
+  const result = await client.query(
+    `
+      INSERT INTO cquiz2_teachers (display_name, user_id)
+      VALUES ($1, $2)
+      ON CONFLICT (display_name)
+      DO UPDATE SET user_id = COALESCE(cquiz2_teachers.user_id, EXCLUDED.user_id)
+      WHERE cquiz2_teachers.user_id IS NULL
+         OR cquiz2_teachers.user_id = EXCLUDED.user_id
+      RETURNING id, display_name
+    `,
+    [safeDisplayName, session.user.id],
+  );
+
+  const teacher = result.rows[0];
+  if (!teacher) {
+    const err = new Error("That teacher display name is already in use.");
+    err.statusCode = 409;
+    throw err;
+  }
+  return teacher;
 };
 
 const toTeacherQuizMeta = (row) => ({
@@ -114,7 +207,10 @@ const toTeacherQuizMeta = (row) => ({
 });
 
 const getStatusMetrics = (attempts, today) => {
-  const streakInput = attempts.map((attempt) => ({
+  const checkEligibleAttempts = attempts.filter(
+    (attempt) => attempt.checkEligible !== false,
+  );
+  const streakInput = checkEligibleAttempts.map((attempt) => ({
     score: attempt.score,
     attempt_date: attempt.attemptDate,
   }));
@@ -143,6 +239,7 @@ const getHighestAggregateChecks = (studentQuizzes, today) => {
   const dates = new Set([today]);
   for (const studentQuiz of studentQuizzes) {
     for (const attempt of studentQuiz.attempts) {
+      if (attempt.checkEligible === false) continue;
       if (attempt.attemptDate <= today) dates.add(attempt.attemptDate);
     }
   }
@@ -151,7 +248,8 @@ const getHighestAggregateChecks = (studentQuizzes, today) => {
   for (const date of Array.from(dates).sort()) {
     const total = studentQuizzes.reduce((sum, studentQuiz) => {
       const attemptsThroughDate = studentQuiz.attempts.filter(
-        (attempt) => attempt.attemptDate <= date,
+        (attempt) =>
+          attempt.checkEligible !== false && attempt.attemptDate <= date,
       );
       if (!attemptsThroughDate.length) return sum;
       const streakInput = attemptsThroughDate.map((attempt) => ({
@@ -207,6 +305,7 @@ const getTeacherAttemptRows = async (session) => {
         a.total_count,
         a.attempt_date,
         a.created_at,
+        a.check_eligible,
         u.anon_id,
         q.quiz_name,
         q.quiz_number,
@@ -379,7 +478,8 @@ const getAttemptsForUser = async (userId) => {
         correct_count,
         total_count,
         attempt_date,
-        created_at
+        created_at,
+        check_eligible
       FROM cquiz2_attempts
       WHERE user_id = $1
       ORDER BY created_at ASC
@@ -467,6 +567,664 @@ const handleTeacherDashboard = async (event, headers) => {
     },
     headers,
   );
+};
+
+const handleTeacherResetQuiz = async (event, headers) => {
+  assertSameOriginWrite(event);
+  if (event.httpMethod !== "POST") {
+    return json(405, { error: "Method not allowed." }, headers);
+  }
+
+  const session = await requireTeacherSession(event, { requireCsrf: true });
+  const body = parseBody(event);
+  const quizId = String(body.quizId || "");
+  if (!quizId) return json(400, { error: "Missing quiz id." }, headers);
+
+  const client = await getPool().connect();
+  const isAdmin = session.user.role === "admin";
+  const teacherParams = isAdmin ? [quizId] : [quizId, session.user.id];
+  const teacherPredicate = isAdmin ? "" : "AND t.user_id = $2";
+
+  try {
+    await client.query("BEGIN");
+
+    const quizCheck = await client.query(
+      `
+        SELECT q.id
+        FROM cquiz2_quizzes q
+        JOIN cquiz2_teachers t ON t.id = q.teacher_id
+        WHERE q.id = $1
+          AND q.active = true
+          ${teacherPredicate}
+      `,
+      teacherParams,
+    );
+
+    if (!quizCheck.rows[0]) {
+      const err = new Error("Quiz not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const affectedUsers = await client.query(
+      `
+        SELECT COUNT(DISTINCT user_id)::int AS count
+        FROM (
+          SELECT user_id FROM cquiz2_attempts WHERE quiz_id = $1
+          UNION
+          SELECT user_id FROM cquiz2_attempt_sessions WHERE quiz_id = $1
+          UNION
+          SELECT user_id FROM cquiz2_user_concept_state WHERE quiz_id = $1
+          UNION
+          SELECT user_id FROM cquiz2_user_question_state WHERE quiz_id = $1
+        ) affected
+      `,
+      [quizId],
+    );
+
+    const attemptAnswers = await client.query(
+      `
+        SELECT COUNT(*)::int AS count
+        FROM cquiz2_attempt_answers aa
+        JOIN cquiz2_attempts a ON a.id = aa.attempt_id
+        WHERE a.quiz_id = $1
+      `,
+      [quizId],
+    );
+
+    const attempts = await client.query(
+      "DELETE FROM cquiz2_attempts WHERE quiz_id = $1",
+      [quizId],
+    );
+    const attemptSessions = await client.query(
+      "DELETE FROM cquiz2_attempt_sessions WHERE quiz_id = $1",
+      [quizId],
+    );
+    const conceptStates = await client.query(
+      "DELETE FROM cquiz2_user_concept_state WHERE quiz_id = $1",
+      [quizId],
+    );
+    const questionStates = await client.query(
+      "DELETE FROM cquiz2_user_question_state WHERE quiz_id = $1",
+      [quizId],
+    );
+
+    await client.query("COMMIT");
+
+    return json(
+      200,
+      {
+        ok: true,
+        quizId,
+        affectedUsers: Number(affectedUsers.rows[0]?.count || 0),
+        attemptsDeleted: attempts.rowCount || 0,
+        attemptAnswersDeleted: Number(attemptAnswers.rows[0]?.count || 0),
+        attemptSessionsDeleted: attemptSessions.rowCount || 0,
+        conceptStatesDeleted: conceptStates.rowCount || 0,
+        questionStatesDeleted: questionStates.rowCount || 0,
+      },
+      headers,
+    );
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+const normalizeQuizDraft = (body) => {
+  const conceptKeyCounts = new Map();
+  const questionTextOwners = new Map();
+  const answerTextOwners = new Map();
+  const concepts = (Array.isArray(body.concepts) ? body.concepts : []).map(
+    (concept, index) => {
+      const position = Number.parseInt(String(concept.position || index + 1), 10);
+      const conceptName = cleanText(concept.conceptName || concept.concept_name, 160);
+      const conceptKey = slugify(
+        concept.conceptKey || concept.concept_key || conceptName,
+        `concept-${index + 1}`,
+      );
+      const confusabilityGroup = cleanText(
+        concept.confusabilityGroup || concept.confusability_group || "general",
+        120,
+      );
+      const questionVariants = Array.from(
+        new Set(
+          (Array.isArray(concept.questionVariants)
+            ? concept.questionVariants
+            : concept.question_variants || []
+          )
+            .map((variant) => cleanText(variant, 800))
+            .filter(Boolean),
+        ),
+      );
+      const answerVariants = Array.from(
+        new Set(
+          (Array.isArray(concept.answerVariants)
+            ? concept.answerVariants
+            : concept.answer_variants || []
+          )
+            .map((variant) => cleanText(variant, 800))
+            .filter(Boolean),
+        ),
+      );
+
+      conceptKeyCounts.set(conceptKey, (conceptKeyCounts.get(conceptKey) || 0) + 1);
+      questionVariants.forEach((text) => {
+        const key = text.toLowerCase();
+        questionTextOwners.set(key, [
+          ...(questionTextOwners.get(key) || []),
+          conceptKey,
+        ]);
+      });
+      answerVariants.forEach((text) => {
+        const key = text.toLowerCase();
+        answerTextOwners.set(key, [
+          ...(answerTextOwners.get(key) || []),
+          conceptKey,
+        ]);
+      });
+
+      return {
+        position: Number.isInteger(position) && position > 0 ? position : index + 1,
+        conceptKey,
+        conceptName,
+        confusabilityGroup,
+        questionVariants,
+        answerVariants,
+      };
+    },
+  );
+
+  const quizNumber = Number.parseInt(String(body.quizNumber || body.quiz_number), 10);
+  const gradeLevelValue = body.gradeLevel ?? body.grade_level;
+  const gradeLevel =
+    gradeLevelValue === null || gradeLevelValue === ""
+      ? null
+      : Number.parseInt(String(gradeLevelValue), 10);
+  const errors = [];
+  if (!cleanText(body.quizName || body.quiz_name, 160)) errors.push("Quiz name is required.");
+  if (!Number.isInteger(quizNumber)) errors.push("Quiz number is required.");
+  if (gradeLevel !== null && (!Number.isInteger(gradeLevel) || gradeLevel < 0 || gradeLevel > 12)) {
+    errors.push("Grade level must be between 0 and 12.");
+  }
+  if (!cleanText(body.unitName || body.unit_name, 120)) errors.push("Unit is required.");
+  if (!cleanText(body.sectionName || body.section_name, 120)) errors.push("Section is required.");
+  if (!concepts.length) errors.push("At least one concept is required.");
+
+  for (const concept of concepts) {
+    if (!concept.conceptName) {
+      errors.push(`Concept ${concept.position} needs a name.`);
+    }
+    if (!concept.questionVariants.length) {
+      errors.push(`${concept.conceptName || concept.conceptKey} needs at least one question variant.`);
+    }
+    if (!concept.answerVariants.length) {
+      errors.push(`${concept.conceptName || concept.conceptKey} needs at least one answer variant.`);
+    }
+  }
+
+  for (const [key, count] of conceptKeyCounts.entries()) {
+    if (count > 1) errors.push(`Concept key "${key}" is used more than once.`);
+  }
+
+  const repeatedQuestions = Array.from(questionTextOwners.entries()).filter(
+    ([, owners]) => new Set(owners).size > 1,
+  );
+  const repeatedAnswers = Array.from(answerTextOwners.entries()).filter(
+    ([, owners]) => new Set(owners).size > 1,
+  );
+  if (repeatedQuestions.length) {
+    errors.push("The same question text appears in more than one concept.");
+  }
+  if (repeatedAnswers.length) {
+    errors.push("The same answer text appears in more than one concept.");
+  }
+
+  if (errors.length) {
+    const err = new Error(errors.join(" "));
+    err.statusCode = 400;
+    throw err;
+  }
+
+  return {
+    quizName: cleanText(body.quizName || body.quiz_name, 160),
+    quizNumber,
+    gradeLevel,
+    unitName: cleanText(body.unitName || body.unit_name, 120),
+    sectionName: cleanText(body.sectionName || body.section_name, 120),
+    teacherDisplayName: cleanText(body.teacherDisplayName || body.teacher_display_name, 80),
+    concepts,
+  };
+};
+
+const getEditableQuizRow = async (client, quizId, session) => {
+  const isAdmin = session.user.role === "admin";
+  const params = isAdmin ? [quizId] : [quizId, session.user.id];
+  const teacherPredicate = isAdmin ? "" : "AND t.user_id = $2";
+  const result = await client.query(
+    `
+      SELECT q.id, q.teacher_id
+      FROM cquiz2_quizzes q
+      JOIN cquiz2_teachers t ON t.id = q.teacher_id
+      WHERE q.id = $1
+        AND q.active = true
+        ${teacherPredicate}
+    `,
+    params,
+  );
+  return result.rows[0] || null;
+};
+
+const loadTeacherQuizDetail = async (quizId, session) => {
+  const client = await getPool().connect();
+  try {
+    const quizRow = await getEditableQuizRow(client, quizId, session);
+    if (!quizRow) return null;
+
+    const metaResult = await client.query(
+      `
+        SELECT
+          q.id,
+          q.quiz_name,
+          q.quiz_number,
+          q.grade_level,
+          t.display_name AS teacher,
+          u.name AS unit,
+          s.name AS section
+        FROM cquiz2_quizzes q
+        JOIN cquiz2_teachers t ON t.id = q.teacher_id
+        JOIN cquiz2_units u ON u.id = q.unit_id
+        JOIN cquiz2_sections s ON s.id = q.section_id
+        WHERE q.id = $1
+      `,
+      [quizId],
+    );
+    const conceptResult = await client.query(
+      `
+        SELECT id, concept_key, concept_name, position, confusability_group
+        FROM cquiz2_concepts
+        WHERE quiz_id = $1
+          AND active = true
+        ORDER BY position, concept_name
+      `,
+      [quizId],
+    );
+    const conceptIds = conceptResult.rows.map((row) => row.id);
+    const [questionResult, answerResult] = conceptIds.length
+      ? await Promise.all([
+          client.query(
+            `
+              SELECT concept_id, question_text, difficulty
+              FROM cquiz2_question_variants
+              WHERE concept_id = ANY($1::uuid[])
+                AND active = true
+              ORDER BY concept_id, difficulty, id
+            `,
+            [conceptIds],
+          ),
+          client.query(
+            `
+              SELECT concept_id, answer_text, difficulty
+              FROM cquiz2_answer_variants
+              WHERE concept_id = ANY($1::uuid[])
+                AND active = true
+              ORDER BY concept_id, difficulty, id
+            `,
+            [conceptIds],
+          ),
+        ])
+      : [{ rows: [] }, { rows: [] }];
+
+    const questionsByConcept = new Map();
+    const answersByConcept = new Map();
+    questionResult.rows.forEach((row) => {
+      questionsByConcept.set(row.concept_id, [
+        ...(questionsByConcept.get(row.concept_id) || []),
+        row.question_text,
+      ]);
+    });
+    answerResult.rows.forEach((row) => {
+      answersByConcept.set(row.concept_id, [
+        ...(answersByConcept.get(row.concept_id) || []),
+        row.answer_text,
+      ]);
+    });
+
+    const meta = metaResult.rows[0];
+    return {
+      id: meta.id,
+      quizName: meta.quiz_name,
+      quizNumber: Number(meta.quiz_number),
+      gradeLevel: meta.grade_level == null ? null : Number(meta.grade_level),
+      teacher: meta.teacher,
+      unit: meta.unit,
+      section: meta.section,
+      concepts: conceptResult.rows.map((row) => ({
+        position: Number(row.position),
+        conceptKey: row.concept_key,
+        conceptName: row.concept_name,
+        confusabilityGroup: row.confusability_group || "",
+        questionVariants: questionsByConcept.get(row.id) || [],
+        answerVariants: answersByConcept.get(row.id) || [],
+      })),
+    };
+  } finally {
+    client.release();
+  }
+};
+
+const saveQuizDraft = async ({ session, quizId, draft }) => {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+
+    const existingQuiz = quizId ? await getEditableQuizRow(client, quizId, session) : null;
+    if (quizId && !existingQuiz) {
+      const err = new Error("Quiz not found.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const teacher = existingQuiz
+      ? { id: existingQuiz.teacher_id }
+      : await getOrCreateTeacherForSession(
+          client,
+          session,
+          draft.teacherDisplayName,
+        );
+
+    const unitResult = await client.query(
+      `
+        INSERT INTO cquiz2_units (teacher_id, name)
+        VALUES ($1, $2)
+        ON CONFLICT (teacher_id, name)
+        DO UPDATE SET name = EXCLUDED.name
+        RETURNING id
+      `,
+      [teacher.id, draft.unitName],
+    );
+    const unitId = unitResult.rows[0].id;
+    const sectionResult = await client.query(
+      `
+        INSERT INTO cquiz2_sections (unit_id, name)
+        VALUES ($1, $2)
+        ON CONFLICT (unit_id, name)
+        DO UPDATE SET name = EXCLUDED.name
+        RETURNING id
+      `,
+      [unitId, draft.sectionName],
+    );
+    const sectionId = sectionResult.rows[0].id;
+
+    let savedQuizId = quizId;
+    if (savedQuizId) {
+      await client.query(
+        `
+          UPDATE cquiz2_quizzes
+          SET unit_id = $2,
+              section_id = $3,
+              quiz_name = $4,
+              quiz_number = $5,
+              grade_level = $6,
+              active = true,
+              updated_at = now()
+          WHERE id = $1
+        `,
+        [
+          savedQuizId,
+          unitId,
+          sectionId,
+          draft.quizName,
+          draft.quizNumber,
+          draft.gradeLevel,
+        ],
+      );
+    } else {
+      const quizResult = await client.query(
+        `
+          INSERT INTO cquiz2_quizzes (
+            teacher_id,
+            unit_id,
+            section_id,
+            quiz_name,
+            quiz_number,
+            grade_level,
+            active
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, true)
+          ON CONFLICT (teacher_id, unit_id, section_id, quiz_number, quiz_name)
+          DO UPDATE SET
+            grade_level = EXCLUDED.grade_level,
+            active = true,
+            updated_at = now()
+          RETURNING id
+        `,
+        [
+          teacher.id,
+          unitId,
+          sectionId,
+          draft.quizName,
+          draft.quizNumber,
+          draft.gradeLevel,
+        ],
+      );
+      savedQuizId = quizResult.rows[0].id;
+    }
+
+    const conceptKeys = draft.concepts.map((concept) => concept.conceptKey);
+    await client.query(
+      `
+        UPDATE cquiz2_concepts
+        SET active = false,
+            updated_at = now()
+        WHERE quiz_id = $1
+          AND NOT (concept_key = ANY($2::text[]))
+      `,
+      [savedQuizId, conceptKeys],
+    );
+
+    for (const concept of draft.concepts) {
+      const conceptResult = await client.query(
+        `
+          INSERT INTO cquiz2_concepts (
+            quiz_id,
+            concept_key,
+            concept_name,
+            position,
+            confusability_group,
+            active
+          )
+          VALUES ($1, $2, $3, $4, $5, true)
+          ON CONFLICT (quiz_id, concept_key)
+          DO UPDATE SET
+            concept_name = EXCLUDED.concept_name,
+            position = EXCLUDED.position,
+            confusability_group = EXCLUDED.confusability_group,
+            active = true,
+            updated_at = now()
+          RETURNING id
+        `,
+        [
+          savedQuizId,
+          concept.conceptKey,
+          concept.conceptName,
+          concept.position,
+          concept.confusabilityGroup,
+        ],
+      );
+      const conceptId = conceptResult.rows[0].id;
+
+      await client.query(
+        `
+          UPDATE cquiz2_question_variants
+          SET active = false,
+              updated_at = now()
+          WHERE concept_id = $1
+            AND NOT (question_text = ANY($2::text[]))
+        `,
+        [conceptId, concept.questionVariants],
+      );
+      await client.query(
+        `
+          UPDATE cquiz2_answer_variants
+          SET active = false,
+              updated_at = now()
+          WHERE concept_id = $1
+            AND NOT (answer_text = ANY($2::text[]))
+        `,
+        [conceptId, concept.answerVariants],
+      );
+
+      for (let index = 0; index < concept.questionVariants.length; index += 1) {
+        await client.query(
+          `
+            INSERT INTO cquiz2_question_variants (
+              concept_id,
+              question_text,
+              relationship_type,
+              difficulty,
+              active
+            )
+            VALUES ($1, $2, 'direct', $3, true)
+            ON CONFLICT (concept_id, question_text)
+            DO UPDATE SET
+              relationship_type = EXCLUDED.relationship_type,
+              difficulty = EXCLUDED.difficulty,
+              active = true,
+              updated_at = now()
+          `,
+          [conceptId, concept.questionVariants[index], index + 1],
+        );
+      }
+
+      for (let index = 0; index < concept.answerVariants.length; index += 1) {
+        await client.query(
+          `
+            INSERT INTO cquiz2_answer_variants (
+              concept_id,
+              answer_text,
+              difficulty,
+              active
+            )
+            VALUES ($1, $2, $3, true)
+            ON CONFLICT (concept_id, answer_text)
+            DO UPDATE SET
+              difficulty = EXCLUDED.difficulty,
+              active = true,
+              updated_at = now()
+          `,
+          [conceptId, concept.answerVariants[index], index + 1],
+        );
+      }
+
+      await client.query(
+        `
+          DELETE FROM cquiz2_valid_matches vm
+          USING cquiz2_question_variants qv
+          WHERE vm.question_variant_id = qv.id
+            AND qv.concept_id = $1
+        `,
+        [conceptId],
+      );
+      await client.query(
+        `
+          INSERT INTO cquiz2_valid_matches (question_variant_id, answer_variant_id)
+          SELECT qv.id, av.id
+          FROM cquiz2_question_variants qv
+          CROSS JOIN cquiz2_answer_variants av
+          WHERE qv.concept_id = $1
+            AND av.concept_id = $1
+            AND qv.active = true
+            AND av.active = true
+          ON CONFLICT (question_variant_id, answer_variant_id)
+          DO NOTHING
+        `,
+        [conceptId],
+      );
+    }
+
+    await client.query("COMMIT");
+    return savedQuizId;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+};
+
+const handleSettings = async (event, headers) => {
+  const session = await requireSession(event, { requireCsrf: event.httpMethod !== "GET" });
+
+  if (event.httpMethod === "GET") {
+    return json(200, await getUserSettings(session.user.id), headers);
+  }
+
+  if (event.httpMethod !== "POST") {
+    return json(405, { error: "Method not allowed." }, headers);
+  }
+
+  const body = parseBody(event);
+  const darkTheme = body.darkTheme === true;
+  const teacherGradeLevels = isTeacherRole(session.user)
+    ? normalizeGradeLevels(body.teacherGradeLevels)
+    : [];
+  const result = await getPool().query(
+    `
+      INSERT INTO cquiz2_user_settings (
+        user_id,
+        dark_theme,
+        teacher_grade_levels
+      )
+      VALUES ($1, $2, $3::int[])
+      ON CONFLICT (user_id)
+      DO UPDATE SET
+        dark_theme = EXCLUDED.dark_theme,
+        teacher_grade_levels = EXCLUDED.teacher_grade_levels,
+        updated_at = now()
+      RETURNING dark_theme, teacher_grade_levels
+    `,
+    [session.user.id, darkTheme, teacherGradeLevels],
+  );
+  const row = result.rows[0];
+  return json(
+    200,
+    {
+      darkTheme: row.dark_theme === true,
+      teacherGradeLevels: normalizeGradeLevels(row.teacher_grade_levels || []),
+    },
+    headers,
+  );
+};
+
+const handleTeacherQuizDetail = async (event, headers) => {
+  const session = await requireTeacherSession(event, {
+    requireCsrf: event.httpMethod !== "GET",
+  });
+  const body = parseBody(event);
+  const quizId = String(body.quizId || event.queryStringParameters?.quizId || "");
+  if (!quizId) return json(400, { error: "Missing quiz id." }, headers);
+
+  const detail = await loadTeacherQuizDetail(quizId, session);
+  if (!detail) return json(404, { error: "Quiz not found." }, headers);
+  return json(200, detail, headers);
+};
+
+const handleTeacherSaveQuiz = async (event, headers) => {
+  assertSameOriginWrite(event);
+  if (event.httpMethod !== "POST") {
+    return json(405, { error: "Method not allowed." }, headers);
+  }
+
+  const session = await requireTeacherSession(event, { requireCsrf: true });
+  const body = parseBody(event);
+  const quizId = body.quizId ? String(body.quizId) : "";
+  const draft = normalizeQuizDraft(body);
+  const savedQuizId = await saveQuizDraft({ session, quizId, draft });
+  const detail = await loadTeacherQuizDetail(savedQuizId, session);
+  return json(200, { ok: true, quizId: savedQuizId, quiz: detail }, headers);
 };
 
 const backfillLegacyConceptsForQuiz = async (quizId) => {
@@ -796,7 +1554,118 @@ const ensureAttemptSession = async ({
   return inserted.rows[0];
 };
 
+const SESSION_STATE_VERSION = 2;
+
 const chooseOne = (items) => shuffle(items)[0];
+
+const uniqueIds = (items) =>
+  Array.from(new Set(items.filter((item) => typeof item === "string" && item)));
+
+const validConceptIds = (concepts) => new Set(concepts.map((concept) => concept.id));
+
+const normalizeConceptState = (concepts, conceptState = {}) =>
+  Object.fromEntries(
+    concepts.map((concept) => [concept.id, conceptState[concept.id] === true]),
+  );
+
+const allConceptsCorrect = (concepts, conceptState) =>
+  concepts.length > 0 && concepts.every((concept) => conceptState[concept.id] === true);
+
+const countSeenConcepts = (concepts, seenConceptIds) => {
+  const validIds = validConceptIds(concepts);
+  return seenConceptIds.filter((id) => validIds.has(id)).length;
+};
+
+const bonusRoundsForWrongCount = (wrongCount) =>
+  Math.ceil(wrongCount / QUESTION_WINDOW_SIZE);
+
+const createInitialSessionState = (concepts, persistedConceptState) => {
+  const conceptState = normalizeConceptState(concepts, persistedConceptState);
+  const initialAllCorrect = allConceptsCorrect(concepts, conceptState);
+  return {
+    version: SESSION_STATE_VERSION,
+    conceptState,
+    initialAllCorrect,
+    bonusEligible: initialAllCorrect,
+    seenConceptIds: [],
+    firstPassWrongConceptIds: [],
+    bonusSeenConceptIds: [],
+    bonusRoundsEarned: 0,
+    bonusRoundsUsed: 0,
+    requiredComplete: false,
+    complete: false,
+  };
+};
+
+const normalizeQuizSessionState = (rawState, concepts, fallbackConceptState = {}) => {
+  const validIds = validConceptIds(concepts);
+  const isStructured =
+    rawState &&
+    rawState.version === SESSION_STATE_VERSION &&
+    rawState.conceptState &&
+    typeof rawState.conceptState === "object";
+  const source = isStructured ? rawState : {};
+  const conceptState = normalizeConceptState(
+    concepts,
+    isStructured ? source.conceptState : rawState || fallbackConceptState,
+  );
+  const seenConceptIds = uniqueIds(source.seenConceptIds || []).filter((id) =>
+    validIds.has(id),
+  );
+  const firstPassWrongConceptIds = uniqueIds(
+    source.firstPassWrongConceptIds || [],
+  ).filter((id) => validIds.has(id));
+  const bonusSeenConceptIds = uniqueIds(source.bonusSeenConceptIds || []).filter((id) =>
+    validIds.has(id),
+  );
+  const initialAllCorrect = Boolean(source.initialAllCorrect) ||
+    (!isStructured && allConceptsCorrect(concepts, conceptState));
+  const bonusEligible = Boolean(source.bonusEligible) || initialAllCorrect;
+  const requiredComplete =
+    Boolean(source.requiredComplete) ||
+    (bonusEligible && countSeenConcepts(concepts, seenConceptIds) >= concepts.length);
+  const bonusRoundsEarned = Math.max(
+    Number(source.bonusRoundsEarned || 0),
+    bonusRoundsForWrongCount(firstPassWrongConceptIds.length),
+  );
+
+  return {
+    version: SESSION_STATE_VERSION,
+    conceptState,
+    initialAllCorrect,
+    bonusEligible,
+    seenConceptIds,
+    firstPassWrongConceptIds,
+    bonusSeenConceptIds,
+    bonusRoundsEarned,
+    bonusRoundsUsed: Math.max(0, Number(source.bonusRoundsUsed || 0)),
+    requiredComplete,
+    complete: Boolean(source.complete),
+  };
+};
+
+const refreshSessionCompletion = (sessionState, concepts, { attemptsUsed, maxToday } = {}) => {
+  const seenCount = countSeenConcepts(concepts, sessionState.seenConceptIds);
+  sessionState.requiredComplete =
+    sessionState.bonusEligible && seenCount >= concepts.length;
+  sessionState.bonusRoundsEarned = bonusRoundsForWrongCount(
+    sessionState.firstPassWrongConceptIds.length,
+  );
+
+  if (sessionState.bonusEligible) {
+    sessionState.complete =
+      sessionState.requiredComplete &&
+      sessionState.bonusRoundsUsed >= sessionState.bonusRoundsEarned;
+  } else {
+    sessionState.complete =
+      typeof attemptsUsed === "number" && attemptsUsed >= maxToday;
+  }
+
+  return sessionState;
+};
+
+const allowedRoundsForSession = (sessionState, maxToday) =>
+  maxToday + Number(sessionState.bonusRoundsEarned || 0);
 
 const getCompatibleAnswerVariants = (concept, questionVariant) => {
   if (!questionVariant.validAnswerIds.length) return concept.answerVariants;
@@ -806,22 +1675,59 @@ const getCompatibleAnswerVariants = (concept, questionVariant) => {
   return compatible.length ? compatible : concept.answerVariants;
 };
 
-const createRound = (concepts, conceptState) => {
-  const normalizedState = { ...conceptState };
-  for (const concept of concepts) {
-    if (normalizedState[concept.id] == null) normalizedState[concept.id] = false;
+const createRound = (concepts, sessionState) => {
+  const targetCount = Math.min(QUESTION_WINDOW_SIZE, concepts.length);
+  let roundMode = "practice";
+  let selectedConcepts = [];
+
+  if (sessionState.bonusEligible && !sessionState.requiredComplete) {
+    roundMode = "required";
+    const seen = new Set(sessionState.seenConceptIds);
+    selectedConcepts = shuffle(concepts.filter((concept) => !seen.has(concept.id))).slice(
+      0,
+      targetCount,
+    );
+  } else if (
+    sessionState.bonusEligible &&
+    sessionState.bonusRoundsUsed < sessionState.bonusRoundsEarned
+  ) {
+    roundMode = "bonus";
+    const bonusSeen = new Set(sessionState.bonusSeenConceptIds);
+    const wrong = shuffle(
+      concepts.filter(
+        (concept) => !sessionState.conceptState[concept.id] && !bonusSeen.has(concept.id),
+      ),
+    ).slice(0, targetCount);
+    const selectedIds = new Set(wrong.map((concept) => concept.id));
+    const correctFill = shuffle(
+      concepts.filter(
+        (concept) => sessionState.conceptState[concept.id] && !selectedIds.has(concept.id),
+      ),
+    ).slice(0, Math.max(0, targetCount - wrong.length));
+    selectedConcepts = [...wrong, ...correctFill];
+
+    if (selectedConcepts.length < targetCount) {
+      const fallbackIds = new Set(selectedConcepts.map((concept) => concept.id));
+      selectedConcepts = [
+        ...selectedConcepts,
+        ...shuffle(concepts.filter((concept) => !fallbackIds.has(concept.id))).slice(
+          0,
+          targetCount - selectedConcepts.length,
+        ),
+      ];
+    }
+  } else {
+    const incorrect = concepts.filter((concept) => !sessionState.conceptState[concept.id]);
+    const correct = concepts.filter((concept) => sessionState.conceptState[concept.id]);
+    const basePool = incorrect.length ? incorrect : concepts;
+    const remainingSlots = Math.max(0, targetCount - basePool.length);
+    const sampledCorrect = shuffle(correct).slice(0, remainingSlots);
+    selectedConcepts = shuffle([...basePool, ...sampledCorrect]).slice(
+      0,
+      targetCount,
+    );
   }
 
-  const incorrect = concepts.filter((concept) => !normalizedState[concept.id]);
-  const correct = concepts.filter((concept) => normalizedState[concept.id]);
-  const targetCount = Math.min(QUESTION_WINDOW_SIZE, concepts.length);
-  const basePool = incorrect.length ? incorrect : concepts;
-  const remainingSlots = Math.max(0, targetCount - basePool.length);
-  const sampledCorrect = shuffle(correct).slice(0, remainingSlots);
-  const selectedConcepts = shuffle([...basePool, ...sampledCorrect]).slice(
-    0,
-    targetCount,
-  );
   const selectedPairs = selectedConcepts.map((concept) => {
     const questionVariant = chooseOne(concept.questionVariants);
     const answerVariant = chooseOne(
@@ -844,10 +1750,15 @@ const createRound = (concepts, conceptState) => {
     questionVariantId: pair.questionVariant.id,
     answerVariantId: pair.answerVariant.id,
     answerPublicId: answerPublicIds.get(pair.answerVariant.id),
+    roundMode,
   }));
 
   return {
-    normalizedState,
+    sessionState,
+    roundMode,
+    isBonusRound: roundMode === "bonus",
+    bonusRoundNumber:
+      roundMode === "bonus" ? sessionState.bonusRoundsUsed + 1 : null,
     roundPayload,
     clientQuestions: selectedPairs.map((pair) => ({
       id: questionPublicIds.get(pair.concept.id),
@@ -880,7 +1791,40 @@ const handleStartRound = async (event, headers) => {
   const today = getTodayKey();
   const maxToday = maxAttemptsPerDay(concepts.length);
   const attemptsToday = await countAttemptsToday(session.user.id, quizId, today);
-  if (attemptsToday >= maxToday) {
+  const attemptSessionId = body.attemptSessionId
+    ? String(body.attemptSessionId)
+    : "";
+  const persistedConceptState = attemptSessionId
+    ? {}
+    : await getPersistedConceptState(session.user.id, quizId);
+  const initialQuestionState = createInitialSessionState(
+    concepts,
+    persistedConceptState,
+  );
+
+  const attemptSession = await ensureAttemptSession({
+    userId: session.user.id,
+    quizId,
+    attemptSessionId,
+    initialQuestionState,
+  });
+
+  const sessionState = refreshSessionCompletion(
+    normalizeQuizSessionState(
+      attemptSession.question_state || {},
+      concepts,
+      initialQuestionState.conceptState,
+    ),
+    concepts,
+    { attemptsUsed: attemptsToday, maxToday },
+  );
+
+  if (sessionState.complete) {
+    return json(409, { error: "This quiz is complete for today." }, headers);
+  }
+
+  const allowedRounds = allowedRoundsForSession(sessionState, maxToday);
+  if (attemptsToday >= allowedRounds) {
     return json(
       429,
       {
@@ -892,21 +1836,7 @@ const handleStartRound = async (event, headers) => {
     );
   }
 
-  const attemptSessionId = body.attemptSessionId
-    ? String(body.attemptSessionId)
-    : "";
-  const initialQuestionState = attemptSessionId
-    ? {}
-    : await getPersistedConceptState(session.user.id, quizId);
-
-  const attemptSession = await ensureAttemptSession({
-    userId: session.user.id,
-    quizId,
-    attemptSessionId,
-    initialQuestionState,
-  });
-
-  const round = createRound(concepts, attemptSession.question_state || {});
+  const round = createRound(concepts, sessionState);
   const updated = await getPool().query(
     `
       UPDATE cquiz2_attempt_sessions
@@ -920,7 +1850,7 @@ const handleStartRound = async (event, headers) => {
     `,
     [
       attemptSession.id,
-      JSON.stringify(round.normalizedState),
+      JSON.stringify(round.sessionState),
       JSON.stringify(round.roundPayload),
       ROUND_TTL_SECONDS,
     ],
@@ -935,10 +1865,17 @@ const handleStartRound = async (event, headers) => {
       questions: round.clientQuestions,
       answers: round.clientAnswers,
       questionWindowSize: QUESTION_WINDOW_SIZE,
-      totalQuestions: concepts.length,
       attemptsToday,
       maxAttemptsPerDay: maxToday,
       attemptsRemainingToday: Math.max(0, maxToday - attemptsToday),
+      bonusRoundsEarned: sessionState.bonusRoundsEarned,
+      bonusRoundsRemaining: Math.max(
+        0,
+        sessionState.bonusRoundsEarned - sessionState.bonusRoundsUsed,
+      ),
+      isBonusRound: round.isBonusRound,
+      bonusRoundNumber: round.bonusRoundNumber,
+      roundMode: round.roundMode,
     },
     headers,
   );
@@ -984,8 +1921,14 @@ const handleSubmitRound = async (event, headers) => {
     attemptSession.quiz_id,
     today,
   );
+  const sessionState = refreshSessionCompletion(
+    normalizeQuizSessionState(attemptSession.question_state || {}, concepts),
+    concepts,
+    { attemptsUsed: attemptsToday, maxToday },
+  );
+  const allowedRounds = allowedRoundsForSession(sessionState, maxToday);
 
-  if (attemptsToday >= maxToday) {
+  if (attemptsToday >= allowedRounds) {
     return json(
       429,
       {
@@ -1004,7 +1947,7 @@ const handleSubmitRound = async (event, headers) => {
     pairs.map((pair) => [String(pair.questionId || ""), String(pair.answerId || "")]),
   );
 
-  const conceptState = { ...(attemptSession.question_state || {}) };
+  const roundMode = roundPayload[0]?.roundMode || "practice";
   const answerRows = [];
 
   for (const roundItem of roundPayload) {
@@ -1014,7 +1957,23 @@ const handleSubmitRound = async (event, headers) => {
     const answerItem = answerByPublicId.get(submittedAnswerPublicId);
     const isCorrect = !!answerItem && answerItem.conceptId === roundItem.conceptId;
 
-    conceptState[roundItem.conceptId] = isCorrect;
+    sessionState.conceptState[roundItem.conceptId] = isCorrect;
+    sessionState.seenConceptIds = uniqueIds([
+      ...sessionState.seenConceptIds,
+      roundItem.conceptId,
+    ]);
+    if (roundMode === "required" && !isCorrect) {
+      sessionState.firstPassWrongConceptIds = uniqueIds([
+        ...sessionState.firstPassWrongConceptIds,
+        roundItem.conceptId,
+      ]);
+    }
+    if (roundMode === "bonus") {
+      sessionState.bonusSeenConceptIds = uniqueIds([
+        ...sessionState.bonusSeenConceptIds,
+        roundItem.conceptId,
+      ]);
+    }
     answerRows.push({
       conceptId: roundItem.conceptId,
       questionVariantId: roundItem.questionVariantId,
@@ -1027,10 +1986,24 @@ const handleSubmitRound = async (event, headers) => {
     });
   }
 
+  if (roundMode === "bonus") {
+    sessionState.bonusRoundsUsed += 1;
+  }
+
+  if (!sessionState.bonusEligible && allConceptsCorrect(concepts, sessionState.conceptState)) {
+    sessionState.bonusEligible = true;
+  }
+
+  refreshSessionCompletion(sessionState, concepts, {
+    attemptsUsed: attemptsToday + 1,
+    maxToday,
+  });
+
   const totalCount = concepts.length;
-  const correctCount = concepts.filter((concept) => conceptState[concept.id])
+  const correctCount = concepts.filter((concept) => sessionState.conceptState[concept.id])
     .length;
   const score = Math.round((correctCount / Math.max(1, totalCount)) * 100);
+  const checkEligible = sessionState.complete;
 
   const client = await getPool().connect();
   let attemptId;
@@ -1045,9 +2018,10 @@ const handleSubmitRound = async (event, headers) => {
           score,
           correct_count,
           total_count,
-          attempt_date
+          attempt_date,
+          check_eligible
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7::date)
+        VALUES ($1, $2, $3, $4, $5, $6, $7::date, $8)
         RETURNING id, created_at
       `,
       [
@@ -1058,6 +2032,7 @@ const handleSubmitRound = async (event, headers) => {
         correctCount,
         totalCount,
         today,
+        checkEligible,
       ],
     );
     attemptId = attemptResult.rows[0].id;
@@ -1123,7 +2098,7 @@ const handleSubmitRound = async (event, headers) => {
             updated_at = now()
         WHERE id = $1
       `,
-      [attemptSession.id, JSON.stringify(conceptState), ROUND_TTL_SECONDS],
+      [attemptSession.id, JSON.stringify(sessionState), ROUND_TTL_SECONDS],
     );
 
     await client.query("COMMIT");
@@ -1140,12 +2115,14 @@ const handleSubmitRound = async (event, headers) => {
       FROM cquiz2_attempts
       WHERE user_id = $1
         AND quiz_id = $2
+        AND check_eligible = true
       ORDER BY created_at ASC
     `,
     [session.user.id, attemptSession.quiz_id],
   );
   const status = computeStreakStatus(allAttempts.rows, today).status;
   const attemptsAfterSubmit = attemptsToday + 1;
+  const allowedRoundsAfterSubmit = allowedRoundsForSession(sessionState, maxToday);
 
   return json(
     200,
@@ -1160,7 +2137,17 @@ const handleSubmitRound = async (event, headers) => {
       attemptsToday: attemptsAfterSubmit,
       maxAttemptsPerDay: maxToday,
       attemptsRemainingToday: Math.max(0, maxToday - attemptsAfterSubmit),
-      canKeepGoing: score < 100 && attemptsAfterSubmit < maxToday,
+      bonusRoundsEarned: sessionState.bonusRoundsEarned,
+      bonusRoundsRemaining: Math.max(
+        0,
+        sessionState.bonusRoundsEarned - sessionState.bonusRoundsUsed,
+      ),
+      isBonusRound: roundMode === "bonus",
+      bonusRoundNumber:
+        roundMode === "bonus" ? Math.max(1, sessionState.bonusRoundsUsed) : null,
+      roundMode,
+      canKeepGoing:
+        !sessionState.complete && attemptsAfterSubmit < allowedRoundsAfterSubmit,
     },
     headers,
   );
@@ -1202,9 +2189,19 @@ exports.handler = async (event) => {
 
   try {
     if (action === "session") return handleSession(event, headers);
+    if (action === "settings") return handleSettings(event, headers);
     if (action === "dashboard") return handleDashboard(event, headers);
     if (action === "teacher-dashboard") {
       return handleTeacherDashboard(event, headers);
+    }
+    if (action === "teacher-reset-quiz") {
+      return handleTeacherResetQuiz(event, headers);
+    }
+    if (action === "teacher-quiz-detail") {
+      return handleTeacherQuizDetail(event, headers);
+    }
+    if (action === "teacher-save-quiz") {
+      return handleTeacherSaveQuiz(event, headers);
     }
     if (action === "start-round") return handleStartRound(event, headers);
     if (action === "submit-round") return handleSubmitRound(event, headers);

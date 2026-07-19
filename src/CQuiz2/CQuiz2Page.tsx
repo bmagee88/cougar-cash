@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Autocomplete,
   Box,
@@ -9,6 +12,8 @@ import {
   CssBaseline,
   Divider,
   FormControl,
+  FormControlLabel,
+  IconButton,
   InputLabel,
   LinearProgress,
   List,
@@ -19,6 +24,7 @@ import {
   Paper,
   Select,
   Stack,
+  Switch,
   Tab,
   Table,
   TableBody,
@@ -36,16 +42,23 @@ import {
   createTheme,
 } from "@mui/material";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BarChartIcon from "@mui/icons-material/BarChart";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import QuizIcon from "@mui/icons-material/Quiz";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import SaveIcon from "@mui/icons-material/Save";
 import SettingsIcon from "@mui/icons-material/Settings";
 import TodayIcon from "@mui/icons-material/Today";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 import {
   DndContext,
   DragEndEvent,
@@ -84,8 +97,13 @@ import {
   SessionResponse,
   SubmitRoundResponse,
   TeacherDashboardResponse,
+  TeacherQuizDetailResponse,
+  TeacherQuizDraft,
   TeacherQuizSummary,
+  TeacherResetQuizResponse,
+  TeacherSaveQuizResponse,
   TeacherStudentSummary,
+  UserSettingsResponse,
 } from "./types";
 
 declare global {
@@ -96,15 +114,17 @@ declare global {
 
 const idleTimeoutMs = 20 * 60 * 1000;
 
-const theme = createTheme({
+const buildTheme = (mode: "light" | "dark") =>
+  createTheme({
   palette: {
+    mode,
     primary: { main: "#0f766e" },
     secondary: { main: "#4338ca" },
     success: { main: "#16803c" },
     warning: { main: "#b77905" },
     background: {
-      default: "#f5f7fb",
-      paper: "#ffffff",
+      default: mode === "dark" ? "#0f172a" : "#f5f7fb",
+      paper: mode === "dark" ? "#111827" : "#ffffff",
     },
   },
   shape: { borderRadius: 8 },
@@ -131,6 +151,8 @@ const theme = createTheme({
     },
   },
 });
+
+const theme = buildTheme("light");
 
 type NavItem = { id: CQuiz2View; label: string; icon: React.ReactNode };
 
@@ -172,6 +194,250 @@ const formatDateTime = (value: string) =>
 const formatDueText = (due: boolean, daysUntilDue: number) => {
   if (due || daysUntilDue <= 0) return "due today";
   return `${daysUntilDue} ${daysUntilDue === 1 ? "day" : "days"} till due`;
+};
+
+const gradeLevelOptions = Array.from({ length: 13 }, (_, index) => index);
+
+const csvPromptText = `I need you to generate a CSV question bank for a quiz system.
+
+The quiz system works like this:
+- A quiz is made of concepts.
+- A concept is one specific idea, fact, definition, skill, or relationship that a student should learn.
+- Each concept has multiple question variants and multiple answer variants.
+- During the quiz, the system shows one question variant and one answer variant for the same concept.
+- Any question variant for a concept must correctly match any answer variant for that same concept.
+- Questions and answers are matched by concept, not exact wording.
+
+Create this quiz:
+Topic: [TOPIC]
+Source/book/program to reference: [SOURCE NAME OR "none"]
+Grade level: [GRADE LEVEL]
+Quiz name: [QUIZ NAME]
+Quiz number: [QUIZ NUMBER]
+Unit: [UNIT]
+Section: [SECTION]
+Teacher display name: [TEACHER DISPLAY NAME]
+Number of concepts: [X]
+Number of question variants per concept: [Y]
+Number of answer variants per concept: [Y]
+
+Fairness and ambiguity rules:
+- Each concept must be clearly different from every other concept.
+- No answer from one concept may reasonably answer a question from another concept.
+- No question from one concept may reasonably accept an answer from another concept.
+- Do not create two answers that could satisfy the same question unless they belong to the same concept.
+- Do not create one answer that could satisfy questions from two different concepts.
+- Avoid broad prompts, opinion questions, trick questions, and questions with multiple reasonable answers.
+- Use grade-level-appropriate language.
+- Make answers specific, concise, and unambiguous.
+- If a source/book/program is named, use it as the content anchor. If you do not know the source well enough, ask me to upload or paste source material before creating the CSV.
+- If I upload an image, extract usable questions, answers, vocabulary, or concepts from it and rewrite unclear material into clean concept-based variants.
+- Before finalizing, compare every question variant against every answer variant from every other concept and revise anything ambiguous.
+
+Return only CSV text, no explanation.
+
+CSV headers must be exactly:
+teacher_display_name,unit_name,section_name,quiz_name,quiz_number,grade_level,concept_position,concept_key,concept_name,confusability_group,variant_type,variant_position,variant_text
+
+CSV rules:
+- Use one row per question variant and one row per answer variant.
+- variant_type must be either question or answer.
+- concept_position starts at 1.
+- variant_position starts at 1 within each concept and variant_type.
+- concept_key must be short kebab-case, unique within the quiz.
+- confusability_group should group related concepts, but concepts still must not be interchangeable.
+- Escape CSV correctly using double quotes around fields that contain commas, quotes, or line breaks.`;
+
+const slugifyClient = (value: string, fallback: string) => {
+  const slug = value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/_/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .slice(0, 64);
+  return slug || fallback;
+};
+
+const emptyConcept = (position: number) => ({
+  position,
+  conceptKey: `concept-${position}`,
+  conceptName: "",
+  confusabilityGroup: "general",
+  questionVariants: [""],
+  answerVariants: [""],
+});
+
+const emptyQuizDraft = (): TeacherQuizDraft => ({
+  quizName: "",
+  quizNumber: "",
+  gradeLevel: null,
+  unitName: "",
+  sectionName: "",
+  sourceName: "",
+  concepts: [emptyConcept(1)],
+});
+
+const draftFromQuizDetail = (detail: TeacherQuizDetailResponse): TeacherQuizDraft => ({
+  quizId: detail.id,
+  quizName: detail.quizName,
+  quizNumber: detail.quizNumber,
+  gradeLevel: detail.gradeLevel,
+  unitName: detail.unit,
+  sectionName: detail.section,
+  sourceName: "",
+  concepts: detail.concepts.length ? detail.concepts : [emptyConcept(1)],
+});
+
+const parseCsv = (text: string) => {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        field += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === "," && !inQuotes) {
+      row.push(field);
+      field = "";
+    } else if ((char === "\n" || char === "\r") && !inQuotes) {
+      if (char === "\r" && next === "\n") index += 1;
+      row.push(field);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+
+  row.push(field);
+  if (row.some((value) => value.trim())) rows.push(row);
+  return rows;
+};
+
+const draftFromCsv = (text: string): TeacherQuizDraft => {
+  const rows = parseCsv(text);
+  if (rows.length < 2) throw new Error("CSV needs a header row and at least one data row.");
+
+  const headers = rows[0].map((header) => header.trim());
+  const requiredHeaders = [
+    "teacher_display_name",
+    "unit_name",
+    "section_name",
+    "quiz_name",
+    "quiz_number",
+    "grade_level",
+    "concept_position",
+    "concept_key",
+    "concept_name",
+    "confusability_group",
+    "variant_type",
+    "variant_position",
+    "variant_text",
+  ];
+  const missing = requiredHeaders.filter((header) => !headers.includes(header));
+  if (missing.length) {
+    throw new Error(`CSV is missing: ${missing.join(", ")}`);
+  }
+
+  const records = rows.slice(1).map((row) =>
+    Object.fromEntries(headers.map((header, index) => [header, row[index] || ""])),
+  );
+  const first = records[0];
+  const conceptMap = new Map<
+    string,
+    TeacherQuizDraft["concepts"][number] & {
+      questionPositions: number[];
+      answerPositions: number[];
+    }
+  >();
+
+  records.forEach((record, recordIndex) => {
+    const conceptPosition = Number.parseInt(record.concept_position, 10);
+    const conceptName = record.concept_name.trim();
+    const conceptKey = slugifyClient(
+      record.concept_key || conceptName,
+      `concept-${Number.isInteger(conceptPosition) ? conceptPosition : recordIndex + 1}`,
+    );
+    if (!conceptMap.has(conceptKey)) {
+      conceptMap.set(conceptKey, {
+        position: Number.isInteger(conceptPosition) ? conceptPosition : conceptMap.size + 1,
+        conceptKey,
+        conceptName,
+        confusabilityGroup: record.confusability_group.trim() || "general",
+        questionVariants: [],
+        answerVariants: [],
+        questionPositions: [],
+        answerPositions: [],
+      });
+    }
+
+    const concept = conceptMap.get(conceptKey);
+    if (!concept) return;
+    const variantText = record.variant_text.trim();
+    if (!variantText) return;
+    const variantPosition = Number.parseInt(record.variant_position, 10) || 999;
+    const variantType = record.variant_type.trim().toLowerCase();
+    if (variantType === "question") {
+      concept.questionVariants.push(variantText);
+      concept.questionPositions.push(variantPosition);
+    } else if (variantType === "answer") {
+      concept.answerVariants.push(variantText);
+      concept.answerPositions.push(variantPosition);
+    }
+  });
+
+  const concepts = Array.from(conceptMap.values())
+    .sort((left, right) => left.position - right.position)
+    .map((concept, index) => {
+      const sortedQuestions = concept.questionVariants
+        .map((text, questionIndex) => ({
+          text,
+          position: concept.questionPositions[questionIndex],
+        }))
+        .sort((left, right) => left.position - right.position)
+        .map((item) => item.text);
+      const sortedAnswers = concept.answerVariants
+        .map((text, answerIndex) => ({
+          text,
+          position: concept.answerPositions[answerIndex],
+        }))
+        .sort((left, right) => left.position - right.position)
+        .map((item) => item.text);
+      return {
+        position: index + 1,
+        conceptKey: concept.conceptKey,
+        conceptName: concept.conceptName,
+        confusabilityGroup: concept.confusabilityGroup,
+        questionVariants: sortedQuestions.length ? sortedQuestions : [""],
+        answerVariants: sortedAnswers.length ? sortedAnswers : [""],
+      };
+    });
+
+  return {
+    teacherDisplayName: first.teacher_display_name?.trim(),
+    unitName: first.unit_name?.trim() || "",
+    sectionName: first.section_name?.trim() || "",
+    quizName: first.quiz_name?.trim() || "",
+    quizNumber: Number.parseInt(first.quiz_number, 10) || "",
+    gradeLevel: Number.isInteger(Number.parseInt(first.grade_level, 10))
+      ? Number.parseInt(first.grade_level, 10)
+      : null,
+    sourceName: "",
+    concepts: concepts.length ? concepts : [emptyConcept(1)],
+  };
 };
 
 const compareText = (left: unknown, right: unknown) =>
@@ -221,6 +487,11 @@ const formatChartDate = (value: string) =>
 
 const totalGreenChecks = (quizzes: QuizSummary[]) =>
   quizzes.reduce((total, quiz) => total + quiz.greenChecks, 0);
+
+const formatDueColumnText = (quiz: Pick<QuizSummary, "due" | "daysUntilDue">) =>
+  quiz.due || quiz.daysUntilDue <= 0
+    ? "Due today"
+    : `${quiz.daysUntilDue} ${quiz.daysUntilDue === 1 ? "day" : "days"}`;
 
 const buildCheckStatusHistory = (quizzes: QuizSummary[], today: string) => {
   const dates = new Set<string>([today]);
@@ -329,7 +600,7 @@ const CheckSymbols: React.FC<{
   count: number;
   color?: "success" | "warning";
   label?: string;
-}> = ({ count, color = "success", label = "total checks" }) => (
+}> = ({ count, color = "success", label = "total complete" }) => (
   <Stack
     direction="row"
     spacing={1}
@@ -412,8 +683,8 @@ const CheckStatusChart: React.FC<{
   title: string;
   data: Array<{ date: string; grey: number; yellow: number; green: number }>;
   dueCount: number;
-  totalChecks: number;
-}> = ({ title, data, dueCount, totalChecks }) => (
+  totalComplete: number;
+}> = ({ title, data, dueCount, totalComplete }) => (
   <Paper elevation={0} sx={{ p: 2, minHeight: 240 }}>
     <Stack direction="row" justifyContent="space-between" alignItems="center">
       <Typography variant="h6">{title}</Typography>
@@ -424,22 +695,30 @@ const CheckStatusChart: React.FC<{
           icon={<CheckCircleIcon />}
           color="success"
           variant="outlined"
-          label={`${totalChecks} total`}
+          label={`${totalComplete} complete`}
         />
       </Stack>
     </Stack>
-    <Box sx={{ height: 170, mt: 1 }}>
+    <Box sx={{ height: 190, mt: 1 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
+        <LineChart data={data} margin={{ top: 8, right: 24, left: 12, bottom: 22 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={formatChartDate} minTickGap={24} />
-          <YAxis allowDecimals={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatChartDate}
+            minTickGap={24}
+            label={{ value: "Date", position: "insideBottom", offset: -12 }}
+          />
+          <YAxis
+            allowDecimals={false}
+            label={{ value: "Amount", angle: -90, position: "insideLeft" }}
+          />
           <RechartsTooltip labelFormatter={(label) => formatChartDate(String(label))} />
           <Legend verticalAlign="top" height={28} />
           <Line
             type="monotone"
             dataKey="grey"
-            name="Not attempted / decline"
+            name="Not Attempted Yet"
             stroke="#64748b"
             strokeWidth={2}
             dot={{ r: 3 }}
@@ -447,7 +726,7 @@ const CheckStatusChart: React.FC<{
           <Line
             type="monotone"
             dataKey="yellow"
-            name="Attempted, not 100%"
+            name="<100"
             stroke="#b77905"
             strokeWidth={2}
             dot={{ r: 3 }}
@@ -455,7 +734,7 @@ const CheckStatusChart: React.FC<{
           <Line
             type="monotone"
             dataKey="green"
-            name="Attempted, 100%"
+            name="100%"
             stroke="#16803c"
             strokeWidth={2}
             dot={{ r: 3 }}
@@ -467,18 +746,15 @@ const CheckStatusChart: React.FC<{
 );
 
 const SummaryBand: React.FC<{
-  dashboard: DashboardResponse;
   filteredQuizzes: QuizSummary[];
-}> = ({ dashboard, filteredQuizzes }) => {
-  const chartData = useMemo(
-    () => buildCheckStatusHistory(dashboard.quizzes, dashboard.today),
-    [dashboard.quizzes, dashboard.today],
-  );
+  title: string;
+  today: string;
+}> = ({ filteredQuizzes, title, today }) => {
   const filteredChartData = useMemo(
-    () => buildCheckStatusHistory(filteredQuizzes, dashboard.today),
-    [dashboard.today, filteredQuizzes],
+    () => buildCheckStatusHistory(filteredQuizzes, today),
+    [filteredQuizzes, today],
   );
-  const filteredTotalChecks = useMemo(
+  const filteredTotalComplete = useMemo(
     () => totalGreenChecks(filteredQuizzes),
     [filteredQuizzes],
   );
@@ -498,16 +774,10 @@ const SummaryBand: React.FC<{
     >
       <Stack spacing={2}>
         <CheckStatusChart
-          title="Total checks"
-          data={chartData}
-          dueCount={dashboard.totals.dueToday}
-          totalChecks={dashboard.totals.greenChecks}
-        />
-        <CheckStatusChart
-          title="Filtered total checks"
+          title={title}
           data={filteredChartData}
           dueCount={filteredDueCount}
-          totalChecks={filteredTotalChecks}
+          totalComplete={filteredTotalComplete}
         />
       </Stack>
 
@@ -524,11 +794,7 @@ const SummaryBand: React.FC<{
         }}
       >
         <Box>
-          <CheckCircleIcon color="success" sx={{ fontSize: 34 }} />
-          <Typography variant="h4" sx={{ fontWeight: 900 }}>
-            {dashboard.totals.greenChecks}
-          </Typography>
-          <Typography color="text.secondary">total checks</Typography>
+          <CheckSymbols count={filteredTotalComplete} label="complete" />
         </Box>
       </Paper>
     </Box>
@@ -542,6 +808,7 @@ type QuizSortKey =
   | "unit"
   | "section"
   | "gradeLevel"
+  | "daysUntilDue"
   | "greenChecks";
 type QuizSortDirection = "asc" | "desc";
 
@@ -557,7 +824,8 @@ const quizTableColumns: Array<{
   { key: "gradeLevel", label: "Grade", width: 120 },
   { key: "unit", label: "Unit", width: 150 },
   { key: "section", label: "Section", width: 150 },
-  { key: "greenChecks", label: "Total checks", align: "right", width: 190 },
+  { key: "daysUntilDue", label: "Due", width: 150 },
+  { key: "greenChecks", label: "Total complete", align: "right", width: 190 },
 ];
 const quizTableGridTemplate = quizTableColumns
   .map((column) => `${column.width}px`)
@@ -646,7 +914,7 @@ const QuizTable: React.FC<{
   quizzes: QuizSummary[];
   onOpenQuiz: (quiz: QuizSummary) => void;
 }> = ({ quizzes, onOpenQuiz }) => {
-  const [sortKey, setSortKey] = useState<QuizSortKey>("quizName");
+  const [sortKey, setSortKey] = useState<QuizSortKey>("daysUntilDue");
   const [sortDirection, setSortDirection] = useState<QuizSortDirection>("asc");
 
   const sortedQuizzes = useMemo(() => {
@@ -656,7 +924,8 @@ const QuizTable: React.FC<{
       if (
         sortKey === "greenChecks" ||
         sortKey === "gradeLevel" ||
-        sortKey === "quizNumber"
+        sortKey === "quizNumber" ||
+        sortKey === "daysUntilDue"
       ) {
         const leftValue = Number(left[sortKey] ?? -1);
         const rightValue = Number(right[sortKey] ?? -1);
@@ -715,30 +984,27 @@ const QuizTable: React.FC<{
             <TableRow key={quiz.id} hover>
               <TableCell>{formatQuizNumber(quiz.quizNumber)}</TableCell>
               <TableCell>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                  {quiz.due && (
-                    <Chip
-                      size="small"
-                      icon={<TodayIcon />}
-                      label="Due"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  )}
-                  <Button
-                    variant="text"
-                    startIcon={<PlayArrowIcon />}
-                    onClick={() => onOpenQuiz(quiz)}
-                    sx={{ justifyContent: "flex-start", px: 0 }}
-                  >
-                    {quiz.quizName}
-                  </Button>
-                </Stack>
+                <Button
+                  variant="text"
+                  startIcon={<PlayArrowIcon />}
+                  onClick={() => onOpenQuiz(quiz)}
+                  sx={{ justifyContent: "flex-start", px: 0 }}
+                >
+                  {quiz.quizName}
+                </Button>
               </TableCell>
               <TableCell>{quiz.teacher}</TableCell>
               <TableCell>{formatGradeLevel(quiz.gradeLevel)}</TableCell>
               <TableCell>{quiz.unit}</TableCell>
               <TableCell>{quiz.section}</TableCell>
+              <TableCell>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  {quiz.due && (
+                    <Chip size="small" icon={<TodayIcon />} label="Due" color="primary" />
+                  )}
+                  <Typography variant="body2">{formatDueColumnText(quiz)}</Typography>
+                </Stack>
+              </TableCell>
               <TableCell align="right">
                 <CheckSymbols count={quiz.greenChecks} />
               </TableCell>
@@ -859,10 +1125,16 @@ const QuizzesView: React.FC<{
       ),
     [dashboard.quizzes, gradeLevel, quizName, quizNumber, section, teacher, unit],
   );
+  const hasNonGradeFilter = Boolean(teacher || unit || section || quizNumber != null || quizName);
+  const graphTitle = hasNonGradeFilter ? "Filtered Complete" : "Total Complete";
 
   return (
     <Box>
-      <SummaryBand dashboard={dashboard} filteredQuizzes={filtered} />
+      <SummaryBand
+        filteredQuizzes={filtered}
+        title={graphTitle}
+        today={dashboard.today}
+      />
 
       <Paper elevation={0} sx={{ mb: 2, overflow: "visible" }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ p: 2, pb: 1 }}>
@@ -964,6 +1236,7 @@ const QuizzesView: React.FC<{
               />
             </Box>
             <Box sx={{ ...quizTableFilterCellSx, display: { xs: "none", lg: "block" } }} />
+            <Box sx={{ ...quizTableFilterCellSx, display: { xs: "none", lg: "block" } }} />
           </Box>
         </Box>
       </Paper>
@@ -1046,11 +1319,11 @@ const ScoresView: React.FC<{ dashboard: DashboardResponse }> = ({ dashboard }) =
                   <XAxis dataKey="period" />
                   <YAxis allowDecimals={false} />
                   <RechartsTooltip />
-                  <Bar dataKey="checks" name="Green checks" fill="#16803c" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="checks" name="Complete" fill="#16803c" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState title="No green checks yet" detail="Scores of 100 will appear here." />
+              <EmptyState title="No complete scores yet" detail="Scores of 100 will appear here." />
             )}
           </Box>
         </Box>
@@ -1097,15 +1370,447 @@ type TeacherQuizSortKey =
   | "highestChecksToDate";
 type TeacherQuizStudentSortKey = "anonId" | "currentChecks" | "maxChecks";
 
-const TeacherCreateView: React.FC = () => (
-  <Paper elevation={0} sx={{ p: 2 }}>
-    <Typography variant="h6">Create</Typography>
-    <Divider sx={{ my: 2 }} />
-    <Typography color="text.secondary">
-      Quiz creation tools will appear here after the teacher authoring flow is connected.
-    </Typography>
-  </Paper>
-);
+const QuizAuthorForm: React.FC<{
+  initialDraft: TeacherQuizDraft;
+  teacherGradeLevels: number[];
+  title: string;
+  submitLabel: string;
+  resetOnSave?: boolean;
+  onSubmit: (draft: TeacherQuizDraft) => Promise<TeacherSaveQuizResponse>;
+}> = ({
+  initialDraft,
+  teacherGradeLevels,
+  title,
+  submitLabel,
+  resetOnSave = false,
+  onSubmit,
+}) => {
+  const [draft, setDraft] = useState<TeacherQuizDraft>(initialDraft);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const promptText = useMemo(
+    () =>
+      csvPromptText.replace(
+        'Source/book/program to reference: [SOURCE NAME OR "none"]',
+        `Source/book/program to reference: ${draft.sourceName?.trim() || '[SOURCE NAME OR "none"]'}`,
+      ),
+    [draft.sourceName],
+  );
+
+  useEffect(() => {
+    setDraft(initialDraft);
+    setError("");
+    setMessage("");
+  }, [initialDraft]);
+
+  const gradeOptions = teacherGradeLevels.length ? teacherGradeLevels : gradeLevelOptions;
+
+  const updateConcept = (
+    index: number,
+    updates: Partial<TeacherQuizDraft["concepts"][number]>,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      concepts: current.concepts.map((concept, conceptIndex) =>
+        conceptIndex === index ? { ...concept, ...updates } : concept,
+      ),
+    }));
+  };
+
+  const updateVariant = (
+    conceptIndex: number,
+    kind: "questionVariants" | "answerVariants",
+    variantIndex: number,
+    value: string,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      concepts: current.concepts.map((concept, index) => {
+        if (index !== conceptIndex) return concept;
+        return {
+          ...concept,
+          [kind]: concept[kind].map((variant, innerIndex) =>
+            innerIndex === variantIndex ? value : variant,
+          ),
+        };
+      }),
+    }));
+  };
+
+  const addVariant = (
+    conceptIndex: number,
+    kind: "questionVariants" | "answerVariants",
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      concepts: current.concepts.map((concept, index) =>
+        index === conceptIndex
+          ? { ...concept, [kind]: [...concept[kind], ""] }
+          : concept,
+      ),
+    }));
+  };
+
+  const removeVariant = (
+    conceptIndex: number,
+    kind: "questionVariants" | "answerVariants",
+    variantIndex: number,
+  ) => {
+    setDraft((current) => ({
+      ...current,
+      concepts: current.concepts.map((concept, index) => {
+        if (index !== conceptIndex) return concept;
+        const nextVariants = concept[kind].filter((_, innerIndex) => innerIndex !== variantIndex);
+        return { ...concept, [kind]: nextVariants.length ? nextVariants : [""] };
+      }),
+    }));
+  };
+
+  const addConcept = () => {
+    setDraft((current) => ({
+      ...current,
+      concepts: [...current.concepts, emptyConcept(current.concepts.length + 1)],
+    }));
+  };
+
+  const removeConcept = (conceptIndex: number) => {
+    setDraft((current) => ({
+      ...current,
+      concepts: current.concepts
+        .filter((_, index) => index !== conceptIndex)
+        .map((concept, index) => ({ ...concept, position: index + 1 })),
+    }));
+  };
+
+  const handleCsvUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const nextDraft = draftFromCsv(String(reader.result || ""));
+        setDraft((current) => ({
+          ...nextDraft,
+          quizId: current.quizId,
+          sourceName: current.sourceName,
+        }));
+        setError("");
+        setMessage(`Loaded ${nextDraft.concepts.length} concepts from ${file.name}.`);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Could not read CSV.");
+      }
+    };
+    reader.onerror = () => setError("Could not read CSV.");
+    reader.readAsText(file);
+  };
+
+  const copyPrompt = async () => {
+    try {
+      await navigator.clipboard.writeText(promptText);
+      setMessage("CSV prompt copied.");
+    } catch {
+      setMessage("CSV prompt is shown in the tooltip.");
+    }
+  };
+
+  const submit = async () => {
+    setSubmitting(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await onSubmit(draft);
+      setMessage(`Saved ${response.quiz.quizName}.`);
+      if (resetOnSave) setDraft(emptyQuizDraft());
+      else setDraft(draftFromQuizDetail(response.quiz));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save quiz.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Stack spacing={2}>
+      <Paper elevation={0} sx={{ p: 2 }}>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={1.5} alignItems={{ md: "center" }}>
+          <Box sx={{ flex: 1 }}>
+            <Typography variant="h6">{title}</Typography>
+            <Typography color="text.secondary">
+              Build concepts manually or upload the CSV format from the prompt helper.
+            </Typography>
+          </Box>
+          <Tooltip
+            arrow
+            placement="bottom-end"
+            title={
+              <Box sx={{ maxWidth: 520, whiteSpace: "pre-wrap", fontSize: 12 }}>
+                {promptText}
+              </Box>
+            }
+          >
+            <Button variant="outlined" startIcon={<HelpOutlineIcon />} onClick={copyPrompt}>
+              CSV prompt
+            </Button>
+          </Tooltip>
+          <Button variant="outlined" component="label" startIcon={<UploadFileIcon />}>
+            Upload CSV
+            <input type="file" accept=".csv,text/csv" hidden onChange={handleCsvUpload} />
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<SaveIcon />}
+            onClick={submit}
+            disabled={submitting}
+          >
+            {submitting ? "Saving..." : submitLabel}
+          </Button>
+        </Stack>
+      </Paper>
+
+      {error && <Alert severity="error">{error}</Alert>}
+      {message && <Alert severity="success">{message}</Alert>}
+      {!teacherGradeLevels.length && (
+        <Alert severity="info">
+          Add grade levels in Settings to limit this menu to the grades you teach.
+        </Alert>
+      )}
+
+      <Paper elevation={0} sx={{ p: 2, overflow: "visible" }}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1.2fr 0.5fr 0.7fr 0.7fr 0.8fr" },
+            gap: 1.5,
+          }}
+        >
+          <TextField
+            label="Quiz name"
+            size="small"
+            value={draft.quizName}
+            onChange={(event) => setDraft({ ...draft, quizName: event.target.value })}
+          />
+          <TextField
+            label="Quiz #"
+            size="small"
+            type="number"
+            value={draft.quizNumber}
+            onChange={(event) =>
+              setDraft({
+                ...draft,
+                quizNumber: event.target.value === "" ? "" : Number(event.target.value),
+              })
+            }
+          />
+          <FormControl size="small">
+            <InputLabel>Grade</InputLabel>
+            <Select
+              label="Grade"
+              value={draft.gradeLevel ?? ""}
+              onChange={(event) =>
+                setDraft({
+                  ...draft,
+                  gradeLevel:
+                    event.target.value === "" ? null : Number(event.target.value),
+                })
+              }
+            >
+              <MenuItem value="">Unassigned</MenuItem>
+              {gradeOptions.map((grade) => (
+                <MenuItem key={grade} value={grade}>
+                  {formatGradeLevel(grade)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Unit"
+            size="small"
+            value={draft.unitName}
+            onChange={(event) => setDraft({ ...draft, unitName: event.target.value })}
+          />
+          <TextField
+            label="Section"
+            size="small"
+            value={draft.sectionName}
+            onChange={(event) => setDraft({ ...draft, sectionName: event.target.value })}
+          />
+          <TextField
+            label="Source/book/program for prompt"
+            size="small"
+            value={draft.sourceName || ""}
+            onChange={(event) => setDraft({ ...draft, sourceName: event.target.value })}
+            sx={{ gridColumn: { md: "1 / -1" } }}
+          />
+        </Box>
+      </Paper>
+
+      <Stack spacing={1.25}>
+        {draft.concepts.map((concept, conceptIndex) => (
+          <Accordion key={`${concept.conceptKey}-${conceptIndex}`} disableGutters>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%" }}>
+                <Chip size="small" label={`Concept ${conceptIndex + 1}`} />
+                <Typography sx={{ flex: 1, fontWeight: 800 }}>
+                  {concept.conceptName || "Untitled concept"}
+                </Typography>
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={`${concept.questionVariants.filter(Boolean).length} Q`}
+                />
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={`${concept.answerVariants.filter(Boolean).length} A`}
+                />
+              </Stack>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Stack spacing={1.5}>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "1.2fr 1fr 1fr" },
+                    gap: 1.5,
+                  }}
+                >
+                  <TextField
+                    label="Concept name"
+                    size="small"
+                    value={concept.conceptName}
+                    onChange={(event) => {
+                      const conceptName = event.target.value;
+                      updateConcept(conceptIndex, {
+                        conceptName,
+                        conceptKey: concept.conceptKey.startsWith("concept-")
+                          ? slugifyClient(conceptName, `concept-${conceptIndex + 1}`)
+                          : concept.conceptKey,
+                      });
+                    }}
+                  />
+                  <TextField
+                    label="Concept key"
+                    size="small"
+                    value={concept.conceptKey}
+                    onChange={(event) =>
+                      updateConcept(conceptIndex, {
+                        conceptKey: slugifyClient(event.target.value, `concept-${conceptIndex + 1}`),
+                      })
+                    }
+                  />
+                  <TextField
+                    label="Confusability group"
+                    size="small"
+                    value={concept.confusabilityGroup}
+                    onChange={(event) =>
+                      updateConcept(conceptIndex, {
+                        confusabilityGroup: event.target.value,
+                      })
+                    }
+                  />
+                </Box>
+
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" },
+                    gap: 2,
+                  }}
+                >
+                  {(["questionVariants", "answerVariants"] as const).map((kind) => (
+                    <Paper key={kind} elevation={0} sx={{ p: 1.5 }}>
+                      <Stack spacing={1}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Typography sx={{ flex: 1, fontWeight: 800 }}>
+                            {kind === "questionVariants" ? "Question variants" : "Answer variants"}
+                          </Typography>
+                          <Button
+                            size="small"
+                            startIcon={<AddIcon />}
+                            onClick={() => addVariant(conceptIndex, kind)}
+                          >
+                            Add
+                          </Button>
+                        </Stack>
+                        {concept[kind].map((variant, variantIndex) => (
+                          <Stack
+                            key={`${kind}-${variantIndex}`}
+                            direction="row"
+                            spacing={1}
+                            alignItems="flex-start"
+                          >
+                            <TextField
+                              fullWidth
+                              multiline
+                              minRows={2}
+                              size="small"
+                              label={`${variantIndex + 1}`}
+                              value={variant}
+                              onChange={(event) =>
+                                updateVariant(
+                                  conceptIndex,
+                                  kind,
+                                  variantIndex,
+                                  event.target.value,
+                                )
+                              }
+                            />
+                            <IconButton
+                              aria-label="Remove variant"
+                              color="error"
+                              onClick={() => removeVariant(conceptIndex, kind, variantIndex)}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Stack>
+                        ))}
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Box>
+
+                <Stack direction="row" justifyContent="flex-end">
+                  <Button
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => removeConcept(conceptIndex)}
+                    disabled={draft.concepts.length <= 1}
+                  >
+                    Remove concept
+                  </Button>
+                </Stack>
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        ))}
+      </Stack>
+
+      <Button variant="outlined" startIcon={<AddIcon />} onClick={addConcept}>
+        Add concept
+      </Button>
+    </Stack>
+  );
+};
+
+const TeacherCreateView: React.FC<{ settings: UserSettingsResponse }> = ({ settings }) => {
+  const initialDraft = useMemo(() => emptyQuizDraft(), []);
+
+  return (
+    <QuizAuthorForm
+      initialDraft={initialDraft}
+      teacherGradeLevels={settings.teacherGradeLevels}
+      title="Create quiz"
+      submitLabel="Create quiz"
+      resetOnSave
+      onSubmit={async (draft) => {
+        return apiPost<TeacherSaveQuizResponse>("teacher-save-quiz", draft);
+      }}
+    />
+  );
+};
 
 const TeacherStudentTable: React.FC<{
   students: TeacherStudentSummary[];
@@ -1157,7 +1862,7 @@ const TeacherStudentTable: React.FC<{
                 direction={sortKey === "totalChecks" ? sortDirection : "asc"}
                 onClick={() => handleSort("totalChecks")}
               >
-                Total checks
+                Total complete
               </TableSortLabel>
             </TableCell>
           </TableRow>
@@ -1428,13 +2133,13 @@ const TeacherStudentProfile: React.FC<{
                   <TableCell>{quiz.section}</TableCell>
                   <TableCell>{formatDueText(quiz.due, quiz.daysUntilDue)}</TableCell>
                   <TableCell align="right">
-                    <CheckSymbols count={quiz.greenChecks} label="green checks" />
+                    <CheckSymbols count={quiz.greenChecks} label="100% complete" />
                   </TableCell>
                   <TableCell align="right">
                     <CheckSymbols
                       count={quiz.yellowChecks}
                       color="warning"
-                      label="yellow checks"
+                      label="<100 complete"
                     />
                   </TableCell>
                 </TableRow>
@@ -1475,8 +2180,8 @@ const TeacherQuizTable: React.FC<{
     { key: "unit", label: "Unit" },
     { key: "section", label: "Section" },
     { key: "totalUniqueStudentsAttempted", label: "Students", align: "right" },
-    { key: "totalChecksCurrently", label: "Current checks", align: "right" },
-    { key: "highestChecksToDate", label: "Highest checks", align: "right" },
+    { key: "totalChecksCurrently", label: "Current complete", align: "right" },
+    { key: "highestChecksToDate", label: "Highest complete", align: "right" },
   ];
 
   const sortedQuizzes = useMemo(() => {
@@ -1553,9 +2258,27 @@ const TeacherQuizProfile: React.FC<{
   quiz: TeacherQuizSummary;
   onBack: () => void;
   onOpenStudent: (anonId: string) => void;
-}> = ({ quiz, onBack, onOpenStudent }) => {
+  onResetQuiz: (quizId: string) => Promise<TeacherResetQuizResponse>;
+  onQuizChanged: () => Promise<void>;
+  settings: UserSettingsResponse;
+}> = ({ quiz, onBack, onOpenStudent, onResetQuiz, onQuizChanged, settings }) => {
   const [sortKey, setSortKey] = useState<TeacherQuizStudentSortKey>("anonId");
   const [sortDirection, setSortDirection] = useState<QuizSortDirection>("asc");
+  const [resetting, setResetting] = useState(false);
+  const [resetError, setResetError] = useState("");
+  const [resetMessage, setResetMessage] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editDraft, setEditDraft] = useState<TeacherQuizDraft | null>(null);
+  const [editError, setEditError] = useState("");
+
+  useEffect(() => {
+    setEditOpen(false);
+    setEditDraft(null);
+    setEditError("");
+    setResetError("");
+    setResetMessage("");
+  }, [quiz.id]);
 
   const sortedStudents = useMemo(() => {
     const directionMultiplier = sortDirection === "asc" ? 1 : -1;
@@ -1577,12 +2300,73 @@ const TeacherQuizProfile: React.FC<{
     setSortDirection("asc");
   };
 
+  const handleResetQuiz = async () => {
+    const confirmed = window.confirm(
+      `Reset "${quiz.quizName}" for all users? This deletes attempts, complete status, master concept progress, and active sessions for this quiz.`,
+    );
+    if (!confirmed) return;
+
+    setResetting(true);
+    setResetError("");
+    setResetMessage("");
+    try {
+      const response = await onResetQuiz(quiz.id);
+      setResetMessage(
+        `Reset quiz for ${response.affectedUsers} users. Deleted ${response.attemptsDeleted} attempts and ${response.conceptStatesDeleted + response.questionStatesDeleted} progress records.`,
+      );
+    } catch (err) {
+      setResetError(err instanceof Error ? err.message : "Could not reset quiz.");
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  const toggleEdit = async () => {
+    if (editOpen) {
+      setEditOpen(false);
+      return;
+    }
+
+    setEditOpen(true);
+    if (editDraft?.quizId === quiz.id) return;
+
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const detail = await apiPost<TeacherQuizDetailResponse>("teacher-quiz-detail", {
+        quizId: quiz.id,
+      });
+      setEditDraft(draftFromQuizDetail(detail));
+    } catch (err) {
+      setEditError(err instanceof Error ? err.message : "Could not load quiz editor.");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <Stack spacing={2}>
       <Paper elevation={0} sx={{ p: 2 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Button startIcon={<ArrowBackIcon />} onClick={onBack}>
             Back
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<EditIcon />}
+            onClick={toggleEdit}
+            disabled={editLoading}
+          >
+            {editOpen ? "Close editor" : "Edit quiz"}
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<RestartAltIcon />}
+            onClick={handleResetQuiz}
+            disabled={resetting}
+          >
+            {resetting ? "Resetting..." : "Reset quiz"}
           </Button>
           <Box sx={{ flex: 1 }} />
           <Box sx={{ textAlign: "right" }}>
@@ -1593,6 +2377,34 @@ const TeacherQuizProfile: React.FC<{
           </Box>
         </Stack>
       </Paper>
+
+      {resetError && <Alert severity="error">{resetError}</Alert>}
+      {resetMessage && <Alert severity="success">{resetMessage}</Alert>}
+      {editError && <Alert severity="error">{editError}</Alert>}
+
+      {editOpen && (
+        editLoading ? (
+          <Paper elevation={0} sx={{ p: 4, textAlign: "center" }}>
+            <CircularProgress />
+          </Paper>
+        ) : editDraft ? (
+          <QuizAuthorForm
+            initialDraft={editDraft}
+            teacherGradeLevels={settings.teacherGradeLevels}
+            title="Edit quiz"
+            submitLabel="Save changes"
+            onSubmit={async (draft) => {
+              const response = await apiPost<TeacherSaveQuizResponse>("teacher-save-quiz", {
+                ...draft,
+                quizId: quiz.id,
+              });
+              setEditDraft(draftFromQuizDetail(response.quiz));
+              await onQuizChanged();
+              return response;
+            }}
+          />
+        ) : null
+      )}
 
       {sortedStudents.length ? (
         <TableContainer component={Paper} elevation={0}>
@@ -1617,7 +2429,7 @@ const TeacherQuizProfile: React.FC<{
                     direction={sortKey === "currentChecks" ? sortDirection : "asc"}
                     onClick={() => handleSort("currentChecks")}
                   >
-                    Current checks
+                    Current complete
                   </TableSortLabel>
                 </TableCell>
                 <TableCell
@@ -1629,7 +2441,7 @@ const TeacherQuizProfile: React.FC<{
                     direction={sortKey === "maxChecks" ? sortDirection : "asc"}
                     onClick={() => handleSort("maxChecks")}
                   >
-                    Max checks
+                    Max complete
                   </TableSortLabel>
                 </TableCell>
               </TableRow>
@@ -1660,7 +2472,7 @@ const TeacherQuizProfile: React.FC<{
   );
 };
 
-const TeacherDataView: React.FC = () => {
+const TeacherDataView: React.FC<{ settings: UserSettingsResponse }> = ({ settings }) => {
   const [teacherDashboard, setTeacherDashboard] =
     useState<TeacherDashboardResponse | null>(null);
   const [tab, setTab] = useState(0);
@@ -1669,26 +2481,22 @@ const TeacherDataView: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadTeacherData = useCallback(async () => {
     setLoading(true);
-    apiGet<TeacherDashboardResponse>("teacher-dashboard")
-      .then((response) => {
-        if (cancelled) return;
-        setTeacherDashboard(response);
-        setError("");
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Could not load teacher data.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const response = await apiGet<TeacherDashboardResponse>("teacher-dashboard");
+      setTeacherDashboard(response);
+      setError("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load teacher data.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    loadTeacherData();
+  }, [loadTeacherData]);
 
   const selectedStudent =
     teacherDashboard?.students.find(
@@ -1707,6 +2515,14 @@ const TeacherDataView: React.FC = () => {
     setSelectedQuizId(quizId);
     setSelectedStudentAlias("");
     setTab(1);
+  };
+
+  const resetQuizForAllUsers = async (quizId: string) => {
+    const response = await apiPost<TeacherResetQuizResponse>("teacher-reset-quiz", {
+      quizId,
+    });
+    await loadTeacherData();
+    return response;
   };
 
   if (loading) {
@@ -1765,6 +2581,9 @@ const TeacherDataView: React.FC = () => {
             quiz={selectedQuiz}
             onBack={() => setSelectedQuizId("")}
             onOpenStudent={openStudent}
+            onResetQuiz={resetQuizForAllUsers}
+            onQuizChanged={loadTeacherData}
+            settings={settings}
           />
         ) : teacherDashboard.quizzes.length ? (
           <TeacherQuizTable quizzes={teacherDashboard.quizzes} onOpenQuiz={openQuiz} />
@@ -1915,6 +2734,19 @@ const QuizRunner: React.FC<{
 
   const canSubmit = !!round && !result && !loading;
   const canKeepGoing = !!result?.canKeepGoing && !!round;
+  const attemptsLeft =
+    result?.attemptsRemainingToday ??
+    round?.attemptsRemainingToday ??
+    quiz.attemptsRemainingToday;
+  const bonusRoundsEarned =
+    result?.bonusRoundsEarned ?? round?.bonusRoundsEarned ?? 0;
+  const bonusRoundsRemaining =
+    result?.bonusRoundsRemaining ?? round?.bonusRoundsRemaining ?? 0;
+  const roundLabel = round?.isBonusRound
+    ? `Bonus round ${round.bonusRoundNumber || ""}`.trim()
+    : round
+      ? `Round ${round.roundNumber}`
+      : "";
 
   return (
     <Box>
@@ -1931,8 +2763,16 @@ const QuizRunner: React.FC<{
               {quiz.unit} / {quiz.section} / Quiz {quiz.quizNumber}
             </Typography>
           </Box>
-          <Chip label={`${quiz.greenChecks} green`} color="success" variant="outlined" />
-          <Chip label={`${quiz.attemptsRemainingToday} left today`} variant="outlined" />
+          <Chip label={`${quiz.greenChecks} complete`} color="success" variant="outlined" />
+          <Chip label={`${attemptsLeft} left today`} variant="outlined" />
+          {bonusRoundsEarned > 0 && (
+            <Chip
+              label={`${bonusRoundsRemaining} bonus left`}
+              color="secondary"
+              variant={bonusRoundsRemaining > 0 ? "filled" : "outlined"}
+              sx={{ fontWeight: 800 }}
+            />
+          )}
         </Stack>
       </Paper>
 
@@ -1957,9 +2797,11 @@ const QuizRunner: React.FC<{
               alignItems={{ xs: "stretch", sm: "center" }}
             >
               <Typography sx={{ flex: 1 }} color="text.secondary">
-                Round {round.roundNumber} / showing {round.questions.length} of{" "}
-                {round.totalQuestions} questions
+                {roundLabel}
               </Typography>
+              {round.isBonusRound && (
+                <Chip color="secondary" label="Bonus" sx={{ fontWeight: 800 }} />
+              )}
               {result && (
                 <Chip
                   color={result.score === 100 ? "success" : "warning"}
@@ -2076,17 +2918,93 @@ const AccountView: React.FC<{ session: SessionResponse }> = ({ session }) => (
   </Paper>
 );
 
-const SettingsView: React.FC = () => (
-  <Paper elevation={0} sx={{ p: 2 }}>
-    <Typography variant="h6">Settings</Typography>
-    <Divider sx={{ my: 2 }} />
-    <Stack spacing={1}>
-      <Typography color="text.secondary">Question window: 5</Typography>
-      <Typography color="text.secondary">Session timeout: 20 minutes</Typography>
-      <Typography color="text.secondary">Scores are saved by anonymous account id.</Typography>
-    </Stack>
-  </Paper>
-);
+const SettingsView: React.FC<{
+  settings: UserSettingsResponse;
+  teacherMode: boolean;
+  onSave: (settings: UserSettingsResponse) => Promise<UserSettingsResponse>;
+}> = ({ settings, teacherMode, onSave }) => {
+  const [draft, setDraft] = useState<UserSettingsResponse>(settings);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setDraft(settings);
+  }, [settings]);
+
+  const save = async () => {
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const saved = await onSave(draft);
+      setDraft(saved);
+      setMessage("Settings saved.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Paper elevation={0} sx={{ p: 2 }}>
+      <Typography variant="h6">Settings</Typography>
+      <Divider sx={{ my: 2 }} />
+      <Stack spacing={2}>
+        {error && <Alert severity="error">{error}</Alert>}
+        {message && <Alert severity="success">{message}</Alert>}
+        <FormControlLabel
+          control={
+            <Switch
+              checked={draft.darkTheme}
+              onChange={(event) =>
+                setDraft({ ...draft, darkTheme: event.target.checked })
+              }
+            />
+          }
+          label="Dark theme"
+        />
+        {teacherMode && (
+          <Autocomplete
+            multiple
+            options={gradeLevelOptions}
+            value={draft.teacherGradeLevels}
+            onChange={(_, value) =>
+              setDraft({
+                ...draft,
+                teacherGradeLevels: [...value].sort((left, right) => left - right),
+              })
+            }
+            getOptionLabel={formatGradeLevel}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Grade levels you teach"
+                helperText="These grades appear in the quiz creation form."
+              />
+            )}
+          />
+        )}
+        <Stack spacing={1}>
+          <Typography color="text.secondary">Question window: 5</Typography>
+          <Typography color="text.secondary">Session timeout: 20 minutes</Typography>
+          <Typography color="text.secondary">Scores are saved by anonymous account id.</Typography>
+        </Stack>
+        <Stack direction="row" justifyContent="flex-end">
+          <Button
+            variant="contained"
+            startIcon={<SaveIcon />}
+            onClick={save}
+            disabled={saving}
+          >
+            {saving ? "Saving..." : "Save settings"}
+          </Button>
+        </Stack>
+      </Stack>
+    </Paper>
+  );
+};
 
 const CQuiz2Page: React.FC = () => {
   const [session, setSession] = useState<SessionResponse>({
@@ -2095,12 +3013,20 @@ const CQuiz2Page: React.FC = () => {
     idleTimeoutSeconds: 20 * 60,
   });
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [settings, setSettings] = useState<UserSettingsResponse>({
+    darkTheme: false,
+    teacherGradeLevels: [],
+  });
   const [activeView, setActiveView] = useState<CQuiz2View>("quizzes");
   const [selectedQuizId, setSelectedQuizId] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingDashboard, setLoadingDashboard] = useState(false);
   const [appError, setAppError] = useState("");
   const teacherMode = isTeacherUser(session.user);
+  const appTheme = useMemo(
+    () => buildTheme(settings.darkTheme ? "dark" : "light"),
+    [settings.darkTheme],
+  );
 
   const loadDashboard = useCallback(async () => {
     setLoadingDashboard(true);
@@ -2126,6 +3052,8 @@ const CQuiz2Page: React.FC = () => {
       const nextSession = await apiGet<SessionResponse>("session");
       setSession(nextSession);
       if (nextSession.signedIn) {
+        const nextSettings = await apiGet<UserSettingsResponse>("settings");
+        setSettings(nextSettings);
         if (isTeacherUser(nextSession.user)) {
           setDashboard(null);
           setSelectedQuizId("");
@@ -2146,6 +3074,7 @@ const CQuiz2Page: React.FC = () => {
         }
       } else {
         setDashboard(null);
+        setSettings({ darkTheme: false, teacherGradeLevels: [] });
       }
     } catch (err) {
       setAppError(err instanceof Error ? err.message : "Could not check sign-in.");
@@ -2185,9 +3114,16 @@ const CQuiz2Page: React.FC = () => {
     } finally {
       setSession({ signedIn: false, user: null, idleTimeoutSeconds: 20 * 60 });
       setDashboard(null);
+      setSettings({ darkTheme: false, teacherGradeLevels: [] });
       setSelectedQuizId("");
       setActiveView("account");
     }
+  }, []);
+
+  const saveSettings = useCallback(async (nextSettings: UserSettingsResponse) => {
+    const saved = await apiPost<UserSettingsResponse>("settings", nextSettings);
+    setSettings(saved);
+    return saved;
   }, []);
 
   useEffect(() => {
@@ -2252,9 +3188,17 @@ const CQuiz2Page: React.FC = () => {
 
     if (teacherMode) {
       if (activeView === "account") return <AccountView session={session} />;
-      if (activeView === "settings") return <SettingsView />;
-      if (activeView === "teacher-create") return <TeacherCreateView />;
-      return <TeacherDataView />;
+      if (activeView === "settings") {
+        return (
+          <SettingsView
+            settings={settings}
+            teacherMode={teacherMode}
+            onSave={saveSettings}
+          />
+        );
+      }
+      if (activeView === "teacher-create") return <TeacherCreateView settings={settings} />;
+      return <TeacherDataView settings={settings} />;
     }
 
     if (loadingDashboard && !dashboard) {
@@ -2274,7 +3218,15 @@ const CQuiz2Page: React.FC = () => {
       return <DueTodayView dashboard={dashboard} onOpenQuiz={openQuiz} />;
     }
     if (activeView === "scores") return <ScoresView dashboard={dashboard} />;
-    if (activeView === "settings") return <SettingsView />;
+    if (activeView === "settings") {
+      return (
+        <SettingsView
+          settings={settings}
+          teacherMode={teacherMode}
+          onSave={saveSettings}
+        />
+      );
+    }
     if (activeView === "quiz") {
       return selectedQuiz ? (
         <QuizRunner quiz={selectedQuiz} onAttemptRecorded={loadDashboard} />
@@ -2286,7 +3238,7 @@ const CQuiz2Page: React.FC = () => {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <ThemeProvider theme={appTheme}>
       <CssBaseline />
       <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
         <Box
@@ -2342,7 +3294,10 @@ const CQuiz2Page: React.FC = () => {
             <List dense>
               {navItems.map((item) => {
                 const shouldPulseDue =
-                  item.id === "due" && session.signedIn && dueTodayCount > 0;
+                  item.id === "due" &&
+                  session.signedIn &&
+                  dueTodayCount > 0 &&
+                  activeView !== "quiz";
 
                 return (
                   <ListItemButton
