@@ -488,6 +488,11 @@ const formatChartDate = (value: string) =>
 const totalGreenChecks = (quizzes: QuizSummary[]) =>
   quizzes.reduce((total, quiz) => total + quiz.greenChecks, 0);
 
+const formatDueColumnText = (quiz: Pick<QuizSummary, "due" | "daysUntilDue">) =>
+  quiz.due || quiz.daysUntilDue <= 0
+    ? "Due today"
+    : `${quiz.daysUntilDue} ${quiz.daysUntilDue === 1 ? "day" : "days"}`;
+
 const buildCheckStatusHistory = (quizzes: QuizSummary[], today: string) => {
   const dates = new Set<string>([today]);
 
@@ -595,7 +600,7 @@ const CheckSymbols: React.FC<{
   count: number;
   color?: "success" | "warning";
   label?: string;
-}> = ({ count, color = "success", label = "total checks" }) => (
+}> = ({ count, color = "success", label = "total complete" }) => (
   <Stack
     direction="row"
     spacing={1}
@@ -678,8 +683,8 @@ const CheckStatusChart: React.FC<{
   title: string;
   data: Array<{ date: string; grey: number; yellow: number; green: number }>;
   dueCount: number;
-  totalChecks: number;
-}> = ({ title, data, dueCount, totalChecks }) => (
+  totalComplete: number;
+}> = ({ title, data, dueCount, totalComplete }) => (
   <Paper elevation={0} sx={{ p: 2, minHeight: 240 }}>
     <Stack direction="row" justifyContent="space-between" alignItems="center">
       <Typography variant="h6">{title}</Typography>
@@ -690,22 +695,30 @@ const CheckStatusChart: React.FC<{
           icon={<CheckCircleIcon />}
           color="success"
           variant="outlined"
-          label={`${totalChecks} total`}
+          label={`${totalComplete} complete`}
         />
       </Stack>
     </Stack>
-    <Box sx={{ height: 170, mt: 1 }}>
+    <Box sx={{ height: 190, mt: 1 }}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
+        <LineChart data={data} margin={{ top: 8, right: 24, left: 12, bottom: 22 }}>
           <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="date" tickFormatter={formatChartDate} minTickGap={24} />
-          <YAxis allowDecimals={false} />
+          <XAxis
+            dataKey="date"
+            tickFormatter={formatChartDate}
+            minTickGap={24}
+            label={{ value: "Date", position: "insideBottom", offset: -12 }}
+          />
+          <YAxis
+            allowDecimals={false}
+            label={{ value: "Amount", angle: -90, position: "insideLeft" }}
+          />
           <RechartsTooltip labelFormatter={(label) => formatChartDate(String(label))} />
           <Legend verticalAlign="top" height={28} />
           <Line
             type="monotone"
             dataKey="grey"
-            name="Not attempted / decline"
+            name="Not Attempted Yet"
             stroke="#64748b"
             strokeWidth={2}
             dot={{ r: 3 }}
@@ -713,7 +726,7 @@ const CheckStatusChart: React.FC<{
           <Line
             type="monotone"
             dataKey="yellow"
-            name="Attempted, not 100%"
+            name="<100"
             stroke="#b77905"
             strokeWidth={2}
             dot={{ r: 3 }}
@@ -721,7 +734,7 @@ const CheckStatusChart: React.FC<{
           <Line
             type="monotone"
             dataKey="green"
-            name="Attempted, 100%"
+            name="100%"
             stroke="#16803c"
             strokeWidth={2}
             dot={{ r: 3 }}
@@ -733,18 +746,15 @@ const CheckStatusChart: React.FC<{
 );
 
 const SummaryBand: React.FC<{
-  dashboard: DashboardResponse;
   filteredQuizzes: QuizSummary[];
-}> = ({ dashboard, filteredQuizzes }) => {
-  const chartData = useMemo(
-    () => buildCheckStatusHistory(dashboard.quizzes, dashboard.today),
-    [dashboard.quizzes, dashboard.today],
-  );
+  title: string;
+  today: string;
+}> = ({ filteredQuizzes, title, today }) => {
   const filteredChartData = useMemo(
-    () => buildCheckStatusHistory(filteredQuizzes, dashboard.today),
-    [dashboard.today, filteredQuizzes],
+    () => buildCheckStatusHistory(filteredQuizzes, today),
+    [filteredQuizzes, today],
   );
-  const filteredTotalChecks = useMemo(
+  const filteredTotalComplete = useMemo(
     () => totalGreenChecks(filteredQuizzes),
     [filteredQuizzes],
   );
@@ -764,16 +774,10 @@ const SummaryBand: React.FC<{
     >
       <Stack spacing={2}>
         <CheckStatusChart
-          title="Total checks"
-          data={chartData}
-          dueCount={dashboard.totals.dueToday}
-          totalChecks={dashboard.totals.greenChecks}
-        />
-        <CheckStatusChart
-          title="Filtered total checks"
+          title={title}
           data={filteredChartData}
           dueCount={filteredDueCount}
-          totalChecks={filteredTotalChecks}
+          totalComplete={filteredTotalComplete}
         />
       </Stack>
 
@@ -790,11 +794,7 @@ const SummaryBand: React.FC<{
         }}
       >
         <Box>
-          <CheckCircleIcon color="success" sx={{ fontSize: 34 }} />
-          <Typography variant="h4" sx={{ fontWeight: 900 }}>
-            {dashboard.totals.greenChecks}
-          </Typography>
-          <Typography color="text.secondary">total checks</Typography>
+          <CheckSymbols count={filteredTotalComplete} label="complete" />
         </Box>
       </Paper>
     </Box>
@@ -808,6 +808,7 @@ type QuizSortKey =
   | "unit"
   | "section"
   | "gradeLevel"
+  | "daysUntilDue"
   | "greenChecks";
 type QuizSortDirection = "asc" | "desc";
 
@@ -823,7 +824,8 @@ const quizTableColumns: Array<{
   { key: "gradeLevel", label: "Grade", width: 120 },
   { key: "unit", label: "Unit", width: 150 },
   { key: "section", label: "Section", width: 150 },
-  { key: "greenChecks", label: "Total checks", align: "right", width: 190 },
+  { key: "daysUntilDue", label: "Due", width: 150 },
+  { key: "greenChecks", label: "Total complete", align: "right", width: 190 },
 ];
 const quizTableGridTemplate = quizTableColumns
   .map((column) => `${column.width}px`)
@@ -912,7 +914,7 @@ const QuizTable: React.FC<{
   quizzes: QuizSummary[];
   onOpenQuiz: (quiz: QuizSummary) => void;
 }> = ({ quizzes, onOpenQuiz }) => {
-  const [sortKey, setSortKey] = useState<QuizSortKey>("quizName");
+  const [sortKey, setSortKey] = useState<QuizSortKey>("daysUntilDue");
   const [sortDirection, setSortDirection] = useState<QuizSortDirection>("asc");
 
   const sortedQuizzes = useMemo(() => {
@@ -922,7 +924,8 @@ const QuizTable: React.FC<{
       if (
         sortKey === "greenChecks" ||
         sortKey === "gradeLevel" ||
-        sortKey === "quizNumber"
+        sortKey === "quizNumber" ||
+        sortKey === "daysUntilDue"
       ) {
         const leftValue = Number(left[sortKey] ?? -1);
         const rightValue = Number(right[sortKey] ?? -1);
@@ -981,30 +984,27 @@ const QuizTable: React.FC<{
             <TableRow key={quiz.id} hover>
               <TableCell>{formatQuizNumber(quiz.quizNumber)}</TableCell>
               <TableCell>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                  {quiz.due && (
-                    <Chip
-                      size="small"
-                      icon={<TodayIcon />}
-                      label="Due"
-                      color="primary"
-                      variant="outlined"
-                    />
-                  )}
-                  <Button
-                    variant="text"
-                    startIcon={<PlayArrowIcon />}
-                    onClick={() => onOpenQuiz(quiz)}
-                    sx={{ justifyContent: "flex-start", px: 0 }}
-                  >
-                    {quiz.quizName}
-                  </Button>
-                </Stack>
+                <Button
+                  variant="text"
+                  startIcon={<PlayArrowIcon />}
+                  onClick={() => onOpenQuiz(quiz)}
+                  sx={{ justifyContent: "flex-start", px: 0 }}
+                >
+                  {quiz.quizName}
+                </Button>
               </TableCell>
               <TableCell>{quiz.teacher}</TableCell>
               <TableCell>{formatGradeLevel(quiz.gradeLevel)}</TableCell>
               <TableCell>{quiz.unit}</TableCell>
               <TableCell>{quiz.section}</TableCell>
+              <TableCell>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  {quiz.due && (
+                    <Chip size="small" icon={<TodayIcon />} label="Due" color="primary" />
+                  )}
+                  <Typography variant="body2">{formatDueColumnText(quiz)}</Typography>
+                </Stack>
+              </TableCell>
               <TableCell align="right">
                 <CheckSymbols count={quiz.greenChecks} />
               </TableCell>
@@ -1125,10 +1125,16 @@ const QuizzesView: React.FC<{
       ),
     [dashboard.quizzes, gradeLevel, quizName, quizNumber, section, teacher, unit],
   );
+  const hasNonGradeFilter = Boolean(teacher || unit || section || quizNumber != null || quizName);
+  const graphTitle = hasNonGradeFilter ? "Filtered Complete" : "Total Complete";
 
   return (
     <Box>
-      <SummaryBand dashboard={dashboard} filteredQuizzes={filtered} />
+      <SummaryBand
+        filteredQuizzes={filtered}
+        title={graphTitle}
+        today={dashboard.today}
+      />
 
       <Paper elevation={0} sx={{ mb: 2, overflow: "visible" }}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ p: 2, pb: 1 }}>
@@ -1230,6 +1236,7 @@ const QuizzesView: React.FC<{
               />
             </Box>
             <Box sx={{ ...quizTableFilterCellSx, display: { xs: "none", lg: "block" } }} />
+            <Box sx={{ ...quizTableFilterCellSx, display: { xs: "none", lg: "block" } }} />
           </Box>
         </Box>
       </Paper>
@@ -1312,11 +1319,11 @@ const ScoresView: React.FC<{ dashboard: DashboardResponse }> = ({ dashboard }) =
                   <XAxis dataKey="period" />
                   <YAxis allowDecimals={false} />
                   <RechartsTooltip />
-                  <Bar dataKey="checks" name="Green checks" fill="#16803c" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="checks" name="Complete" fill="#16803c" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <EmptyState title="No green checks yet" detail="Scores of 100 will appear here." />
+              <EmptyState title="No complete scores yet" detail="Scores of 100 will appear here." />
             )}
           </Box>
         </Box>
@@ -1855,7 +1862,7 @@ const TeacherStudentTable: React.FC<{
                 direction={sortKey === "totalChecks" ? sortDirection : "asc"}
                 onClick={() => handleSort("totalChecks")}
               >
-                Total checks
+                Total complete
               </TableSortLabel>
             </TableCell>
           </TableRow>
@@ -2126,13 +2133,13 @@ const TeacherStudentProfile: React.FC<{
                   <TableCell>{quiz.section}</TableCell>
                   <TableCell>{formatDueText(quiz.due, quiz.daysUntilDue)}</TableCell>
                   <TableCell align="right">
-                    <CheckSymbols count={quiz.greenChecks} label="green checks" />
+                    <CheckSymbols count={quiz.greenChecks} label="100% complete" />
                   </TableCell>
                   <TableCell align="right">
                     <CheckSymbols
                       count={quiz.yellowChecks}
                       color="warning"
-                      label="yellow checks"
+                      label="<100 complete"
                     />
                   </TableCell>
                 </TableRow>
@@ -2173,8 +2180,8 @@ const TeacherQuizTable: React.FC<{
     { key: "unit", label: "Unit" },
     { key: "section", label: "Section" },
     { key: "totalUniqueStudentsAttempted", label: "Students", align: "right" },
-    { key: "totalChecksCurrently", label: "Current checks", align: "right" },
-    { key: "highestChecksToDate", label: "Highest checks", align: "right" },
+    { key: "totalChecksCurrently", label: "Current complete", align: "right" },
+    { key: "highestChecksToDate", label: "Highest complete", align: "right" },
   ];
 
   const sortedQuizzes = useMemo(() => {
@@ -2295,7 +2302,7 @@ const TeacherQuizProfile: React.FC<{
 
   const handleResetQuiz = async () => {
     const confirmed = window.confirm(
-      `Reset "${quiz.quizName}" for all users? This deletes attempts, checks, master concept progress, and active sessions for this quiz.`,
+      `Reset "${quiz.quizName}" for all users? This deletes attempts, complete status, master concept progress, and active sessions for this quiz.`,
     );
     if (!confirmed) return;
 
@@ -2422,7 +2429,7 @@ const TeacherQuizProfile: React.FC<{
                     direction={sortKey === "currentChecks" ? sortDirection : "asc"}
                     onClick={() => handleSort("currentChecks")}
                   >
-                    Current checks
+                    Current complete
                   </TableSortLabel>
                 </TableCell>
                 <TableCell
@@ -2434,7 +2441,7 @@ const TeacherQuizProfile: React.FC<{
                     direction={sortKey === "maxChecks" ? sortDirection : "asc"}
                     onClick={() => handleSort("maxChecks")}
                   >
-                    Max checks
+                    Max complete
                   </TableSortLabel>
                 </TableCell>
               </TableRow>
@@ -2756,7 +2763,7 @@ const QuizRunner: React.FC<{
               {quiz.unit} / {quiz.section} / Quiz {quiz.quizNumber}
             </Typography>
           </Box>
-          <Chip label={`${quiz.greenChecks} green`} color="success" variant="outlined" />
+          <Chip label={`${quiz.greenChecks} complete`} color="success" variant="outlined" />
           <Chip label={`${attemptsLeft} left today`} variant="outlined" />
           {bonusRoundsEarned > 0 && (
             <Chip
@@ -3287,7 +3294,10 @@ const CQuiz2Page: React.FC = () => {
             <List dense>
               {navItems.map((item) => {
                 const shouldPulseDue =
-                  item.id === "due" && session.signedIn && dueTodayCount > 0;
+                  item.id === "due" &&
+                  session.signedIn &&
+                  dueTodayCount > 0 &&
+                  activeView !== "quiz";
 
                 return (
                   <ListItemButton
