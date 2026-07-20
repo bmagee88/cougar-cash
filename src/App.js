@@ -23,6 +23,7 @@ import TypingPong from "./TypingPong/TypingPong";
 import MultipleChoiceQuiz from "./MultipleChoiceQuiz/MultipleChoiceQuiz";
 import ParentLetter from "./ParentLetter/ParentLetter";
 import SoundButton from "./SoundButton/SoundButton";
+import IrregularShapeGenerator from "./IrregularShapeGenerator/IrregularShapeGenerator";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -60,6 +61,10 @@ function App() {
           <Route path="/mc-quiz" element={<MultipleChoiceQuiz />} />
           <Route path="/parent-letter" element={<ParentLetter />} />
           <Route path="/sound" element={<SoundButton />} />
+          <Route
+            path="/shape-gen"
+            element={<IrregularShapeGenerator />}
+          />
         </Routes>
       </Router>
     </Box>

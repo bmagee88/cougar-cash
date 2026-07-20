@@ -84,6 +84,14 @@ const tiles = [
     category: "concept",
   },
   {
+    path: "/shape-gen",
+    title: "Irregular Shape Generator",
+    subtitle: "Cut, remove, and round generated line segments",
+    emoji: "#",
+    gradient: "linear-gradient(135deg, #0f766e, #ef476f)",
+    category: "concept",
+  },
+  {
     path: "/one-word",
     title: "One Word Ten Seconds",
     subtitle: "Speed Typing One Word Challenge",
