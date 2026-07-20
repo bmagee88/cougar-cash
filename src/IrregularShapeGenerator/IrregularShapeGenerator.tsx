@@ -7,6 +7,7 @@ import {
   Divider,
   FormControlLabel,
   IconButton,
+  MenuItem,
   Paper,
   Slider,
   Stack,
@@ -75,6 +76,12 @@ type GraphEdge = {
   kind: "boundary" | "segment";
 };
 
+type ShapeTexture = {
+  id: string;
+  name: string;
+  path: string;
+};
+
 type ShapeRegion = {
   id: string;
   label: string;
@@ -83,6 +90,7 @@ type ShapeRegion = {
   perimeter: number;
   centroid: Point;
   color: string;
+  texture: ShapeTexture;
   bounds: {
     minX: number;
     minY: number;
@@ -107,6 +115,113 @@ const SHAPE_PALETTE = [
   "#2563eb",
   "#16a34a",
   "#db2777",
+];
+const SHAPE_TEXTURES: ShapeTexture[] = [
+  {
+    id: "lapis-lazuli",
+    name: "Lapis Lazuli",
+    path: "/assets/shape-textures/lapis-lazuli.png",
+  },
+  {
+    id: "amethyst",
+    name: "Amethyst",
+    path: "/assets/shape-textures/amethyst.png",
+  },
+  {
+    id: "rose-quartz",
+    name: "Rose Quartz",
+    path: "/assets/shape-textures/rose-quartz.png",
+  },
+  {
+    id: "smoky-quartz",
+    name: "Smoky Quartz",
+    path: "/assets/shape-textures/smoky-quartz.png",
+  },
+  {
+    id: "citrine",
+    name: "Citrine",
+    path: "/assets/shape-textures/citrine.png",
+  },
+  {
+    id: "malachite",
+    name: "Malachite",
+    path: "/assets/shape-textures/malachite.png",
+  },
+  {
+    id: "turquoise",
+    name: "Turquoise",
+    path: "/assets/shape-textures/turquoise.png",
+  },
+  {
+    id: "obsidian",
+    name: "Obsidian",
+    path: "/assets/shape-textures/obsidian.png",
+  },
+  {
+    id: "jade",
+    name: "Jade",
+    path: "/assets/shape-textures/jade.png",
+  },
+  {
+    id: "garnet",
+    name: "Garnet",
+    path: "/assets/shape-textures/garnet.png",
+  },
+  {
+    id: "fluorite",
+    name: "Fluorite",
+    path: "/assets/shape-textures/fluorite.png",
+  },
+  {
+    id: "gneiss",
+    name: "Gneiss",
+    path: "/assets/shape-textures/gneiss.png",
+  },
+  {
+    id: "granite",
+    name: "Granite",
+    path: "/assets/shape-textures/granite.png",
+  },
+  {
+    id: "diorite",
+    name: "Diorite",
+    path: "/assets/shape-textures/diorite.png",
+  },
+  {
+    id: "feldspar",
+    name: "Feldspar",
+    path: "/assets/shape-textures/feldspar.png",
+  },
+  {
+    id: "schist",
+    name: "Schist",
+    path: "/assets/shape-textures/schist.png",
+  },
+  {
+    id: "basalt",
+    name: "Basalt",
+    path: "/assets/shape-textures/basalt.png",
+  },
+  {
+    id: "sandstone",
+    name: "Sandstone",
+    path: "/assets/shape-textures/sandstone.png",
+  },
+  {
+    id: "limestone",
+    name: "Limestone",
+    path: "/assets/shape-textures/limestone.png",
+  },
+  {
+    id: "slate",
+    name: "Slate",
+    path: "/assets/shape-textures/slate.png",
+  },
+  {
+    id: "quartzite",
+    name: "Quartzite",
+    path: "/assets/shape-textures/quartzite.png",
+  },
 ];
 
 function clamp(value: number, min: number, max: number) {
@@ -861,6 +976,7 @@ function buildShapeRegions(
       centroid: shape.centroid,
       bounds: shape.bounds,
       color: SHAPE_PALETTE[index % SHAPE_PALETTE.length],
+      texture: SHAPE_TEXTURES[index % SHAPE_TEXTURES.length],
     }));
 }
 
@@ -877,6 +993,74 @@ function shapeViewBox(shape: ShapeRegion, padding: number) {
   } ${height + padding * 2}`;
 }
 
+function escapeSvgAttribute(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function resolveSvgAssetHref(path: string) {
+  if (/^(?:blob:|data:|https?:\/\/)/.test(path)) {
+    return path;
+  }
+
+  if (typeof window === "undefined") {
+    return path;
+  }
+
+  return new URL(path, window.location.origin).toString();
+}
+
+function blobToDataUri(blob: Blob) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error("Texture could not be converted for SVG export."));
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function getTextureHrefForDownload(path: string) {
+  if (/^(?:blob:|data:)/.test(path)) {
+    return path;
+  }
+
+  const response = await fetch(resolveSvgAssetHref(path));
+
+  if (!response.ok) {
+    throw new Error(`Texture request failed with ${response.status}.`);
+  }
+
+  return blobToDataUri(await response.blob());
+}
+
+async function getTextureHrefsForDownload(textures: ShapeTexture[]) {
+  const uniqueTextures = Array.from(
+    new Map(textures.map((texture) => [texture.id, texture])).values()
+  );
+  const entries = await Promise.all(
+    uniqueTextures.map(async (texture) => [
+      texture.id,
+      await getTextureHrefForDownload(texture.path),
+    ])
+  );
+
+  return Object.fromEntries(entries) as Record<string, string>;
+}
+
+function getDownloadTexturePatternId(texture: ShapeTexture) {
+  return `shape-texture-${texture.id}`;
+}
+
 function createSvgDocument({
   shapes,
   squareSize,
@@ -886,6 +1070,8 @@ function createSvgDocument({
   seed,
   title,
   targetShape,
+  textureByShapeId,
+  textureHrefs,
 }: {
   shapes: ShapeRegion[];
   squareSize: number;
@@ -895,28 +1081,58 @@ function createSvgDocument({
   seed: number;
   title: string;
   targetShape?: ShapeRegion;
+  textureByShapeId?: Record<string, ShapeTexture>;
+  textureHrefs?: Record<string, string>;
 }) {
   const activeShapes = targetShape ? [targetShape] : shapes;
   const padding = Math.max(16, roundness + strokeWidth + 8);
   const viewBox = targetShape
     ? shapeViewBox(targetShape, padding)
     : `0 0 ${squareSize} ${squareSize}`;
+  const innerShadowId = "shape-inner-shadow";
   const background = targetShape
     ? ""
     : `<rect x="0" y="0" width="${squareSize}" height="${squareSize}" rx="12" fill="#f8fbfc" />`;
+  const activeShapeTextures = activeShapes.map(
+    (shape) => textureByShapeId?.[shape.id] ?? shape.texture
+  );
+  const uniqueTextures = Array.from(
+    new Map(
+      activeShapeTextures.map((texture) => [texture.id, texture] as const)
+    ).values()
+  );
+  const patterns = uniqueTextures
+    .map((texture) => {
+      const textureSource = escapeSvgAttribute(
+        textureHrefs?.[texture.id] ?? resolveSvgAssetHref(texture.path)
+      );
+
+      return `<pattern id="${getDownloadTexturePatternId(
+        texture
+      )}" patternUnits="objectBoundingBox" patternContentUnits="objectBoundingBox" x="0" y="0" width="1" height="1"><image href="${textureSource}" xlink:href="${textureSource}" x="0" y="0" width="1" height="1" preserveAspectRatio="xMidYMid slice" /></pattern>`;
+    })
+    .join("");
+  const defs = `<defs>${patterns}<filter id="${innerShadowId}" x="-35%" y="-35%" width="170%" height="170%"><feOffset dx="0" dy="3" /><feGaussianBlur stdDeviation="4" result="offset-blur" /><feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" /><feFlood flood-color="#020617" flood-opacity="0.4" result="shadow-color" /><feComposite operator="in" in="shadow-color" in2="inverse" result="inner-shadow" /><feComposite operator="over" in="inner-shadow" in2="SourceGraphic" /></filter></defs>`;
   const paths = activeShapes
     .map(
-      (shape) =>
-        `<path d="${getShapePath(
+      (shape) => {
+        const texture = textureByShapeId?.[shape.id] ?? shape.texture;
+
+        return `<path d="${getShapePath(
           shape,
           roundness,
           randomizeRoundness,
           seed
-        )}" fill="#fbfaf7" fill-opacity="0.9" stroke="#4b5563" stroke-width="${strokeWidth}" stroke-linejoin="round" />`
+        )}" fill="url(#${getDownloadTexturePatternId(
+          texture
+        )})" stroke="#0f172a" stroke-opacity="0.28" stroke-width="${strokeWidth}" stroke-linejoin="round" filter="url(#${innerShadowId})" />`
+      }
     )
     .join("");
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${viewBox}" role="img" aria-label="${title}">${background}${paths}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" role="img" aria-label="${escapeSvgAttribute(
+    title
+  )}">${defs}${background}${paths}</svg>`;
 }
 
 function downloadSvgFile(fileName: string, source: string) {
@@ -1011,6 +1227,181 @@ function StatChip({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function ShapeListItem({
+  shape,
+  texture,
+  textures,
+  cornerRoundness,
+  randomizeRoundness,
+  seed,
+  onDownload,
+  onTextureChange,
+}: {
+  shape: ShapeRegion;
+  texture: ShapeTexture;
+  textures: ShapeTexture[];
+  cornerRoundness: number;
+  randomizeRoundness: boolean;
+  seed: number;
+  onDownload: (shape: ShapeRegion) => void;
+  onTextureChange: (shapeId: string, textureId: string) => void;
+}) {
+  const texturePatternId = `texture-${seed}-${shape.id}`;
+  const innerShadowId = `inner-shadow-${seed}-${shape.id}`;
+  const shapePath = getShapePath(
+    shape,
+    cornerRoundness,
+    randomizeRoundness,
+    seed
+  );
+
+  return (
+    <Box
+      sx={{
+        p: 1,
+        borderRadius: 1.5,
+        border: "1px solid rgba(15, 23, 42, 0.1)",
+        bgcolor: "rgba(255, 255, 255, 0.58)",
+      }}
+    >
+      <Stack direction="row" spacing={1.25} alignItems="center">
+        <Box
+          sx={{
+            width: 72,
+            height: 56,
+            flexShrink: 0,
+            borderRadius: 1,
+            bgcolor: "#f8fbfc",
+            border: "1px solid rgba(15, 23, 42, 0.08)",
+            overflow: "hidden",
+          }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            xmlnsXlink="http://www.w3.org/1999/xlink"
+            viewBox={shapeViewBox(shape, Math.max(10, cornerRoundness + 4))}
+            width="100%"
+            height="100%"
+            role="img"
+            aria-label={`${shape.label} preview with ${texture.name} texture`}
+          >
+            <defs>
+              <pattern
+                id={texturePatternId}
+                patternUnits="objectBoundingBox"
+                patternContentUnits="objectBoundingBox"
+                x="0"
+                y="0"
+                width="1"
+                height="1"
+              >
+                <image
+                  href={texture.path}
+                  xlinkHref={texture.path}
+                  x="0"
+                  y="0"
+                  width="1"
+                  height="1"
+                  preserveAspectRatio="xMidYMid slice"
+                />
+              </pattern>
+              <filter
+                id={innerShadowId}
+                x="-35%"
+                y="-35%"
+                width="170%"
+                height="170%"
+              >
+                <feOffset dx="0" dy="2" />
+                <feGaussianBlur stdDeviation="2.2" result="offset-blur" />
+                <feComposite
+                  operator="out"
+                  in="SourceGraphic"
+                  in2="offset-blur"
+                  result="inverse"
+                />
+                <feFlood
+                  floodColor="#0f172a"
+                  floodOpacity="0.48"
+                  result="shadow-color"
+                />
+                <feComposite
+                  operator="in"
+                  in="shadow-color"
+                  in2="inverse"
+                  result="inner-shadow"
+                />
+                <feComposite
+                  operator="over"
+                  in="inner-shadow"
+                  in2="SourceGraphic"
+                />
+              </filter>
+            </defs>
+            <path
+              d={shapePath}
+              fill={`url(#${texturePatternId})`}
+              stroke="#334155"
+              strokeOpacity="0.38"
+              strokeWidth="1.5"
+              strokeLinejoin="round"
+              filter={`url(#${innerShadowId})`}
+            />
+          </svg>
+        </Box>
+
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+            {shape.label}
+          </Typography>
+          <TextField
+            select
+            size="small"
+            label="Texture"
+            value={texture.id}
+            onChange={(event) => onTextureChange(shape.id, event.target.value)}
+            sx={{
+              mt: 0.75,
+              width: "100%",
+              "& .MuiInputBase-root": {
+                bgcolor: "rgba(255, 255, 255, 0.72)",
+              },
+            }}
+          >
+            {textures.map((option) => (
+              <MenuItem key={option.id} value={option.id}>
+                {option.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Typography variant="caption" sx={{ display: "block", color: "#64748b" }}>
+            Area {formatNumber(shape.area)} sq px
+          </Typography>
+          <Typography variant="caption" sx={{ display: "block", color: "#64748b" }}>
+            Perimeter {formatNumber(shape.perimeter)} px
+          </Typography>
+        </Box>
+
+        <Tooltip title={`Download ${shape.label}`}>
+          <IconButton
+            aria-label={`Download ${shape.label}`}
+            onClick={() => onDownload(shape)}
+            sx={{
+              bgcolor: "rgba(15, 118, 110, 0.08)",
+              color: "#0f766e",
+              "&:hover": {
+                bgcolor: "rgba(15, 118, 110, 0.16)",
+              },
+            }}
+          >
+            <FileDownloadIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    </Box>
+  );
+}
+
 export default function IrregularShapeGenerator() {
   const [seed, setSeed] = useState(() =>
     Math.floor(Math.random() * 1_000_000_000)
@@ -1026,6 +1417,9 @@ export default function IrregularShapeGenerator() {
   const [removedCountOverride, setRemovedCountOverride] = useState<
     number | null
   >(null);
+  const [textureAssignments, setTextureAssignments] = useState<
+    Record<string, string>
+  >({});
 
   const network = useMemo(
     () => buildNetwork(lineCount, squareSize, seed),
@@ -1060,11 +1454,45 @@ export default function IrregularShapeGenerator() {
     () => buildShapeRegions(network, keptSegments, squareSize),
     [network, keptSegments, squareSize]
   );
+  const textureById = useMemo(
+    () =>
+      new Map(SHAPE_TEXTURES.map((texture) => [texture.id, texture] as const)),
+    []
+  );
+  const textureByShapeId = useMemo(() => {
+    return shapeRegions.reduce<Record<string, ShapeTexture>>((acc, shape) => {
+      acc[shape.id] =
+        textureById.get(textureAssignments[shape.id]) ?? shape.texture;
+      return acc;
+    }, {});
+  }, [shapeRegions, textureAssignments, textureById]);
+  const getSelectedTexture = useCallback(
+    (shape: ShapeRegion) => textureByShapeId[shape.id] ?? shape.texture,
+    [textureByShapeId]
+  );
+  const selectedCanvasTextures = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          shapeRegions.map((shape) => {
+            const texture = getSelectedTexture(shape);
+            return [texture.id, texture] as const;
+          })
+        ).values()
+      ),
+    [getSelectedTexture, shapeRegions]
+  );
   const roundedCornerCount = shapeRegions.reduce(
     (sum, shape) => sum + shape.points.length,
     0
   );
   const gridId = `shape-grid-${seed}`;
+  const canvasShadowId = `shape-soft-shadow-${seed}`;
+  const canvasInnerShadowId = `shape-inner-shadow-${seed}`;
+  const getCanvasTexturePatternId = useCallback(
+    (texture: ShapeTexture) => `shape-texture-${seed}-${texture.id}`,
+    [seed]
+  );
 
   const randomizeSeed = useCallback(() => {
     setSeed(Math.floor(Math.random() * 1_000_000_000));
@@ -1078,9 +1506,46 @@ export default function IrregularShapeGenerator() {
     setRandomizeRoundness(false);
     setRemovedCountOverride(null);
     setShowRemovedSegments(true);
+    setTextureAssignments({});
   }, []);
 
-  const downloadAllShapes = useCallback(() => {
+  const updateShapeTexture = useCallback(
+    (shapeId: string, textureId: string) => {
+      setTextureAssignments((current) => ({
+        ...current,
+        [shapeId]: textureId,
+      }));
+    },
+    []
+  );
+
+  const randomizeShapeTextures = useCallback(() => {
+    setTextureAssignments(() => {
+      const next: Record<string, string> = {};
+
+      shapeRegions.forEach((shape) => {
+        const texture =
+          SHAPE_TEXTURES[Math.floor(Math.random() * SHAPE_TEXTURES.length)];
+        next[shape.id] = texture.id;
+      });
+
+      return next;
+    });
+  }, [shapeRegions]);
+
+  const downloadAllShapes = useCallback(async () => {
+    let textureHrefs: Record<string, string>;
+
+    try {
+      const selectedTextures = shapeRegions.map((shape) =>
+        getSelectedTexture(shape)
+      );
+      textureHrefs = await getTextureHrefsForDownload(selectedTextures);
+    } catch {
+      window.alert("The selected texture images could not be embedded.");
+      return;
+    }
+
     downloadSvgFile(
       `shape-gen-${seed}-all.svg`,
       createSvgDocument({
@@ -1091,19 +1556,33 @@ export default function IrregularShapeGenerator() {
         randomizeRoundness,
         seed,
         title: `All generated shapes for seed ${seed}`,
+        textureByShapeId,
+        textureHrefs,
       })
     );
   }, [
     cornerRoundness,
+    getSelectedTexture,
     randomizeRoundness,
     seed,
     shapeRegions,
     squareSize,
     strokeWidth,
+    textureByShapeId,
   ]);
 
   const downloadShape = useCallback(
-    (shape: ShapeRegion) => {
+    async (shape: ShapeRegion) => {
+      const texture = getSelectedTexture(shape);
+      let textureHrefs: Record<string, string>;
+
+      try {
+        textureHrefs = await getTextureHrefsForDownload([texture]);
+      } catch {
+        window.alert(`${texture.name} could not be embedded in the SVG.`);
+        return;
+      }
+
       downloadSvgFile(
         `shape-gen-${seed}-${shape.id}.svg`,
         createSvgDocument({
@@ -1115,16 +1594,20 @@ export default function IrregularShapeGenerator() {
           seed,
           title: `${shape.label} from seed ${seed}`,
           targetShape: shape,
+          textureByShapeId,
+          textureHrefs,
         })
       );
     },
     [
       cornerRoundness,
+      getSelectedTexture,
       randomizeRoundness,
       seed,
       shapeRegions,
       squareSize,
       strokeWidth,
+      textureByShapeId,
     ]
   );
 
@@ -1401,6 +1884,8 @@ export default function IrregularShapeGenerator() {
                     }}
                   >
                     <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      xmlnsXlink="http://www.w3.org/1999/xlink"
                       viewBox={`0 0 ${squareSize} ${squareSize}`}
                       width="100%"
                       height="100%"
@@ -1425,8 +1910,30 @@ export default function IrregularShapeGenerator() {
                             strokeWidth="0.8"
                           />
                         </pattern>
+                        {selectedCanvasTextures.map((texture) => (
+                          <pattern
+                            key={`${texture.id}-texture-pattern`}
+                            id={getCanvasTexturePatternId(texture)}
+                            patternUnits="objectBoundingBox"
+                            patternContentUnits="objectBoundingBox"
+                            x="0"
+                            y="0"
+                            width="1"
+                            height="1"
+                          >
+                            <image
+                              href={texture.path}
+                              xlinkHref={texture.path}
+                              x="0"
+                              y="0"
+                              width="1"
+                              height="1"
+                              preserveAspectRatio="xMidYMid slice"
+                            />
+                          </pattern>
+                        ))}
                         <filter
-                          id="shape-soft-shadow"
+                          id={canvasShadowId}
                           x="-8%"
                           y="-8%"
                           width="116%"
@@ -1438,6 +1945,41 @@ export default function IrregularShapeGenerator() {
                             stdDeviation="9"
                             floodColor="#0f172a"
                             floodOpacity="0.12"
+                          />
+                        </filter>
+                        <filter
+                          id={canvasInnerShadowId}
+                          x="-35%"
+                          y="-35%"
+                          width="170%"
+                          height="170%"
+                        >
+                          <feOffset dx="0" dy="3" />
+                          <feGaussianBlur
+                            stdDeviation="4"
+                            result="offset-blur"
+                          />
+                          <feComposite
+                            operator="out"
+                            in="SourceGraphic"
+                            in2="offset-blur"
+                            result="inverse"
+                          />
+                          <feFlood
+                            floodColor="#020617"
+                            floodOpacity="0.38"
+                            result="shadow-color"
+                          />
+                          <feComposite
+                            operator="in"
+                            in="shadow-color"
+                            in2="inverse"
+                            result="inner-shadow"
+                          />
+                          <feComposite
+                            operator="over"
+                            in="inner-shadow"
+                            in2="SourceGraphic"
                           />
                         </filter>
                       </defs>
@@ -1492,7 +2034,7 @@ export default function IrregularShapeGenerator() {
                         </g>
                       )}
 
-                      <g filter="url(#shape-soft-shadow)">
+                      <g filter={`url(#${canvasShadowId})`}>
                         {shapeRegions.map((shape) => (
                           <path
                             key={`${shape.id}-underlay`}
@@ -1519,12 +2061,14 @@ export default function IrregularShapeGenerator() {
                               randomizeRoundness,
                               seed
                             )}
-                            fill="#fbfaf7"
-                            fillOpacity="0.88"
-                            stroke="#4b5563"
-                            strokeOpacity="0.9"
+                            fill={`url(#${getCanvasTexturePatternId(
+                              getSelectedTexture(shape)
+                            )})`}
+                            stroke="#0f172a"
+                            strokeOpacity="0.28"
                             strokeWidth={strokeWidth}
                             strokeLinejoin="round"
+                            filter={`url(#${canvasInnerShadowId})`}
                           />
                         ))}
                       </g>
@@ -1610,14 +2154,41 @@ export default function IrregularShapeGenerator() {
                       Closed regions from the remaining segments
                     </Typography>
                   </Box>
-                  <Chip
-                    label={shapeRegions.length}
-                    sx={{
-                      bgcolor: "rgba(15, 118, 110, 0.1)",
-                      color: "#115e59",
-                      fontWeight: 800,
-                    }}
-                  />
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    justifyContent="flex-end"
+                    flexWrap="wrap"
+                    useFlexGap
+                  >
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<AutoAwesomeIcon />}
+                      onClick={randomizeShapeTextures}
+                      disabled={shapeRegions.length === 0}
+                      sx={{
+                        borderColor: "rgba(15, 23, 42, 0.14)",
+                        color: "#0f172a",
+                        bgcolor: "rgba(255, 255, 255, 0.72)",
+                        "&:hover": {
+                          borderColor: "#0f766e",
+                          bgcolor: "rgba(15, 118, 110, 0.08)",
+                        },
+                      }}
+                    >
+                      Random textures
+                    </Button>
+                    <Chip
+                      label={shapeRegions.length}
+                      sx={{
+                        bgcolor: "rgba(15, 118, 110, 0.1)",
+                        color: "#115e59",
+                        fontWeight: 800,
+                      }}
+                    />
+                  </Stack>
                 </Stack>
 
                 <Divider />
@@ -1631,95 +2202,17 @@ export default function IrregularShapeGenerator() {
                   }}
                 >
                   {shapeRegions.map((shape) => (
-                    <Box
+                    <ShapeListItem
                       key={shape.id}
-                      sx={{
-                        p: 1,
-                        borderRadius: 1.5,
-                        border: "1px solid rgba(15, 23, 42, 0.1)",
-                        bgcolor: "rgba(255, 255, 255, 0.58)",
-                      }}
-                    >
-                      <Stack
-                        direction="row"
-                        spacing={1.25}
-                        alignItems="center"
-                      >
-                        <Box
-                          sx={{
-                            width: 72,
-                            height: 56,
-                            flexShrink: 0,
-                            borderRadius: 1,
-                            bgcolor: "#f8fbfc",
-                            border: "1px solid rgba(15, 23, 42, 0.08)",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <svg
-                            viewBox={shapeViewBox(
-                              shape,
-                              Math.max(10, cornerRoundness + 4)
-                            )}
-                            width="100%"
-                            height="100%"
-                            role="img"
-                            aria-label={`${shape.label} preview`}
-                          >
-                            <path
-                              d={getShapePath(
-                                shape,
-                                cornerRoundness,
-                                randomizeRoundness,
-                                seed
-                              )}
-                              fill="#fbfaf7"
-                              fillOpacity="0.92"
-                              stroke={shape.color}
-                              strokeWidth="3"
-                              strokeLinejoin="round"
-                            />
-                          </svg>
-                        </Box>
-
-                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 800 }}
-                          >
-                            {shape.label}
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{ display: "block", color: "#64748b" }}
-                          >
-                            Area {formatNumber(shape.area)} sq px
-                          </Typography>
-                          <Typography
-                            variant="caption"
-                            sx={{ display: "block", color: "#64748b" }}
-                          >
-                            Perimeter {formatNumber(shape.perimeter)} px
-                          </Typography>
-                        </Box>
-
-                        <Tooltip title={`Download ${shape.label}`}>
-                          <IconButton
-                            aria-label={`Download ${shape.label}`}
-                            onClick={() => downloadShape(shape)}
-                            sx={{
-                              bgcolor: "rgba(15, 118, 110, 0.08)",
-                              color: "#0f766e",
-                              "&:hover": {
-                                bgcolor: "rgba(15, 118, 110, 0.16)",
-                              },
-                            }}
-                          >
-                            <FileDownloadIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Box>
+                      shape={shape}
+                      texture={getSelectedTexture(shape)}
+                      textures={SHAPE_TEXTURES}
+                      cornerRoundness={cornerRoundness}
+                      randomizeRoundness={randomizeRoundness}
+                      seed={seed}
+                      onDownload={downloadShape}
+                      onTextureChange={updateShapeTexture}
+                    />
                   ))}
                 </Stack>
               </Stack>
