@@ -177,6 +177,21 @@ const SHAPE_TEXTURES: ShapeTexture[] = [
     path: "/assets/shape-textures/obsidian.png",
   },
   {
+    id: "full-potch-black-opal",
+    name: "Full Potch Black Opal",
+    path: "/assets/shape-textures/full-potch-black-opal.png",
+  },
+  {
+    id: "dull-half-potchy-black-opal",
+    name: "Dull Half Potchy Black Opal",
+    path: "/assets/shape-textures/dull-half-potchy-black-opal.png",
+  },
+  {
+    id: "clean-polished-black-opal",
+    name: "Clean Polished Black Opal",
+    path: "/assets/shape-textures/clean-polished-black-opal.png",
+  },
+  {
     id: "jade",
     name: "Jade",
     path: "/assets/shape-textures/jade.png",
