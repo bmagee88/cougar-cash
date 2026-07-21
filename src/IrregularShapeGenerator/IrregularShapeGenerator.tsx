@@ -1,4 +1,7 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Canvas } from "@react-three/fiber";
+import { OrbitControls, useTexture } from "@react-three/drei";
+import * as THREE from "three";
 import {
   Box,
   Button,
@@ -12,6 +15,8 @@ import {
   Slider,
   Stack,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   Tooltip,
   Typography,
@@ -99,12 +104,26 @@ type ShapeRegion = {
   };
 };
 
+type ProjectionAxis = "xy" | "xz" | "yz";
+
+type StoneViewMode = "3d" | ProjectionAxis;
+
+type StoneProjectionSet = Record<ProjectionAxis, Point[]>;
+
+type StoneGeometryModel = {
+  geometry: THREE.BufferGeometry;
+  vertexCount: number;
+};
+
 type RoundnessResolver = (point: Point, index: number) => number;
 
 const DEFAULT_LINE_COUNT = 14;
 const DEFAULT_SQUARE_SIZE = 520;
 const DEFAULT_STROKE_WIDTH = 8;
 const DEFAULT_CORNER_ROUNDNESS = 12;
+const STONE_LATITUDE_STEPS = 18;
+const STONE_LONGITUDE_STEPS = 30;
+const STONE_RADIUS_SEARCH_STEPS = 10;
 const EPSILON = 0.000001;
 const SHAPE_PALETTE = [
   "#0f766e",
@@ -571,6 +590,204 @@ function polygonBounds(points: Point[]) {
       maxY: -Infinity,
     }
   );
+}
+
+function pointInPolygon(point: Point, polygon: Point[]) {
+  let inside = false;
+
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    const current = polygon[i];
+    const previous = polygon[j];
+    const crossesScanline =
+      (current.y > point.y) !== (previous.y > point.y);
+    const intersects =
+      crossesScanline &&
+      point.x <
+        ((previous.x - current.x) * (point.y - current.y)) /
+          (previous.y - current.y + EPSILON) +
+          current.x;
+
+    if (intersects) {
+      inside = !inside;
+    }
+  }
+
+  return inside;
+}
+
+function normalizeShapeForStone(shape: ShapeRegion) {
+  const boundsCenter = {
+    x: (shape.bounds.minX + shape.bounds.maxX) / 2,
+    y: (shape.bounds.minY + shape.bounds.maxY) / 2,
+  };
+  const centerCandidates = [shape.centroid, boundsCenter];
+  const center =
+    centerCandidates.find((candidate) => pointInPolygon(candidate, shape.points)) ??
+    boundsCenter;
+  const scale =
+    shape.points.reduce(
+      (maxExtent, point) =>
+        Math.max(
+          maxExtent,
+          Math.abs(point.x - center.x),
+          Math.abs(point.y - center.y)
+        ),
+      1
+    ) / 0.96;
+
+  return shape.points.map((point) => ({
+    x: clamp((point.x - center.x) / scale, -1, 1),
+    y: clamp((point.y - center.y) / scale, -1, 1),
+  }));
+}
+
+function stoneProjectionPoint(
+  point: Point,
+  index: number,
+  axis: ProjectionAxis,
+  shapeId: string,
+  seed: number
+) {
+  const jitterA = randomUnitFromKey(`${seed}-${shapeId}-${axis}-${index}-a`) - 0.5;
+  const jitterB = randomUnitFromKey(`${seed}-${shapeId}-${axis}-${index}-b`) - 0.5;
+  const waveA = Math.sin(point.x * 4.3 + point.y * 2.1 + seed * 0.0003);
+  const waveB = Math.cos(point.y * 3.7 - point.x * 1.9 + seed * 0.0002);
+  let x = point.x;
+  let y = point.y;
+
+  if (axis === "xz") {
+    x = point.x * (0.9 + jitterA * 0.12) + waveB * 0.035;
+    y = point.y * (0.68 + jitterB * 0.16) + waveA * 0.11;
+  } else if (axis === "yz") {
+    x = point.y * (0.88 + jitterA * 0.12) + waveA * 0.035;
+    y = point.x * (0.72 + jitterB * 0.16) + waveB * 0.1;
+  } else {
+    x = point.x * (0.94 + jitterA * 0.08) + waveA * 0.025;
+    y = point.y * (0.94 + jitterB * 0.08) + waveB * 0.025;
+  }
+
+  return {
+    x: clamp(x, -0.98, 0.98),
+    y: clamp(y, -0.98, 0.98),
+  };
+}
+
+function buildStoneProjections(shape: ShapeRegion, seed: number): StoneProjectionSet {
+  const normalized = normalizeShapeForStone(shape);
+
+  return {
+    xy: normalized.map((point, index) =>
+      stoneProjectionPoint(point, index, "xy", shape.id, seed)
+    ),
+    xz: normalized.map((point, index) =>
+      stoneProjectionPoint(point, index, "xz", shape.id, seed)
+    ),
+    yz: normalized.map((point, index) =>
+      stoneProjectionPoint(point, index, "yz", shape.id, seed)
+    ),
+  };
+}
+
+function projectionPath(points: Point[]) {
+  return points
+    .map((point, index) => {
+      const x = 50 + point.x * 42;
+      const y = 50 + point.y * 42;
+      return `${index === 0 ? "M" : "L"} ${x.toFixed(2)} ${y.toFixed(2)}`;
+    })
+    .join(" ")
+    .concat(" Z");
+}
+
+function buildStoneGeometry(
+  projections: StoneProjectionSet,
+  seed: number,
+  shapeId: string,
+  latitudeSteps = STONE_LATITUDE_STEPS,
+  longitudeSteps = STONE_LONGITUDE_STEPS
+): StoneGeometryModel {
+  const positions: number[] = [];
+  const uvs: number[] = [];
+  const indices: number[] = [];
+  const isInsideProjectionVolume = (x: number, y: number, z: number) =>
+    pointInPolygon({ x, y }, projections.xy) &&
+    pointInPolygon({ x, y: z }, projections.xz) &&
+    pointInPolygon({ x: y, y: z }, projections.yz);
+
+  const radiusForDirection = (x: number, y: number, z: number) => {
+    let low = 0;
+    let high = 1.42;
+
+    for (let step = 0; step < STONE_RADIUS_SEARCH_STEPS; step += 1) {
+      const middle = (low + high) / 2;
+
+      if (isInsideProjectionVolume(x * middle, y * middle, z * middle)) {
+        low = middle;
+      } else {
+        high = middle;
+      }
+    }
+
+    return low;
+  };
+
+  for (let latIndex = 0; latIndex <= latitudeSteps; latIndex += 1) {
+    const v = latIndex / latitudeSteps;
+    const phi = -Math.PI / 2 + v * Math.PI;
+    const ringRadius = Math.cos(phi);
+    const zDirection = Math.sin(phi);
+
+    for (let lonIndex = 0; lonIndex <= longitudeSteps; lonIndex += 1) {
+      const u = lonIndex / longitudeSteps;
+      const theta = u * Math.PI * 2;
+      const xDirection = ringRadius * Math.cos(theta);
+      const yDirection = ringRadius * Math.sin(theta);
+      const baseRadius = radiusForDirection(
+        xDirection,
+        yDirection,
+        zDirection
+      );
+      const surfaceNoise =
+        randomUnitFromKey(`${seed}-${shapeId}-stone-${latIndex}-${lonIndex}`) *
+        0.12;
+      const ripple =
+        Math.sin(theta * 3 + seed * 0.00007) *
+        Math.cos(phi * 4 + seed * 0.00011) *
+        0.035;
+      const radius = Math.max(0.02, baseRadius * (0.86 + surfaceNoise + ripple));
+
+      positions.push(
+        xDirection * radius,
+        yDirection * radius,
+        zDirection * radius
+      );
+      uvs.push(u, 1 - v);
+    }
+  }
+
+  const ringVertexCount = longitudeSteps + 1;
+
+  for (let latIndex = 0; latIndex < latitudeSteps; latIndex += 1) {
+    for (let lonIndex = 0; lonIndex < longitudeSteps; lonIndex += 1) {
+      const topLeft = latIndex * ringVertexCount + lonIndex;
+      const topRight = topLeft + 1;
+      const bottomLeft = topLeft + ringVertexCount;
+      const bottomRight = bottomLeft + 1;
+
+      indices.push(topLeft, bottomLeft, bottomRight);
+      indices.push(topLeft, bottomRight, topRight);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("uv", new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+
+  return { geometry, vertexCount: positions.length / 3 };
 }
 
 function unitVector(from: Point, to: Point): Point {
@@ -1227,12 +1444,208 @@ function StatChip({ label, value }: { label: string; value: string | number }) {
   );
 }
 
+function StoneMesh({
+  model,
+  texture,
+}: {
+  model: StoneGeometryModel;
+  texture: ShapeTexture;
+}) {
+  const textureMap = useTexture(texture.path);
+
+  useEffect(() => {
+    textureMap.wrapS = THREE.RepeatWrapping;
+    textureMap.wrapT = THREE.RepeatWrapping;
+    textureMap.colorSpace = THREE.SRGBColorSpace;
+    textureMap.anisotropy = 4;
+    textureMap.needsUpdate = true;
+  }, [textureMap]);
+
+  return (
+    <mesh geometry={model.geometry} rotation={[-0.28, 0.58, 0.08]}>
+      <meshStandardMaterial
+        map={textureMap}
+        roughness={0.88}
+        metalness={0.02}
+        side={THREE.DoubleSide}
+      />
+    </mesh>
+  );
+}
+
+function ProjectionPreview({
+  axis,
+  projections,
+  texture,
+  texturePatternId,
+}: {
+  axis: ProjectionAxis;
+  projections: StoneProjectionSet;
+  texture: ShapeTexture;
+  texturePatternId: string;
+}) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      xmlnsXlink="http://www.w3.org/1999/xlink"
+      viewBox="0 0 100 100"
+      width="100%"
+      height="100%"
+      role="img"
+      aria-label={`${axis.toUpperCase()} stone projection`}
+      style={{ display: "block" }}
+    >
+      <defs>
+        <pattern
+          id={texturePatternId}
+          patternUnits="objectBoundingBox"
+          patternContentUnits="objectBoundingBox"
+          x="0"
+          y="0"
+          width="1"
+          height="1"
+        >
+          <image
+            href={texture.path}
+            xlinkHref={texture.path}
+            x="0"
+            y="0"
+            width="1"
+            height="1"
+            preserveAspectRatio="xMidYMid slice"
+          />
+        </pattern>
+        <filter id={`${texturePatternId}-shadow`} x="-35%" y="-35%" width="170%" height="170%">
+          <feOffset dx="0" dy="2" />
+          <feGaussianBlur stdDeviation="2.2" result="offset-blur" />
+          <feComposite
+            operator="out"
+            in="SourceGraphic"
+            in2="offset-blur"
+            result="inverse"
+          />
+          <feFlood floodColor="#0f172a" floodOpacity="0.42" result="shadow-color" />
+          <feComposite
+            operator="in"
+            in="shadow-color"
+            in2="inverse"
+            result="inner-shadow"
+          />
+          <feComposite operator="over" in="inner-shadow" in2="SourceGraphic" />
+        </filter>
+      </defs>
+      <rect x="0" y="0" width="100" height="100" rx="8" fill="#f8fbfc" />
+      <path
+        d={projectionPath(projections[axis])}
+        fill={`url(#${texturePatternId})`}
+        filter={`url(#${texturePatternId}-shadow)`}
+      />
+    </svg>
+  );
+}
+
+function StoneInspectPreview({
+  shape,
+  texture,
+  seed,
+  startIn3d,
+}: {
+  shape: ShapeRegion;
+  texture: ShapeTexture;
+  seed: number;
+  startIn3d: boolean;
+}) {
+  const [viewMode, setViewMode] = useState<StoneViewMode>(
+    startIn3d ? "3d" : "xy"
+  );
+  const projections = useMemo(
+    () => buildStoneProjections(shape, seed),
+    [shape, seed]
+  );
+  const stoneModel = useMemo(
+    () =>
+      viewMode === "3d" ? buildStoneGeometry(projections, seed, shape.id) : null,
+    [projections, seed, shape.id, viewMode]
+  );
+  const patternId = `stone-projection-${seed}-${shape.id}-${texture.id}-${viewMode}`;
+
+  return (
+    <Box
+      sx={{
+        width: 148,
+        flexShrink: 0,
+        borderRadius: 1.25,
+        border: "1px solid rgba(15, 23, 42, 0.1)",
+        bgcolor: "#f8fbfc",
+        overflow: "hidden",
+      }}
+    >
+      <Tabs
+        value={viewMode}
+        onChange={(_, nextValue) => setViewMode(nextValue)}
+        variant="fullWidth"
+        sx={{
+          minHeight: 26,
+          borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+          "& .MuiTab-root": {
+            minHeight: 26,
+            minWidth: 0,
+            p: 0,
+            fontSize: 10,
+            fontWeight: 800,
+            color: "#475569",
+          },
+          "& .Mui-selected": {
+            color: "#0f766e",
+          },
+          "& .MuiTabs-indicator": {
+            height: 2,
+            bgcolor: "#0f766e",
+          },
+        }}
+      >
+        <Tab value="3d" label="3D" />
+        <Tab value="xy" label="XY" />
+        <Tab value="xz" label="XZ" />
+        <Tab value="yz" label="YZ" />
+      </Tabs>
+
+      <Box sx={{ height: 116, position: "relative" }}>
+        {viewMode === "3d" && stoneModel ? (
+          <Canvas
+            camera={{ position: [2.4, 2, 2.6], fov: 38 }}
+            gl={{ antialias: true, alpha: true }}
+            style={{ width: "100%", height: "100%" }}
+          >
+            <ambientLight intensity={1.8} />
+            <directionalLight position={[3, 4, 5]} intensity={1.7} />
+            <directionalLight position={[-3, -2, -4]} intensity={0.7} />
+            <StoneMesh model={stoneModel} texture={texture} />
+            <OrbitControls
+              enablePan={false}
+              enableZoom={false}
+              autoRotate
+              autoRotateSpeed={0.9}
+            />
+          </Canvas>
+        ) : (
+          <ProjectionPreview
+            axis={viewMode as ProjectionAxis}
+            projections={projections}
+            texture={texture}
+            texturePatternId={patternId}
+          />
+        )}
+      </Box>
+    </Box>
+  );
+}
+
 function ShapeListItem({
   shape,
   texture,
   textures,
-  cornerRoundness,
-  randomizeRoundness,
+  startIn3d,
   seed,
   onDownload,
   onTextureChange,
@@ -1240,117 +1653,29 @@ function ShapeListItem({
   shape: ShapeRegion;
   texture: ShapeTexture;
   textures: ShapeTexture[];
-  cornerRoundness: number;
-  randomizeRoundness: boolean;
+  startIn3d: boolean;
   seed: number;
   onDownload: (shape: ShapeRegion) => void;
   onTextureChange: (shapeId: string, textureId: string) => void;
 }) {
-  const texturePatternId = `texture-${seed}-${shape.id}`;
-  const innerShadowId = `inner-shadow-${seed}-${shape.id}`;
-  const shapePath = getShapePath(
-    shape,
-    cornerRoundness,
-    randomizeRoundness,
-    seed
-  );
-
   return (
     <Box
       sx={{
-        p: 1,
+        p: 1.1,
         borderRadius: 1.5,
         border: "1px solid rgba(15, 23, 42, 0.1)",
         bgcolor: "rgba(255, 255, 255, 0.58)",
       }}
     >
-      <Stack direction="row" spacing={1.25} alignItems="center">
-        <Box
-          sx={{
-            width: 72,
-            height: 56,
-            flexShrink: 0,
-            borderRadius: 1,
-            bgcolor: "#f8fbfc",
-            border: "1px solid rgba(15, 23, 42, 0.08)",
-            overflow: "hidden",
-          }}
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            xmlnsXlink="http://www.w3.org/1999/xlink"
-            viewBox={shapeViewBox(shape, Math.max(10, cornerRoundness + 4))}
-            width="100%"
-            height="100%"
-            role="img"
-            aria-label={`${shape.label} preview with ${texture.name} texture`}
-          >
-            <defs>
-              <pattern
-                id={texturePatternId}
-                patternUnits="objectBoundingBox"
-                patternContentUnits="objectBoundingBox"
-                x="0"
-                y="0"
-                width="1"
-                height="1"
-              >
-                <image
-                  href={texture.path}
-                  xlinkHref={texture.path}
-                  x="0"
-                  y="0"
-                  width="1"
-                  height="1"
-                  preserveAspectRatio="xMidYMid slice"
-                />
-              </pattern>
-              <filter
-                id={innerShadowId}
-                x="-35%"
-                y="-35%"
-                width="170%"
-                height="170%"
-              >
-                <feOffset dx="0" dy="2" />
-                <feGaussianBlur stdDeviation="2.2" result="offset-blur" />
-                <feComposite
-                  operator="out"
-                  in="SourceGraphic"
-                  in2="offset-blur"
-                  result="inverse"
-                />
-                <feFlood
-                  floodColor="#0f172a"
-                  floodOpacity="0.48"
-                  result="shadow-color"
-                />
-                <feComposite
-                  operator="in"
-                  in="shadow-color"
-                  in2="inverse"
-                  result="inner-shadow"
-                />
-                <feComposite
-                  operator="over"
-                  in="inner-shadow"
-                  in2="SourceGraphic"
-                />
-              </filter>
-            </defs>
-            <path
-              d={shapePath}
-              fill={`url(#${texturePatternId})`}
-              stroke="#334155"
-              strokeOpacity="0.38"
-              strokeWidth="1.5"
-              strokeLinejoin="round"
-              filter={`url(#${innerShadowId})`}
-            />
-          </svg>
-        </Box>
+      <Stack direction="row" spacing={1.25} alignItems="flex-start">
+        <StoneInspectPreview
+          shape={shape}
+          texture={texture}
+          seed={seed}
+          startIn3d={startIn3d}
+        />
 
-        <Box sx={{ minWidth: 0, flex: 1 }}>
+        <Box sx={{ minWidth: 150, flex: "1 1 150px" }}>
           <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
             {shape.label}
           </Typography>
@@ -1365,6 +1690,9 @@ function ShapeListItem({
               width: "100%",
               "& .MuiInputBase-root": {
                 bgcolor: "rgba(255, 255, 255, 0.72)",
+              },
+              "& .MuiSelect-select": {
+                pr: 3.5,
               },
             }}
           >
@@ -1552,7 +1880,7 @@ export default function IrregularShapeGenerator() {
         shapes: shapeRegions,
         squareSize,
         roundness: cornerRoundness,
-        strokeWidth,
+        strokeWidth: 0,
         randomizeRoundness,
         seed,
         title: `All generated shapes for seed ${seed}`,
@@ -1567,7 +1895,6 @@ export default function IrregularShapeGenerator() {
     seed,
     shapeRegions,
     squareSize,
-    strokeWidth,
     textureByShapeId,
   ]);
 
@@ -1589,7 +1916,7 @@ export default function IrregularShapeGenerator() {
           shapes: shapeRegions,
           squareSize,
           roundness: cornerRoundness,
-          strokeWidth,
+          strokeWidth: 0,
           randomizeRoundness,
           seed,
           title: `${shape.label} from seed ${seed}`,
@@ -1606,7 +1933,6 @@ export default function IrregularShapeGenerator() {
       seed,
       shapeRegions,
       squareSize,
-      strokeWidth,
       textureByShapeId,
     ]
   );
@@ -1689,7 +2015,8 @@ export default function IrregularShapeGenerator() {
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                lg: "320px minmax(0, 1fr) 340px",
+                lg: "300px minmax(430px, 1fr) minmax(390px, 420px)",
+                xl: "320px minmax(0, 1fr) 420px",
               },
               gap: 2,
               alignItems: "start",
@@ -2201,14 +2528,13 @@ export default function IrregularShapeGenerator() {
                     pr: { lg: 0.5 },
                   }}
                 >
-                  {shapeRegions.map((shape) => (
+                  {shapeRegions.map((shape, index) => (
                     <ShapeListItem
                       key={shape.id}
                       shape={shape}
                       texture={getSelectedTexture(shape)}
                       textures={SHAPE_TEXTURES}
-                      cornerRoundness={cornerRoundness}
-                      randomizeRoundness={randomizeRoundness}
+                      startIn3d={index === 0}
                       seed={seed}
                       onDownload={downloadShape}
                       onTextureChange={updateShapeTexture}
