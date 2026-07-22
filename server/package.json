@@ -1,0 +1,11 @@
+{
+  "name": "cougar-padlet-backend",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node padletServer.js"
+  }
+}
