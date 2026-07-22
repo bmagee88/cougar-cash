@@ -7,6 +7,9 @@ import {
 } from "./types";
 
 const API_BASE = (process.env.REACT_APP_PADLET_API_URL || "").replace(/\/$/, "");
+const isLocalFrontend =
+  typeof window !== "undefined" &&
+  ["localhost", "127.0.0.1"].includes(window.location.hostname);
 
 function withBase(path: string) {
   return `${API_BASE}${path}`;
@@ -27,6 +30,16 @@ function withQuery(path: string, params: Record<string, string | undefined>) {
 
 async function parseResponse<T>(response: Response): Promise<T> {
   const text = await response.text();
+  const contentType = response.headers.get("content-type") || "";
+
+  if (text.trim().startsWith("<!DOCTYPE") || !contentType.includes("json")) {
+    throw new Error(
+      isLocalFrontend
+        ? "The Padlet backend did not return JSON. Make sure npm run start:backend is running on port 4000."
+        : "The Padlet backend is not configured for this deployed site. Deploy the backend to a persistent Node host and set REACT_APP_PADLET_API_URL in Netlify."
+    );
+  }
+
   const payload = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
