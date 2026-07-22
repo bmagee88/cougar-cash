@@ -10,6 +10,7 @@ import TypingGamePage from "./typingProject/pages/TypingGamePage";
 import TypingMarathonMode from "./typingProject/pages/TypingMarathonMode";
 import SnakeGamePage from "./SnakeGamePage";
 import ComplianceQuizPage from "./ComplianceQuizProject/ComplianceQuizPage";
+import CQuiz2Page from "./CQuiz2/CQuiz2Page";
 import TimerApp from "./TimerApp/TimerApp";
 import Demo from "./components/FetchProgressModal/Demo";
 import Oroboros from "./oroboros/Oroboros";
@@ -49,6 +50,7 @@ function App() {
           ></Route>
           <Route path="/snake" element={<SnakeGamePage />}></Route>
           <Route path="/c-quiz" element={<ComplianceQuizPage />}></Route>
+          <Route path="/c-quiz-2" element={<CQuiz2Page />}></Route>
           <Route path="/timer" element={<TimerApp />}></Route>
           <Route path="/fpm" element={<Demo />}></Route>
           <Route path="/oroboros" element={<Oroboros />}></Route>

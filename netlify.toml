@@ -1,3 +1,15 @@
+[build]
+  command = "npm run build"
+  publish = "build"
+  functions = "netlify/functions"
+
+[dev]
+  command = "npm run start:frontend"
+  port = 8888
+  targetPort = 3001
+  publish = "build"
+  framework = "#custom"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
