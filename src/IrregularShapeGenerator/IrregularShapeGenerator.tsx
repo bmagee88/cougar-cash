@@ -4231,7 +4231,11 @@ export default function IrregularShapeGenerator() {
               </Paper>
 
               {selectedGrindingShape && (
-                <GrindingBench shape={selectedGrindingShape} seed={seed} />
+                <GrindingBench
+                  shape={selectedGrindingShape}
+                  texture={getSelectedTexture(selectedGrindingShape)}
+                  seed={seed}
+                />
               )}
 
               <Paper
