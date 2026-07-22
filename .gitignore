@@ -17,6 +17,8 @@
 
 # misc
 .DS_Store
+.netlify/
+.netlify-local/
 .env.local
 .env.development.local
 .env.test.local

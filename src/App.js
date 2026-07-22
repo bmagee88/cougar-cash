@@ -26,6 +26,7 @@ import ParentLetter from "./ParentLetter/ParentLetter";
 import SoundButton from "./SoundButton/SoundButton";
 import DndZoneCombatSimulator from "./DndZoneCombatSimulator/DndZoneCombatSimulator";
 import CuriosityApp from "./Curiosity App/CuriosityApp";
+import IrregularShapeGenerator from "./IrregularShapeGenerator/IrregularShapeGenerator";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -66,6 +67,10 @@ function App() {
           <Route path="/sound" element={<SoundButton />} />
           <Route path="/combat-sim" element={<DndZoneCombatSimulator />} />
           <Route path="/curiosity" element={<CuriosityApp />} />
+          <Route
+            path="/shape-gen"
+            element={<IrregularShapeGenerator />}
+          />
         </Routes>
       </Router>
     </Box>
