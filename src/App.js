@@ -27,6 +27,7 @@ import SoundButton from "./SoundButton/SoundButton";
 import DndZoneCombatSimulator from "./DndZoneCombatSimulator/DndZoneCombatSimulator";
 import CuriosityApp from "./Curiosity App/CuriosityApp";
 import IrregularShapeGenerator from "./IrregularShapeGenerator/IrregularShapeGenerator";
+import PadletSessionApp from "./PadletSessions/PadletSessionApp";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -71,6 +72,7 @@ function App() {
             path="/shape-gen"
             element={<IrregularShapeGenerator />}
           />
+          <Route path="/padlet/*" element={<PadletSessionApp />} />
         </Routes>
       </Router>
     </Box>

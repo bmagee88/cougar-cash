@@ -36,6 +36,15 @@ const tiles = [
     category: "utility",
   },
   {
+    path: "/padlet",
+    title: "Live Board",
+    subtitle: "Host a short reflection board",
+    emoji: "LB",
+    gradient: "linear-gradient(135deg, #0891b2, #84cc16)",
+    category: "utility",
+    multiplayer: true,
+  },
+  {
     path: "/oroboros",
     title: "Oroboros",
     subtitle: "Endless loop demo",
