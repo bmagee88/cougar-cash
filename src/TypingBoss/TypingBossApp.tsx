@@ -22,6 +22,10 @@ import {
   Container,
   createTheme,
   CssBaseline,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   Grid,
   IconButton,
@@ -76,6 +80,138 @@ import {
 const SESSION_ID_PATTERN = /^boss[0-9A-F]{3}$/;
 const PLAYER_CODE_PATTERN = /^hero[0-9A-F]{4}$/;
 const MAX_RECONNECT_ATTEMPTS = 5;
+const PUBLIC_ASSET_BASE = (process.env.PUBLIC_URL || "").replace(/\/$/, "");
+const TYPING_BOSS_ASSETS = {
+  arena: `${PUBLIC_ASSET_BASE}/assets/typing-boss/volcanic-arena.png`,
+  boss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/red-dragon-sprite.png`,
+  emberWhelpBoss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/ember-whelp-sprite.png`,
+  cindermawBoss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/red-dragon-sprite.png`,
+  ancientRedDragonBoss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/ancient-red-dragon-sprite.png`,
+  cleric: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-sprite.png`,
+  barbarian: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-sprite.png`,
+  paladin: `${PUBLIC_ASSET_BASE}/assets/typing-boss/paladin-sprite.png`,
+  rogue: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-sprite.png`,
+  necromancer: `${PUBLIC_ASSET_BASE}/assets/typing-boss/necromancer-sprite.png`,
+  monk: `${PUBLIC_ASSET_BASE}/assets/typing-boss/monk-sprite.png`,
+  barbarianWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-weak-attack-sprite.png`,
+  barbarianStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-strong-attack-sprite.png`,
+  clericWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-weak-attack-sprite.png`,
+  clericStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-strong-attack-sprite.png`,
+  rogueWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-weak-attack-sprite.png`,
+  rogueStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-strong-attack-sprite.png`,
+  necromancerWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/necromancer-weak-attack-sprite.png`,
+  necromancerStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/necromancer-strong-attack-sprite.png`,
+  paladinWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/paladin-weak-attack-sprite.png`,
+  paladinStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/paladin-strong-attack-sprite.png`,
+  fireballWhelp: `${PUBLIC_ASSET_BASE}/assets/typing-boss/fireball-whelp.png`,
+  fireballCindermaw: `${PUBLIC_ASSET_BASE}/assets/typing-boss/fireball-cindermaw.png`,
+  fireballAncientRedDragon: `${PUBLIC_ASSET_BASE}/assets/typing-boss/fireball-ancient-red-dragon.png`,
+} as const;
+
+const BOSS_SPRITE_ASSETS: Record<TypingBossId, string> = {
+  emberWhelp: TYPING_BOSS_ASSETS.emberWhelpBoss,
+  cindermaw: TYPING_BOSS_ASSETS.cindermawBoss,
+  infernalDragon: TYPING_BOSS_ASSETS.ancientRedDragonBoss,
+};
+
+const BOSS_FIREBALL_ASSETS: Record<TypingBossId, string> = {
+  emberWhelp: TYPING_BOSS_ASSETS.fireballWhelp,
+  cindermaw: TYPING_BOSS_ASSETS.fireballCindermaw,
+  infernalDragon: TYPING_BOSS_ASSETS.fireballAncientRedDragon,
+};
+
+const CLASS_PROJECTILE_ASSETS: Record<
+  TypingBossClassId,
+  { weak: string; strong: string }
+> = {
+  cleric: {
+    weak: TYPING_BOSS_ASSETS.clericWeakAttack,
+    strong: TYPING_BOSS_ASSETS.clericStrongAttack,
+  },
+  barbarian: {
+    weak: TYPING_BOSS_ASSETS.barbarianWeakAttack,
+    strong: TYPING_BOSS_ASSETS.barbarianStrongAttack,
+  },
+  paladin: {
+    weak: TYPING_BOSS_ASSETS.paladinWeakAttack,
+    strong: TYPING_BOSS_ASSETS.paladinStrongAttack,
+  },
+  rogue: {
+    weak: TYPING_BOSS_ASSETS.rogueWeakAttack,
+    strong: TYPING_BOSS_ASSETS.rogueStrongAttack,
+  },
+  necromancer: {
+    weak: TYPING_BOSS_ASSETS.necromancerWeakAttack,
+    strong: TYPING_BOSS_ASSETS.necromancerStrongAttack,
+  },
+  monk: {
+    weak: TYPING_BOSS_ASSETS.barbarianWeakAttack,
+    strong: TYPING_BOSS_ASSETS.clericStrongAttack,
+  },
+};
+
+const CLASS_ORDER: TypingBossClassId[] = [
+  "cleric",
+  "barbarian",
+  "paladin",
+  "rogue",
+  "necromancer",
+  "monk",
+];
+
+const CLASS_INFO: Record<
+  TypingBossClassId,
+  {
+    label: string;
+    special: string;
+    detail: string;
+    specialDetail: string;
+    color: string;
+  }
+> = {
+  cleric: {
+    label: "Cleric",
+    special: "Radiant Mend",
+    detail: "Ally healing through medium questions.",
+    specialDetail: "Heal an ally.",
+    color: "#facc15",
+  },
+  barbarian: {
+    label: "Barbarian",
+    special: "Rage Breaker",
+    detail: "A longer hard question for bigger damage.",
+    specialDetail: "Hard+ damage.",
+    color: "#fb7185",
+  },
+  paladin: {
+    label: "Paladin",
+    special: "Blessed Rally",
+    detail: "Buff another player's next attack by 50%.",
+    specialDetail: "Buff ally.",
+    color: "#fbbf24",
+  },
+  rogue: {
+    label: "Rogue",
+    special: "Shadow Veil",
+    detail: "Prepare one special evade that halves a boss hit chance.",
+    specialDetail: "Ready evade.",
+    color: "#a78bfa",
+  },
+  necromancer: {
+    label: "Necromancer",
+    special: "Soul Return",
+    detail: "Resurrect a fallen player at half HP.",
+    specialDetail: "Resurrect ally.",
+    color: "#86efac",
+  },
+  monk: {
+    label: "Monk",
+    special: "Third Palm",
+    detail: "No speed penalty, with a powerful easy special every third turn.",
+    specialDetail: "Every 3rd turn.",
+    color: "#fb923c",
+  },
+};
 
 const BOSS_CHOICES: {
   id: TypingBossId;
@@ -106,7 +242,7 @@ const BOSS_CHOICES: {
   },
   {
     id: "infernalDragon",
-    name: "Infernal Dragon",
+    name: "Ancient Red Dragon",
     difficulty: "hard",
     hp: 1550,
     attackIntervalMs: 12000,
@@ -114,6 +250,73 @@ const BOSS_CHOICES: {
     description: "Fast charge bar and punishing fireballs.",
   },
 ];
+
+type ArenaLayout = {
+  background: string;
+  hostBossPoint: Point;
+  playerBossPoint: Point;
+  hostSpawns: Point[];
+  playerSpawns: Point[];
+};
+
+const VOLCANIC_HOST_SPAWNS: Point[] = [
+  { x: 25, y: 76 },
+  { x: 36, y: 74 },
+  { x: 47, y: 72 },
+  { x: 58, y: 70 },
+  { x: 68, y: 68 },
+  { x: 20, y: 84 },
+  { x: 31, y: 86 },
+  { x: 42, y: 84 },
+  { x: 53, y: 82 },
+  { x: 64, y: 80 },
+  { x: 16, y: 92 },
+  { x: 28, y: 94 },
+  { x: 40, y: 92 },
+  { x: 52, y: 90 },
+  { x: 64, y: 88 },
+];
+
+const VOLCANIC_PLAYER_SPAWNS: Point[] = [
+  { x: 48, y: 84 },
+  { x: 24, y: 72 },
+  { x: 64, y: 70 },
+  { x: 16, y: 82 },
+  { x: 56, y: 78 },
+  { x: 34, y: 66 },
+  { x: 70, y: 62 },
+  { x: 22, y: 92 },
+  { x: 42, y: 94 },
+  { x: 62, y: 90 },
+];
+
+const BOSS_ARENAS: Record<TypingBossId, ArenaLayout> = {
+  emberWhelp: {
+    background: TYPING_BOSS_ASSETS.arena,
+    hostBossPoint: { x: 76, y: 54 },
+    playerBossPoint: { x: 76, y: 52 },
+    hostSpawns: VOLCANIC_HOST_SPAWNS,
+    playerSpawns: VOLCANIC_PLAYER_SPAWNS,
+  },
+  cindermaw: {
+    background: TYPING_BOSS_ASSETS.arena,
+    hostBossPoint: { x: 76, y: 53 },
+    playerBossPoint: { x: 76, y: 51 },
+    hostSpawns: VOLCANIC_HOST_SPAWNS,
+    playerSpawns: VOLCANIC_PLAYER_SPAWNS,
+  },
+  infernalDragon: {
+    background: TYPING_BOSS_ASSETS.arena,
+    hostBossPoint: { x: 76, y: 52 },
+    playerBossPoint: { x: 76, y: 50 },
+    hostSpawns: VOLCANIC_HOST_SPAWNS,
+    playerSpawns: VOLCANIC_PLAYER_SPAWNS,
+  },
+};
+
+function arenaForBoss(bossId: TypingBossId): ArenaLayout {
+  return BOSS_ARENAS[bossId] || BOSS_ARENAS.cindermaw;
+}
 
 type TypingProgressStats = {
   accepted: number;
@@ -264,13 +467,34 @@ function bossHitChanceFromAccuracy(accuracy: number) {
   return clamp(1 - accuracy + accuracy / 2, 0.35, 0.95);
 }
 
-function defensePercentFromAccuracy(accuracy: number) {
-  return Math.round((1 - bossHitChanceFromAccuracy(accuracy)) * 100);
+function effectiveBossHitChance(player: TypingBossPlayer) {
+  const base = bossHitChanceFromAccuracy(player.accuracy);
+  return player.classId === "rogue" && player.evadeReady ? base / 2 : base;
+}
+
+function defensePercentForPlayer(player: TypingBossPlayer) {
+  return Math.round((1 - effectiveBossHitChance(player)) * 100);
 }
 
 function attackStrengthForPlayer(player: TypingBossPlayer) {
   const speed = player.averageDps > 0 ? player.averageDps : 1;
-  return Math.max(1, Math.round(speed * (1 + player.correctStreak * 0.05) * 10));
+  return Math.max(
+    1,
+    Math.round(
+      speed *
+        (1 + player.correctStreak * 0.05) *
+        (player.nextAttackMultiplier || 1) *
+        10
+    )
+  );
+}
+
+function speedMultiplierForPlayer(player: TypingBossPlayer, effectiveDps: number) {
+  if (player.averageDps <= 0) return 1;
+  if (player.classId === "monk") {
+    return clamp(effectiveDps / player.averageDps, 1, 1.75);
+  }
+  return clamp(effectiveDps / player.averageDps, 0.65, 1.6);
 }
 
 function liveAttackStats(
@@ -284,15 +508,20 @@ function liveAttackStats(
   const accuracy = clamp(stats.accepted / totalKeystrokes, 0, 1);
   const durationSec = clamp((now - stats.startedAt) / 1000, 0.6, 180);
   const effectiveDps = stats.accepted / durationSec;
-  const speedMultiplier =
-    player.averageDps > 0 ? clamp(effectiveDps / player.averageDps, 0.65, 1.6) : 1;
+  const speedMultiplier = speedMultiplierForPlayer(player, effectiveDps);
   const accuracyMultiplier = accuracyBonusMultiplier(accuracy);
   const nextStreak = player.correctStreak + 1;
   const streakMultiplier = 1 + nextStreak * 0.05;
   const answerLength = answerInput.length || Math.max(...challenge.answers.map((answer) => answer.length));
   const baseCharacters = challenge.question.length + answerLength;
+  const buffMultiplier =
+    challenge.kind === "damage" ? player.nextAttackMultiplier || 1 : 1;
   const totalMultiplier =
-    challenge.movePower * speedMultiplier * accuracyMultiplier * streakMultiplier;
+    challenge.movePower *
+    speedMultiplier *
+    accuracyMultiplier *
+    streakMultiplier *
+    buffMultiplier;
   const estimatedAmount = Math.max(1, Math.round(baseCharacters * totalMultiplier));
 
   return {
@@ -305,6 +534,24 @@ function liveAttackStats(
     baseCharacters,
     estimatedAmount,
   };
+}
+
+function challengeEffectLabel(challenge: TypingBossChallenge) {
+  if (challenge.kind === "heal-self" || challenge.kind === "heal-other") return "Healing";
+  if (challenge.kind === "buff-other") return "Buff";
+  if (challenge.kind === "evade-self") return "Evade";
+  if (challenge.kind === "resurrect") return "Revive";
+  return "Attack";
+}
+
+function challengeEffectValue(
+  challenge: TypingBossChallenge,
+  preview: ReturnType<typeof liveAttackStats>
+) {
+  if (challenge.kind === "buff-other") return "+50%";
+  if (challenge.kind === "evade-self") return "Ready";
+  if (challenge.kind === "resurrect") return "Half HP";
+  return `${preview.estimatedAmount}`;
 }
 
 function sleep(ms: number) {
@@ -499,140 +746,17 @@ function StatusChip({ status }: { status: TypingBossStatus }) {
   );
 }
 
-function DragonSigil({
-  size = 96,
-  color = "#ef4444",
-}: {
-  size?: number;
-  color?: string;
-}) {
-  return (
-    <Box
-      component="svg"
-      viewBox="0 0 180 140"
-      aria-hidden="true"
-      sx={{ width: size, height: size, display: "block" }}
-    >
-      <defs>
-        <radialGradient id="dragonGlow" cx="50%" cy="48%" r="58%">
-          <stop offset="0%" stopColor="#fde68a" />
-          <stop offset="48%" stopColor={color} />
-          <stop offset="100%" stopColor="#581c1c" />
-        </radialGradient>
-      </defs>
-      <path
-        d="M82 48 22 14 40 70 12 92 70 86z"
-        fill="#7f1d1d"
-        stroke="#1f0a0a"
-        strokeWidth="5"
-      />
-      <path
-        d="M98 48 158 14 140 70 168 92 110 86z"
-        fill="#7f1d1d"
-        stroke="#1f0a0a"
-        strokeWidth="5"
-      />
-      <path
-        d="M90 12 104 36 130 28 117 54 142 70 112 76 118 110 91 92 64 110 70 76 38 70 64 54 50 28 76 36z"
-        fill="url(#dragonGlow)"
-        stroke="#fed7aa"
-        strokeWidth="4"
-      />
-      <path
-        d="M66 64c8-24 40-24 48 0 8 24-4 48-24 59-20-11-32-35-24-59z"
-        fill="#240909"
-        stroke={color}
-        strokeWidth="5"
-      />
-      <path
-        d="M72 52 58 22l27 18M108 52l14-30-27 18"
-        fill="none"
-        stroke="#fed7aa"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <rect x="76" y="67" width="9" height="8" fill="#facc15" />
-      <rect x="96" y="67" width="9" height="8" fill="#facc15" />
-      <path
-        d="M78 91c8 8 17 8 25 0"
-        fill="none"
-        stroke="#f97316"
-        strokeWidth="6"
-        strokeLinecap="round"
-      />
-      <path
-        d="M55 102 32 124M126 102l22 22"
-        stroke="#1f0a0a"
-        strokeWidth="8"
-        strokeLinecap="round"
-      />
-    </Box>
-  );
-}
-
-function VolcanicBackdrop() {
+function VolcanicBackdrop({ background = TYPING_BOSS_ASSETS.arena }: { background?: string }) {
   return (
     <>
       <Box
         sx={{
           position: "absolute",
           inset: 0,
-          background:
-            "linear-gradient(180deg, #160912 0%, #241019 34%, #191010 58%, #0d0d10 100%)",
-        }}
-      />
-      {[
-        { left: "7%", top: "9%", scale: 1.1 },
-        { left: "84%", top: "7%", scale: 1.25 },
-        { left: "18%", top: "28%", scale: 0.7 },
-        { left: "72%", top: "30%", scale: 0.75 },
-      ].map((volcano, index) => (
-        <Box
-          key={`volcano-${index}`}
-          sx={{
-            position: "absolute",
-            left: volcano.left,
-            top: volcano.top,
-            width: 92 * volcano.scale,
-            height: 120 * volcano.scale,
-            transform: "translate(-50%, -12%)",
-            clipPath: "polygon(50% 0, 100% 100%, 0 100%)",
-            bgcolor: "#1f1113",
-            boxShadow: "inset 0 -12px 0 rgba(0,0,0,.35)",
-            "&:after": {
-              content: '""',
-              position: "absolute",
-              left: "45%",
-              top: 0,
-              width: "13%",
-              height: "92%",
-              bgcolor: "#f97316",
-              boxShadow: "0 0 18px #f97316",
-            },
-          }}
-        />
-      ))}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: "48% 0 0",
-          background:
-            "linear-gradient(90deg, transparent 0 8%, #ef4444 8% 9%, transparent 9% 23%, #f97316 23% 24%, transparent 24% 39%, #b91c1c 39% 40%, transparent 40% 63%, #ef4444 63% 64%, transparent 64% 78%, #f97316 78% 79%, transparent 79%), linear-gradient(180deg, #1b1b1f, #0d0d10)",
-          backgroundSize: "100% 100%, 100% 100%",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          left: "-5%",
-          right: "-5%",
-          bottom: "-12%",
-          height: "58%",
-          background:
-            "radial-gradient(circle at 20% 20%, #2d2d33 0 3px, transparent 4px), radial-gradient(circle at 55% 65%, #34343a 0 4px, transparent 5px), linear-gradient(135deg, transparent 0 9%, #ef4444 9% 10%, transparent 10% 33%, #7f1d1d 33% 34%, transparent 34% 60%, #f97316 60% 61%, transparent 61%), #141416",
-          backgroundSize: "34px 34px, 42px 42px, 100% 100%, 100% 100%",
-          transform: "perspective(600px) rotateX(8deg)",
-          transformOrigin: "bottom",
+          backgroundImage: `linear-gradient(180deg, rgba(5,8,13,.08), rgba(5,8,13,.22) 48%, rgba(5,8,13,.64) 100%), url("${background}")`,
+          backgroundPosition: "center center",
+          backgroundSize: "cover",
+          imageRendering: "pixelated",
         }}
       />
       <Box
@@ -640,11 +764,59 @@ function VolcanicBackdrop() {
           position: "absolute",
           inset: 0,
           background:
-            "radial-gradient(circle at 50% 26%, rgba(239,68,68,.25), transparent 30%), linear-gradient(180deg, transparent 65%, rgba(0,0,0,.55))",
+            "linear-gradient(180deg, rgba(0,0,0,.2), transparent 22%, rgba(0,0,0,.12) 58%, rgba(0,0,0,.72)), linear-gradient(90deg, rgba(0,0,0,.36), transparent 18%, transparent 78%, rgba(0,0,0,.32))",
         }}
       />
     </>
   );
+}
+
+function BossSprite({
+  width,
+  glow = "#ef4444",
+  bossId = "cindermaw",
+}: {
+  width: number | { xs: number; md: number };
+  glow?: string;
+  bossId?: TypingBossId;
+}) {
+  return (
+    <Box
+      component="img"
+      src={BOSS_SPRITE_ASSETS[bossId]}
+      alt=""
+      draggable={false}
+      sx={{
+        width,
+        maxWidth: "100%",
+        height: "auto",
+        display: "block",
+        imageRendering: "pixelated",
+        filter: `drop-shadow(0 18px 34px ${glow}66) drop-shadow(0 18px 0 rgba(0,0,0,.22))`,
+        userSelect: "none",
+      }}
+    />
+  );
+}
+
+function bossPreviewWidth(bossId: TypingBossId) {
+  if (bossId === "emberWhelp") {
+    return { xs: 170, md: 190 };
+  }
+  if (bossId === "infernalDragon") {
+    return { xs: 250, md: 300 };
+  }
+  return { xs: 220, md: 260 };
+}
+
+function bossBattleWidth(bossId: TypingBossId, size: "host" | "player") {
+  if (bossId === "emberWhelp") {
+    return size === "host" ? { xs: 170, md: 220 } : { xs: 190, md: 250 };
+  }
+  if (bossId === "infernalDragon") {
+    return size === "host" ? { xs: 320, md: 430 } : { xs: 340, md: 470 };
+  }
+  return size === "host" ? { xs: 260, md: 340 } : { xs: 280, md: 380 };
 }
 
 function ClassMark({
@@ -654,7 +826,7 @@ function ClassMark({
   classId: TypingBossClassId;
   size?: number;
 }) {
-  const isCleric = classId === "cleric";
+  const info = CLASS_INFO[classId];
   return (
     <Box
       sx={{
@@ -663,67 +835,57 @@ function ClassMark({
         borderRadius: "50%",
         display: "grid",
         placeItems: "center",
-        bgcolor: isCleric ? "#3d3513" : "#3b1720",
-        color: isCleric ? "#facc15" : "#fb7185",
-        border: `2px solid ${isCleric ? "#facc15" : "#fb7185"}`,
-        boxShadow: `0 0 18px ${isCleric ? "rgba(250,204,21,.24)" : "rgba(251,113,133,.24)"}`,
+        bgcolor: `${info.color}22`,
+        color: info.color,
+        border: `2px solid ${info.color}`,
+        boxShadow: `0 0 18px ${info.color}3d`,
       }}
     >
-      {isCleric ? <ShieldIcon /> : <LocalFireDepartmentIcon />}
+      {classIcon(classId)}
     </Box>
   );
 }
 
-function PixelHeroSprite({
+function classIcon(classId: TypingBossClassId) {
+  if (classId === "cleric" || classId === "paladin") return <ShieldIcon />;
+  if (classId === "barbarian") return <LocalFireDepartmentIcon />;
+  if (classId === "rogue") return <AutoFixHighIcon />;
+  if (classId === "necromancer") return <FavoriteIcon />;
+  return <BoltIcon />;
+}
+
+function PlayerCharacterSprite({
   classId,
   color,
   size = 62,
+  highlight = false,
 }: {
   classId: TypingBossClassId;
   color: string;
   size?: number;
+  highlight?: boolean;
 }) {
-  const robe = classId === "cleric" ? "#f8fafc" : "#8b451c";
-  const trim = classId === "cleric" ? "#facc15" : "#c084fc";
+  const src = TYPING_BOSS_ASSETS[classId];
   return (
     <Box
-      component="svg"
-      viewBox="0 0 64 76"
+      component="img"
+      src={src}
+      alt=""
+      draggable={false}
       aria-hidden="true"
       sx={{
-        width: size,
-        height: size * 1.18,
+        height: size,
+        width: "auto",
+        maxWidth: size * 0.82,
+        objectFit: "contain",
         display: "block",
         imageRendering: "pixelated",
-        filter: `drop-shadow(0 8px 0 rgba(0,0,0,.35)) drop-shadow(0 0 12px ${color}66)`,
+        filter: `drop-shadow(0 8px 0 rgba(0,0,0,.34)) drop-shadow(0 0 ${
+          highlight ? 18 : 10
+        }px ${color}${highlight ? "cc" : "66"})`,
+        userSelect: "none",
       }}
-    >
-      <rect x="24" y="8" width="16" height="14" fill="#d6a66a" />
-      <rect x="20" y="20" width="24" height="36" fill={robe} />
-      <rect x="18" y="30" width="8" height="22" fill={color} />
-      <rect x="38" y="30" width="8" height="22" fill={color} />
-      <rect x="22" y="54" width="8" height="12" fill="#111827" />
-      <rect x="34" y="54" width="8" height="12" fill="#111827" />
-      <rect x="20" y="24" width="24" height="6" fill={trim} />
-      <rect x="27" y="30" width="10" height="18" fill={trim} opacity="0.75" />
-      {classId === "cleric" ? (
-        <>
-          <rect x="48" y="13" width="4" height="48" fill="#c08b32" />
-          <rect x="43" y="14" width="14" height="8" fill="#facc15" />
-          <rect x="47" y="8" width="6" height="18" fill="#facc15" />
-        </>
-      ) : (
-        <>
-          <rect x="48" y="24" width="4" height="38" fill="#d6a66a" />
-          <rect x="44" y="16" width="14" height="14" fill="#9ca3af" />
-          <rect x="50" y="10" width="8" height="10" fill="#e5e7eb" />
-        </>
-      )}
-      <rect x="14" y="34" width="7" height="14" fill="#d6a66a" />
-      <rect x="43" y="34" width="7" height="14" fill="#d6a66a" />
-      <rect x="17" y="66" width="14" height="5" fill="#05070a" />
-      <rect x="33" y="66" width="14" height="5" fill="#05070a" />
-    </Box>
+    />
   );
 }
 
@@ -763,7 +925,7 @@ function moveIcon(moveId: TypingBossMoveId, classId: TypingBossClassId) {
   if (moveId === "weak") return <BoltIcon />;
   if (moveId === "strong") return <AutoFixHighIcon />;
   if (moveId === "potion") return <FavoriteIcon />;
-  return classId === "cleric" ? <ShieldIcon /> : <LocalFireDepartmentIcon />;
+  return classIcon(classId);
 }
 
 function CreateGamePage() {
@@ -775,6 +937,7 @@ function CreateGamePage() {
   const [error, setError] = useState("");
   const selectedBoss =
     BOSS_CHOICES.find((boss) => boss.id === selectedBossId) || BOSS_CHOICES[1];
+  const selectedArena = arenaForBoss(selectedBoss.id);
 
   async function handleCreate() {
     const name = gameName.trim();
@@ -916,6 +1079,14 @@ function CreateGamePage() {
               >
                 Create host session
               </Button>
+              <Button
+                component={RouterLink}
+                to="/typing-boss/join"
+                variant="outlined"
+                startIcon={<PersonAddIcon />}
+              >
+                Join a game
+              </Button>
             </Stack>
           </Paper>
         </Box>
@@ -930,17 +1101,24 @@ function CreateGamePage() {
             bgcolor: "#10080a",
           }}
         >
-          <VolcanicBackdrop />
+          <VolcanicBackdrop background={selectedArena.background} />
           <Box
             sx={{
               position: "absolute",
-              left: "50%",
-              top: "40%",
+              left: {
+                xs: `${selectedArena.hostBossPoint.x - 4}%`,
+                md: `${selectedArena.hostBossPoint.x}%`,
+              },
+              top: `${selectedArena.hostBossPoint.y}%`,
               transform: "translate(-50%, -50%)",
               filter: `drop-shadow(0 20px 45px ${selectedBoss.color}99)`,
             }}
           >
-            <DragonSigil size={190} color={selectedBoss.color} />
+            <BossSprite
+              width={bossPreviewWidth(selectedBoss.id)}
+              glow={selectedBoss.color}
+              bossId={selectedBoss.id}
+            />
           </Box>
           <Box
             sx={{
@@ -1008,6 +1186,15 @@ function HostSessionPage() {
   const [copied, setCopied] = useState(false);
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [outcomeDismissed, setOutcomeDismissed] = useState(false);
+
+  useEffect(() => {
+    if (session?.status === "active") {
+      setOutcomeDismissed(false);
+    }
+  }, [session?.status]);
 
   if (!normalizedSessionId || !SESSION_ID_PATTERN.test(normalizedSessionId)) {
     return <Navigate to="/typing-boss" replace />;
@@ -1102,6 +1289,12 @@ function HostSessionPage() {
               variant="outlined"
               sx={{ maxWidth: { xs: "100%", md: 420 }, fontFamily: "monospace" }}
             />
+            <Button variant="outlined" onClick={() => setCodeModalOpen(true)}>
+              Display Code
+            </Button>
+            <Button variant="outlined" onClick={() => setStatsOpen(true)}>
+              Stats
+            </Button>
             <Button
               variant="contained"
               startIcon={<PlayArrowIcon />}
@@ -1145,6 +1338,29 @@ function HostSessionPage() {
           </Grid>
         </Grid>
       </Stack>
+      <HostCodeModal
+        open={codeModalOpen}
+        sessionId={normalizedSessionId}
+        onClose={() => setCodeModalOpen(false)}
+      />
+      <BattleStatsModal
+        open={statsOpen}
+        session={session}
+        onClose={() => setStatsOpen(false)}
+      />
+      <BattleOutcomeModal
+        open={
+          ["victory", "defeat"].includes(session.status) &&
+          !outcomeDismissed &&
+          !statsOpen
+        }
+        session={session}
+        onClose={() => setOutcomeDismissed(true)}
+        onStats={() => {
+          setOutcomeDismissed(true);
+          setStatsOpen(true);
+        }}
+      />
     </PageFrame>
   );
 }
@@ -1199,7 +1415,7 @@ function JoinPage() {
 
         <Box>
           <Typography variant="h3" sx={{ fontWeight: 950, letterSpacing: 0 }}>
-            Join Battle
+            Join a Game
           </Typography>
           <Typography sx={{ color: "text.secondary", mt: 1 }}>
             Choose your class, enter your name, and connect to the host session.
@@ -1256,8 +1472,11 @@ function JoinPage() {
                     setClassId(event.target.value as TypingBossClassId)
                   }
                 >
-                  <MenuItem value="cleric">Cleric</MenuItem>
-                  <MenuItem value="barbarian">Barbarian</MenuItem>
+                  {CLASS_ORDER.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {CLASS_INFO[item].label}
+                    </MenuItem>
+                  ))}
                 </TextField>
                 {error && <Alert severity="error">{error}</Alert>}
                 <Button
@@ -1274,8 +1493,10 @@ function JoinPage() {
 
           <Grid item xs={12} md={7}>
             <Grid container spacing={2}>
-              {(["cleric", "barbarian"] as TypingBossClassId[]).map((item) => (
-                <Grid item xs={12} sm={6} key={item}>
+              {CLASS_ORDER.map((item) => {
+                const info = CLASS_INFO[item];
+                return (
+                <Grid item xs={12} sm={6} md={4} key={item}>
                   <Paper
                     elevation={0}
                     onClick={() => setClassId(item)}
@@ -1287,27 +1508,30 @@ function JoinPage() {
                       borderRadius: 2,
                       p: 2,
                       cursor: "pointer",
-                      minHeight: 210,
-                      bgcolor:
-                        item === "cleric"
-                          ? "rgba(250,204,21,.08)"
-                          : "rgba(251,113,133,.08)",
+                      minHeight: 238,
+                      bgcolor: `${info.color}14`,
                     }}
                   >
                     <Stack spacing={1.5}>
-                      <ClassMark classId={item} size={54} />
+                      <Stack direction="row" spacing={1.5} alignItems="center">
+                        <PlayerCharacterSprite
+                          classId={item}
+                          color={info.color}
+                          size={104}
+                        />
+                        <ClassMark classId={item} size={42} />
+                      </Stack>
                       <Typography variant="h5" sx={{ fontWeight: 950 }}>
-                        {item === "cleric" ? "Cleric" : "Barbarian"}
+                        {info.label}
                       </Typography>
                       <Typography sx={{ color: "text.secondary" }}>
-                        {item === "cleric"
-                          ? "Radiant Mend turns medium questions into ally healing."
-                          : "Rage Breaker asks a longer hard question for bigger damage."}
+                        {info.detail}
                       </Typography>
                     </Stack>
                   </Paper>
                 </Grid>
-              ))}
+                );
+              })}
             </Grid>
           </Grid>
         </Grid>
@@ -1328,6 +1552,8 @@ function PlayerSessionPage() {
   );
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState("");
+  const [statsOpen, setStatsOpen] = useState(false);
+  const [outcomeDismissed, setOutcomeDismissed] = useState(false);
   const {
     reconnecting,
     session,
@@ -1359,6 +1585,12 @@ function PlayerSessionPage() {
       cancelled = true;
     };
   }, [normalizedSessionId, savedCode]);
+
+  useEffect(() => {
+    if (session?.status === "active") {
+      setOutcomeDismissed(false);
+    }
+  }, [session?.status]);
 
   if (!normalizedSessionId || !SESSION_ID_PATTERN.test(normalizedSessionId)) {
     return <Navigate to="/typing-boss/join" replace />;
@@ -1411,9 +1643,48 @@ function PlayerSessionPage() {
         me={me}
         sessionId={normalizedSessionId}
         code={savedCode}
+        onOpenStats={() => setStatsOpen(true)}
+      />
+      <BattleStatsModal
+        open={statsOpen}
+        session={session}
+        me={me}
+        onClose={() => setStatsOpen(false)}
+      />
+      <BattleOutcomeModal
+        open={
+          ["victory", "defeat"].includes(session.status) &&
+          !outcomeDismissed &&
+          !statsOpen
+        }
+        session={session}
+        onClose={() => setOutcomeDismissed(true)}
+        onStats={() => {
+          setOutcomeDismissed(true);
+          setStatsOpen(true);
+        }}
       />
     </PageFrame>
   );
+}
+
+function specialTargetMode(classId: TypingBossClassId) {
+  if (classId === "cleric") return "heal";
+  if (classId === "paladin") return "buff";
+  if (classId === "necromancer") return "resurrect";
+  return "";
+}
+
+function specialTargetTitle(classId: TypingBossClassId) {
+  if (classId === "paladin") return "Buff Target";
+  if (classId === "necromancer") return "Resurrection Target";
+  return "Heal Target";
+}
+
+function specialTargetError(classId: TypingBossClassId) {
+  if (classId === "paladin") return "Blessed Rally needs another living player.";
+  if (classId === "necromancer") return "Soul Return needs a fallen player.";
+  return "Radiant Mend needs a valid target.";
 }
 
 function PlayerBattlePanel({
@@ -1421,11 +1692,13 @@ function PlayerBattlePanel({
   me,
   sessionId,
   code,
+  onOpenStats,
 }: {
   session: TypingBossSessionSnapshot;
   me: TypingBossPlayer;
   sessionId: string;
   code: string;
+  onOpenStats: () => void;
 }) {
   const [menuIndex, setMenuIndex] = useState(0);
   const [mode, setMode] = useState<"menu" | "target" | "typing">("menu");
@@ -1480,36 +1753,52 @@ function PlayerBattlePanel({
   }, []);
 
   const moves = useMemo(
-    () => [
-      {
-        id: "weak" as TypingBossMoveId,
-        label: "Weak Attack",
-        detail: "Easy",
-      },
-      {
-        id: "strong" as TypingBossMoveId,
-        label: "Strong Attack",
-        detail: "Medium",
-      },
-      {
-        id: "special" as TypingBossMoveId,
-        label: me.classId === "cleric" ? "Radiant Mend" : "Rage Breaker",
-        detail: me.classId === "cleric" ? "Ally heal" : "Hard+",
-      },
-      {
-        id: "potion" as TypingBossMoveId,
-        label: "Potion",
-        detail: "Self heal",
-      },
-    ],
-    [me.classId]
+    () => {
+      const info = CLASS_INFO[me.classId];
+      const specialDetail = me.specialReady
+        ? info.specialDetail
+        : me.classId === "monk"
+        ? `Ready in ${Math.max(1, 2 - me.monkSpecialCharge)} turn`
+        : "Already active";
+
+      return [
+        {
+          id: "weak" as TypingBossMoveId,
+          label: "Weak Attack",
+          detail: "Easy",
+        },
+        {
+          id: "strong" as TypingBossMoveId,
+          label: "Strong Attack",
+          detail: "Medium",
+        },
+        {
+          id: "special" as TypingBossMoveId,
+          label: info.special,
+          detail: specialDetail,
+          disabled: !me.specialReady,
+        },
+        {
+          id: "potion" as TypingBossMoveId,
+          label: "Potion",
+          detail: "Self heal",
+        },
+      ];
+    },
+    [me.classId, me.monkSpecialCharge, me.specialReady]
   );
 
   const targetCandidates = useMemo(() => {
     const alive = session.players.filter((player) => !player.defeated);
     const allies = alive.filter((player) => player.code !== me.code);
-    return allies.length > 0 ? allies : alive;
-  }, [me.code, session.players]);
+    const targetMode = specialTargetMode(me.classId);
+    if (targetMode === "buff") return allies;
+    if (targetMode === "resurrect") {
+      return session.players.filter((player) => player.defeated && player.code !== me.code);
+    }
+    if (targetMode === "heal") return allies.length > 0 ? allies : alive;
+    return [];
+  }, [me.classId, me.code, session.players]);
 
   const canAct = session.status === "active" && !me.defeated && !busy;
 
@@ -1558,15 +1847,27 @@ function PlayerBattlePanel({
   const chooseSelectedMove = useCallback(() => {
     const move = moves[menuIndex];
     if (!move || !canAct) return;
+    if (move.disabled) {
+      setError(
+        meRef.current.classId === "monk"
+          ? "Third Palm is ready every third turn."
+          : "That special is already active."
+      );
+      return;
+    }
 
-    if (move.id === "special" && meRef.current.classId === "cleric") {
+    if (move.id === "special" && specialTargetMode(meRef.current.classId)) {
+      if (targetCandidates.length === 0) {
+        setError(specialTargetError(meRef.current.classId));
+        return;
+      }
       setTargetIndex(0);
       setMode("target");
       return;
     }
 
     startChallenge(move.id);
-  }, [canAct, menuIndex, moves, startChallenge]);
+  }, [canAct, menuIndex, moves, startChallenge, targetCandidates.length]);
 
   const recordMistake = useCallback(() => {
     typingRef.current.mistakes += 1;
@@ -1595,7 +1896,7 @@ function PlayerBattlePanel({
         answerText,
         Date.now()
       );
-      const steps = [
+      const steps: BonusStep[] = [
         {
           label: "Characters",
           value: `${preview.baseCharacters}`,
@@ -1617,10 +1918,19 @@ function PlayerBattlePanel({
           value: `x${preview.streakMultiplier.toFixed(2)}`,
         },
         {
-          label: activeChallenge.kind === "damage" ? "Attack" : "Heal",
-          value: `${preview.estimatedAmount}`,
+          label: challengeEffectLabel(activeChallenge),
+          value: challengeEffectValue(activeChallenge, preview),
         },
       ];
+      if (
+        activeChallenge.kind === "damage" &&
+        (meRef.current.nextAttackMultiplier || 1) > 1
+      ) {
+        steps.splice(5, 0, {
+          label: "Paladin Buff",
+          value: `x${meRef.current.nextAttackMultiplier.toFixed(2)}`,
+        });
+      }
       setBonusAnimation({ steps, activeIndex: -1 });
       for (let index = 0; index < steps.length; index += 1) {
         setBonusAnimation({ steps, activeIndex: index });
@@ -1822,6 +2132,14 @@ function PlayerBattlePanel({
           </Typography>
         </Box>
 
+        <Button
+          variant="outlined"
+          onClick={onOpenStats}
+          sx={{ alignSelf: { xs: "stretch", md: "flex-start" } }}
+        >
+          Stats
+        </Button>
+
         <Paper
           elevation={0}
           sx={{
@@ -1880,6 +2198,8 @@ function PlayerBattlePanel({
                 />
               ) : mode === "target" ? (
                 <TargetSelector
+                  title={specialTargetTitle(me.classId)}
+                  emptyLabel={specialTargetError(me.classId)}
                   targets={targetCandidates}
                   selectedIndex={targetIndex}
                   onSelect={(index) => setTargetIndex(index)}
@@ -1920,7 +2240,7 @@ function MoveMenu({
   onSelect,
   onConfirm,
 }: {
-  moves: { id: TypingBossMoveId; label: string; detail: string }[];
+  moves: { id: TypingBossMoveId; label: string; detail: string; disabled?: boolean }[];
   selectedIndex: number;
   classId: TypingBossClassId;
   disabled: boolean;
@@ -1954,7 +2274,7 @@ function MoveMenu({
             <Button
               key={move.id}
               variant={selected ? "contained" : "outlined"}
-              disabled={disabled}
+              disabled={disabled || move.disabled}
               onClick={() => onSelect(index)}
               onDoubleClick={onConfirm}
               sx={{
@@ -1992,7 +2312,11 @@ function MoveMenu({
           );
         })}
       </Box>
-      <Button variant="contained" disabled={disabled} onClick={onConfirm}>
+      <Button
+        variant="contained"
+        disabled={disabled || Boolean(moves[selectedIndex]?.disabled)}
+        onClick={onConfirm}
+      >
         Select
       </Button>
     </Stack>
@@ -2000,11 +2324,15 @@ function MoveMenu({
 }
 
 function TargetSelector({
+  title,
+  emptyLabel,
   targets,
   selectedIndex,
   onSelect,
   onConfirm,
 }: {
+  title: string;
+  emptyLabel: string;
   targets: TypingBossPlayer[];
   selectedIndex: number;
   onSelect: (index: number) => void;
@@ -2014,11 +2342,14 @@ function TargetSelector({
     <Stack spacing={1.5}>
       <Stack direction="row" justifyContent="space-between" alignItems="center">
         <Typography variant="h6" sx={{ fontWeight: 950 }}>
-          Heal Target
+          {title}
         </Typography>
         <Chip size="small" label="Enter" variant="outlined" sx={{ fontWeight: 900 }} />
       </Stack>
       <Stack spacing={1}>
+        {targets.length === 0 && (
+          <Alert severity="info">{emptyLabel}</Alert>
+        )}
         {targets.map((target, index) => (
           <Button
             key={target.code}
@@ -2109,8 +2440,8 @@ function TypingChallengeView({
             value: `x${preview.totalMultiplier.toFixed(2)}`,
           },
           {
-            label: challenge.kind === "damage" ? "Attack" : "Healing",
-            value: `${preview.estimatedAmount}`,
+            label: challengeEffectLabel(challenge),
+            value: challengeEffectValue(challenge, preview),
           },
         ].map((stat) => (
           <Box
@@ -2426,6 +2757,228 @@ function BattleLog({
   );
 }
 
+function HostCodeModal({
+  open,
+  sessionId,
+  onClose,
+}: {
+  open: boolean;
+  sessionId: string;
+  onClose: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const joinUrl = joinUrlForSession(sessionId);
+
+  async function copyCode() {
+    await navigator.clipboard.writeText(sessionId);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  }
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle sx={{ fontWeight: 950 }}>Game Code</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} alignItems="center" sx={{ py: 1 }}>
+          <Typography
+            sx={{
+              fontFamily: "'Courier New', monospace",
+              fontSize: { xs: 48, md: 76 },
+              fontWeight: 950,
+              color: "#67e8f9",
+              textShadow: "0 4px 0 #000",
+              letterSpacing: 0,
+            }}
+          >
+            {sessionId.toUpperCase()}
+          </Typography>
+          <Typography sx={{ color: "text.secondary", overflowWrap: "anywhere" }}>
+            {joinUrl}
+          </Typography>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={copyCode}>{copied ? "Copied" : "Copy Code"}</Button>
+        <Button onClick={onClose} variant="contained">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function BattleOutcomeModal({
+  open,
+  session,
+  onClose,
+  onStats,
+}: {
+  open: boolean;
+  session: TypingBossSessionSnapshot;
+  onClose: () => void;
+  onStats: () => void;
+}) {
+  const victory = session.status === "victory";
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+      <DialogTitle
+        sx={{
+          fontWeight: 950,
+          color: victory ? "#67e8f9" : "#fb7185",
+          textAlign: "center",
+          fontSize: { xs: 30, md: 42 },
+          letterSpacing: 0,
+        }}
+      >
+        {victory ? "VICTORY" : "DEFEAT"}
+      </DialogTitle>
+      <DialogContent>
+        <Typography sx={{ textAlign: "center", color: "text.secondary" }}>
+          {victory
+            ? `${session.boss.name} has fallen.`
+            : "The party was knocked out."}
+        </Typography>
+      </DialogContent>
+      <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+        <Button onClick={onStats} variant="outlined">
+          See Stats
+        </Button>
+        <Button component={RouterLink} to="/typing-boss/join" variant="contained">
+          Join a Game
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function StatTile({ label, value }: { label: string; value: string | number }) {
+  return (
+    <Box
+      sx={{
+        border: "1px solid #31394a",
+        borderRadius: 1,
+        p: 1,
+        bgcolor: "#0f151f",
+      }}
+    >
+      <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>
+        {label}
+      </Typography>
+      <Typography sx={{ fontWeight: 950, fontSize: 20 }}>{value}</Typography>
+    </Box>
+  );
+}
+
+function BattleStatsModal({
+  open,
+  session,
+  me,
+  onClose,
+}: {
+  open: boolean;
+  session: TypingBossSessionSnapshot;
+  me?: TypingBossPlayer;
+  onClose: () => void;
+}) {
+  const rankedPlayers = [...session.players].sort(
+    (a, b) => b.totalDamage - a.totalDamage
+  );
+  const focus = me || rankedPlayers[0] || null;
+
+  return (
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+      <DialogTitle sx={{ fontWeight: 950 }}>
+        {me ? "Personal Stats" : "Battle Stats"}
+      </DialogTitle>
+      <DialogContent>
+        <Stack spacing={2}>
+          {focus && (
+            <Paper
+              elevation={0}
+              sx={{ border: "1px solid #31394a", borderRadius: 2, p: 2 }}
+            >
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.5 }}>
+                <ClassMark classId={focus.classId} size={42} />
+                <Box>
+                  <Typography sx={{ fontWeight: 950 }}>{focus.name}</Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {focus.classLabel}
+                  </Typography>
+                </Box>
+              </Stack>
+              <Grid container spacing={1}>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Damage" value={focus.totalDamage} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Healing" value={focus.totalHealing} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Accuracy" value={`${Math.round(focus.accuracy * 100)}%`} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Avg DPS" value={focus.averageDps.toFixed(1)} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Turns" value={focus.turnsTaken} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Buffs" value={focus.totalBuffs} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Revives" value={focus.totalResurrections} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Evades" value={focus.specialEvades} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Boss Hits" value={focus.bossHitsTaken} />
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <StatTile label="Dodges" value={focus.regularBossMisses} />
+                </Grid>
+              </Grid>
+            </Paper>
+          )}
+
+          <Stack spacing={1}>
+            <Typography sx={{ fontWeight: 950 }}>Party Ranking</Typography>
+            {rankedPlayers.map((player, index) => (
+              <Paper
+                key={player.code}
+                elevation={0}
+                sx={{ border: "1px solid #31394a", borderRadius: 1, p: 1 }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Typography sx={{ fontWeight: 950, width: 28 }}>
+                    #{index + 1}
+                  </Typography>
+                  <ClassMark classId={player.classId} size={34} />
+                  <Box sx={{ minWidth: 0, flex: 1 }}>
+                    <Typography sx={{ fontWeight: 900 }}>{player.name}</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                      Dmg {player.totalDamage} | Heal {player.totalHealing} | Buff{" "}
+                      {player.totalBuffs} | Revive {player.totalResurrections}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Paper>
+            ))}
+          </Stack>
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button component={RouterLink} to="/typing-boss/join">
+          Join a Game
+        </Button>
+        <Button onClick={onClose} variant="contained">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
 function bossChargePercent(session: TypingBossSessionSnapshot, now: number) {
   if (session.status !== "active") return 0;
   const start = session.boss.lastAttackAt;
@@ -2433,19 +2986,13 @@ function bossChargePercent(session: TypingBossSessionSnapshot, now: number) {
   return clamp(((now - start) / Math.max(1, end - start)) * 100, 0, 100);
 }
 
-function playerHostPositions(players: TypingBossPlayer[]) {
+function playerHostPositions(players: TypingBossPlayer[], spawns: Point[]) {
   const positions = new Map<string, Point>();
-  const perRow = players.length > 10 ? 5 : players.length > 6 ? 4 : 6;
 
   players.forEach((player, index) => {
-    const row = Math.floor(index / perRow);
-    const rowStart = row * perRow;
-    const rowItems = players.slice(rowStart, rowStart + perRow);
-    const rowIndex = index - rowStart;
-    const rowCount = Math.max(1, rowItems.length);
-    const x = rowCount === 1 ? 50 : 16 + (68 * rowIndex) / (rowCount - 1);
-    const y = 60 + row * 14;
-    positions.set(player.code, { x, y });
+    const base = spawns[index % spawns.length] || { x: 44, y: 84 };
+    const rowOffset = Math.floor(index / spawns.length) * 2.5;
+    positions.set(player.code, { x: base.x, y: Math.min(95, base.y + rowOffset) });
   });
 
   return positions;
@@ -2453,15 +3000,16 @@ function playerHostPositions(players: TypingBossPlayer[]) {
 
 function playerPersonalPositions(
   players: TypingBossPlayer[],
-  me: TypingBossPlayer
+  me: TypingBossPlayer,
+  spawns: Point[]
 ) {
   const positions = new Map<string, Point>();
   const allies = players.filter((player) => player.code !== me.code);
-  positions.set(me.code, { x: 50, y: 78 });
+  positions.set(me.code, spawns[0] || { x: 48, y: 84 });
   allies.forEach((player, index) => {
-    const side = index % 2 === 0 ? 18 : 82;
-    const row = Math.floor(index / 2);
-    positions.set(player.code, { x: side, y: 66 - row * 12 });
+    const base = spawns[(index + 1) % spawns.length] || { x: 28, y: 76 };
+    const rowOffset = Math.floor((index + 1) / spawns.length) * 2.5;
+    positions.set(player.code, { x: base.x, y: Math.min(95, base.y + rowOffset) });
   });
   return positions;
 }
@@ -2472,10 +3020,7 @@ function projectilePosition(
   positions: Map<string, Point>,
   bossPoint: Point
 ) {
-  const from =
-    projectile.source === "boss" ? bossPoint : positions.get(projectile.source) || bossPoint;
-  const to =
-    projectile.target === "boss" ? bossPoint : positions.get(projectile.target) || bossPoint;
+  const { from, to } = projectileEndpoints(projectile, positions, bossPoint);
   const progress = easeOutCubic(
     clamp(
       (now - projectile.startedAt) /
@@ -2491,16 +3036,90 @@ function projectilePosition(
   };
 }
 
+function projectileEndpoints(
+  projectile: TypingBossProjectile,
+  positions: Map<string, Point>,
+  bossPoint: Point
+) {
+  const from =
+    projectile.source === "boss" ? bossPoint : positions.get(projectile.source) || bossPoint;
+  const to =
+    projectile.target === "boss" ? bossPoint : positions.get(projectile.target) || bossPoint;
+  return { from, to };
+}
+
+type ProjectileArt = {
+  src: string;
+  size: number;
+  glow: string;
+};
+
+function projectileArtFor(
+  projectile: TypingBossProjectile,
+  playerByCode: Map<string, TypingBossPlayer>
+): ProjectileArt | null {
+  if (projectile.kind === "boss") {
+    const bossId = projectile.bossId || "cindermaw";
+    const sizeByBoss: Record<TypingBossId, number> = {
+      emberWhelp: 42,
+      cindermaw: 54,
+      infernalDragon: 68,
+    };
+    return {
+      src: BOSS_FIREBALL_ASSETS[bossId],
+      size: sizeByBoss[bossId],
+      glow: "#fb923c",
+    };
+  }
+
+  if (projectile.kind === "resurrect") {
+    return {
+      src: TYPING_BOSS_ASSETS.necromancerStrongAttack,
+      size: 58,
+      glow: "#86efac",
+    };
+  }
+
+  if (projectile.kind === "buff") {
+    return {
+      src: TYPING_BOSS_ASSETS.paladinStrongAttack,
+      size: 54,
+      glow: "#facc15",
+    };
+  }
+
+  if (projectile.kind === "heal") {
+    return {
+      src: TYPING_BOSS_ASSETS.clericWeakAttack,
+      size: 46,
+      glow: "#fde68a",
+    };
+  }
+
+  if (projectile.kind !== "damage") {
+    return null;
+  }
+
+  const sourceClass = playerByCode.get(projectile.source)?.classId || "barbarian";
+  const moveTier = projectile.moveId === "weak" ? "weak" : "strong";
+  return {
+    src: CLASS_PROJECTILE_ASSETS[sourceClass][moveTier],
+    size: moveTier === "weak" ? 48 : 64,
+    glow: moveTier === "weak" ? "#fbbf24" : "#f97316",
+  };
+}
+
 function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
   const now = useNow(120);
-  const bossPoint = { x: 50, y: 28 };
+  const arena = arenaForBoss(session.boss.id);
+  const bossPoint = arena.hostBossPoint;
   const positions = useMemo(
-    () => playerHostPositions(session.players),
-    [session.players]
+    () => playerHostPositions(session.players, arena.hostSpawns),
+    [arena.hostSpawns, session.players]
   );
 
   return (
-    <BattlefieldShell minHeight={640}>
+    <BattlefieldShell minHeight={640} background={arena.background}>
       <BossNode session={session} point={bossPoint} now={now} size="host" />
       {session.players.map((player) => (
         <PlayerNode
@@ -2515,6 +3134,7 @@ function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
         now={now}
         positions={positions}
         bossPoint={bossPoint}
+        players={session.players}
       />
     </BattlefieldShell>
   );
@@ -2528,14 +3148,15 @@ function PlayerBattlefield({
   me: TypingBossPlayer;
 }) {
   const now = useNow(120);
-  const bossPoint = { x: 50, y: 28 };
+  const arena = arenaForBoss(session.boss.id);
+  const bossPoint = arena.playerBossPoint;
   const positions = useMemo(
-    () => playerPersonalPositions(session.players, me),
-    [me, session.players]
+    () => playerPersonalPositions(session.players, me, arena.playerSpawns),
+    [arena.playerSpawns, me, session.players]
   );
 
   return (
-    <BattlefieldShell minHeight={600}>
+    <BattlefieldShell minHeight={600} background={arena.background}>
       <BossNode session={session} point={bossPoint} now={now} size="player" />
       {session.players.map((player) => (
         <PlayerNode
@@ -2551,6 +3172,7 @@ function PlayerBattlefield({
         now={now}
         positions={positions}
         bossPoint={bossPoint}
+        players={session.players}
       />
     </BattlefieldShell>
   );
@@ -2559,9 +3181,11 @@ function PlayerBattlefield({
 function BattlefieldShell({
   children,
   minHeight,
+  background,
 }: {
   children: React.ReactNode;
   minHeight: number;
+  background: string;
 }) {
   return (
     <Box
@@ -2576,7 +3200,7 @@ function BattlefieldShell({
         boxShadow: "inset 0 0 0 2px #c08b32",
       }}
     >
-      <VolcanicBackdrop />
+      <VolcanicBackdrop background={background} />
       {children}
     </Box>
   );
@@ -2593,82 +3217,90 @@ function BossNode({
   now: number;
   size: "host" | "player";
 }) {
-  const dragonSize = size === "host" ? 230 : 260;
+  const dragonWidth = bossBattleWidth(session.boss.id, size);
   return (
-    <Box
-      sx={{
-        position: "absolute",
-        left: `${point.x}%`,
-        top: "3%",
-        transform: "translateX(-50%)",
-        width: { xs: "88%", md: size === "host" ? 760 : 720 },
-        textAlign: "center",
-        zIndex: 2,
-      }}
-    >
-      <Typography
-        sx={{
-          fontFamily: "'Courier New', monospace",
-          fontWeight: 950,
-          fontSize: { xs: 22, md: 30 },
-          letterSpacing: 0,
-          textShadow: "0 3px 0 #000",
-        }}
-      >
-        {session.boss.name.toUpperCase()}
-      </Typography>
+    <>
       <Box
         sx={{
-          border: "2px solid #c08b32",
-          bgcolor: "#250707",
-          p: 0.5,
-          boxShadow: "0 0 0 2px #120707, 0 6px 0 rgba(0,0,0,.35)",
+          position: "absolute",
+          left: "50%",
+          top: "3%",
+          transform: "translateX(-50%)",
+          width: { xs: "88%", md: size === "host" ? 760 : 720 },
+          textAlign: "center",
+          zIndex: 5,
         }}
       >
-        <StatBar
-          value={session.boss.hp}
-          max={session.boss.maxHp}
-          color={session.boss.color}
-          height={20}
-        />
+        <Typography
+          sx={{
+            fontFamily: "'Courier New', monospace",
+            fontWeight: 950,
+            fontSize: { xs: 22, md: 30 },
+            letterSpacing: 0,
+            textShadow: "0 3px 0 #000",
+          }}
+        >
+          {session.boss.name.toUpperCase()}
+        </Typography>
+        <Box
+          sx={{
+            border: "2px solid #c08b32",
+            bgcolor: "#250707",
+            p: 0.5,
+            boxShadow: "0 0 0 2px #120707, 0 6px 0 rgba(0,0,0,.35)",
+          }}
+        >
+          <StatBar
+            value={session.boss.hp}
+            max={session.boss.maxHp}
+            color={session.boss.color}
+            height={20}
+          />
+        </Box>
+        <Typography
+          sx={{
+            fontFamily: "'Courier New', monospace",
+            color: "#f8fafc",
+            fontWeight: 950,
+            mt: -2.7,
+            position: "relative",
+            textShadow: "0 2px 0 #000",
+          }}
+        >
+          {Math.round(session.boss.hp)} / {session.boss.maxHp} HP
+        </Typography>
+        <Box sx={{ width: { xs: "72%", md: 380 }, mx: "auto", mt: 0.75 }}>
+          <LinearProgress
+            variant="determinate"
+            value={bossChargePercent(session, now)}
+            sx={{
+              height: 8,
+              borderRadius: 999,
+              bgcolor: "rgba(250,204,21,.13)",
+              "& .MuiLinearProgress-bar": {
+                bgcolor: "#facc15",
+              },
+            }}
+          />
+        </Box>
       </Box>
-      <Typography
-        sx={{
-          fontFamily: "'Courier New', monospace",
-          color: "#f8fafc",
-          fontWeight: 950,
-          mt: -2.7,
-          position: "relative",
-          textShadow: "0 2px 0 #000",
-        }}
-      >
-        {Math.round(session.boss.hp)} / {session.boss.maxHp} HP
-      </Typography>
       <Box
         sx={{
-          display: "flex",
-          justifyContent: "center",
-          mt: 0.5,
+          position: "absolute",
+          left: `${point.x}%`,
+          top: `${point.y}%`,
+          transform: "translate(-50%, -50%)",
+          zIndex: 2,
           filter: `drop-shadow(0 18px 34px ${session.boss.glow})`,
         }}
       >
-        <DragonSigil size={dragonSize} color={session.boss.color} />
-      </Box>
-      <Box sx={{ width: { xs: "72%", md: 380 }, mx: "auto", mt: -1 }}>
-        <LinearProgress
-          variant="determinate"
-          value={bossChargePercent(session, now)}
-          sx={{
-            height: 8,
-            borderRadius: 999,
-            bgcolor: "rgba(250,204,21,.13)",
-            "& .MuiLinearProgress-bar": {
-              bgcolor: "#facc15",
-            },
-          }}
+        <BossSprite
+          width={dragonWidth}
+          glow={session.boss.color}
+          bossId={session.boss.id}
         />
       </Box>
-    </Box>
+    </>
   );
 }
 
@@ -2684,7 +3316,7 @@ function PlayerNode({
   highlight?: boolean;
 }) {
   const width = compact ? 132 : 170;
-  const defense = defensePercentFromAccuracy(player.accuracy);
+  const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
   return (
     <Box
@@ -2705,10 +3337,11 @@ function PlayerNode({
           alignItems="center"
           justifyContent="center"
         >
-          <PixelHeroSprite
+          <PlayerCharacterSprite
             classId={player.classId}
             color={highlight ? "#67e8f9" : player.color}
-            size={compact ? 42 : 58}
+            size={compact ? 62 : 86}
+            highlight={highlight}
           />
           <Stack spacing={0.35}>
             <Chip
@@ -2735,6 +3368,34 @@ function PlayerNode({
                 fontWeight: 950,
               }}
             />
+            {player.nextAttackMultiplier > 1 && (
+              <Chip
+                size="small"
+                label={`BUFF x${player.nextAttackMultiplier.toFixed(1)}`}
+                sx={{
+                  height: compact ? 20 : 22,
+                  bgcolor: "rgba(250,204,21,.12)",
+                  color: "#facc15",
+                  border: "1px solid #facc15",
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: 950,
+                }}
+              />
+            )}
+            {player.evadeReady && (
+              <Chip
+                size="small"
+                label="EVADE"
+                sx={{
+                  height: compact ? 20 : 22,
+                  bgcolor: "rgba(167,139,250,.12)",
+                  color: "#c4b5fd",
+                  border: "1px solid #a78bfa",
+                  fontSize: compact ? 10 : 11,
+                  fontWeight: 950,
+                }}
+              />
+            )}
           </Stack>
         </Stack>
         <Box sx={{ width: "100%", textAlign: "center" }}>
@@ -2771,20 +3432,35 @@ function ProjectileLayer({
   now,
   positions,
   bossPoint,
+  players,
 }: {
   projectiles: TypingBossProjectile[];
   now: number;
   positions: Map<string, Point>;
   bossPoint: Point;
+  players: TypingBossPlayer[];
 }) {
+  const playerByCode = useMemo(
+    () => new Map(players.map((player) => [player.code, player])),
+    [players]
+  );
+
   return (
     <>
       {projectiles.map((projectile) => {
         const point = projectilePosition(projectile, now, positions, bossPoint);
+        const endpoints = projectileEndpoints(projectile, positions, bossPoint);
+        const angle =
+          (Math.atan2(endpoints.to.y - endpoints.from.y, endpoints.to.x - endpoints.from.x) *
+            180) /
+          Math.PI;
+        const art = projectileArtFor(projectile, playerByCode);
         const isPending = projectile.result === "pending";
         const color =
-          projectile.kind === "heal"
+          projectile.kind === "heal" || projectile.kind === "resurrect"
             ? "#86efac"
+            : projectile.kind === "buff"
+            ? "#facc15"
             : projectile.kind === "boss"
             ? "#fb7185"
             : "#67e8f9";
@@ -2801,31 +3477,60 @@ function ProjectileLayer({
               pointerEvents: "none",
             }}
           >
-            <Box
-              sx={{
-                width: projectile.kind === "boss" ? 24 : 18,
-                height: projectile.kind === "boss" ? 24 : 18,
-                borderRadius: "50%",
-                bgcolor: color,
-                boxShadow: `0 0 22px ${color}`,
-                border: "2px solid rgba(255,255,255,.65)",
-              }}
-            />
+            {art ? (
+              <Box
+                component="img"
+                src={art.src}
+                alt=""
+                draggable={false}
+                sx={{
+                  width: art.size,
+                  height: art.size,
+                  objectFit: "contain",
+                  display: "block",
+                  imageRendering: "pixelated",
+                  transform: `rotate(${angle}deg)`,
+                  transformOrigin: "50% 50%",
+                  filter: `drop-shadow(0 0 12px ${art.glow}) drop-shadow(0 6px 0 rgba(0,0,0,.25))`,
+                  userSelect: "none",
+                }}
+              />
+            ) : (
+              <Box
+                sx={{
+                  width: projectile.kind === "boss" ? 24 : 18,
+                  height: projectile.kind === "boss" ? 24 : 18,
+                  borderRadius: "50%",
+                  bgcolor: color,
+                  boxShadow: `0 0 22px ${color}`,
+                  border: "2px solid rgba(255,255,255,.65)",
+                }}
+              />
+            )}
             {!isPending && (
               <Chip
                 size="small"
                 label={
-                  projectile.result === "miss"
+                  projectile.result === "evade"
+                    ? "EVADE"
+                    : projectile.result === "miss"
                     ? "MISS"
-                    : projectile.kind === "heal"
+                    : projectile.kind === "heal" || projectile.kind === "resurrect"
                     ? `+${projectile.amount}`
+                    : projectile.kind === "buff"
+                    ? projectile.amount
+                      ? "BUFF"
+                      : "READY"
                     : `-${projectile.amount}`
                 }
                 sx={{
                   mt: 0.5,
-                  bgcolor: projectile.result === "miss" ? "#34212a" : "#10131a",
+                  bgcolor:
+                    projectile.result === "miss" ? "#34212a" : "#10131a",
                   color: projectile.result === "miss" ? "#fda4af" : color,
-                  border: `1px solid ${projectile.result === "miss" ? "#fda4af" : color}`,
+                  border: `1px solid ${
+                    projectile.result === "miss" ? "#fda4af" : color
+                  }`,
                   fontWeight: 950,
                 }}
               />
