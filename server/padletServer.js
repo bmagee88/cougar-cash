@@ -60,7 +60,7 @@ const TYPING_BOSS_PROFILES = {
   },
   infernalDragon: {
     id: "infernalDragon",
-    name: "Infernal Dragon",
+    name: "Ancient Red Dragon",
     difficulty: "hard",
     maxHp: 1550,
     attackIntervalMs: 12000,
@@ -88,6 +88,34 @@ const TYPING_BOSS_CLASSES = {
     maxHp: 165,
     color: "#fb7185",
     specialLabel: "Rage Breaker",
+  },
+  paladin: {
+    id: "paladin",
+    label: "Paladin",
+    maxHp: 155,
+    color: "#fbbf24",
+    specialLabel: "Blessed Rally",
+  },
+  rogue: {
+    id: "rogue",
+    label: "Rogue",
+    maxHp: 125,
+    color: "#a78bfa",
+    specialLabel: "Shadow Veil",
+  },
+  necromancer: {
+    id: "necromancer",
+    label: "Necromancer",
+    maxHp: 130,
+    color: "#86efac",
+    specialLabel: "Soul Return",
+  },
+  monk: {
+    id: "monk",
+    label: "Monk",
+    maxHp: 140,
+    color: "#fb923c",
+    specialLabel: "Third Palm",
   },
 };
 
@@ -120,6 +148,34 @@ const TYPING_BOSS_MOVES = {
     difficulty: "hard",
     power: 1.72,
     extraLong: true,
+  },
+  paladinSpecial: {
+    id: "paladinSpecial",
+    label: "Blessed Rally",
+    kind: "buff-other",
+    difficulty: "medium",
+    power: 1,
+  },
+  rogueSpecial: {
+    id: "rogueSpecial",
+    label: "Shadow Veil",
+    kind: "evade-self",
+    difficulty: "easy",
+    power: 1,
+  },
+  necromancerSpecial: {
+    id: "necromancerSpecial",
+    label: "Soul Return",
+    kind: "resurrect",
+    difficulty: "medium",
+    power: 1,
+  },
+  monkSpecial: {
+    id: "monkSpecial",
+    label: "Third Palm",
+    kind: "damage",
+    difficulty: "easy",
+    power: 1.48,
   },
   potion: {
     id: "potion",
@@ -461,7 +517,7 @@ function normalizeTypingBossPlayerName(value, fallback) {
 }
 
 function normalizeTypingBossClass(value) {
-  return value === "barbarian" ? "barbarian" : "cleric";
+  return TYPING_BOSS_CLASSES[value] ? value : "cleric";
 }
 
 function normalizeTypingBossProfile(value) {
@@ -886,12 +942,53 @@ function shuffleCopy(items) {
 
 function typingBossMoveForPlayer(player, moveId) {
   if (moveId === "special") {
-    return player.classId === "barbarian"
-      ? TYPING_BOSS_MOVES.barbarianSpecial
-      : TYPING_BOSS_MOVES.clericSpecial;
+    const moveByClass = {
+      barbarian: TYPING_BOSS_MOVES.barbarianSpecial,
+      paladin: TYPING_BOSS_MOVES.paladinSpecial,
+      rogue: TYPING_BOSS_MOVES.rogueSpecial,
+      necromancer: TYPING_BOSS_MOVES.necromancerSpecial,
+      monk: TYPING_BOSS_MOVES.monkSpecial,
+      cleric: TYPING_BOSS_MOVES.clericSpecial,
+    };
+    return moveByClass[player.classId] || TYPING_BOSS_MOVES.clericSpecial;
   }
 
   return TYPING_BOSS_MOVES[moveId] || TYPING_BOSS_MOVES.weak;
+}
+
+function typingBossSpecialReady(player) {
+  if (player.classId === "monk") {
+    return (player.monkSpecialCharge || 0) >= 2;
+  }
+
+  if (player.classId === "rogue") {
+    return !player.evadeReady;
+  }
+
+  return true;
+}
+
+function typingBossSpeedMultiplier(player, effectiveDps, previousAverage) {
+  if (!player.averageDps) {
+    return 1;
+  }
+
+  if (player.classId === "monk") {
+    return clampNumber(effectiveDps / previousAverage, 1, 1.75);
+  }
+
+  return clampNumber(effectiveDps / previousAverage, 0.65, 1.6);
+}
+
+function advanceTypingBossPlayerTurn(player, move) {
+  player.turnsTaken = (player.turnsTaken || 0) + 1;
+
+  if (player.classId === "monk") {
+    player.monkSpecialCharge =
+      move.id === "monkSpecial"
+        ? 0
+        : Math.min(2, (player.monkSpecialCharge || 0) + 1);
+  }
 }
 
 function typingBossQuestionById(questionId) {
@@ -946,6 +1043,36 @@ function typingBossAccuracyBonus(attackAccuracy) {
 function typingBossResolveTarget(session, player, move, requestedTargetCode) {
   if (move.kind === "heal-self") {
     return player.code;
+  }
+
+  if (move.kind === "evade-self") {
+    return player.code;
+  }
+
+  if (move.kind === "buff-other") {
+    const requested = session.players.get(normalizeTypingBossPlayerCode(requestedTargetCode));
+    if (requested && requested.hp > 0 && requested.code !== player.code) {
+      return requested.code;
+    }
+
+    const ally = [...session.players.values()].find(
+      (candidate) => candidate.hp > 0 && candidate.code !== player.code
+    );
+
+    return ally?.code || null;
+  }
+
+  if (move.kind === "resurrect") {
+    const requested = session.players.get(normalizeTypingBossPlayerCode(requestedTargetCode));
+    if (requested && requested.hp <= 0) {
+      return requested.code;
+    }
+
+    const defeated = [...session.players.values()].find(
+      (candidate) => candidate.hp <= 0 && candidate.code !== player.code
+    );
+
+    return defeated?.code || null;
   }
 
   if (move.kind === "heal-other") {
@@ -1025,23 +1152,43 @@ function getTypingBossPlayerSnapshot(player) {
     correctStreak: player.correctStreak,
     totalDamage: Math.round(player.totalDamage),
     totalHealing: Math.round(player.totalHealing),
+    totalBuffs: player.totalBuffs || 0,
+    totalResurrections: player.totalResurrections || 0,
+    bossHitsTaken: player.bossHitsTaken || 0,
+    regularBossMisses: player.regularBossMisses || 0,
+    specialEvades: player.specialEvades || 0,
+    turnsTaken: player.turnsTaken || 0,
+    nextAttackMultiplier: Number((player.nextAttackMultiplier || 1).toFixed(2)),
+    evadeReady: Boolean(player.evadeReady),
+    monkSpecialCharge: player.monkSpecialCharge || 0,
+    specialReady: typingBossSpecialReady(player),
     defeated: player.hp <= 0,
   };
 }
 
 function getTypingBossProjectileSnapshot(projectile) {
   const pending = !projectile.resolvedAt;
+  const result = pending
+    ? "pending"
+    : projectile.willHit
+    ? "hit"
+    : projectile.evadeType === "special"
+    ? "evade"
+    : "miss";
   return {
     id: projectile.id,
     source: projectile.source,
     target: projectile.target,
     kind: projectile.kind,
+    moveId: projectile.moveId || null,
+    bossId: projectile.bossId || null,
     moveLabel: projectile.moveLabel,
     startedAt: projectile.startedAt,
     impactAt: projectile.impactAt,
     resolvedAt: projectile.resolvedAt || null,
-    result: pending ? "pending" : projectile.willHit ? "hit" : "miss",
+    result,
     amount: pending ? null : projectile.amount,
+    evadeType: projectile.evadeType || null,
   };
 }
 
@@ -1253,7 +1400,7 @@ function resolveTypingBossProjectile(session, projectileId) {
   projectile.resolvedAt = Date.now();
 
   if (
-    (projectile.kind === "damage" || projectile.kind === "heal") &&
+    ["damage", "heal", "resurrect", "buff"].includes(projectile.kind) &&
     typeof projectile.nextStreak === "number"
   ) {
     const source = session.players.get(projectile.source);
@@ -1308,30 +1455,99 @@ function resolveTypingBossProjectile(session, projectileId) {
     } else {
       addTypingBossLog(session, `${projectile.sourceName}'s heal fizzled.`, "miss");
     }
+  } else if (projectile.kind === "resurrect") {
+    const target = session.players.get(projectile.target);
+    if (projectile.willHit && target && target.hp <= 0) {
+      target.hp = Math.max(1, Math.ceil(target.maxHp / 2));
+      const source = session.players.get(projectile.source);
+      if (source) {
+        source.totalHealing += target.hp;
+        source.totalResurrections = (source.totalResurrections || 0) + 1;
+      }
+      addTypingBossLog(
+        session,
+        `${projectile.sourceName} resurrected ${target.name} with ${target.hp} HP.`,
+        "heal"
+      );
+    } else {
+      addTypingBossLog(session, `${projectile.sourceName}'s resurrection failed.`, "miss");
+    }
+  } else if (projectile.kind === "buff") {
+    const target = session.players.get(projectile.target);
+    const source = session.players.get(projectile.source);
+    if (projectile.willHit && target) {
+      if (projectile.buffType === "attack") {
+        target.nextAttackMultiplier = Math.max(
+          target.nextAttackMultiplier || 1,
+          projectile.multiplier || 1.5
+        );
+        if (source) {
+          source.totalBuffs = (source.totalBuffs || 0) + 1;
+        }
+        addTypingBossLog(
+          session,
+          `${projectile.sourceName} buffed ${target.name}'s next attack by 50%.`,
+          "heal"
+        );
+      } else if (projectile.buffType === "evade") {
+        target.evadeReady = true;
+        if (source) {
+          source.totalBuffs = (source.totalBuffs || 0) + 1;
+        }
+        addTypingBossLog(
+          session,
+          `${target.name} prepared a special evade.`,
+          "evade"
+        );
+      }
+    } else {
+      addTypingBossLog(session, `${projectile.sourceName}'s buff fizzled.`, "miss");
+    }
   } else if (projectile.kind === "boss") {
     const target = session.players.get(projectile.target);
     if (projectile.willHit && target && target.hp > 0) {
       target.hp = Math.max(0, target.hp - projectile.amount);
+      target.bossHitsTaken = (target.bossHitsTaken || 0) + 1;
       addTypingBossLog(
         session,
         `${session.boss.name}'s ${projectile.moveLabel} hit ${target.name} for ${projectile.amount}.`,
         "danger"
       );
     } else if (target) {
-      addTypingBossLog(
-        session,
-        `${target.name} evaded ${session.boss.name}'s ${projectile.moveLabel}.`,
-        "evade"
-      );
+      if (projectile.evadeType === "special") {
+        target.evadeReady = false;
+        target.specialEvades = (target.specialEvades || 0) + 1;
+        addTypingBossLog(
+          session,
+          `${target.name} special-evaded ${session.boss.name}'s ${projectile.moveLabel}.`,
+          "evade"
+        );
+      } else {
+        target.regularBossMisses = (target.regularBossMisses || 0) + 1;
+        addTypingBossLog(
+          session,
+          `${target.name} dodged ${session.boss.name}'s ${projectile.moveLabel}.`,
+          "miss"
+        );
+      }
     }
 
-    const anyAlive = [...session.players.values()].some((player) => player.hp > 0);
-    if (!anyAlive && session.players.size > 0 && session.status === "active") {
-      session.status = "defeat";
-      session.closedAt = Date.now();
-      clearTimeout(session.bossTimer);
-      addTypingBossLog(session, "The party was knocked out.", "danger");
-    }
+  }
+
+  const anyAlive = [...session.players.values()].some((player) => player.hp > 0);
+  const pendingResurrection = session.projectiles.some(
+    (item) => item.kind === "resurrect" && !item.resolvedAt && item.willHit
+  );
+  if (
+    !anyAlive &&
+    session.players.size > 0 &&
+    session.status === "active" &&
+    !pendingResurrection
+  ) {
+    session.status = "defeat";
+    session.closedAt = Date.now();
+    clearTimeout(session.bossTimer);
+    addTypingBossLog(session, "The party was knocked out.", "danger");
   }
 
   broadcastTypingBossSession(session);
@@ -1372,8 +1588,17 @@ function triggerTypingBossAttack(session) {
 
   alivePlayers.forEach((player) => {
     const accuracy = typingBossAccuracy(player);
-    const hitChance = clampNumber(1 - accuracy + accuracy / 2, 0.35, 0.95);
-    const willHit = Math.random() < hitChance;
+    const baseHitChance = clampNumber(1 - accuracy + accuracy / 2, 0.35, 0.95);
+    const hitChance =
+      player.classId === "rogue" && player.evadeReady
+        ? baseHitChance / 2
+        : baseHitChance;
+    const roll = Math.random();
+    const willHit = roll < hitChance;
+    const evadeType =
+      !willHit && player.classId === "rogue" && player.evadeReady && roll < baseHitChance
+        ? "special"
+        : "regular";
     const amount = randomInt(move.damageMin, move.damageMax);
 
     createTypingBossProjectile(session, {
@@ -1381,9 +1606,12 @@ function triggerTypingBossAttack(session) {
       sourceName: session.boss.name,
       target: player.code,
       kind: "boss",
+      bossId: session.boss.id,
+      moveId: move.id,
       moveLabel: move.label,
       amount,
       willHit,
+      evadeType: willHit ? null : evadeType,
       travelMs: TYPING_BOSS_BOSS_TRAVEL_MS,
     });
   });
@@ -1493,6 +1721,15 @@ async function handleCreateTypingBossParticipant(req, res, session) {
     correctStreak: 0,
     totalDamage: 0,
     totalHealing: 0,
+    totalBuffs: 0,
+    totalResurrections: 0,
+    bossHitsTaken: 0,
+    regularBossMisses: 0,
+    specialEvades: 0,
+    turnsTaken: 0,
+    nextAttackMultiplier: 1,
+    evadeReady: false,
+    monkSpecialCharge: 0,
   };
 
   session.players.set(code, player);
@@ -1585,7 +1822,22 @@ async function handleCreateTypingBossChallenge(req, res, session, url) {
   }
 
   const move = typingBossMoveForPlayer(player, body.moveId);
+  if (body.moveId === "special" && !typingBossSpecialReady(player)) {
+    sendError(
+      res,
+      409,
+      player.classId === "monk"
+        ? "The monk special is ready every third turn."
+        : "That special is already active."
+    );
+    return;
+  }
+
   const targetCode = typingBossResolveTarget(session, player, move, body.targetCode);
+  if (!targetCode) {
+    sendError(res, 409, "That move needs a valid target.");
+    return;
+  }
   const question = pickTypingBossQuestion(move);
   const challenge = {
     id: randomHex(12),
@@ -1669,13 +1921,13 @@ async function handleSubmitTypingBossAction(req, res, session, url) {
   const durationSec = clampNumber((Number(body.durationMs) || 1000) / 1000, 0.6, 180);
   const effectiveDps = acceptedCharacters / durationSec;
   const previousAverage = player.averageDps || effectiveDps || 1;
-  const speedMultiplier = player.averageDps
-    ? clampNumber(effectiveDps / previousAverage, 0.65, 1.6)
-    : 1;
+  const speedMultiplier = typingBossSpeedMultiplier(player, effectiveDps, previousAverage);
   const attackAccuracy = clampNumber(acceptedCharacters / totalKeystrokes, 0, 1);
   const accuracyMultiplier = typingBossAccuracyBonus(attackAccuracy);
   const nextStreak = isCorrect ? player.correctStreak + 1 : Math.floor(player.correctStreak / 2);
   const streakMultiplier = isCorrect ? 1 + nextStreak * 0.05 : 1;
+  const buffMultiplier =
+    move.kind === "damage" ? player.nextAttackMultiplier || 1 : 1;
   const typedCharBase = Math.max(
     challenge.questionText.length + answerText.length,
     challenge.questionText.length + challenge.correctAnswer.length
@@ -1687,13 +1939,23 @@ async function handleSubmitTypingBossAction(req, res, session, url) {
         move.power *
         speedMultiplier *
         accuracyMultiplier *
-        streakMultiplier
+        streakMultiplier *
+        buffMultiplier
     )
   );
   const targetCode = challenge.targetCode;
   const isHeal = move.kind === "heal-self" || move.kind === "heal-other";
-  const targetPlayer = isHeal ? session.players.get(targetCode) : null;
-  const willHit = isCorrect && (!isHeal || Boolean(targetPlayer && targetPlayer.hp > 0));
+  const isResurrect = move.kind === "resurrect";
+  const isBuff = move.kind === "buff-other" || move.kind === "evade-self";
+  const targetPlayer =
+    isHeal || isResurrect || isBuff ? session.players.get(targetCode) : null;
+  const willHit =
+    isCorrect &&
+    (move.kind === "damage" ||
+      (isHeal && Boolean(targetPlayer && targetPlayer.hp > 0)) ||
+      (isResurrect && Boolean(targetPlayer && targetPlayer.hp <= 0)) ||
+      (move.kind === "buff-other" && Boolean(targetPlayer && targetPlayer.hp > 0)) ||
+      (move.kind === "evade-self" && Boolean(targetPlayer && targetPlayer.code === player.code)));
 
   player.totalKeystrokes += totalKeystrokes;
   player.correctKeystrokes += acceptedCharacters;
@@ -1701,23 +1963,47 @@ async function handleSubmitTypingBossAction(req, res, session, url) {
     ? player.averageDps * 0.78 + effectiveDps * 0.22
     : effectiveDps;
   player.lastSeenAt = Date.now();
+  advanceTypingBossPlayerTurn(player, move);
+
+  if (move.kind === "damage" && buffMultiplier > 1) {
+    player.nextAttackMultiplier = 1;
+  }
+
+  const projectileKind = isResurrect ? "resurrect" : isBuff ? "buff" : isHeal ? "heal" : "damage";
+  const projectileAmount = isResurrect && targetPlayer
+    ? Math.ceil(targetPlayer.maxHp / 2)
+    : isBuff
+    ? move.kind === "buff-other"
+      ? 50
+      : 0
+    : willHit
+    ? amount
+    : 0;
 
   const projectile = createTypingBossProjectile(session, {
     source: player.code,
     sourceName: player.name,
-    target: isHeal ? targetCode : "boss",
-    kind: isHeal ? "heal" : "damage",
+    target: move.kind === "damage" ? "boss" : targetCode,
+    kind: projectileKind,
+    moveId: move.id,
     moveLabel: move.label,
-    amount: willHit ? amount : 0,
+    amount: willHit ? projectileAmount : 0,
     willHit,
     nextStreak,
+    buffType:
+      move.kind === "buff-other"
+        ? "attack"
+        : move.kind === "evade-self"
+        ? "evade"
+        : null,
+    multiplier: move.kind === "buff-other" ? 1.5 : null,
     travelMs: TYPING_BOSS_PROJECTILE_TRAVEL_MS,
   });
 
   addTypingBossLog(
     session,
     `${player.name} launched ${move.label}.`,
-    isHeal ? "heal" : "info"
+    isHeal || isResurrect || isBuff ? "heal" : "info"
   );
   broadcastTypingBossSession(session);
 

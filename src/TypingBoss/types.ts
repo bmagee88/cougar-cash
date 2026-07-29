@@ -6,12 +6,23 @@ export type TypingBossStatus =
   | "victory"
   | "defeat";
 
-export type TypingBossClassId = "cleric" | "barbarian";
+export type TypingBossClassId =
+  | "cleric"
+  | "barbarian"
+  | "paladin"
+  | "rogue"
+  | "necromancer"
+  | "monk";
 export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon";
 export type TypingBossDifficulty = "easy" | "medium" | "hard";
 export type TypingBossMoveId = "weak" | "strong" | "special" | "potion";
-export type TypingBossProjectileKind = "damage" | "heal" | "boss";
-export type TypingBossProjectileResult = "pending" | "hit" | "miss";
+export type TypingBossProjectileKind =
+  | "damage"
+  | "heal"
+  | "resurrect"
+  | "buff"
+  | "boss";
+export type TypingBossProjectileResult = "pending" | "hit" | "miss" | "evade";
 
 export interface TypingBossPlayer {
   code: string;
@@ -28,6 +39,16 @@ export interface TypingBossPlayer {
   correctStreak: number;
   totalDamage: number;
   totalHealing: number;
+  totalBuffs: number;
+  totalResurrections: number;
+  bossHitsTaken: number;
+  regularBossMisses: number;
+  specialEvades: number;
+  turnsTaken: number;
+  nextAttackMultiplier: number;
+  evadeReady: boolean;
+  monkSpecialCharge: number;
+  specialReady: boolean;
   defeated: boolean;
 }
 
@@ -50,12 +71,15 @@ export interface TypingBossProjectile {
   source: string;
   target: string;
   kind: TypingBossProjectileKind;
+  moveId?: string | null;
+  bossId?: TypingBossId | null;
   moveLabel: string;
   startedAt: number;
   impactAt: number;
   resolvedAt: number | null;
   result: TypingBossProjectileResult;
   amount: number | null;
+  evadeType?: "regular" | "special" | null;
 }
 
 export interface TypingBossLogEntry {
@@ -91,7 +115,13 @@ export interface TypingBossChallenge {
   moveId: string;
   moveLabel: string;
   movePower: number;
-  kind: "damage" | "heal-self" | "heal-other";
+  kind:
+    | "damage"
+    | "heal-self"
+    | "heal-other"
+    | "buff-other"
+    | "evade-self"
+    | "resurrect";
   targetCode: string;
   questionId: string;
   question: string;
