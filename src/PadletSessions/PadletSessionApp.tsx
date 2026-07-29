@@ -155,6 +155,27 @@ function hostStorageKey(sessionId: string) {
   return `padletHost:${sessionId}`;
 }
 
+function savedHostTokenForSession(sessionId: string) {
+  if (!SESSION_ID_PATTERN.test(sessionId)) return "";
+
+  try {
+    const directToken = localStorage.getItem(hostStorageKey(sessionId)) || "";
+    if (directToken) return directToken;
+
+    const auditToken =
+      readTeacherSessionAudits().find((record) => record.sessionId === sessionId)
+        ?.hostToken || "";
+
+    if (auditToken) {
+      localStorage.setItem(hostStorageKey(sessionId), auditToken);
+    }
+
+    return auditToken;
+  } catch {
+    return "";
+  }
+}
+
 function participantStorageKey(sessionId: string) {
   return `padletParticipant:${sessionId}`;
 }
@@ -543,9 +564,13 @@ function CreateSessionPanel() {
           ? { name: boardName, type: sessionType, prompt }
           : { name: boardName, type: sessionType, columnTitles: [columnA, columnB] }
       );
-      localStorage.setItem(hostStorageKey(response.sessionId), response.hostToken);
+      const createdSessionId = normalizeSessionAlias(
+        response.sessionId || response.session.id
+      );
+      localStorage.setItem(hostStorageKey(createdSessionId), response.hostToken);
+      localStorage.setItem(hostStorageKey(response.session.id), response.hostToken);
       recordTeacherSessionAudit(response.session, response.hostToken);
-      navigate(`/padlet/host/${response.sessionId}`);
+      navigate(`/padlet/host/${createdSessionId}`);
     } catch (caught) {
       setError(messageFromError(caught));
     } finally {
@@ -716,7 +741,7 @@ function SessionsPage() {
   }
 
   async function closeFromList(session: PadletSessionSummary) {
-    const hostToken = localStorage.getItem(hostStorageKey(session.id)) || "";
+    const hostToken = savedHostTokenForSession(session.id);
     if (!hostToken) {
       setSessionListError("Host access for this session is not saved in this browser.");
       return;
@@ -936,7 +961,7 @@ function SessionSummaryCard({
   onDisplayCode: () => void;
   onClose: () => void;
 }) {
-  const hostToken = localStorage.getItem(hostStorageKey(session.id));
+  const hostToken = savedHostTokenForSession(session.id);
   const joinUrl = joinUrlForSession(session.id);
   const expiresAtMs = new Date(session.expiresAt).getTime();
   const remainingSeconds = Number.isFinite(expiresAtMs)
@@ -1134,7 +1159,7 @@ function HostSessionPage() {
   const params = useParams();
   const sessionId = normalizeSessionAlias(params.sessionId || "");
   const [hostToken] = useState(() =>
-    sessionId ? localStorage.getItem(hostStorageKey(sessionId)) || "" : ""
+    sessionId ? savedHostTokenForSession(sessionId) : ""
   );
   const credentials = useMemo(
     () => (hostToken ? { hostToken } : null),
@@ -1194,9 +1219,21 @@ function HostSessionPage() {
   if (!SESSION_ID_PATTERN.test(sessionId) || !hostToken) {
     return (
       <PageFrame>
-        <Alert severity="warning" sx={{ borderRadius: 2 }}>
-          Host access for this session is not available in this browser.
-        </Alert>
+        <Stack spacing={2}>
+          <Alert severity="warning" sx={{ borderRadius: 2 }}>
+            Host access for this session is not saved in this browser. If you just
+            created it, the host key did not make it into this site&apos;s local
+            browser storage.
+          </Alert>
+          <Button
+            component={RouterLink}
+            to="/padlet"
+            variant="contained"
+            sx={{ alignSelf: "flex-start" }}
+          >
+            Back to dashboard
+          </Button>
+        </Stack>
       </PageFrame>
     );
   }
