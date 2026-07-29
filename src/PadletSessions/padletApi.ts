@@ -1,7 +1,10 @@
 import {
+  CreateSessionRequest,
   CreateSessionResponse,
+  FlagPostResponse,
   PadletCredentials,
   PadletSessionSnapshot,
+  PadletSessionSummary,
   ParticipantResponse,
   SessionResponse,
 } from "./types";
@@ -13,6 +16,24 @@ const isLocalFrontend =
 
 function withBase(path: string) {
   return `${API_BASE}${path}`;
+}
+
+function describeNetworkFailure(path: string) {
+  const target = withBase(path);
+
+  if (!API_BASE && !isLocalFrontend) {
+    return "The Padlet backend URL is missing. In Netlify, set REACT_APP_PADLET_API_URL to your Render backend URL and redeploy.";
+  }
+
+  if (
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    target.startsWith("http://")
+  ) {
+    return `The Padlet backend URL must use https, not http. Current URL: ${target}`;
+  }
+
+  return `Could not reach the Padlet backend at ${target}. Check that the Render service is deployed, awake, and that /api/health works.`;
 }
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
@@ -43,7 +64,13 @@ async function parseResponse<T>(response: Response): Promise<T> {
   const payload = text ? JSON.parse(text) : {};
 
   if (!response.ok) {
-    throw new Error(payload.error || "Request failed.");
+    const error = new Error(payload.error || "Request failed.") as Error & {
+      status?: number;
+      payload?: unknown;
+    };
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
   }
 
   return payload as T;
@@ -54,14 +81,20 @@ async function apiFetch<T>(
   options: RequestInit & { json?: unknown } = {}
 ) {
   const { json, headers, ...rest } = options;
-  const response = await fetch(withBase(path), {
-    ...rest,
-    headers: {
-      ...(json === undefined ? {} : { "Content-Type": "application/json" }),
-      ...headers,
-    },
-    body: json === undefined ? rest.body : JSON.stringify(json),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(withBase(path), {
+      ...rest,
+      headers: {
+        ...(json === undefined ? {} : { "Content-Type": "application/json" }),
+        ...headers,
+      },
+      body: json === undefined ? rest.body : JSON.stringify(json),
+    });
+  } catch {
+    throw new Error(describeNetworkFailure(path));
+  }
 
   return parseResponse<T>(response);
 }
@@ -82,14 +115,26 @@ export function getEventSourceUrl(
   });
 }
 
-export function createSession(columnTitles: [string, string]) {
+export function createSession(config: CreateSessionRequest) {
   return apiFetch<CreateSessionResponse>("/api/sessions", {
     method: "POST",
-    json: {
-      type: "good-not-good",
-      columnTitles,
-    },
+    json: config,
   });
+}
+
+export function listActiveSessions() {
+  return apiFetch<{ sessions: PadletSessionSummary[] }>("/api/sessions/active");
+}
+
+export function getSession(
+  sessionId: string,
+  credentials: PadletCredentials
+) {
+  const query = new URLSearchParams();
+  if (credentials.hostToken) query.set("hostToken", credentials.hostToken);
+  if (credentials.code) query.set("code", credentials.code);
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  return apiFetch<SessionResponse>(`/api/sessions/${sessionId}${suffix}`);
 }
 
 export function createParticipant(sessionId: string) {
@@ -123,6 +168,17 @@ export function closeSession(sessionId: string, hostToken: string) {
   });
 }
 
+export function renameSession(
+  sessionId: string,
+  hostToken: string,
+  name: string
+) {
+  return apiFetch<SessionResponse>(`/api/sessions/${sessionId}/name`, {
+    method: "PATCH",
+    json: { hostToken, name },
+  });
+}
+
 export function renameColumns(
   sessionId: string,
   hostToken: string,
@@ -138,7 +194,8 @@ export function createPost(
   sessionId: string,
   credentials: PadletCredentials,
   columnId: string,
-  text: string
+  text: string,
+  parentPostId?: string
 ) {
   return apiFetch<SessionResponse>(`/api/sessions/${sessionId}/posts`, {
     method: "POST",
@@ -146,7 +203,19 @@ export function createPost(
       ...credentialsBody(credentials),
       columnId,
       text,
+      parentPostId,
     },
+  });
+}
+
+export function updateShowMe(
+  sessionId: string,
+  code: string,
+  showMe: boolean
+) {
+  return apiFetch<SessionResponse>(`/api/sessions/${sessionId}/show-me`, {
+    method: "PATCH",
+    json: { code, showMe },
   });
 }
 
@@ -203,6 +272,20 @@ export function deletePost(
     method: "DELETE",
     json: { hostToken },
   });
+}
+
+export function flagPost(
+  sessionId: string,
+  hostToken: string,
+  postId: string
+) {
+  return apiFetch<FlagPostResponse>(
+    `/api/sessions/${sessionId}/posts/${postId}/flag`,
+    {
+      method: "POST",
+      json: { hostToken },
+    }
+  );
 }
 
 export async function downloadSessionCsv(

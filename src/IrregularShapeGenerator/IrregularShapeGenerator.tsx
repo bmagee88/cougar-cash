@@ -1,8 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { OBJExporter } from "three-stdlib";
 import {
   Box,
   Button,
@@ -140,6 +147,24 @@ type GrindingCut = {
   normal: Vector3Point;
   offset: number;
   gritId: string;
+};
+
+type StoneFileKind = "original" | "polished";
+
+type SavedShapeRegion = Omit<ShapeRegion, "texture"> & {
+  textureId: string;
+};
+
+type StoneSnapshot = {
+  version: 1;
+  id: string;
+  kind: StoneFileKind;
+  label: string;
+  seed: number;
+  shape: SavedShapeRegion;
+  textureId: string;
+  cuts: GrindingCut[];
+  createdAt: string;
 };
 
 type PreparedGrindingCut = {
@@ -2094,9 +2119,9 @@ function createSvgDocument({
   )}">${defs}${background}${paths}</svg>`;
 }
 
-function downloadSvgFile(fileName: string, source: string) {
+function downloadTextFile(fileName: string, source: string, type: string) {
   const blob = new Blob([source], {
-    type: "image/svg+xml;charset=utf-8",
+    type,
   });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -2106,6 +2131,178 @@ function downloadSvgFile(fileName: string, source: string) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function downloadSvgFile(fileName: string, source: string) {
+  downloadTextFile(fileName, source, "image/svg+xml;charset=utf-8");
+}
+
+function stoneFileId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function sanitizeFileName(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function serializeShapeRegion(
+  shape: ShapeRegion,
+  texture: ShapeTexture
+): SavedShapeRegion {
+  return {
+    id: shape.id,
+    label: shape.label,
+    points: shape.points.map((point) => ({ ...point })),
+    area: shape.area,
+    perimeter: shape.perimeter,
+    centroid: { ...shape.centroid },
+    color: shape.color,
+    bounds: { ...shape.bounds },
+    textureId: texture.id,
+  };
+}
+
+function createStoneSnapshot({
+  shape,
+  texture,
+  seed,
+  cuts,
+  kind,
+}: {
+  shape: ShapeRegion;
+  texture: ShapeTexture;
+  seed: number;
+  cuts: GrindingCut[];
+  kind: StoneFileKind;
+}): StoneSnapshot {
+  return {
+    version: 1,
+    id: stoneFileId(),
+    kind,
+    label: `${shape.label} ${kind === "original" ? "Original" : "Polished"}`,
+    seed,
+    shape: serializeShapeRegion(shape, texture),
+    textureId: texture.id,
+    cuts: cuts.map((cut) => ({
+      normal: { ...cut.normal },
+      offset: cut.offset,
+      gritId: cut.gritId,
+    })),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function textureForStoneSnapshot(
+  snapshot: StoneSnapshot,
+  textureById: Map<string, ShapeTexture>
+) {
+  return (
+    textureById.get(snapshot.textureId) ??
+    textureById.get(snapshot.shape.textureId) ??
+    SHAPE_TEXTURES[0]
+  );
+}
+
+function shapeRegionFromSnapshot(
+  snapshot: StoneSnapshot,
+  texture: ShapeTexture
+): ShapeRegion {
+  return {
+    id: snapshot.shape.id,
+    label: snapshot.shape.label,
+    points: snapshot.shape.points.map((point) => ({ ...point })),
+    area: snapshot.shape.area,
+    perimeter: snapshot.shape.perimeter,
+    centroid: { ...snapshot.shape.centroid },
+    color: snapshot.shape.color,
+    bounds: { ...snapshot.shape.bounds },
+    texture,
+  };
+}
+
+function buildStoneSnapshotModel(
+  snapshot: StoneSnapshot,
+  textureById: Map<string, ShapeTexture>
+) {
+  const texture = textureForStoneSnapshot(snapshot, textureById);
+  const shape = shapeRegionFromSnapshot(snapshot, texture);
+  const projections = buildStoneProjections(shape, snapshot.seed);
+  const textureStack = grindingTextureStackForTexture(texture);
+
+  if (snapshot.cuts.length > 0) {
+    return buildGrindingStoneGeometry(
+      projections,
+      snapshot.seed,
+      shape.id,
+      snapshot.cuts,
+      textureStack.isLayered
+    );
+  }
+
+  return buildStoneGeometry(projections, snapshot.seed, shape.id);
+}
+
+function downloadStoneFile(snapshot: StoneSnapshot) {
+  downloadTextFile(
+    `${sanitizeFileName(snapshot.label)}.stone.json`,
+    JSON.stringify(snapshot, null, 2),
+    "application/json;charset=utf-8"
+  );
+}
+
+function downloadStoneObj(
+  snapshot: StoneSnapshot,
+  textureById: Map<string, ShapeTexture>
+) {
+  const model = buildStoneSnapshotModel(snapshot, textureById);
+  const mesh = new THREE.Mesh(model.geometry.clone());
+  mesh.name = sanitizeFileName(snapshot.label) || "stone";
+  const source = new OBJExporter().parse(mesh);
+
+  downloadTextFile(
+    `${sanitizeFileName(snapshot.label)}.obj`,
+    source,
+    "text/plain;charset=utf-8"
+  );
+  model.geometry.dispose();
+  mesh.geometry.dispose();
+}
+
+function isPointLike(value: unknown): value is Point {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as Point).x === "number" &&
+    typeof (value as Point).y === "number"
+  );
+}
+
+function isStoneSnapshot(value: unknown): value is StoneSnapshot {
+  const candidate = value as StoneSnapshot;
+
+  return (
+    typeof candidate === "object" &&
+    candidate !== null &&
+    candidate.version === 1 &&
+    typeof candidate.id === "string" &&
+    (candidate.kind === "original" || candidate.kind === "polished") &&
+    typeof candidate.label === "string" &&
+    typeof candidate.seed === "number" &&
+    typeof candidate.textureId === "string" &&
+    Array.isArray(candidate.cuts) &&
+    typeof candidate.shape === "object" &&
+    candidate.shape !== null &&
+    Array.isArray(candidate.shape.points) &&
+    candidate.shape.points.every(isPointLike)
+  );
 }
 
 function sliderValue(value: number | number[]) {
@@ -2326,6 +2523,184 @@ function GrindingStoneMesh({
   );
 }
 
+function StoneFilesPanel({
+  stones,
+  textureById,
+  onLoadFile,
+  onRemove,
+  onClear,
+  onDownloadObj,
+  onDownloadStoneFile,
+}: {
+  stones: StoneSnapshot[];
+  textureById: Map<string, ShapeTexture>;
+  onLoadFile: (file: File | null) => void;
+  onRemove: (id: string) => void;
+  onClear: () => void;
+  onDownloadObj: (snapshot: StoneSnapshot) => void;
+  onDownloadStoneFile: (snapshot: StoneSnapshot) => void;
+}) {
+  return (
+    <Paper
+      elevation={0}
+      sx={{
+        p: { xs: 1.5, sm: 2 },
+        borderRadius: 2,
+        border: "1px solid rgba(15, 23, 42, 0.12)",
+        bgcolor: "rgba(255, 255, 255, 0.82)",
+        overflow: "hidden",
+      }}
+    >
+      <Stack spacing={1.5}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1}
+          justifyContent="space-between"
+          alignItems={{ xs: "stretch", sm: "center" }}
+        >
+          <Box>
+            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+              Stone Files
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b" }}>
+              OBJ and editable stone files
+            </Typography>
+          </Box>
+
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              component="label"
+              size="small"
+              variant="outlined"
+              sx={{
+                borderColor: "rgba(15, 23, 42, 0.14)",
+                color: "#0f172a",
+                bgcolor: "rgba(255, 255, 255, 0.72)",
+              }}
+            >
+              Load stone
+              <input
+                hidden
+                type="file"
+                accept=".stone.json,application/json"
+                onChange={(event) => {
+                  onLoadFile(event.target.files?.[0] ?? null);
+                  event.target.value = "";
+                }}
+              />
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={onClear}
+              disabled={stones.length === 0}
+              sx={{
+                borderColor: "rgba(15, 23, 42, 0.14)",
+                color: "#0f172a",
+                bgcolor: "rgba(255, 255, 255, 0.72)",
+              }}
+            >
+              Clear
+            </Button>
+            <Chip
+              size="small"
+              label={`${stones.length} loaded`}
+              sx={{ bgcolor: "rgba(15, 118, 110, 0.1)", fontWeight: 800 }}
+            />
+          </Stack>
+        </Stack>
+
+        {stones.length === 0 ? (
+          <Typography variant="body2" sx={{ color: "#64748b" }}>
+            No loaded stone files yet.
+          </Typography>
+        ) : (
+          <Stack spacing={0.85}>
+            {stones.map((stone) => {
+              const texture = textureForStoneSnapshot(stone, textureById);
+
+              return (
+                <Stack
+                  key={stone.id}
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1}
+                  alignItems={{ xs: "stretch", sm: "center" }}
+                  justifyContent="space-between"
+                  sx={{
+                    border: "1px solid rgba(15, 23, 42, 0.1)",
+                    borderRadius: 1,
+                    px: 1,
+                    py: 0.85,
+                    bgcolor: "rgba(255, 255, 255, 0.64)",
+                  }}
+                >
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontWeight: 800, wordBreak: "break-word" }}
+                    >
+                      {stone.label}
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={0.75}
+                      flexWrap="wrap"
+                      useFlexGap
+                      sx={{ mt: 0.45 }}
+                    >
+                      <Chip
+                        size="small"
+                        label={stone.kind === "original" ? "Original" : "Polished"}
+                        sx={{ height: 22, fontWeight: 700 }}
+                      />
+                      <Chip
+                        size="small"
+                        label={texture.name}
+                        sx={{
+                          height: 22,
+                          bgcolor: "rgba(17, 138, 178, 0.1)",
+                          fontWeight: 700,
+                        }}
+                      />
+                    </Stack>
+                  </Box>
+
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                    <Tooltip title="Download OBJ">
+                      <IconButton
+                        aria-label={`Download ${stone.label} OBJ`}
+                        size="small"
+                        onClick={() => onDownloadObj(stone)}
+                        sx={{
+                          border: "1px solid rgba(15, 23, 42, 0.12)",
+                          bgcolor: "rgba(255, 255, 255, 0.72)",
+                        }}
+                      >
+                        <FileDownloadIcon fontSize="inherit" />
+                      </IconButton>
+                    </Tooltip>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => onDownloadStoneFile(stone)}
+                      sx={{ borderColor: "rgba(15, 23, 42, 0.14)", color: "#0f172a" }}
+                    >
+                      File
+                    </Button>
+                    <Button size="small" onClick={() => onRemove(stone.id)}>
+                      Remove
+                    </Button>
+                  </Stack>
+                </Stack>
+              );
+            })}
+          </Stack>
+        )}
+      </Stack>
+    </Paper>
+  );
+}
+
 function GrindingWheel({ grit }: { grit: GrindingGrit }) {
   const wheelRef = useRef<THREE.Group>(null);
   const gritNumber = Number(grit.id);
@@ -2436,10 +2811,14 @@ function GrindingBench({
   shape,
   texture,
   seed,
+  onDownloadObj,
+  onDownloadStoneFile,
 }: {
   shape: ShapeRegion;
   texture: ShapeTexture;
   seed: number;
+  onDownloadObj: (snapshot: StoneSnapshot) => void;
+  onDownloadStoneFile: (snapshot: StoneSnapshot) => void;
 }) {
   const [feed, setFeed] = useState(0);
   const [rotation, setRotation] = useState<StoneRotation>(
@@ -2512,6 +2891,17 @@ function GrindingBench({
   const exposureLabel = textureStack.isLayered
     ? `Exposed ${Math.round(stoneModel.exposedRatio * 100)}%`
     : "Single material";
+  const createSnapshot = useCallback(
+    (kind: StoneFileKind) =>
+      createStoneSnapshot({
+        shape,
+        texture,
+        seed,
+        cuts: kind === "original" ? [] : cuts,
+        kind,
+      }),
+    [cuts, seed, shape, texture]
+  );
 
   useEffect(() => {
     feedRef.current = feed;
@@ -3239,6 +3629,43 @@ function GrindingBench({
             />
           )}
         </Stack>
+
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={() => onDownloadObj(createSnapshot("original"))}
+            sx={{ borderColor: "rgba(15, 23, 42, 0.14)", color: "#0f172a" }}
+          >
+            Original OBJ
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<FileDownloadIcon />}
+            onClick={() => onDownloadObj(createSnapshot("polished"))}
+            sx={{ borderColor: "rgba(15, 23, 42, 0.14)", color: "#0f172a" }}
+          >
+            Polished OBJ
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => onDownloadStoneFile(createSnapshot("original"))}
+            sx={{ borderColor: "rgba(15, 23, 42, 0.14)", color: "#0f172a" }}
+          >
+            Original file
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={() => onDownloadStoneFile(createSnapshot("polished"))}
+            sx={{ borderColor: "rgba(15, 23, 42, 0.14)", color: "#0f172a" }}
+          >
+            Polished file
+          </Button>
+        </Stack>
       </Stack>
     </Paper>
   );
@@ -3553,6 +3980,9 @@ export default function IrregularShapeGenerator() {
     Record<string, string>
   >({});
   const [grindingShapeId, setGrindingShapeId] = useState<string | null>(null);
+  const [loadedStoneSnapshots, setLoadedStoneSnapshots] = useState<
+    StoneSnapshot[]
+  >([]);
 
   const network = useMemo(
     () => buildNetwork(lineCount, squareSize, seed),
@@ -3659,6 +4089,58 @@ export default function IrregularShapeGenerator() {
   );
   const selectGrindingShape = useCallback((shape: ShapeRegion) => {
     setGrindingShapeId(shape.id);
+  }, []);
+  const removeLoadedStoneSnapshot = useCallback((id: string) => {
+    setLoadedStoneSnapshots((current) =>
+      current.filter((stone) => stone.id !== id)
+    );
+  }, []);
+  const clearLoadedStoneSnapshots = useCallback(() => {
+    setLoadedStoneSnapshots([]);
+  }, []);
+  const downloadStoneObjFromSnapshot = useCallback(
+    (snapshot: StoneSnapshot) => {
+      downloadStoneObj(snapshot, textureById);
+    },
+    [textureById]
+  );
+  const loadStoneFile = useCallback((file: File | null) => {
+    if (!file) {
+      return;
+    }
+
+    file
+      .text()
+      .then((source) => {
+        const parsed = JSON.parse(source);
+        const normalizedKind =
+          parsed.kind === "original" || parsed.kind === "polished"
+            ? parsed.kind
+            : Array.isArray(parsed.cuts) && parsed.cuts.length > 0
+            ? "polished"
+            : "original";
+        const normalizedSnapshot = {
+          ...parsed,
+          kind: normalizedKind,
+        };
+
+        if (!isStoneSnapshot(normalizedSnapshot)) {
+          throw new Error("Invalid stone file");
+        }
+
+        const snapshot: StoneSnapshot = {
+          ...normalizedSnapshot,
+          id: stoneFileId(),
+          label:
+            normalizedSnapshot.label ||
+            file.name.replace(/\.stone\.json$/i, ""),
+        };
+
+        setLoadedStoneSnapshots((current) => [snapshot, ...current]);
+      })
+      .catch(() => {
+        window.alert("That stone file could not be loaded.");
+      });
   }, []);
 
   const randomizeShapeTextures = useCallback(() => {
@@ -4235,8 +4717,20 @@ export default function IrregularShapeGenerator() {
                   shape={selectedGrindingShape}
                   texture={getSelectedTexture(selectedGrindingShape)}
                   seed={seed}
+                  onDownloadObj={downloadStoneObjFromSnapshot}
+                  onDownloadStoneFile={downloadStoneFile}
                 />
               )}
+
+              <StoneFilesPanel
+                stones={loadedStoneSnapshots}
+                textureById={textureById}
+                onLoadFile={loadStoneFile}
+                onRemove={removeLoadedStoneSnapshot}
+                onClear={clearLoadedStoneSnapshots}
+                onDownloadObj={downloadStoneObjFromSnapshot}
+                onDownloadStoneFile={downloadStoneFile}
+              />
 
               <Paper
                 elevation={0}

@@ -28,6 +28,7 @@ import DndZoneCombatSimulator from "./DndZoneCombatSimulator/DndZoneCombatSimula
 import CuriosityApp from "./Curiosity App/CuriosityApp";
 import IrregularShapeGenerator from "./IrregularShapeGenerator/IrregularShapeGenerator";
 import PadletSessionApp from "./PadletSessions/PadletSessionApp";
+import TypingBossApp from "./TypingBoss/TypingBossApp";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -73,6 +74,7 @@ function App() {
             element={<IrregularShapeGenerator />}
           />
           <Route path="/padlet/*" element={<PadletSessionApp />} />
+          <Route path="/typing-boss/*" element={<TypingBossApp />} />
         </Routes>
       </Router>
     </Box>

@@ -118,6 +118,15 @@ const tiles = [
     category: "typing",
     multiplayer: true,
   },
+  {
+    path: "/typing-boss",
+    title: "Typing Boss Battle",
+    subtitle: "Host a class typing raid against one big boss.",
+    emoji: "TB",
+    gradient: "linear-gradient(135deg, #67e8f9, #ef4444)",
+    category: "typing",
+    multiplayer: true,
+  },
 ];
 
 const CATEGORY_SECTIONS: {
