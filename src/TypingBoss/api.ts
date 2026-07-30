@@ -2,6 +2,7 @@ import {
   CreateTypingBossSessionResponse,
   TypingBossActionResponse,
   TypingBossChallengeResponse,
+  TypingBossClassId,
   TypingBossCredentials,
   TypingBossId,
   TypingBossParticipantResponse,
@@ -9,6 +10,7 @@ import {
 } from "./types";
 
 const API_BASE = (
+  process.env.REACT_APP_COUGAR_API_URL ||
   process.env.REACT_APP_TYPING_BOSS_API_URL ||
   process.env.REACT_APP_PADLET_API_URL ||
   ""
@@ -38,7 +40,7 @@ function describeNetworkFailure(path: string) {
   const target = withBase(path);
 
   if (!API_BASE && !isLocalFrontend) {
-    return "The Typing Boss backend URL is missing. Set REACT_APP_TYPING_BOSS_API_URL or REACT_APP_PADLET_API_URL for the deployed site.";
+    return "The Typing Boss backend URL is missing. In Netlify, set REACT_APP_COUGAR_API_URL to your Render backend URL and redeploy.";
   }
 
   if (
@@ -49,7 +51,7 @@ function describeNetworkFailure(path: string) {
     return `The Typing Boss backend URL must use https, not http. Current URL: ${target}`;
   }
 
-  return `Could not reach the Typing Boss backend at ${target}. Check that npm run start:backend is running locally or that the deployed backend is awake.`;
+  return `Could not reach the Typing Boss backend at ${target}. Check that npm run start:backend is running locally or that the deployed classroom backend is awake.`;
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -60,7 +62,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
     throw new Error(
       isLocalFrontend
         ? "The Typing Boss backend did not return JSON. Make sure npm run start:backend is running on port 4000."
-        : "The Typing Boss backend is not configured for this deployed site."
+        : "The Typing Boss backend is not configured for this deployed site. Set REACT_APP_COUGAR_API_URL in Netlify and redeploy."
     );
   }
 
@@ -141,7 +143,7 @@ export function getTypingBossSession(
 export function createTypingBossParticipant(
   sessionId: string,
   name: string,
-  classId: string
+  classId: TypingBossClassId
 ) {
   return apiFetch<TypingBossParticipantResponse>(
     `/api/typing-boss/sessions/${sessionId}/participants`,

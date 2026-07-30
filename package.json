@@ -36,7 +36,8 @@
   "scripts": {
     "start": "tsc & react-scripts start",
     "start:frontend": "set PORT=3001&&react-scripts start",
-    "start:backend": "node server/padletServer.js",
+    "start:backend": "node server/appServer.js",
+    "start:app-server": "node server/appServer.js",
     "dev:netlify": "set APPDATA=%CD%\\.netlify-local\\appdata&&set LOCALAPPDATA=%CD%\\.netlify-local\\localappdata&&set XDG_CONFIG_HOME=%CD%\\.netlify-local\\xdg-config&&netlify dev",
     "build": "react-scripts build",
     "test": "react-scripts test",

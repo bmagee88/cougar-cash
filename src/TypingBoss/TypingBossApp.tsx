@@ -38,6 +38,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { keyframes } from "@emotion/react";
 import React, {
   useCallback,
   useEffect,
@@ -93,6 +94,9 @@ const TYPING_BOSS_ASSETS = {
   rogue: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-sprite.png`,
   necromancer: `${PUBLIC_ASSET_BASE}/assets/typing-boss/necromancer-sprite.png`,
   monk: `${PUBLIC_ASSET_BASE}/assets/typing-boss/monk-sprite.png`,
+  clericIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-idle-sprite.png`,
+  barbarianIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-idle-sprite.png`,
+  clericAnimationSheet: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-animation-sheet.png`,
   barbarianWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-weak-attack-sprite.png`,
   barbarianStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-strong-attack-sprite.png`,
   clericWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-weak-attack-sprite.png`,
@@ -150,6 +154,98 @@ const CLASS_PROJECTILE_ASSETS: Record<
   },
 };
 
+type CharacterAnimationState =
+  | "idle"
+  | "weakAttack"
+  | "strongAttack"
+  | "potion"
+  | "death"
+  | "resurrection";
+
+type CharacterAnimationEvent = {
+  id: string;
+  state: Exclude<CharacterAnimationState, "idle" | "death">;
+};
+
+const CHARACTER_SPRITE_COLUMNS = 6;
+const CHARACTER_SPRITE_LAST_COLUMN = CHARACTER_SPRITE_COLUMNS - 1;
+const CLERIC_LEGACY_SPRITE_ROWS = 6;
+
+type CharacterSpriteAnimationConfig = {
+  src: string;
+  rows: number;
+  row: number;
+  durationMs: number;
+  frameAspectRatio?: number;
+};
+
+const CLASS_CHARACTER_ANIMATION_CONFIG: Partial<
+  Record<
+    TypingBossClassId,
+    Partial<Record<CharacterAnimationState, CharacterSpriteAnimationConfig>>
+  >
+> = {
+  cleric: {
+    idle: {
+      src: TYPING_BOSS_ASSETS.clericIdleAnimation,
+      rows: 1,
+      row: 0,
+      durationMs: 900,
+    },
+    weakAttack: {
+      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
+      rows: CLERIC_LEGACY_SPRITE_ROWS,
+      row: 1,
+      durationMs: 620,
+    },
+    strongAttack: {
+      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
+      rows: CLERIC_LEGACY_SPRITE_ROWS,
+      row: 2,
+      durationMs: 760,
+    },
+    potion: {
+      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
+      rows: CLERIC_LEGACY_SPRITE_ROWS,
+      row: 3,
+      durationMs: 760,
+    },
+    death: {
+      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
+      rows: CLERIC_LEGACY_SPRITE_ROWS,
+      row: 4,
+      durationMs: 920,
+    },
+    resurrection: {
+      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
+      rows: CLERIC_LEGACY_SPRITE_ROWS,
+      row: 5,
+      durationMs: 1100,
+    },
+  },
+  barbarian: {
+    idle: {
+      src: TYPING_BOSS_ASSETS.barbarianIdleAnimation,
+      rows: 1,
+      row: 0,
+      durationMs: 900,
+      frameAspectRatio: 32 / 34,
+    },
+  },
+};
+
+function getCharacterAnimationConfig(
+  classId: TypingBossClassId,
+  state: CharacterAnimationState
+) {
+  return CLASS_CHARACTER_ANIMATION_CONFIG[classId]?.[state];
+}
+
+const characterSpriteStep = keyframes`
+  from { background-position-x: 0; }
+  to { background-position-x: 100%; }
+`;
+
 const CLASS_ORDER: TypingBossClassId[] = [
   "cleric",
   "barbarian",
@@ -158,6 +254,13 @@ const CLASS_ORDER: TypingBossClassId[] = [
   "necromancer",
   "monk",
 ];
+const CLASS_ID_SET = new Set<string>(CLASS_ORDER);
+
+function normalizeClassSelection(value: unknown): TypingBossClassId {
+  return typeof value === "string" && CLASS_ID_SET.has(value)
+    ? (value as TypingBossClassId)
+    : "cleric";
+}
 
 const CLASS_INFO: Record<
   TypingBossClassId,
@@ -321,8 +424,30 @@ function arenaForBoss(bossId: TypingBossId): ArenaLayout {
 type TypingProgressStats = {
   accepted: number;
   mistakes: number;
+  missedTypes: MissedCharacterTypeCounts;
   startedAt: number;
   updatedAt: number;
+};
+
+type MissedCharacterType =
+  | "capital"
+  | "letter"
+  | "number"
+  | "punctuation"
+  | "space"
+  | "symbol"
+  | "extra";
+
+type MissedCharacterTypeCounts = Record<MissedCharacterType, number>;
+
+const MISSED_CHARACTER_TYPE_LABELS: Record<MissedCharacterType, string> = {
+  capital: "Capital",
+  letter: "Letter",
+  number: "Number",
+  punctuation: "Punctuation",
+  space: "Space",
+  symbol: "Symbol",
+  extra: "Extra",
 };
 
 type BonusStep = {
@@ -450,6 +575,77 @@ function normalizeAnswerText(value: string) {
 
 function keyMatches(key: string, expected: string) {
   return key === expected;
+}
+
+function createMissedTypeCounts(): MissedCharacterTypeCounts {
+  return {
+    capital: 0,
+    letter: 0,
+    number: 0,
+    punctuation: 0,
+    space: 0,
+    symbol: 0,
+    extra: 0,
+  };
+}
+
+function classifyCharacterType(char: string): MissedCharacterType {
+  if (!char) return "extra";
+  if (char === " ") return "space";
+  if (/^[A-Z]$/.test(char)) return "capital";
+  if (/^[a-z]$/.test(char)) return "letter";
+  if (/^[0-9]$/.test(char)) return "number";
+  if (`.,!?;:'"()[]{}-`.includes(char)) return "punctuation";
+  return "symbol";
+}
+
+function countMatchingCharacters(input: string, target: string) {
+  let count = 0;
+  const length = Math.min(input.length, target.length);
+  for (let index = 0; index < length; index += 1) {
+    if (input[index] === target[index]) {
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function bestAnswerMatchingCharacters(input: string, answers: string[]) {
+  return answers.reduce(
+    (best, answer) => Math.max(best, countMatchingCharacters(input, answer)),
+    0
+  );
+}
+
+function acceptedCharactersForInputs(
+  challenge: TypingBossChallenge,
+  questionInput: string,
+  answerInput: string
+) {
+  const questionAccepted = countMatchingCharacters(questionInput, challenge.question);
+  const answerAccepted =
+    questionInput === challenge.question
+      ? bestAnswerMatchingCharacters(answerInput, challenge.answers)
+      : 0;
+  return questionAccepted + answerAccepted;
+}
+
+function answerPrefixMatches(answers: string[], input: string) {
+  return answers.some((answer) => normalizeAnswerText(answer).startsWith(input));
+}
+
+function answerCharacterIsValidPrefix(
+  answers: string[],
+  input: string,
+  index: number
+) {
+  return answerPrefixMatches(answers, input.slice(0, index + 1));
+}
+
+function missedTypeEntries(counts: MissedCharacterTypeCounts) {
+  return (Object.keys(MISSED_CHARACTER_TYPE_LABELS) as MissedCharacterType[])
+    .map((type) => ({ type, count: counts[type] }))
+    .filter((entry) => entry.count > 0);
 }
 
 function accuracyBonusMultiplier(accuracy: number) {
@@ -859,12 +1055,31 @@ function PlayerCharacterSprite({
   color,
   size = 62,
   highlight = false,
+  animationState = "idle",
+  animationKey = "idle",
 }: {
   classId: TypingBossClassId;
   color: string;
   size?: number;
   highlight?: boolean;
+  animationState?: CharacterAnimationState;
+  animationKey?: string;
 }) {
+  const animationConfig = getCharacterAnimationConfig(classId, animationState);
+
+  if (animationConfig) {
+    return (
+      <AnimatedCharacterSprite
+        color={color}
+        config={animationConfig}
+        size={size}
+        highlight={highlight}
+        animationState={animationState}
+        animationKey={animationKey}
+      />
+    );
+  }
+
   const src = TYPING_BOSS_ASSETS[classId];
   return (
     <Box
@@ -887,6 +1102,120 @@ function PlayerCharacterSprite({
       }}
     />
   );
+}
+
+function AnimatedCharacterSprite({
+  color,
+  config,
+  size,
+  highlight,
+  animationState,
+  animationKey,
+}: {
+  color: string;
+  config: CharacterSpriteAnimationConfig;
+  size: number;
+  highlight: boolean;
+  animationState: CharacterAnimationState;
+  animationKey: string;
+}) {
+  const repeats = animationState === "idle" ? "infinite" : "1";
+  const frameAspectRatio = config.frameAspectRatio || 1;
+  const width = size * frameAspectRatio;
+  const rowPosition =
+    config.rows <= 1
+      ? "0%"
+      : `${(config.row / (config.rows - 1)) * 100}%`;
+
+  return (
+    <Box
+      key={`${animationState}-${animationKey}`}
+      aria-hidden="true"
+      sx={{
+        width,
+        height: size,
+        maxWidth: Math.max(size, width),
+        display: "block",
+        backgroundImage: `url(${config.src})`,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: `${CHARACTER_SPRITE_COLUMNS * 100}% ${
+          config.rows * 100
+        }%`,
+        backgroundPositionX: "0%",
+        backgroundPositionY: rowPosition,
+        animation: `${characterSpriteStep} ${config.durationMs}ms steps(${CHARACTER_SPRITE_LAST_COLUMN}, end) ${repeats}`,
+        animationFillMode: animationState === "idle" ? "none" : "forwards",
+        imageRendering: "pixelated",
+        filter: `drop-shadow(0 8px 0 rgba(0,0,0,.34)) drop-shadow(0 0 ${
+          highlight ? 18 : 10
+        }px ${color}${highlight ? "cc" : "66"})`,
+        userSelect: "none",
+      }}
+    />
+  );
+}
+
+function characterAnimationEventForPlayer(
+  player: TypingBossPlayer,
+  projectiles: TypingBossProjectile[]
+): CharacterAnimationEvent | null {
+  for (let index = projectiles.length - 1; index >= 0; index -= 1) {
+    const projectile = projectiles[index];
+
+    if (projectile.kind === "resurrect" && projectile.target === player.code) {
+      if (getCharacterAnimationConfig(player.classId, "resurrection")) {
+        return { id: projectile.id, state: "resurrection" };
+      }
+      continue;
+    }
+
+    if (projectile.source !== player.code) continue;
+
+    if (projectile.kind === "damage") {
+      const state =
+        projectile.moveId === "weak" ? "weakAttack" : "strongAttack";
+      if (getCharacterAnimationConfig(player.classId, state)) {
+        return { id: projectile.id, state };
+      }
+      continue;
+    }
+
+    if (projectile.kind === "heal") {
+      if (getCharacterAnimationConfig(player.classId, "potion")) {
+        return { id: projectile.id, state: "potion" };
+      }
+    }
+  }
+
+  return null;
+}
+
+function useCharacterAnimation(
+  classId: TypingBossClassId,
+  event: CharacterAnimationEvent | null,
+  defeated: boolean
+): CharacterAnimationState {
+  const [state, setState] = useState<CharacterAnimationState>("idle");
+  const eventId = event?.id;
+  const eventState = event?.state;
+
+  useEffect(() => {
+    if (!eventId || !eventState) return undefined;
+
+    setState(eventState);
+    const durationMs =
+      getCharacterAnimationConfig(classId, eventState)?.durationMs || 800;
+    const timer = window.setTimeout(
+      () => setState("idle"),
+      durationMs
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [classId, eventId, eventState]);
+
+  if (state === "resurrection") return state;
+  if (defeated) return "death";
+  return state;
 }
 
 function StatBar({
@@ -1469,7 +1798,7 @@ function JoinPage() {
                   label="Class"
                   value={classId}
                   onChange={(event) =>
-                    setClassId(event.target.value as TypingBossClassId)
+                    setClassId(normalizeClassSelection(event.target.value))
                   }
                 >
                   {CLASS_ORDER.map((item) => (
@@ -1498,8 +1827,17 @@ function JoinPage() {
                 return (
                 <Grid item xs={12} sm={6} md={4} key={item}>
                   <Paper
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={classId === item}
                     elevation={0}
                     onClick={() => setClassId(item)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        setClassId(item);
+                      }
+                    }}
                     sx={{
                       border:
                         classId === item
@@ -1712,6 +2050,7 @@ function PlayerBattlePanel({
   const [typingStats, setTypingStats] = useState<TypingProgressStats>({
     accepted: 0,
     mistakes: 0,
+    missedTypes: createMissedTypeCounts(),
     startedAt: Date.now(),
     updatedAt: Date.now(),
   });
@@ -1724,6 +2063,7 @@ function PlayerBattlePanel({
     answer: "",
     accepted: 0,
     mistakes: 0,
+    missedTypes: createMissedTypeCounts(),
     startedAt: 0,
     submitting: false,
   });
@@ -1744,9 +2084,19 @@ function PlayerBattlePanel({
   }, [me]);
 
   const publishTypingStats = useCallback(() => {
+    const activeChallenge = challengeRef.current;
+    const accepted = activeChallenge
+      ? acceptedCharactersForInputs(
+          activeChallenge,
+          typingRef.current.question,
+          typingRef.current.answer
+        )
+      : typingRef.current.accepted;
+    typingRef.current.accepted = accepted;
     setTypingStats({
-      accepted: typingRef.current.accepted,
+      accepted,
       mistakes: typingRef.current.mistakes,
+      missedTypes: { ...typingRef.current.missedTypes },
       startedAt: typingRef.current.startedAt || Date.now(),
       updatedAt: Date.now(),
     });
@@ -1821,12 +2171,14 @@ function PlayerBattlePanel({
           answer: "",
           accepted: 0,
           mistakes: 0,
+          missedTypes: createMissedTypeCounts(),
           startedAt: Date.now(),
           submitting: false,
         };
         setTypingStats({
           accepted: 0,
           mistakes: 0,
+          missedTypes: createMissedTypeCounts(),
           startedAt: typingRef.current.startedAt,
           updatedAt: Date.now(),
         });
@@ -1869,13 +2221,14 @@ function PlayerBattlePanel({
     startChallenge(move.id);
   }, [canAct, menuIndex, moves, startChallenge, targetCandidates.length]);
 
-  const recordMistake = useCallback(() => {
+  const recordMistake = useCallback((type: MissedCharacterType) => {
     typingRef.current.mistakes += 1;
+    typingRef.current.missedTypes[type] += 1;
     publishTypingStats();
   }, [publishTypingStats]);
 
   const completeAnswer = useCallback(
-    async (answerText: string, acceptedCharacters: number) => {
+    async (answerText: string) => {
       const activeChallenge = challengeRef.current;
       if (!activeChallenge || typingRef.current.submitting) return;
 
@@ -1883,9 +2236,16 @@ function PlayerBattlePanel({
       setBusy(true);
       setError("");
       setStatusText("Adding attack bonuses.");
+      const acceptedCharacters = acceptedCharactersForInputs(
+        activeChallenge,
+        typingRef.current.question,
+        typingRef.current.answer
+      );
+      typingRef.current.accepted = acceptedCharacters;
       const finalTypingStats = {
         accepted: acceptedCharacters,
         mistakes: typingRef.current.mistakes,
+        missedTypes: { ...typingRef.current.missedTypes },
         startedAt: typingRef.current.startedAt,
         updatedAt: Date.now(),
       };
@@ -1952,6 +2312,7 @@ function PlayerBattlePanel({
         setTypingStats({
           accepted: 0,
           mistakes: 0,
+          missedTypes: createMissedTypeCounts(),
           startedAt: Date.now(),
           updatedAt: Date.now(),
         });
@@ -1983,7 +2344,20 @@ function PlayerBattlePanel({
 
       if (event.key === "Backspace") {
         event.preventDefault();
-        recordMistake();
+        if (typingRef.current.answer.length > 0) {
+          const next = typingRef.current.answer.slice(0, -1);
+          typingRef.current.answer = next;
+          setAnswerInput(next);
+          publishTypingStats();
+          return;
+        }
+
+        if (typingRef.current.question.length > 0) {
+          const next = typingRef.current.question.slice(0, -1);
+          typingRef.current.question = next;
+          setTypedQuestion(next);
+          publishTypingStats();
+        }
         return;
       }
 
@@ -1991,38 +2365,49 @@ function PlayerBattlePanel({
       event.preventDefault();
 
       const typedQuestionValue = typingRef.current.question;
-      if (typedQuestionValue.length < activeChallenge.question.length) {
-        const expected = activeChallenge.question[typedQuestionValue.length];
-        if (keyMatches(event.key, expected)) {
-          const next = typedQuestionValue + expected;
-          typingRef.current.question = next;
-          typingRef.current.accepted += 1;
-          setTypedQuestion(next);
-          publishTypingStats();
-        } else {
-          recordMistake();
+      const questionComplete = typedQuestionValue === activeChallenge.question;
+      if (!questionComplete) {
+        if (typedQuestionValue.length >= activeChallenge.question.length) {
+          recordMistake("extra");
+          return;
         }
+
+        const expected = activeChallenge.question[typedQuestionValue.length];
+        const next = typedQuestionValue + event.key;
+        typingRef.current.question = next;
+        setTypedQuestion(next);
+        if (!keyMatches(event.key, expected)) {
+          recordMistake(classifyCharacterType(expected));
+          return;
+        }
+        publishTypingStats();
         return;
       }
 
       const proposed = typingRef.current.answer + event.key;
+      const maxAnswerLength = Math.max(
+        ...activeChallenge.answers.map((answer) => answer.length)
+      );
+      if (typingRef.current.answer.length >= maxAnswerLength) {
+        recordMistake("extra");
+        return;
+      }
+
       const matches = activeChallenge.answers.filter((answer) =>
         normalizeAnswerText(answer).startsWith(proposed)
       );
 
+      typingRef.current.answer = proposed;
+      setAnswerInput(proposed);
       if (matches.length === 0) {
-        recordMistake();
+        recordMistake(classifyCharacterType(event.key));
         return;
       }
-
-      typingRef.current.answer = proposed;
-      typingRef.current.accepted += 1;
-      setAnswerInput(proposed);
       publishTypingStats();
 
       const exact = matches.filter((answer) => normalizeAnswerText(answer) === proposed);
       if (matches.length === 1 && exact.length === 1) {
-        completeAnswer(exact[0], typingRef.current.accepted);
+        completeAnswer(exact[0]);
       }
     },
     [completeAnswer, publishTypingStats, recordMistake]
@@ -2394,11 +2779,12 @@ function TypingChallengeView({
   busy: boolean;
 }) {
   const now = useNow(120);
-  const questionDone = typedQuestion.length >= challenge.question.length;
+  const questionDone = typedQuestion === challenge.question;
   const uniqueAnswer =
     answerInput && activeAnswerMatches.length === 1
       ? activeAnswerMatches[0]
       : "";
+  const missedEntries = missedTypeEntries(typingStats.missedTypes);
   const preview = liveAttackStats(
     challenge,
     player,
@@ -2440,6 +2826,10 @@ function TypingChallengeView({
             value: `x${preview.totalMultiplier.toFixed(2)}`,
           },
           {
+            label: "Misses",
+            value: `${typingStats.mistakes}`,
+          },
+          {
             label: challengeEffectLabel(challenge),
             value: challengeEffectValue(challenge, preview),
           },
@@ -2466,6 +2856,28 @@ function TypingChallengeView({
         ))}
       </Box>
 
+      {missedEntries.length > 0 && (
+        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
+          <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 900 }}>
+            Missed Types
+          </Typography>
+          {missedEntries.map((entry) => (
+            <Chip
+              key={entry.type}
+              size="small"
+              label={`${MISSED_CHARACTER_TYPE_LABELS[entry.type]} ${entry.count}`}
+              sx={{
+                height: 22,
+                bgcolor: "rgba(251,113,133,.12)",
+                color: "#fecdd3",
+                border: "1px solid rgba(251,113,133,.45)",
+                fontWeight: 900,
+              }}
+            />
+          ))}
+        </Stack>
+      )}
+
       <Box
         sx={{
           border: "1px solid #31394a",
@@ -2485,19 +2897,34 @@ function TypingChallengeView({
         >
           {challenge.question.split("").map((char, index) => {
             const typed = index < typedQuestion.length;
-            const active = index === typedQuestion.length;
+            const typedChar = typed ? typedQuestion[index] : "";
+            const correct = typed && keyMatches(typedChar, char);
+            const wrong = typed && !correct;
+            const active = !typed && index === typedQuestion.length;
             return (
               <Box
                 key={`${char}-${index}`}
                 component="span"
+                title={wrong ? `Expected ${char === " " ? "space" : char}` : undefined}
                 sx={{
-                  color: typed ? "#facc15" : active ? "#f8fafc" : "#94a3b8",
-                  bgcolor: active ? "rgba(103,232,249,.18)" : "transparent",
-                  borderRadius: active ? 1 : 0,
-                  px: active ? 0.25 : 0,
+                  color: wrong
+                    ? "#fb7185"
+                    : correct
+                    ? "#facc15"
+                    : active
+                    ? "#f8fafc"
+                    : "#94a3b8",
+                  bgcolor: wrong
+                    ? "rgba(251,113,133,.16)"
+                    : active
+                    ? "rgba(103,232,249,.18)"
+                    : "transparent",
+                  borderBottom: wrong ? "2px solid #fb7185" : "none",
+                  borderRadius: active || wrong ? 1 : 0,
+                  px: active || wrong ? 0.25 : 0,
                 }}
               >
-                {char === " " ? "\u00a0" : char}
+                {(typed ? typedChar : char) === " " ? "\u00a0" : typed ? typedChar : char}
               </Box>
             );
           })}
@@ -2522,7 +2949,32 @@ function TypingChallengeView({
               color: "#67e8f9",
             }}
           >
-            {answerInput || "\u00a0"}
+            {answerInput ? (
+              answerInput.split("").map((char, index) => {
+                const valid = answerCharacterIsValidPrefix(
+                  challenge.answers,
+                  answerInput,
+                  index
+                );
+                return (
+                  <Box
+                    key={`${char}-${index}`}
+                    component="span"
+                    sx={{
+                      color: valid ? "#67e8f9" : "#fb7185",
+                      bgcolor: valid ? "transparent" : "rgba(251,113,133,.16)",
+                      borderBottom: valid ? "none" : "2px solid #fb7185",
+                      borderRadius: valid ? 0 : 1,
+                      px: valid ? 0 : 0.25,
+                    }}
+                  >
+                    {char === " " ? "\u00a0" : char}
+                  </Box>
+                );
+              })
+            ) : (
+              "\u00a0"
+            )}
           </Box>
           <Grid container spacing={1}>
             {challenge.answers.map((answer) => {
@@ -3110,7 +3562,6 @@ function projectileArtFor(
 }
 
 function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
-  const now = useNow(120);
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.hostBossPoint;
   const positions = useMemo(
@@ -3120,18 +3571,21 @@ function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
 
   return (
     <BattlefieldShell minHeight={640} background={arena.background}>
-      <BossNode session={session} point={bossPoint} now={now} size="host" />
+      <BossNode session={session} point={bossPoint} size="host" />
       {session.players.map((player) => (
         <PlayerNode
           key={player.code}
           player={player}
           point={positions.get(player.code) || { x: 50, y: 80 }}
           compact={session.players.length > 6}
+          animationEvent={characterAnimationEventForPlayer(
+            player,
+            session.projectiles
+          )}
         />
       ))}
       <ProjectileLayer
         projectiles={session.projectiles}
-        now={now}
         positions={positions}
         bossPoint={bossPoint}
         players={session.players}
@@ -3147,7 +3601,6 @@ function PlayerBattlefield({
   session: TypingBossSessionSnapshot;
   me: TypingBossPlayer;
 }) {
-  const now = useNow(120);
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.playerBossPoint;
   const positions = useMemo(
@@ -3157,7 +3610,7 @@ function PlayerBattlefield({
 
   return (
     <BattlefieldShell minHeight={600} background={arena.background}>
-      <BossNode session={session} point={bossPoint} now={now} size="player" />
+      <BossNode session={session} point={bossPoint} size="player" />
       {session.players.map((player) => (
         <PlayerNode
           key={player.code}
@@ -3165,11 +3618,14 @@ function PlayerBattlefield({
           point={positions.get(player.code) || { x: 50, y: 80 }}
           compact={player.code !== me.code}
           highlight={player.code === me.code}
+          animationEvent={characterAnimationEventForPlayer(
+            player,
+            session.projectiles
+          )}
         />
       ))}
       <ProjectileLayer
         projectiles={session.projectiles}
-        now={now}
         positions={positions}
         bossPoint={bossPoint}
         players={session.players}
@@ -3209,12 +3665,10 @@ function BattlefieldShell({
 function BossNode({
   session,
   point,
-  now,
   size,
 }: {
   session: TypingBossSessionSnapshot;
   point: Point;
-  now: number;
   size: "host" | "player";
 }) {
   const dragonWidth = bossBattleWidth(session.boss.id, size);
@@ -3269,20 +3723,7 @@ function BossNode({
         >
           {Math.round(session.boss.hp)} / {session.boss.maxHp} HP
         </Typography>
-        <Box sx={{ width: { xs: "72%", md: 380 }, mx: "auto", mt: 0.75 }}>
-          <LinearProgress
-            variant="determinate"
-            value={bossChargePercent(session, now)}
-            sx={{
-              height: 8,
-              borderRadius: 999,
-              bgcolor: "rgba(250,204,21,.13)",
-              "& .MuiLinearProgress-bar": {
-                bgcolor: "#facc15",
-              },
-            }}
-          />
-        </Box>
+        <BossChargeBar session={session} />
       </Box>
       <Box
         sx={{
@@ -3304,20 +3745,48 @@ function BossNode({
   );
 }
 
-function PlayerNode({
+function BossChargeBar({ session }: { session: TypingBossSessionSnapshot }) {
+  const now = useNow(120);
+  return (
+    <Box sx={{ width: { xs: "72%", md: 380 }, mx: "auto", mt: 0.75 }}>
+      <LinearProgress
+        variant="determinate"
+        value={bossChargePercent(session, now)}
+        sx={{
+          height: 8,
+          borderRadius: 999,
+          bgcolor: "rgba(250,204,21,.13)",
+          "& .MuiLinearProgress-bar": {
+            bgcolor: "#facc15",
+          },
+        }}
+      />
+    </Box>
+  );
+}
+
+const PlayerNode = React.memo(function PlayerNode({
   player,
   point,
   compact = false,
   highlight = false,
+  animationEvent = null,
 }: {
   player: TypingBossPlayer;
   point: Point;
   compact?: boolean;
   highlight?: boolean;
+  animationEvent?: CharacterAnimationEvent | null;
 }) {
   const width = compact ? 132 : 170;
   const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
+  const animationState = useCharacterAnimation(
+    player.classId,
+    animationEvent,
+    player.defeated
+  );
+  const animationKey = animationEvent?.id || (player.defeated ? "death" : "idle");
   return (
     <Box
       sx={{
@@ -3342,6 +3811,8 @@ function PlayerNode({
             color={highlight ? "#67e8f9" : player.color}
             size={compact ? 62 : 86}
             highlight={highlight}
+            animationState={animationState}
+            animationKey={animationKey}
           />
           <Stack spacing={0.35}>
             <Chip
@@ -3425,21 +3896,20 @@ function PlayerNode({
       </Stack>
     </Box>
   );
-}
+});
 
 function ProjectileLayer({
   projectiles,
-  now,
   positions,
   bossPoint,
   players,
 }: {
   projectiles: TypingBossProjectile[];
-  now: number;
   positions: Map<string, Point>;
   bossPoint: Point;
   players: TypingBossPlayer[];
 }) {
+  const now = useNow(projectiles.length > 0 ? 60 : 250);
   const playerByCode = useMemo(
     () => new Map(players.map((player) => [player.code, player])),
     [players]

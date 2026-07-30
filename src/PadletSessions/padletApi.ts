@@ -9,7 +9,11 @@ import {
   SessionResponse,
 } from "./types";
 
-const API_BASE = (process.env.REACT_APP_PADLET_API_URL || "").replace(/\/$/, "");
+const API_BASE = (
+  process.env.REACT_APP_COUGAR_API_URL ||
+  process.env.REACT_APP_PADLET_API_URL ||
+  ""
+).replace(/\/$/, "");
 const isLocalFrontend =
   typeof window !== "undefined" &&
   ["localhost", "127.0.0.1"].includes(window.location.hostname);
@@ -22,7 +26,7 @@ function describeNetworkFailure(path: string) {
   const target = withBase(path);
 
   if (!API_BASE && !isLocalFrontend) {
-    return "The Padlet backend URL is missing. In Netlify, set REACT_APP_PADLET_API_URL to your Render backend URL and redeploy.";
+    return "The classroom backend URL is missing. In Netlify, set REACT_APP_COUGAR_API_URL to your Render backend URL and redeploy.";
   }
 
   if (
@@ -30,10 +34,10 @@ function describeNetworkFailure(path: string) {
     window.location.protocol === "https:" &&
     target.startsWith("http://")
   ) {
-    return `The Padlet backend URL must use https, not http. Current URL: ${target}`;
+    return `The classroom backend URL must use https, not http. Current URL: ${target}`;
   }
 
-  return `Could not reach the Padlet backend at ${target}. Check that the Render service is deployed, awake, and that /api/health works.`;
+  return `Could not reach the classroom backend at ${target}. Check that the Render service is deployed, awake, and that /api/health works.`;
 }
 
 function withQuery(path: string, params: Record<string, string | undefined>) {
@@ -56,8 +60,8 @@ async function parseResponse<T>(response: Response): Promise<T> {
   if (text.trim().startsWith("<!DOCTYPE") || !contentType.includes("json")) {
     throw new Error(
       isLocalFrontend
-        ? "The Padlet backend did not return JSON. Make sure npm run start:backend is running on port 4000."
-        : "The Padlet backend is not configured for this deployed site. Deploy the backend to a persistent Node host and set REACT_APP_PADLET_API_URL in Netlify."
+        ? "The classroom backend did not return JSON. Make sure npm run start:backend is running on port 4000."
+        : "The classroom backend is not configured for this deployed site. Deploy the backend to a persistent Node host and set REACT_APP_COUGAR_API_URL in Netlify."
     );
   }
 
