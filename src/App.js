@@ -29,6 +29,7 @@ import CuriosityApp from "./Curiosity App/CuriosityApp";
 import IrregularShapeGenerator from "./IrregularShapeGenerator/IrregularShapeGenerator";
 import PadletSessionApp from "./PadletSessions/PadletSessionApp";
 import TypingBossApp from "./TypingBoss/TypingBossApp";
+import FishingCardGame from "./FishingCardGame/FishingCardGame";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
 
@@ -75,6 +76,7 @@ function App() {
           />
           <Route path="/padlet/*" element={<PadletSessionApp />} />
           <Route path="/typing-boss/*" element={<TypingBossApp />} />
+          <Route path="/fishing-card-game" element={<FishingCardGame />} />
         </Routes>
       </Router>
     </Box>

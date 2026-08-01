@@ -69,6 +69,14 @@ const tiles = [
     category: "game",
   },
   {
+    path: "/fishing-card-game",
+    title: "Fishing Card Duel",
+    subtitle: "Land the fish with pull, reel, and slack cards.",
+    emoji: "FC",
+    gradient: "linear-gradient(135deg, #0f766e, #facc15, #be123c)",
+    category: "game",
+  },
+  {
     path: "/keyboard",
     title: "Drag & Drop Keyboard",
     subtitle: "Build the keyboard layout",
