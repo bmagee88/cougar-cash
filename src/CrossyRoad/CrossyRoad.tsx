@@ -91,6 +91,19 @@ type TrafficSimulationCache = {
   cars: Record<string, TrafficCarState>;
 };
 
+type MobilePressState = {
+  playerId: PlayerId;
+  timer: number | null;
+  longPressed: boolean;
+};
+
+type SwipeState = {
+  active: boolean;
+  startX: number;
+  startY: number;
+  pointerId: number | null;
+};
+
 type ActivePowerUp = {
   type: PowerUpType;
   expiresAt: number;
@@ -227,6 +240,7 @@ const LANE_CHANGE_SECONDS = 1.1;
 const TRAFFIC_GAP = 0.55;
 const TRAFFIC_LOOK_AHEAD_SECONDS = 0.82;
 const TRAFFIC_SIMULATION_STEP = 0.045;
+const TRAIN_CAR_LENGTH = 1;
 const CAMERA_PITCH_MIN = 0.34;
 const CAMERA_PITCH_MAX = 1.38;
 const CAMERA_PITCH_DEFAULT = 0.86;
@@ -690,37 +704,35 @@ function makeMovingThings(
   if (kind !== "road" && kind !== "rail" && kind !== "river") return undefined;
 
   if (kind === "rail") {
-    const minLength = Math.round(clamp(settings.trainLengthMin, 1, 50));
-    const maxLength = Math.round(clamp(settings.trainLengthMax, minLength, 50));
-    const count = board.cols > 18 && maxLength <= board.cols * 0.72 ? 2 : 1;
+    const minCars = Math.round(clamp(settings.trainLengthMin, 1, 50));
+    const maxCars = Math.round(clamp(settings.trainLengthMax, minCars, 50));
+    const count = board.cols > 18 && maxCars <= board.cols * 0.72 ? 2 : 1;
     const lengths = Array.from({ length: count }).map(() =>
-      Math.floor(randomBetween(random, minLength, maxLength + 1)),
+      Math.floor(randomBetween(random, minCars, maxCars + 1)) * TRAIN_CAR_LENGTH,
     );
-    const loopLength = board.cols + maxLength + MOVING_OFFSCREEN_BUFFER * 2;
+    const loopLength = board.cols + maxCars * TRAIN_CAR_LENGTH + MOVING_OFFSCREEN_BUFFER * 2;
     const starts = makeSpacedStarts(lengths, loopLength, random);
 
     return starts.map((start, index) => ({
       id: `train-${row}-${index}`,
       start,
-      length: maxLength,
+      length: maxCars * TRAIN_CAR_LENGTH,
       asset: "train",
       loopLength,
       speedMultiplier: randomBetween(random, 0.85, 1.15),
-      lengthMin: minLength,
-      lengthMax: maxLength,
+      lengthMin: minCars * TRAIN_CAR_LENGTH,
+      lengthMax: maxCars * TRAIN_CAR_LENGTH,
       lengthSeed: row * 101 + index * 17 + settings.laneSeed,
     }));
   }
 
   if (kind === "river") {
-    const minLength = settings.hardMode ? Math.round(clamp(settings.logLengthMin, 1, 10)) : 2.2;
+    const minLength = settings.hardMode ? Math.round(clamp(settings.logLengthMin, 1, 10)) : 2;
     const maxLength = settings.hardMode
       ? Math.round(clamp(settings.logLengthMax, minLength, 10))
-      : 3.9;
+      : 4;
     const lengths = Array.from({ length: Math.max(2, Math.floor(board.cols / 5)) }).map(() =>
-      settings.hardMode
-        ? Math.floor(randomBetween(random, minLength, maxLength + 1))
-        : randomBetween(random, minLength, maxLength),
+      Math.floor(randomBetween(random, minLength, maxLength + 1)),
     );
     const loopLength = board.cols + Math.max(...lengths) + MOVING_OFFSCREEN_BUFFER * 2;
     const starts = makeSpacedStarts(lengths, loopLength, random);
@@ -731,7 +743,7 @@ function makeMovingThings(
       length: lengths[index],
       asset: "log",
       loopLength,
-      speedMultiplier: settings.hardMode ? randomBetween(random, 0.85, 1.15) : 1,
+      speedMultiplier: 1,
     }));
   }
 
@@ -904,32 +916,12 @@ function worldZFromRuntimeThing(thing: RuntimeThing, board: BoardConfig) {
   return THREE.MathUtils.lerp(fromZ, targetZ, progress) + Math.sin(progress * Math.PI * 2) * 0.08;
 }
 
-function thingEnd(thing: RuntimeThing) {
-  return thing.x + thing.length;
-}
-
 function intervalsOverlap(startA: number, endA: number, startB: number, endB: number, gap = 0.3) {
   return startA < endB + gap && endA > startB - gap;
 }
 
 function runtimeThingOccupiesRow(thing: RuntimeThing, row: number) {
   return thing.occupiedRows ? thing.occupiedRows.includes(row) : thing.lane.row === row;
-}
-
-function hasLaneSpace(
-  lane: LaneDefinition,
-  x: number,
-  length: number,
-  runtimeThings: RuntimeThing[],
-  ignoreId: string,
-) {
-  return !runtimeThings.some(
-    (thing) =>
-      thing.asset === "car" &&
-      thing.id !== ignoreId &&
-      runtimeThingOccupiesRow(thing, lane.row) &&
-      intervalsOverlap(x, x + length, thing.x, thingEnd(thing), 0.42),
-  );
 }
 
 function adjacentPassingLanes(lanes: LaneDefinition[], lane: LaneDefinition) {
@@ -1193,7 +1185,7 @@ function stepTrafficSimulation(
     const catchingFront = Boolean(front && desiredSpeed > front.state.speed + 0.02 && front.gap < lookAhead);
     let speed = desiredSpeed;
 
-    if ((closeToFront || catchingFront) && thing.driver === "aggressive" && state.targetLaneRow == null) {
+    if ((closeToFront || catchingFront) && state.targetLaneRow == null) {
       const passLane = pickPassingLane(lanes, currentRow, state, thing, states, thingsById);
       if (passLane) {
         state.laneChangeFromRow = state.laneRow;
@@ -1278,68 +1270,13 @@ function resolveHardModeCars(
   return runtimeThings.map((thing) => (thing.asset === "car" ? resolvedCars.get(thing.id) ?? thing : thing));
 }
 
-function resolveHardModeLogs(runtimeThings: RuntimeThing[], lanes: LaneDefinition[]) {
-  const byLogRow = new Map<number, RuntimeThing[]>();
-  const resolved = [...runtimeThings];
-
-  resolved.forEach((thing) => {
-    if (thing.asset !== "log") return;
-    const rowThings = byLogRow.get(thing.lane.row) ?? [];
-    rowThings.push(thing);
-    byLogRow.set(thing.lane.row, rowThings);
-  });
-
-  byLogRow.forEach((logs, row) => {
-    const lane = lanes[row];
-    if (!lane) return;
-    const sorted = [...logs].sort((a, b) => b.start - a.start);
-    let front: RuntimeThing | null = null;
-    sorted.forEach((log) => {
-      const resolvedIndex = resolved.findIndex((thing) => thing.id === log.id);
-      if (resolvedIndex < 0) return;
-      let nextLog = resolved[resolvedIndex];
-      const gap = 0.36;
-      const wouldOverlap =
-        front &&
-        (lane.direction === 1
-          ? nextLog.x + nextLog.length + gap > front.x
-          : nextLog.x < front.x + front.length + gap);
-
-      if (wouldOverlap && front) {
-        nextLog = {
-          ...nextLog,
-          x:
-            lane.direction === 1
-              ? front.x - nextLog.length - gap
-              : front.x + front.length + gap,
-          speedMultiplier: front.speedMultiplier,
-        };
-        resolved[resolvedIndex] = nextLog;
-      }
-
-      if (!front) {
-        front = nextLog;
-        return;
-      }
-
-      const isAhead =
-        lane.direction === 1
-          ? nextLog.x + nextLog.length > front.x + front.length
-          : nextLog.x < front.x;
-      if (isAhead) front = nextLog;
-    });
-  });
-
-  return resolved;
-}
-
 function resolveHardModeTraffic(
   runtimeThings: RuntimeThing[],
   lanes: LaneDefinition[],
   seconds: number,
   board: BoardConfig,
 ) {
-  return resolveHardModeCars(resolveHardModeLogs(runtimeThings, lanes), lanes, seconds, board);
+  return resolveHardModeCars(runtimeThings, lanes, seconds, board);
 }
 
 function getRuntimeThingsForLanes(lanes: LaneDefinition[], seconds: number, board: BoardConfig): RuntimeThing[] {
@@ -1388,7 +1325,75 @@ function overlapsThing(playerCol: number, thing: RuntimeThing, margin = 0.18) {
 
 function isOnLog(playerCol: number, thing: RuntimeThing) {
   const playerCenter = playerCol + 0.5;
-  return playerCenter >= thing.x + 0.08 && playerCenter <= thing.x + thing.length - 0.08;
+  return logSlotCenters(thing).some((slotCenter) => Math.abs(playerCenter - slotCenter) <= 0.5);
+}
+
+function logSlotCount(log: RuntimeThing) {
+  return Math.max(1, Math.round(log.length));
+}
+
+function logSlotCenters(log: RuntimeThing) {
+  return Array.from({ length: logSlotCount(log) }, (_, index) => log.x + index + 0.5);
+}
+
+function logSlotColFromCenter(slotCenter: number) {
+  return slotCenter - 0.5;
+}
+
+function isPlayableLogSlot(slotCol: number, board: BoardConfig) {
+  return slotCol >= -0.45 && slotCol <= board.cols - 0.55;
+}
+
+function isBetween(value: number, a: number, b: number) {
+  return value >= Math.min(a, b) - 0.001 && value <= Math.max(a, b) + 0.001;
+}
+
+function findLogHopLandingCol(
+  lane: LaneDefinition,
+  requestedCol: number,
+  seconds: number,
+  board: BoardConfig,
+  lanes: LaneDefinition[],
+) {
+  const col = clamp(Math.round(requestedCol), 0, board.cols - 1);
+  const targetCenter = col + 0.5;
+  const logs = getMovingThingsForLane(lane, seconds, board, lanes).filter((thing) => thing.asset === "log");
+
+  const candidates = logs.flatMap((log) => {
+    const centers = logSlotCenters(log);
+    const frontIndex = lane.direction === 1 ? centers.length - 1 : 0;
+    const frontCenter = centers[frontIndex];
+    const frontSlotCol = logSlotColFromCenter(frontCenter);
+    const landingCandidates: Array<{ col: number; distance: number; priority: number }> = [];
+
+    if (isPlayableLogSlot(frontSlotCol, board) && isBetween(targetCenter, frontCenter, frontCenter + lane.direction)) {
+      landingCandidates.push({ col: frontSlotCol, distance: 0, priority: 0 });
+    }
+
+    centers.forEach((slotCenter) => {
+      const slotCol = logSlotColFromCenter(slotCenter);
+      const distance = Math.abs(targetCenter - slotCenter);
+      if (isPlayableLogSlot(slotCol, board) && distance <= 0.5 + 0.001) {
+        landingCandidates.push({ col: slotCol, distance, priority: 1 });
+      }
+    });
+
+    return landingCandidates;
+  });
+
+  const best = candidates.sort((a, b) => a.priority - b.priority || a.distance - b.distance)[0];
+  return best ? best.col : col;
+}
+
+function findLogExitCol(playerCol: number, board: BoardConfig) {
+  const playerCenter = playerCol + 0.5;
+  const candidates = Array.from(new Set([Math.floor(playerCol), Math.ceil(playerCol)]))
+    .filter((col) => col >= 0 && col < board.cols)
+    .map((col) => ({
+      col,
+      distance: Math.abs(playerCenter - (col + 0.5)),
+    }));
+  return candidates.sort((a, b) => a.distance - b.distance || a.col - b.col)[0]?.col ?? clamp(Math.round(playerCol), 0, board.cols - 1);
 }
 
 function getCellOccupant(players: PlayerState[], playerId: PlayerId, row: number, col: number) {
@@ -1403,6 +1408,29 @@ function getCellOccupant(players: PlayerState[], playerId: PlayerId, row: number
 
 function activePlayers(players: PlayerState[]) {
   return players.filter((player) => player.joined);
+}
+
+function nextJoinedPlayerId(players: PlayerState[], currentId: PlayerId | null, includeCurrent = false) {
+  const joinedIds = PLAYER_IDS.filter((id) => players.some((player) => player.id === id && player.joined));
+  if (joinedIds.length === 0) return null;
+  if (!currentId) return joinedIds[0];
+
+  const currentIndex = joinedIds.indexOf(currentId);
+  if (currentIndex < 0) return joinedIds[0];
+  if (includeCurrent) return joinedIds[currentIndex];
+  return joinedIds[(currentIndex + 1) % joinedIds.length];
+}
+
+function mobileTurnPlayers(players: PlayerState[], activePlayerId: PlayerId | null) {
+  if (!activePlayerId) return players.map((player) => ({ ...player, joined: false }));
+  return players.map((player) => (player.id === activePlayerId ? player : { ...player, joined: false }));
+}
+
+function mergeMobileTurnPlayers(players: PlayerState[], simulatedPlayers: PlayerState[], activePlayerId: PlayerId | null) {
+  if (!activePlayerId) return players;
+  const activePlayer = simulatedPlayers.find((player) => player.id === activePlayerId);
+  if (!activePlayer) return players;
+  return players.map((player) => (player.id === activePlayerId ? activePlayer : player));
 }
 
 function resetPlayerForJoin(player: PlayerState, board: BoardConfig, players: PlayerState[]) {
@@ -1945,9 +1973,11 @@ function getAnimatedPosition(player: PlayerState, timestamp: number, board: Boar
 function PlayerModels({
   playersRef,
   boardRef,
+  mobileTurnPlayerIdRef,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   boardRef: MutableRefObject<BoardConfig>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
 }) {
   const refs = useRef<Record<PlayerId, THREE.Group | null>>({
     duck: null,
@@ -1970,7 +2000,9 @@ function PlayerModels({
       const group = refs.current[player.id];
       if (!group) return;
 
-      if (!player.joined) {
+      const hiddenByMobileTurn =
+        mobileTurnPlayerIdRef?.current != null && player.id !== mobileTurnPlayerIdRef.current;
+      if (!player.joined || hiddenByMobileTurn) {
         group.visible = false;
         const glow = glowRefs.current[player.id];
         if (glow) glow.visible = false;
@@ -2067,40 +2099,65 @@ function CarAsset({
   );
 }
 
+function trainCarCountForLength(length: number) {
+  return Math.max(1, Math.round(length / TRAIN_CAR_LENGTH));
+}
+
+function trainCarX(index: number, visibleCars: number) {
+  return -((visibleCars * TRAIN_CAR_LENGTH) / 2) + TRAIN_CAR_LENGTH / 2 + index * TRAIN_CAR_LENGTH;
+}
+
 function TrainAsset({
-  length,
-  direction,
+  thing,
+  lane,
+  secondsRef,
   clippingPlanes,
 }: {
-  length: number;
-  direction: 1 | -1;
+  thing: MovingThing;
+  lane: LaneDefinition;
+  secondsRef?: MutableRefObject<number>;
   clippingPlanes?: THREE.Plane[];
 }) {
-  const segmentCount = Math.max(1, Math.round(length / 1.45));
-  const segmentLength = length / segmentCount;
-  const start = -length / 2 + segmentLength / 2;
+  const segmentRefs = useRef<Array<THREE.Group | null>>([]);
+  const maxCars = trainCarCountForLength(thing.lengthMax ?? thing.length);
+  const initialCars = trainCarCountForLength(getThingLength(thing, lane, secondsRef?.current ?? 0));
+
+  useFrame(() => {
+    const visibleCars = trainCarCountForLength(getThingLength(thing, lane, secondsRef?.current ?? 0));
+    segmentRefs.current.forEach((segment, index) => {
+      if (!segment) return;
+      segment.visible = index < visibleCars;
+      segment.position.x = trainCarX(index, visibleCars);
+    });
+  });
 
   return (
-    <group rotation={[0, direction === 1 ? 0 : Math.PI, 0]}>
-      {Array.from({ length: segmentCount }).map((_, index) => {
-        const isEngine = index === segmentCount - 1;
-        const x = start + index * segmentLength;
+    <group rotation={[0, lane.direction === 1 ? 0 : Math.PI, 0]}>
+      {Array.from({ length: maxCars }).map((_, index) => {
+        const isEngine = index === 0;
         return (
-          <group key={index} position={[x, 0, 0]}>
+          <group
+            key={index}
+            ref={(node) => {
+              segmentRefs.current[index] = node;
+            }}
+            position={[trainCarX(index, initialCars), 0, 0]}
+            visible={index < initialCars}
+          >
             <Block
               color={isEngine ? "#27313d" : "#c53d36"}
-              size={[segmentLength * 0.88, 0.52, 0.68]}
+              size={[TRAIN_CAR_LENGTH * 0.86, 0.52, 0.68]}
               position={[0, 0.38, 0]}
               metalness={0.08}
               clippingPlanes={clippingPlanes}
             />
-            <Block color="#f1f5f9" size={[segmentLength * 0.44, 0.18, 0.06]} position={[0, 0.48, -0.37]} clippingPlanes={clippingPlanes} />
-            <Block color="#171f2a" size={[segmentLength * 0.72, 0.12, 0.12]} position={[0, 0.15, -0.42]} clippingPlanes={clippingPlanes} />
-            <Block color="#171f2a" size={[segmentLength * 0.72, 0.12, 0.12]} position={[0, 0.15, 0.42]} clippingPlanes={clippingPlanes} />
+            <Block color="#f1f5f9" size={[TRAIN_CAR_LENGTH * 0.42, 0.18, 0.06]} position={[0, 0.48, -0.37]} clippingPlanes={clippingPlanes} />
+            <Block color="#171f2a" size={[TRAIN_CAR_LENGTH * 0.72, 0.12, 0.12]} position={[0, 0.15, -0.42]} clippingPlanes={clippingPlanes} />
+            <Block color="#171f2a" size={[TRAIN_CAR_LENGTH * 0.72, 0.12, 0.12]} position={[0, 0.15, 0.42]} clippingPlanes={clippingPlanes} />
             {isEngine && (
               <>
-                <Block color="#171f2a" size={[0.28, 0.28, 0.28]} position={[segmentLength * 0.25, 0.77, 0]} clippingPlanes={clippingPlanes} />
-                <Block color="#f9d16a" size={[0.1, 0.12, 0.46]} position={[segmentLength * 0.46, 0.46, 0]} clippingPlanes={clippingPlanes} />
+                <Block color="#171f2a" size={[0.28, 0.28, 0.28]} position={[TRAIN_CAR_LENGTH * 0.22, 0.77, 0]} clippingPlanes={clippingPlanes} />
+                <Block color="#f9d16a" size={[0.1, 0.12, 0.46]} position={[TRAIN_CAR_LENGTH * 0.44, 0.46, 0]} clippingPlanes={clippingPlanes} />
               </>
             )}
           </group>
@@ -2133,13 +2190,15 @@ function MovingThingModel({
   thing,
   lane,
   board,
+  secondsRef,
 }: {
   thing: MovingThing;
   lane: LaneDefinition;
   board: BoardConfig;
+  secondsRef?: MutableRefObject<number>;
 }) {
   if (thing.asset === "train") {
-    return <TrainAsset length={thing.length} direction={lane.direction} clippingPlanes={board.clipPlanes} />;
+    return <TrainAsset thing={thing} lane={lane} secondsRef={secondsRef} clippingPlanes={board.clipPlanes} />;
   }
   if (thing.asset === "log") return <LogAsset length={thing.length} clippingPlanes={board.clipPlanes} />;
   return (
@@ -2149,38 +2208,6 @@ function MovingThingModel({
       direction={lane.direction}
       clippingPlanes={board.clipPlanes}
     />
-  );
-}
-
-function MovingThingGroup({
-  thing,
-  lane,
-  secondsRef,
-  boardRef,
-}: {
-  thing: MovingThing;
-  lane: LaneDefinition;
-  secondsRef: MutableRefObject<number>;
-  boardRef: MutableRefObject<BoardConfig>;
-}) {
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame(() => {
-    const group = groupRef.current;
-    if (!group) return;
-    const board = boardRef.current;
-    const runtimeThing: RuntimeThing = {
-      ...thing,
-      lane,
-      x: getMovingX(thing, lane, secondsRef.current, board),
-    };
-    group.position.set(worldXFromThing(runtimeThing, board), 0, worldZFromCenter(lane.row, board));
-  });
-
-  return (
-    <group ref={groupRef}>
-      <MovingThingModel thing={thing} lane={lane} board={boardRef.current} />
-    </group>
   );
 }
 
@@ -2202,7 +2229,7 @@ function MovingObjects({
       const group = refs.current[thing.id];
       if (!group) return;
       group.position.set(worldXFromThing(thing, board), 0, worldZFromRuntimeThing(thing, board));
-      group.scale.x = thing.length / Math.max(0.01, thing.asset === "train" ? thing.lengthMax ?? thing.length : thing.length);
+      group.scale.x = 1;
     });
   });
 
@@ -2230,9 +2257,9 @@ function MovingObjects({
               0,
               worldZFromRuntimeThing(runtimeThing, boardRef.current),
             ]}
-            scale={[runtimeThing.length / Math.max(0.01, thing.asset === "train" ? thing.lengthMax ?? thing.length : thing.length), 1, 1]}
+            scale={[1, 1, 1]}
           >
-            <MovingThingModel thing={thing} lane={lane} board={boardRef.current} />
+            <MovingThingModel thing={thing} lane={lane} board={boardRef.current} secondsRef={secondsRef} />
           </group>
         );
         }),
@@ -2613,8 +2640,11 @@ function getCameraFrame(
   defaultZoom: number,
   cameraYaw: number,
   cameraPitch: number,
+  focusPlayerId: PlayerId | null = null,
 ) {
-  const framedPlayers = activePlayers(players);
+  const framedPlayers = focusPlayerId
+    ? players.filter((player) => player.joined && player.id === focusPlayerId)
+    : activePlayers(players);
   const rows = framedPlayers.length > 0 ? framedPlayers.map((player) => player.row) : [board.playerStartRow];
   const cols = framedPlayers.length > 0 ? framedPlayers.map((player) => player.col) : [Math.floor(board.cols / 2)];
   const minRow = Math.min(...rows);
@@ -2657,12 +2687,14 @@ function CameraRig({
   settingsRef,
   cameraYawRef,
   cameraPitchRef,
+  mobileTurnPlayerIdRef,
 }: {
   board: BoardConfig;
   playersRef: MutableRefObject<PlayerState[]>;
   settingsRef: MutableRefObject<GameSettings>;
   cameraYawRef: MutableRefObject<number>;
   cameraPitchRef: MutableRefObject<number>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
 }) {
   const { camera, size } = useThree();
   const lookTargetRef = useRef(new THREE.Vector3(0, 0, 0));
@@ -2675,6 +2707,7 @@ function CameraRig({
       settingsRef.current.defaultZoom,
       cameraYawRef.current,
       cameraPitchRef.current,
+      mobileTurnPlayerIdRef?.current ?? null,
     );
     camera.position.copy(frame.position);
     lookTargetRef.current.copy(frame.target);
@@ -2686,7 +2719,7 @@ function CameraRig({
       camera.far = 120;
       camera.updateProjectionMatrix();
     }
-  }, [board, camera, cameraPitchRef, cameraYawRef, playersRef, settingsRef, size.width]);
+  }, [board, camera, cameraPitchRef, cameraYawRef, mobileTurnPlayerIdRef, playersRef, settingsRef, size.width]);
 
   useFrame((_, delta) => {
     const frame = getCameraFrame(
@@ -2696,6 +2729,7 @@ function CameraRig({
       settingsRef.current.defaultZoom,
       cameraYawRef.current,
       cameraPitchRef.current,
+      mobileTurnPlayerIdRef?.current ?? null,
     );
     const ease = 1 - Math.pow(0.002, delta);
     camera.position.lerp(frame.position, ease);
@@ -2718,6 +2752,8 @@ function CrossyGameLoop({
   playersRef,
   powerUpsRef,
   runningRef,
+  mobileModeRef,
+  mobileTurnPlayerIdRef,
   settingsRef,
   lanesRef,
   boardRef,
@@ -2727,10 +2763,13 @@ function CrossyGameLoop({
   setPowerUps,
   onSnapshot,
   onLeaderboardProgress,
+  onMobileTurnAdvance,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   powerUpsRef: MutableRefObject<PowerUpInstance[]>;
   runningRef: MutableRefObject<boolean>;
+  mobileModeRef?: MutableRefObject<boolean>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
   settingsRef: MutableRefObject<GameSettings>;
   lanesRef: MutableRefObject<LaneDefinition[]>;
   boardRef: MutableRefObject<BoardConfig>;
@@ -2740,6 +2779,7 @@ function CrossyGameLoop({
   setPowerUps: (powerUps: PowerUpInstance[]) => void;
   onSnapshot: (players: PlayerState[], messages: string[]) => void;
   onLeaderboardProgress: (previousPlayers: PlayerState[], nextPlayers: PlayerState[], elapsedMs: number) => void;
+  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[]) => void;
 }) {
   const lastSnapshotRef = useRef(0);
   const lastLeaderboardRef = useRef(0);
@@ -2754,8 +2794,16 @@ function CrossyGameLoop({
     const messages: string[] = [];
     secondsRef.current += dt;
 
+    const mobileMode = mobileModeRef?.current ?? false;
+    const mobileTurnPlayerId = mobileMode ? mobileTurnPlayerIdRef?.current ?? null : null;
+    const basePlayers = playersRef.current;
+    const simulatedPlayers = mobileMode ? mobileTurnPlayers(basePlayers, mobileTurnPlayerId) : basePlayers;
+    const previousTurnPlayer = mobileTurnPlayerId
+      ? simulatedPlayers.find((player) => player.id === mobileTurnPlayerId)
+      : null;
+
     let players = resolvePlayers(
-      playersRef.current,
+      simulatedPlayers,
       lanesRef.current,
       boardRef.current,
       secondsRef.current,
@@ -2780,23 +2828,37 @@ function CrossyGameLoop({
     players = collected.players;
     powerUps = collected.powerUps;
 
-    playersRef.current = players;
+    const nextPlayers = mobileMode ? mergeMobileTurnPlayers(basePlayers, players, mobileTurnPlayerId) : players;
+    playersRef.current = nextPlayers;
     if (spawned.changed || collected.changed) {
       powerUpsRef.current = powerUps;
       setPowerUps([...powerUps]);
     }
 
+    const nextTurnPlayer =
+      mobileTurnPlayerId && nextPlayers.find((player) => player.id === mobileTurnPlayerId);
+    if (
+      mobileMode &&
+      mobileTurnPlayerId &&
+      previousTurnPlayer &&
+      nextTurnPlayer &&
+      nextTurnPlayer.misses > previousTurnPlayer.misses
+    ) {
+      onMobileTurnAdvance?.(mobileTurnPlayerId, nextPlayers);
+    }
+
     leaderboardElapsedRef.current += dt * 1000;
     if (state.clock.elapsedTime - lastLeaderboardRef.current > 1) {
       lastLeaderboardRef.current = state.clock.elapsedTime;
-      onLeaderboardProgress(leaderboardPlayersRef.current, playersRef.current, leaderboardElapsedRef.current);
-      leaderboardPlayersRef.current = copyPlayers(playersRef.current);
+      const leaderboardPlayers = mobileMode ? mobileTurnPlayers(nextPlayers, mobileTurnPlayerId) : nextPlayers;
+      onLeaderboardProgress(leaderboardPlayersRef.current, leaderboardPlayers, leaderboardElapsedRef.current);
+      leaderboardPlayersRef.current = copyPlayers(leaderboardPlayers);
       leaderboardElapsedRef.current = 0;
     }
 
     if (messages.length > 0 || state.clock.elapsedTime - lastSnapshotRef.current > 0.14) {
       lastSnapshotRef.current = state.clock.elapsedTime;
-      onSnapshot(playersRef.current, messages);
+      onSnapshot(nextPlayers, messages);
     }
   });
 
@@ -2808,6 +2870,8 @@ function CrossyScene({
   powerUps,
   powerUpsRef,
   runningRef,
+  mobileModeRef,
+  mobileTurnPlayerIdRef,
   settingsRef,
   lanes,
   lanesRef,
@@ -2821,11 +2885,14 @@ function CrossyScene({
   setPowerUps,
   onSnapshot,
   onLeaderboardProgress,
+  onMobileTurnAdvance,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   powerUps: PowerUpInstance[];
   powerUpsRef: MutableRefObject<PowerUpInstance[]>;
   runningRef: MutableRefObject<boolean>;
+  mobileModeRef?: MutableRefObject<boolean>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
   settingsRef: MutableRefObject<GameSettings>;
   lanes: LaneDefinition[];
   lanesRef: MutableRefObject<LaneDefinition[]>;
@@ -2839,6 +2906,7 @@ function CrossyScene({
   setPowerUps: (powerUps: PowerUpInstance[]) => void;
   onSnapshot: (players: PlayerState[], messages: string[]) => void;
   onLeaderboardProgress: (previousPlayers: PlayerState[], nextPlayers: PlayerState[], elapsedMs: number) => void;
+  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[]) => void;
 }) {
   return (
     <>
@@ -2850,6 +2918,7 @@ function CrossyScene({
         settingsRef={settingsRef}
         cameraYawRef={cameraYawRef}
         cameraPitchRef={cameraPitchRef}
+        mobileTurnPlayerIdRef={mobileTurnPlayerIdRef}
       />
       <ambientLight intensity={1.55} />
       <directionalLight position={[5, 10, 4]} intensity={2.2} />
@@ -2857,12 +2926,21 @@ function CrossyScene({
       <MemoLaneSurfaces lanes={lanes} board={board} />
       <MemoMovingObjects lanes={lanes} secondsRef={secondsRef} boardRef={boardRef} />
       <PowerUpModels powerUps={powerUps} board={board} secondsRef={secondsRef} />
-      <MemoPlayerModels playersRef={playersRef} boardRef={boardRef} />
-      <LightningBeams players={playersRef.current} board={board} />
+      <MemoPlayerModels playersRef={playersRef} boardRef={boardRef} mobileTurnPlayerIdRef={mobileTurnPlayerIdRef} />
+      <LightningBeams
+        players={
+          mobileTurnPlayerIdRef?.current
+            ? mobileTurnPlayers(playersRef.current, mobileTurnPlayerIdRef.current)
+            : playersRef.current
+        }
+        board={board}
+      />
       <CrossyGameLoop
         playersRef={playersRef}
         powerUpsRef={powerUpsRef}
         runningRef={runningRef}
+        mobileModeRef={mobileModeRef}
+        mobileTurnPlayerIdRef={mobileTurnPlayerIdRef}
         settingsRef={settingsRef}
         lanesRef={lanesRef}
         boardRef={boardRef}
@@ -2872,6 +2950,7 @@ function CrossyScene({
         setPowerUps={setPowerUps}
         onSnapshot={onSnapshot}
         onLeaderboardProgress={onLeaderboardProgress}
+        onMobileTurnAdvance={onMobileTurnAdvance}
       />
     </>
   );
@@ -2885,25 +2964,16 @@ function activeLabel(player: PlayerState, now: number) {
 
 export default function CrossyRoad() {
   const [settings, setSettings] = useState<GameSettings>(() => loadSettings());
-  const board = useMemo(() => createBoard(settings), [settings.cols, settings.rows]);
-  const lanes = useMemo(
-    () => generateLanes(settings, board),
-    [
-      board,
-      settings.carSpeed,
-      settings.grannyDriverSpeed,
-      settings.hardMode,
-      settings.laneSeed,
-      settings.logLengthMax,
-      settings.logLengthMin,
-      settings.logSpeed,
-      settings.trainLengthMax,
-      settings.trainLengthMin,
-      settings.trainSpeed,
-    ],
-  );
+  const board = useMemo(() => createBoard(settings), [settings]);
+  const lanes = useMemo(() => generateLanes(settings, board), [settings, board]);
   const [playersSnapshot, setPlayersSnapshot] = useState<PlayerState[]>(() =>
     makeInitialPlayers(board, settings.playerNames),
+  );
+  const [isMobileMode, setIsMobileMode] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia("(max-width: 700px)").matches,
+  );
+  const [mobileTurnPlayerId, setMobileTurnPlayerId] = useState<PlayerId | null>(() =>
+    nextJoinedPlayerId(makeInitialPlayers(board, settings.playerNames), null, true),
   );
   const [feed, setFeed] = useState<FeedItem[]>([{ id: "ready", text: "3D course loaded." }]);
   const [running, setRunning] = useState(true);
@@ -2916,6 +2986,8 @@ export default function CrossyRoad() {
   const powerUpsRef = useRef<PowerUpInstance[]>(powerUps);
   const leaderboardRef = useRef<LeaderboardRecord[]>(leaderboard);
   const runningRef = useRef(running);
+  const mobileModeRef = useRef(isMobileMode);
+  const mobileTurnPlayerIdRef = useRef<PlayerId | null>(mobileTurnPlayerId);
   const settingsRef = useRef(settings);
   const boardRef = useRef(board);
   const lanesRef = useRef(lanes);
@@ -2925,6 +2997,8 @@ export default function CrossyRoad() {
   const cameraYawRef = useRef(0);
   const cameraPitchRef = useRef(CAMERA_PITCH_DEFAULT);
   const pressedKeysRef = useRef(new Set<string>());
+  const mobilePressRef = useRef<MobilePressState | null>(null);
+  const swipeRef = useRef<SwipeState>({ active: false, startX: 0, startY: 0, pointerId: null });
   const rotationDragRef = useRef<{ active: boolean; lastX: number; lastY: number; pointerId: number | null }>({
     active: false,
     lastX: 0,
@@ -2940,6 +3014,33 @@ export default function CrossyRoad() {
   useEffect(() => {
     runningRef.current = running;
   }, [running]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const query = window.matchMedia("(max-width: 700px)");
+    const update = () => setIsMobileMode(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+
+  useEffect(() => {
+    mobileModeRef.current = isMobileMode;
+    if (!isMobileMode) {
+      mobileTurnPlayerIdRef.current = null;
+      setMobileTurnPlayerId(null);
+      return;
+    }
+
+    const nextTurn = nextJoinedPlayerId(playersRef.current, mobileTurnPlayerIdRef.current, true);
+    mobileTurnPlayerIdRef.current = nextTurn;
+    setMobileTurnPlayerId(nextTurn);
+    rotationDragRef.current = { active: false, lastX: 0, lastY: 0, pointerId: null };
+  }, [isMobileMode]);
+
+  useEffect(() => {
+    mobileTurnPlayerIdRef.current = mobileTurnPlayerId;
+  }, [mobileTurnPlayerId]);
 
   useEffect(() => {
     boardRef.current = board;
@@ -3122,6 +3223,33 @@ export default function CrossyRoad() {
     [setLeaderboardRecords],
   );
 
+  const joinPlayer = useCallback(
+    (playerId: PlayerId) => {
+      const currentPlayers = playersRef.current.map((player) => clearExpiredPlayerEffects(player, performance.now()));
+      const player = currentPlayers.find((candidate) => candidate.id === playerId);
+      if (!player || player.joined) return;
+
+      const nextPlayers = currentPlayers.map((candidate) =>
+        candidate.id === player.id ? resetPlayerForJoin(candidate, boardRef.current, currentPlayers) : candidate,
+      );
+      playersRef.current = nextPlayers;
+      setSettings((current) => ({
+        ...current,
+        playerNames: {
+          ...current.playerNames,
+          [player.id]: DEFAULT_PLAYER_NAMES[player.id],
+        },
+      }));
+
+      if (mobileModeRef.current && !mobileTurnPlayerIdRef.current) {
+        mobileTurnPlayerIdRef.current = player.id;
+        setMobileTurnPlayerId(player.id);
+      }
+      updateSnapshot(nextPlayers);
+    },
+    [updateSnapshot],
+  );
+
   const removePlayer = useCallback(
     (playerId: PlayerId) => {
       const boardNow = boardRef.current;
@@ -3167,6 +3295,11 @@ export default function CrossyRoad() {
           : player,
       );
       playersRef.current = nextPlayers;
+      if (mobileModeRef.current && mobileTurnPlayerIdRef.current === playerId) {
+        const nextTurn = nextJoinedPlayerId(nextPlayers, playerId);
+        mobileTurnPlayerIdRef.current = nextTurn;
+        setMobileTurnPlayerId(nextTurn);
+      }
       setSettings((current) => ({
         ...current,
         playerNames: {
@@ -3178,6 +3311,12 @@ export default function CrossyRoad() {
     },
     [setLeaderboardRecords, updateSnapshot],
   );
+
+  const advanceMobileTurn = useCallback((playerId: PlayerId, players: PlayerState[]) => {
+    const nextTurn = nextJoinedPlayerId(players, playerId);
+    mobileTurnPlayerIdRef.current = nextTurn;
+    setMobileTurnPlayerId(nextTurn);
+  }, []);
 
   const resetRun = useCallback(
     (message = "New 3D run ready.") => {
@@ -3214,6 +3353,11 @@ export default function CrossyRoad() {
         profileName: previousById[player.id]?.joined ? previousById[player.id]?.profileName ?? null : null,
       }));
       playersRef.current = nextPlayers;
+      if (mobileModeRef.current) {
+        const nextTurn = nextJoinedPlayerId(nextPlayers, mobileTurnPlayerIdRef.current, true);
+        mobileTurnPlayerIdRef.current = nextTurn;
+        setMobileTurnPlayerId(nextTurn);
+      }
       powerUpsRef.current = [];
       secondsRef.current = 0;
       nextSpawnRef.current = randomPowerUpSeconds(randomRef.current);
@@ -3248,20 +3392,18 @@ export default function CrossyRoad() {
       const actor = currentPlayers.find((player) => player.id === playerId);
       if (!actor) return;
 
+      if (
+        mobileModeRef.current &&
+        actor.joined &&
+        mobileTurnPlayerIdRef.current &&
+        actor.id !== mobileTurnPlayerIdRef.current
+      ) {
+        return;
+      }
+
       if (!actor.joined) {
         if (rowDelta !== -1 || colDelta !== 0) return;
-        const nextPlayers = currentPlayers.map((player) =>
-          player.id === actor.id ? resetPlayerForJoin(player, boardRef.current, currentPlayers) : player,
-        );
-        playersRef.current = nextPlayers;
-        setSettings((current) => ({
-          ...current,
-          playerNames: {
-            ...current.playerNames,
-            [actor.id]: DEFAULT_PLAYER_NAMES[actor.id],
-          },
-        }));
-        updateSnapshot(nextPlayers);
+        joinPlayer(actor.id);
         return;
       }
 
@@ -3310,7 +3452,7 @@ export default function CrossyRoad() {
         nextCol = clamp(Math.round(actor.col) + colDelta * moveDistance, 0, boardNow.cols - 1);
         if (moveDistance === 2) {
           jump = {
-            fromCol: Math.round(actor.col),
+            fromCol: actor.col,
             fromRow: Math.round(actor.row),
             toCol: nextCol,
             toRow: nextRow,
@@ -3320,7 +3462,25 @@ export default function CrossyRoad() {
         }
       }
 
-      const blocker = getCellOccupant(currentPlayers, actor.id, nextRow, nextCol);
+      const targetLane = getLane(lanesNow, nextRow);
+      if (!lightning) {
+        if (targetLane.kind === "river" && currentLane.kind !== "river") {
+          nextCol = findLogHopLandingCol(targetLane, nextCol, secondsRef.current, boardNow, lanesNow);
+        } else if (currentLane.kind === "river" && targetLane.kind !== "river") {
+          nextCol = findLogExitCol(actor.col, boardNow);
+        }
+
+        if (jump) {
+          jump = {
+            ...jump,
+            toCol: nextCol,
+            toRow: nextRow,
+          };
+        }
+      }
+
+      const collisionPlayers = mobileModeRef.current ? mobileTurnPlayers(currentPlayers, actor.id) : currentPlayers;
+      const blocker = getCellOccupant(collisionPlayers, actor.id, nextRow, nextCol);
       let pushedPlayer: PlayerState | null = null;
       if (blocker) {
         const pushRow = Math.round(blocker.row) + rowDelta;
@@ -3332,7 +3492,7 @@ export default function CrossyRoad() {
           pushRow <= boardNow.startRow &&
           pushCol >= 0 &&
           pushCol < boardNow.cols &&
-          !getCellOccupant(currentPlayers, blocker.id, pushRow, pushCol);
+          !getCellOccupant(collisionPlayers, blocker.id, pushRow, pushCol);
 
         if (!canShove) {
           const blockedPlayers = currentPlayers.map((player) =>
@@ -3378,7 +3538,7 @@ export default function CrossyRoad() {
       playersRef.current = nextPlayers;
       updateSnapshot(nextPlayers, messages);
     },
-    [updateSnapshot],
+    [joinPlayer, updateSnapshot],
   );
 
   useEffect(() => {
@@ -3499,6 +3659,66 @@ export default function CrossyRoad() {
     [setLeaderboardRecords],
   );
 
+  const editMobilePlayerName = useCallback(
+    (player: PlayerState) => {
+      const rawName = window.prompt("Player name", settingsRef.current.playerNames[player.id] ?? player.name);
+      if (rawName == null) return;
+      updatePlayerName(player.id, rawName);
+      finalizePlayerName(player.id, rawName);
+    },
+    [finalizePlayerName, updatePlayerName],
+  );
+
+  const clearMobilePress = useCallback(() => {
+    if (mobilePressRef.current?.timer != null) {
+      window.clearTimeout(mobilePressRef.current.timer);
+    }
+    mobilePressRef.current = null;
+  }, []);
+
+  const handleMobilePlayerPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>, player: PlayerState) => {
+      if (!mobileModeRef.current) return;
+      event.preventDefault();
+      clearMobilePress();
+      const press: MobilePressState = {
+        playerId: player.id,
+        timer: null,
+        longPressed: false,
+      };
+      press.timer = window.setTimeout(() => {
+        press.longPressed = true;
+        const currentPlayer = playersRef.current.find((candidate) => candidate.id === player.id);
+        if (currentPlayer?.joined) {
+          removePlayer(player.id);
+        }
+      }, 650);
+      mobilePressRef.current = press;
+    },
+    [clearMobilePress, removePlayer],
+  );
+
+  const handleMobilePlayerPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>, player: PlayerState) => {
+      if (!mobileModeRef.current) return;
+      event.preventDefault();
+      const press = mobilePressRef.current;
+      if (press?.timer != null) window.clearTimeout(press.timer);
+      mobilePressRef.current = null;
+      if (!press || press.playerId !== player.id || press.longPressed) return;
+
+      const currentPlayer = playersRef.current.find((candidate) => candidate.id === player.id);
+      if (!currentPlayer?.joined) {
+        joinPlayer(player.id);
+        return;
+      }
+      editMobilePlayerName(currentPlayer);
+    },
+    [editMobilePlayerName, joinPlayer],
+  );
+
+  useEffect(() => clearMobilePress, [clearMobilePress]);
+
   const now = performance.now();
   const leaderboardRows = rankedLeaderboard(leaderboard, leaderboardTab);
 
@@ -3513,8 +3733,98 @@ export default function CrossyRoad() {
     rotationDragRef.current = { active: false, lastX: 0, lastY: 0, pointerId: null };
   }, []);
 
+  const stopMobileSwipe = useCallback((event?: React.PointerEvent<HTMLDivElement>) => {
+    if (event && swipeRef.current.pointerId != null) {
+      try {
+        event.currentTarget.releasePointerCapture?.(swipeRef.current.pointerId);
+      } catch {
+        // Pointer capture may already be gone.
+      }
+    }
+    swipeRef.current = { active: false, startX: 0, startY: 0, pointerId: null };
+  }, []);
+
+  const handleStagePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+
+    if (mobileModeRef.current) {
+      swipeRef.current = {
+        active: true,
+        startX: event.clientX,
+        startY: event.clientY,
+        pointerId: event.pointerId,
+      };
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      return;
+    }
+
+    rotationDragRef.current = {
+      active: true,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      pointerId: event.pointerId,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }, []);
+
+  const handleStagePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (mobileModeRef.current) return;
+    if (!rotationDragRef.current.active) return;
+    event.preventDefault();
+    const deltaX = event.clientX - rotationDragRef.current.lastX;
+    const deltaY = event.clientY - rotationDragRef.current.lastY;
+    rotationDragRef.current.lastX = event.clientX;
+    rotationDragRef.current.lastY = event.clientY;
+    cameraYawRef.current += deltaX * 0.012;
+    cameraPitchRef.current = clamp(
+      cameraPitchRef.current - deltaY * 0.006,
+      CAMERA_PITCH_MIN,
+      CAMERA_PITCH_MAX,
+    );
+  }, []);
+
+  const handleStagePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!mobileModeRef.current) {
+        stopRotationDrag(event);
+        return;
+      }
+
+      const swipe = swipeRef.current;
+      stopMobileSwipe(event);
+      if (!swipe.active) return;
+      event.preventDefault();
+      const deltaX = event.clientX - swipe.startX;
+      const deltaY = event.clientY - swipe.startY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      if (Math.max(absX, absY) < 28) return;
+
+      const playerId = mobileTurnPlayerIdRef.current;
+      if (!playerId) return;
+      if (absX > absY) {
+        movePlayer(playerId, 0, deltaX > 0 ? 1 : -1);
+      } else {
+        movePlayer(playerId, deltaY > 0 ? 1 : -1, 0);
+      }
+    },
+    [movePlayer, stopMobileSwipe, stopRotationDrag],
+  );
+
+  const handleStagePointerLeave = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (mobileModeRef.current) {
+        stopMobileSwipe(event);
+        return;
+      }
+      stopRotationDrag(event);
+    },
+    [stopMobileSwipe, stopRotationDrag],
+  );
+
   return (
-    <main className="crossy-road-shell">
+    <main className={`crossy-road-shell${isMobileMode ? " crossy-mobile-mode" : ""}`}>
       <header className="crossy-topbar">
         <div className="crossy-title-row">
           <Tooltip title="Game settings">
@@ -3540,88 +3850,116 @@ export default function CrossyRoad() {
       <section className="crossy-play-layout">
         <aside className="crossy-left-panel">
           <div className="crossy-scoreboard">
-            {playersSnapshot.map((player) => (
-              <div
-                key={player.id}
-                className={`crossy-racer${player.joined ? "" : " crossy-racer-empty"}`}
-                style={{ "--player-accent": player.accent } as React.CSSProperties}
-                title={player.joined ? activeLabel(player, now) : `press ${PLAYER_UP_KEYS[player.id]} to join`}
+            {playersSnapshot.map((player) =>
+              isMobileMode ? (
+                <button
+                  key={player.id}
+                  type="button"
+                  className={`crossy-mobile-racer${player.joined ? "" : " crossy-mobile-racer-empty"}${
+                    player.joined && mobileTurnPlayerId === player.id ? " crossy-mobile-racer-active" : ""
+                  }`}
+                  style={{ "--player-accent": player.accent } as React.CSSProperties}
+                  aria-label={`${player.name} score ${player.score}`}
+                  title={player.joined ? activeLabel(player, now) : `tap ${player.name} to join`}
+                  onPointerDown={(event) => handleMobilePlayerPointerDown(event, player)}
+                  onPointerUp={(event) => handleMobilePlayerPointerUp(event, player)}
+                  onPointerCancel={clearMobilePress}
+                  onPointerLeave={clearMobilePress}
+                >
+                  <span className="crossy-racer-token" aria-hidden="true">
+                    {animalIcon(player.id)}
+                  </span>
+                  <span className="crossy-mobile-score">
+                    <ScoreboardIcon fontSize="small" />
+                    <strong>{player.score}</strong>
+                  </span>
+                  {!player.joined && <span className="crossy-mobile-join" aria-hidden="true">+</span>}
+                </button>
+              ) : (
+                <div
+                  key={player.id}
+                  className={`crossy-racer${player.joined ? "" : " crossy-racer-empty"}`}
+                  style={{ "--player-accent": player.accent } as React.CSSProperties}
+                  title={player.joined ? activeLabel(player, now) : `press ${PLAYER_UP_KEYS[player.id]} to join`}
+                >
+                  {player.joined ? (
+                    <>
+                      <span className="crossy-racer-token" aria-label={`${player.name} icon`}>
+                        {animalIcon(player.id)}
+                      </span>
+                      <input
+                        className="crossy-racer-name-input"
+                        value={settings.playerNames[player.id] ?? player.name}
+                        aria-label={`${player.name} name`}
+                        onChange={(event) => updatePlayerName(player.id, event.target.value)}
+                        onBlur={(event) => finalizePlayerName(player.id, event.currentTarget.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.currentTarget.blur();
+                          }
+                        }}
+                      />
+                      <span className="crossy-stat-chip" aria-label={`${player.name} score`}>
+                        <ScoreboardIcon fontSize="small" />
+                        <strong>{player.score}</strong>
+                      </span>
+                      <span className="crossy-stat-chip" aria-label={`${player.name} flags`}>
+                        <FlagIcon fontSize="small" />
+                        <span>{player.laps}</span>
+                      </span>
+                      <span className="crossy-stat-chip" aria-label={`${player.name} misses`}>
+                        <span className="crossy-skull-icon" aria-hidden="true">{"\u2620"}</span>
+                        <span>{player.misses}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="crossy-racer-remove"
+                        aria-label={`Remove ${player.name}`}
+                        onClick={() => removePlayer(player.id)}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="crossy-join-prompt">press {PLAYER_UP_KEYS[player.id]} to join</span>
+                  )}
+                </div>
+              ),
+            )}
+          </div>
+          {!isMobileMode && (
+            <div className="crossy-leaderboard">
+              <Tabs
+                value={leaderboardTab}
+                onChange={(_, value) => setLeaderboardTab(value as LeaderboardTab)}
+                variant="fullWidth"
               >
-                {player.joined ? (
-                  <>
-                    <span className="crossy-racer-token" aria-label={`${player.name} icon`}>
-                      {animalIcon(player.id)}
-                    </span>
-                    <input
-                      className="crossy-racer-name-input"
-                      value={settings.playerNames[player.id] ?? player.name}
-                      aria-label={`${player.name} name`}
-                      onChange={(event) => updatePlayerName(player.id, event.target.value)}
-                      onBlur={(event) => finalizePlayerName(player.id, event.currentTarget.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.currentTarget.blur();
-                        }
-                      }}
-                    />
-                    <span className="crossy-stat-chip" aria-label={`${player.name} score`}>
-                      <ScoreboardIcon fontSize="small" />
-                      <strong>{player.score}</strong>
-                    </span>
-                    <span className="crossy-stat-chip" aria-label={`${player.name} flags`}>
-                      <FlagIcon fontSize="small" />
-                      <span>{player.laps}</span>
-                    </span>
-                    <span className="crossy-stat-chip" aria-label={`${player.name} misses`}>
-                      <span className="crossy-skull-icon" aria-hidden="true">{"\u2620"}</span>
-                      <span>{player.misses}</span>
-                    </span>
-                    <button
-                      type="button"
-                      className="crossy-racer-remove"
-                      aria-label={`Remove ${player.name}`}
-                      onClick={() => removePlayer(player.id)}
-                    >
-                      <CloseIcon fontSize="small" />
-                    </button>
-                  </>
+                <Tab value="rank" label="Rank" />
+                <Tab value="score" label="Score" />
+              </Tabs>
+              <div className="crossy-leaderboard-list">
+                {leaderboardRows.length === 0 ? (
+                  <div className="crossy-leaderboard-empty">No saved scores</div>
                 ) : (
-                  <span className="crossy-join-prompt">press {PLAYER_UP_KEYS[player.id]} to join</span>
+                  leaderboardRows.slice(0, 8).map((record, index) => {
+                    const rank = record.score / Math.max(record.timeMs / 60000, 1 / 60);
+                    return (
+                      <div key={record.name} className="crossy-leaderboard-row">
+                        <strong>{index + 1}</strong>
+                        <span>{record.name}</span>
+                        <span>{leaderboardTab === "rank" ? rank.toFixed(1) : Math.round(record.score)}</span>
+                        <small>{formatPlayTime(record.timeMs)}</small>
+                        <button type="button" onClick={() => resetLeaderboardRecord(record.name)}>
+                          Reset
+                        </button>
+                      </div>
+                    );
+                  })
                 )}
               </div>
-            ))}
-          </div>
-          <div className="crossy-leaderboard">
-            <Tabs
-              value={leaderboardTab}
-              onChange={(_, value) => setLeaderboardTab(value as LeaderboardTab)}
-              variant="fullWidth"
-            >
-              <Tab value="rank" label="Rank" />
-              <Tab value="score" label="Score" />
-            </Tabs>
-            <div className="crossy-leaderboard-list">
-              {leaderboardRows.length === 0 ? (
-                <div className="crossy-leaderboard-empty">No saved scores</div>
-              ) : (
-                leaderboardRows.slice(0, 8).map((record, index) => {
-                  const rank = record.score / Math.max(record.timeMs / 60000, 1 / 60);
-                  return (
-                    <div key={record.name} className="crossy-leaderboard-row">
-                      <strong>{index + 1}</strong>
-                      <span>{record.name}</span>
-                      <span>{leaderboardTab === "rank" ? rank.toFixed(1) : Math.round(record.score)}</span>
-                      <small>{formatPlayTime(record.timeMs)}</small>
-                      <button type="button" onClick={() => resetLeaderboardRecord(record.name)}>
-                        Reset
-                      </button>
-                    </div>
-                  );
-                })
-              )}
             </div>
-          </div>
-          {settings.showDeathLog && (
+          )}
+          {!isMobileMode && settings.showDeathLog && (
             <div className="crossy-feed" aria-live="polite">
               {feed.map((item) => (
                 <div key={item.id}>{item.text}</div>
@@ -3639,33 +3977,11 @@ export default function CrossyRoad() {
             gl={{ antialias: true, powerPreference: "high-performance" }}
             frameloop="always"
             onContextMenu={(event) => event.preventDefault()}
-            onPointerDown={(event) => {
-              if (event.button !== 0) return;
-              event.preventDefault();
-              rotationDragRef.current = {
-                active: true,
-                lastX: event.clientX,
-                lastY: event.clientY,
-                pointerId: event.pointerId,
-              };
-              event.currentTarget.setPointerCapture?.(event.pointerId);
-            }}
-            onPointerMove={(event) => {
-              if (!rotationDragRef.current.active) return;
-              event.preventDefault();
-              const deltaX = event.clientX - rotationDragRef.current.lastX;
-              const deltaY = event.clientY - rotationDragRef.current.lastY;
-              rotationDragRef.current.lastX = event.clientX;
-              rotationDragRef.current.lastY = event.clientY;
-              cameraYawRef.current += deltaX * 0.012;
-              cameraPitchRef.current = clamp(
-                cameraPitchRef.current - deltaY * 0.006,
-                CAMERA_PITCH_MIN,
-                CAMERA_PITCH_MAX,
-              );
-            }}
-            onPointerUp={stopRotationDrag}
-            onPointerLeave={stopRotationDrag}
+            onPointerDown={handleStagePointerDown}
+            onPointerMove={handleStagePointerMove}
+            onPointerUp={handleStagePointerUp}
+            onPointerLeave={handleStagePointerLeave}
+            onPointerCancel={handleStagePointerLeave}
             onCreated={({ gl }) => {
               gl.localClippingEnabled = true;
             }}
@@ -3675,6 +3991,8 @@ export default function CrossyRoad() {
               powerUps={powerUps}
               powerUpsRef={powerUpsRef}
               runningRef={runningRef}
+              mobileModeRef={mobileModeRef}
+              mobileTurnPlayerIdRef={isMobileMode ? mobileTurnPlayerIdRef : undefined}
               settingsRef={settingsRef}
               lanes={lanes}
               lanesRef={lanesRef}
@@ -3688,6 +4006,7 @@ export default function CrossyRoad() {
               setPowerUps={setPowerUps}
               onSnapshot={updateSnapshot}
               onLeaderboardProgress={updateLeaderboardProgress}
+              onMobileTurnAdvance={advanceMobileTurn}
             />
           </Canvas>
         </section>
