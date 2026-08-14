@@ -17,22 +17,30 @@ import {
   Slider,
   Stack,
   Switch,
+  Tab,
+  Tabs,
   TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import FlagIcon from "@mui/icons-material/Flag";
 import MenuIcon from "@mui/icons-material/Menu";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import ScoreboardIcon from "@mui/icons-material/Scoreboard";
 import ShuffleIcon from "@mui/icons-material/Shuffle";
 import * as THREE from "three";
 import "./CrossyRoad.css";
 
 type LaneKind = "goal" | "grass" | "road" | "river" | "rail";
 type Direction = "up" | "down" | "left" | "right";
-type PlayerId = "duck" | "chicken";
+type PlayerId = "duck" | "chicken" | "frog" | "rabbit";
 type MovingAsset = "car" | "train" | "log";
+type DriverKind = "normal" | "aggressive" | "granny";
 type PowerUpType = "control" | "speed" | "life" | "jump" | "lightning";
+type ScoreItemType = "seeds" | "bread" | "flies" | "carrot";
+type PlayerNames = Record<PlayerId, string>;
+type LeaderboardTab = "rank" | "score";
 
 type MovingThing = {
   id: string;
@@ -40,6 +48,12 @@ type MovingThing = {
   length: number;
   asset: MovingAsset;
   color?: string;
+  loopLength?: number;
+  speedMultiplier?: number;
+  driver?: DriverKind;
+  lengthMin?: number;
+  lengthMax?: number;
+  lengthSeed?: number;
 };
 
 type LaneDefinition = {
@@ -47,12 +61,47 @@ type LaneDefinition = {
   kind: LaneKind;
   direction: 1 | -1;
   speed: number;
+  hardMode: boolean;
   things?: MovingThing[];
 };
 
 type RuntimeThing = MovingThing & {
   lane: LaneDefinition;
   x: number;
+  homeRow?: number;
+  laneChangeFromRow?: number;
+  laneChangeProgress?: number;
+  occupiedRows?: number[];
+};
+
+type TrafficCarState = {
+  id: string;
+  laneRow: number;
+  targetLaneRow: number | null;
+  laneChangeFromRow: number | null;
+  laneChangeStartedAt: number;
+  laneChangeEndsAt: number;
+  x: number;
+  speed: number;
+};
+
+type TrafficSimulationCache = {
+  signature: string;
+  seconds: number;
+  cars: Record<string, TrafficCarState>;
+};
+
+type MobilePressState = {
+  playerId: PlayerId;
+  timer: number | null;
+  longPressed: boolean;
+};
+
+type SwipeState = {
+  active: boolean;
+  startX: number;
+  startY: number;
+  pointerId: number | null;
 };
 
 type ActivePowerUp = {
@@ -72,11 +121,14 @@ type TravelAnimation = {
 type PlayerState = {
   id: PlayerId;
   name: string;
+  profileName: string | null;
+  joined: boolean;
   accent: string;
   bodyColor: string;
   row: number;
   col: number;
   score: number;
+  leaderboardScoreCheckpoint: number;
   laps: number;
   misses: number;
   bestProgress: number;
@@ -94,6 +146,14 @@ type FeedItem = {
   text: string;
 };
 
+type LeaderboardRecord = {
+  name: string;
+  password: string;
+  score: number;
+  timeMs: number;
+  updatedAt: number;
+};
+
 type ControlAction = {
   playerId: PlayerId;
   rowDelta: number;
@@ -109,10 +169,16 @@ type GameSettings = {
   trainSpeed: number;
   logSpeed: number;
   moveCooldown: number;
+  defaultZoom: number;
+  hardMode: boolean;
+  logLengthMin: number;
+  logLengthMax: number;
+  grannyDriverSpeed: number;
   trainLengthMin: number;
   trainLengthMax: number;
   laneSeed: number;
   showDeathLog: boolean;
+  playerNames: PlayerNames;
   powerUps: PowerUpSettings;
 };
 
@@ -120,19 +186,30 @@ type BoardConfig = {
   cols: number;
   rows: number;
   startRow: number;
+  playerStartRow: number;
   halfCols: number;
   halfRows: number;
   startCols: Record<PlayerId, number>;
   clipPlanes: THREE.Plane[];
 };
 
+type PickupOrigin = {
+  x: number;
+  y: number;
+  z: number;
+};
+
 type PowerUpInstance = {
   id: string;
-  type: PowerUpType;
   row: number;
   col: number;
+  spawnedAt: number;
   expiresAt: number;
-};
+  entryOrigin?: PickupOrigin;
+} & (
+  | { kind: "power"; type: PowerUpType }
+  | { kind: "score"; type: ScoreItemType }
+);
 
 type BlockProps = {
   color: string;
@@ -148,14 +225,49 @@ type BlockProps = {
 };
 
 const SETTINGS_KEY = "crossy-road-3d-settings-v3";
+const LEADERBOARD_KEY = "crossy-road-leaderboard-v1";
 const MIN_COLS = 7;
 const MAX_COLS = 31;
 const MIN_ROWS = 7;
 const MAX_ROWS = 41;
 const MAX_POWER_UPS_ON_BOARD = 3;
-const POWER_UP_MIN_SECONDS = 30;
-const POWER_UP_MAX_SECONDS = 60;
+const POWER_UP_MIN_SECONDS = 20;
+const POWER_UP_MAX_SECONDS = 40;
+const PICKUP_ENTRY_SECONDS = 1.25;
+const PICKUP_EXIT_SECONDS = 1.25;
+const MOVING_OFFSCREEN_BUFFER = 1.15;
+const LANE_CHANGE_SECONDS = 1.1;
+const TRAFFIC_GAP = 0.55;
+const TRAFFIC_LOOK_AHEAD_SECONDS = 0.82;
+const TRAFFIC_SIMULATION_STEP = 0.045;
+const TRAIN_CAR_LENGTH = 1;
+const CAMERA_PITCH_MIN = 0.34;
+const CAMERA_PITCH_MAX = 1.38;
+const CAMERA_PITCH_DEFAULT = 0.86;
+const CAMERA_DIRECTION_PRESETS = [
+  ["North", 0],
+  ["East", Math.PI / 2],
+  ["South", Math.PI],
+  ["West", -Math.PI / 2],
+] as const;
+const CAMERA_TILT_PRESETS = [
+  ["Top", CAMERA_PITCH_MAX],
+  ["High", (CAMERA_PITCH_MAX + Math.PI / 4) / 2],
+  ["45", Math.PI / 4],
+  ["Low", (Math.PI / 4 + CAMERA_PITCH_MIN) / 2],
+  ["Flat", CAMERA_PITCH_MIN],
+] as const;
 const POWER_UP_TYPES: PowerUpType[] = ["control", "speed", "life", "jump", "lightning"];
+const SCORE_ITEM_TYPES: ScoreItemType[] = ["seeds", "bread", "flies", "carrot"];
+const PLAYER_IDS: PlayerId[] = ["duck", "frog", "chicken", "rabbit"];
+const SAFE_START_ROWS = 4;
+
+const DEFAULT_PLAYER_NAMES: PlayerNames = {
+  duck: "Duck",
+  frog: "Frog",
+  chicken: "Chicken",
+  rabbit: "Rabbit",
+};
 
 const DEFAULT_POWER_UP_SETTINGS: PowerUpSettings = {
   control: { enabled: true, frequency: 1 },
@@ -172,10 +284,16 @@ const DEFAULT_SETTINGS: GameSettings = {
   trainSpeed: 1,
   logSpeed: 1,
   moveCooldown: 0.25,
+  defaultZoom: 1,
+  hardMode: false,
+  logLengthMin: 1,
+  logLengthMax: 5,
+  grannyDriverSpeed: 0.85,
   trainLengthMin: 5,
   trainLengthMax: 7,
   laneSeed: 1,
   showDeathLog: false,
+  playerNames: DEFAULT_PLAYER_NAMES,
   powerUps: DEFAULT_POWER_UP_SETTINGS,
 };
 
@@ -215,6 +333,36 @@ const POWER_UP_DEFS: Record<
   },
 };
 
+const SCORE_ITEM_DEFS: Record<
+  ScoreItemType,
+  { label: string; color: string; accent: string; bonusFor: PlayerId }
+> = {
+  seeds: {
+    label: "Seeds",
+    color: "#d8a927",
+    accent: "#5f4115",
+    bonusFor: "chicken",
+  },
+  bread: {
+    label: "Bread",
+    color: "#d99a4e",
+    accent: "#7a4423",
+    bonusFor: "duck",
+  },
+  flies: {
+    label: "Flies",
+    color: "#1f2937",
+    accent: "#22c55e",
+    bonusFor: "frog",
+  },
+  carrot: {
+    label: "Carrot",
+    color: "#a96a3a",
+    accent: "#6f4326",
+    bonusFor: "rabbit",
+  },
+};
+
 const PLAYER_META: Record<
   PlayerId,
   Pick<PlayerState, "name" | "accent" | "bodyColor">
@@ -229,6 +377,16 @@ const PLAYER_META: Record<
     accent: "#fb7185",
     bodyColor: "#fff5df",
   },
+  frog: {
+    name: "Frog",
+    accent: "#3fbf5f",
+    bodyColor: "#42b85c",
+  },
+  rabbit: {
+    name: "Rabbit",
+    accent: "#9b6a43",
+    bodyColor: "#8a5a35",
+  },
 };
 
 const KEYBOARD_CONTROLS: Record<string, ControlAction> = {
@@ -240,16 +398,114 @@ const KEYBOARD_CONTROLS: Record<string, ControlAction> = {
   arrowleft: { playerId: "chicken", rowDelta: 0, colDelta: -1 },
   arrowdown: { playerId: "chicken", rowDelta: 1, colDelta: 0 },
   arrowright: { playerId: "chicken", rowDelta: 0, colDelta: 1 },
+  i: { playerId: "frog", rowDelta: -1, colDelta: 0 },
+  j: { playerId: "frog", rowDelta: 0, colDelta: -1 },
+  k: { playerId: "frog", rowDelta: 1, colDelta: 0 },
+  l: { playerId: "frog", rowDelta: 0, colDelta: 1 },
+  t: { playerId: "rabbit", rowDelta: -1, colDelta: 0 },
+  f: { playerId: "rabbit", rowDelta: 0, colDelta: -1 },
+  g: { playerId: "rabbit", rowDelta: 1, colDelta: 0 },
+  h: { playerId: "rabbit", rowDelta: 0, colDelta: 1 },
+};
+
+const PLAYER_UP_KEYS: Record<PlayerId, string> = {
+  duck: "W",
+  chicken: "ArrowUp",
+  frog: "I",
+  rabbit: "T",
+};
+
+const PLAYER_EXIT_KEYS: Record<PlayerId, string[]> = {
+  duck: ["a", "s", "d"],
+  chicken: ["arrowleft", "arrowdown", "arrowright"],
+  frog: ["j", "k", "l"],
+  rabbit: ["f", "g", "h"],
 };
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function animalIcon(playerId: PlayerId) {
+  return playerId === "duck"
+    ? "\u{1F986}"
+    : playerId === "chicken"
+    ? "\u{1F414}"
+    : playerId === "frog"
+    ? "\u{1F438}"
+    : "\u{1F407}";
+}
+
+function cleanPlayerName(value: unknown, fallback: string) {
+  if (typeof value !== "string") return fallback;
+  return value.slice(0, 18);
+}
+
 function cleanNumber(value: unknown, fallback: number, min: number, max: number) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return clamp(parsed, min, max);
+}
+
+function normalizeProfileName(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function isDefaultPlayerName(value: string) {
+  const normalized = normalizeProfileName(value);
+  return PLAYER_IDS.some((id) => normalizeProfileName(DEFAULT_PLAYER_NAMES[id]) === normalized);
+}
+
+function shouldTrackProfileName(value: string) {
+  const trimmed = value.trim();
+  return trimmed.length > 0 && !isDefaultPlayerName(trimmed);
+}
+
+function readLeaderboard(): LeaderboardRecord[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const saved = window.localStorage.getItem(LEADERBOARD_KEY);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved) as Partial<LeaderboardRecord>[];
+    return parsed
+      .filter((record) => typeof record.name === "string" && typeof record.password === "string")
+      .map((record) => ({
+        name: record.name ?? "",
+        password: record.password ?? "",
+        score: cleanNumber(record.score, 0, 0, Number.MAX_SAFE_INTEGER),
+        timeMs: cleanNumber(record.timeMs, 0, 0, Number.MAX_SAFE_INTEGER),
+        updatedAt: cleanNumber(record.updatedAt, Date.now(), 0, Number.MAX_SAFE_INTEGER),
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function writeLeaderboard(records: LeaderboardRecord[]) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(records));
+}
+
+function findLeaderboardRecord(records: LeaderboardRecord[], name: string) {
+  const normalized = normalizeProfileName(name);
+  return records.find((record) => normalizeProfileName(record.name) === normalized);
+}
+
+function rankedLeaderboard(records: LeaderboardRecord[], tab: LeaderboardTab) {
+  return [...records].sort((a, b) => {
+    if (tab === "score") return b.score - a.score || a.name.localeCompare(b.name);
+    const rankA = a.score / Math.max(a.timeMs / 60000, 1 / 60);
+    const rankB = b.score / Math.max(b.timeMs / 60000, 1 / 60);
+    return rankB - rankA || b.score - a.score || a.name.localeCompare(b.name);
+  });
+}
+
+function formatPlayTime(timeMs: number) {
+  const seconds = Math.max(0, Math.floor(timeMs / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
 }
 
 function positiveModulo(value: number, modulo: number) {
@@ -267,6 +523,46 @@ function createSeededRandom(seed: number) {
 
 function randomBetween(random: () => number, min: number, max: number) {
   return min + random() * (max - min);
+}
+
+function makeSpacedStarts(lengths: number[], loopLength: number, random: () => number) {
+  if (lengths.length === 0) return [];
+
+  const maxLength = Math.max(...lengths);
+  let count = lengths.length;
+  while (count > 1 && loopLength / count < maxLength + 1.25) {
+    count -= 1;
+  }
+
+  const segment = loopLength / count;
+  const offset = random() * segment;
+  return lengths.slice(0, count).map((_, index) => positiveModulo(offset + index * segment, loopLength));
+}
+
+function makeLoopStarts(lengths: number[], loopLength: number) {
+  if (lengths.length === 0) return [];
+
+  const maxLength = Math.max(...lengths);
+  let count = lengths.length;
+  while (count > 1 && loopLength / count < maxLength + 1.25) {
+    count -= 1;
+  }
+
+  const segment = loopLength / count;
+  return lengths.slice(0, count).map((_, index) => index * segment);
+}
+
+function pickDriverKind(random: () => number): DriverKind {
+  const roll = random();
+  if (roll < 0.18) return "aggressive";
+  if (roll < 0.38) return "granny";
+  return "normal";
+}
+
+function driverSpeedMultiplier(driver: DriverKind, settings: GameSettings) {
+  if (driver === "aggressive") return 1.15;
+  if (driver === "granny") return settings.grannyDriverSpeed;
+  return 1;
 }
 
 function makeId(prefix: string) {
@@ -295,6 +591,22 @@ function pickPowerUpType(settings: GameSettings, random: () => number) {
   return enabledTypes[enabledTypes.length - 1]?.type ?? null;
 }
 
+function pickScoreItemType(random: () => number) {
+  return SCORE_ITEM_TYPES[Math.floor(random() * SCORE_ITEM_TYPES.length)];
+}
+
+function pickSpawnItem(settings: GameSettings, random: () => number) {
+  const scoreChoice = { kind: "score" as const, type: pickScoreItemType(random) };
+  if (random() < 0.42) return scoreChoice;
+
+  const powerType = pickPowerUpType(settings, random);
+  return powerType ? { kind: "power" as const, type: powerType } : scoreChoice;
+}
+
+function scoreItemValue(type: ScoreItemType, playerId: PlayerId) {
+  return SCORE_ITEM_DEFS[type].bonusFor === playerId ? 150 : 100;
+}
+
 function loadSettings(): GameSettings {
   if (typeof window === "undefined") return DEFAULT_SETTINGS;
 
@@ -304,18 +616,29 @@ function loadSettings(): GameSettings {
     const parsed = JSON.parse(saved) as Partial<GameSettings>;
     const trainLengthMin = cleanNumber(parsed.trainLengthMin, DEFAULT_SETTINGS.trainLengthMin, 1, 50);
     const trainLengthMax = cleanNumber(parsed.trainLengthMax, DEFAULT_SETTINGS.trainLengthMax, 1, 50);
+    const logLengthMin = cleanNumber(parsed.logLengthMin, DEFAULT_SETTINGS.logLengthMin, 1, 10);
+    const logLengthMax = cleanNumber(parsed.logLengthMax, DEFAULT_SETTINGS.logLengthMax, 1, 10);
 
     return {
       cols: Math.round(cleanNumber(parsed.cols, DEFAULT_SETTINGS.cols, MIN_COLS, MAX_COLS)),
       rows: Math.round(cleanNumber(parsed.rows, DEFAULT_SETTINGS.rows, MIN_ROWS, MAX_ROWS)),
-      carSpeed: cleanNumber(parsed.carSpeed, DEFAULT_SETTINGS.carSpeed, 0.1, 4),
-      trainSpeed: cleanNumber(parsed.trainSpeed, DEFAULT_SETTINGS.trainSpeed, 0.1, 4),
-      logSpeed: cleanNumber(parsed.logSpeed, DEFAULT_SETTINGS.logSpeed, 0.1, 4),
+      carSpeed: cleanNumber(parsed.carSpeed, DEFAULT_SETTINGS.carSpeed, 0.5, 1.5),
+      trainSpeed: cleanNumber(parsed.trainSpeed, DEFAULT_SETTINGS.trainSpeed, 0.5, 1.5),
+      logSpeed: cleanNumber(parsed.logSpeed, DEFAULT_SETTINGS.logSpeed, 0.5, 1.5),
       moveCooldown: cleanNumber(parsed.moveCooldown, DEFAULT_SETTINGS.moveCooldown, 0, 2),
+      defaultZoom: cleanNumber(parsed.defaultZoom, DEFAULT_SETTINGS.defaultZoom, 0.55, 1.45),
+      hardMode: parsed.hardMode ?? DEFAULT_SETTINGS.hardMode,
+      logLengthMin: Math.min(logLengthMin, logLengthMax),
+      logLengthMax: Math.max(logLengthMin, logLengthMax),
+      grannyDriverSpeed: cleanNumber(parsed.grannyDriverSpeed, DEFAULT_SETTINGS.grannyDriverSpeed, 0.5, 1.5),
       trainLengthMin: Math.min(trainLengthMin, trainLengthMax),
       trainLengthMax: Math.max(trainLengthMin, trainLengthMax),
       laneSeed: cleanNumber(parsed.laneSeed, DEFAULT_SETTINGS.laneSeed, 1, 999999999),
       showDeathLog: parsed.showDeathLog ?? DEFAULT_SETTINGS.showDeathLog,
+      playerNames: PLAYER_IDS.reduce((acc, id) => {
+        acc[id] = cleanPlayerName(parsed.playerNames?.[id], DEFAULT_PLAYER_NAMES[id]);
+        return acc;
+      }, {} as PlayerNames),
       powerUps: POWER_UP_TYPES.reduce((acc, type) => {
         const savedPowerUp = parsed.powerUps?.[type];
         acc[type] = {
@@ -343,8 +666,10 @@ function saveSettings(settings: GameSettings) {
 function createBoard(settings: GameSettings): BoardConfig {
   const cols = Math.round(clamp(settings.cols, MIN_COLS, MAX_COLS));
   const rows = Math.round(clamp(settings.rows, MIN_ROWS, MAX_ROWS));
-  const duckStart = clamp(Math.floor(cols / 2) - 1, 0, cols - 1);
+  const duckStart = clamp(Math.floor(cols / 2) - 2, 0, cols - 1);
+  const frogStart = clamp(Math.floor(cols / 2) - 1, 0, cols - 1);
   const chickenStart = clamp(Math.floor(cols / 2) + 1, 0, cols - 1);
+  const rabbitStart = clamp(Math.floor(cols / 2) + 2, 0, cols - 1);
   const halfCols = cols / 2;
   const halfRows = rows / 2;
 
@@ -352,11 +677,14 @@ function createBoard(settings: GameSettings): BoardConfig {
     cols,
     rows,
     startRow: rows - 1,
+    playerStartRow: Math.max(0, rows - SAFE_START_ROWS),
     halfCols,
     halfRows,
     startCols: {
       duck: duckStart,
+      frog: frogStart,
       chicken: chickenStart,
+      rabbit: rabbitStart,
     },
     clipPlanes: [
       new THREE.Plane(new THREE.Vector3(1, 0, 0), halfCols),
@@ -376,37 +704,76 @@ function makeMovingThings(
   if (kind !== "road" && kind !== "rail" && kind !== "river") return undefined;
 
   if (kind === "rail") {
-    const minLength = Math.round(clamp(settings.trainLengthMin, 1, 50));
-    const maxLength = Math.round(clamp(settings.trainLengthMax, minLength, 50));
-    const count = board.cols > 18 ? 2 : 1;
+    const minCars = Math.round(clamp(settings.trainLengthMin, 1, 50));
+    const maxCars = Math.round(clamp(settings.trainLengthMax, minCars, 50));
+    const count = board.cols > 18 && maxCars <= board.cols * 0.72 ? 2 : 1;
+    const lengths = Array.from({ length: count }).map(() =>
+      Math.floor(randomBetween(random, minCars, maxCars + 1)) * TRAIN_CAR_LENGTH,
+    );
+    const loopLength = board.cols + maxCars * TRAIN_CAR_LENGTH + MOVING_OFFSCREEN_BUFFER * 2;
+    const starts = makeSpacedStarts(lengths, loopLength, random);
 
-    return Array.from({ length: count }).map((_, index) => ({
+    return starts.map((start, index) => ({
       id: `train-${row}-${index}`,
-      start: randomBetween(random, -maxLength, board.cols + maxLength) + index * (board.cols / count),
-      length: Math.round(randomBetween(random, minLength, maxLength + 0.99)),
+      start,
+      length: maxCars * TRAIN_CAR_LENGTH,
       asset: "train",
+      loopLength,
+      speedMultiplier: randomBetween(random, 0.85, 1.15),
+      lengthMin: minCars * TRAIN_CAR_LENGTH,
+      lengthMax: maxCars * TRAIN_CAR_LENGTH,
+      lengthSeed: row * 101 + index * 17 + settings.laneSeed,
     }));
   }
 
   if (kind === "river") {
-    const count = Math.max(2, Math.floor(board.cols / 5));
-    return Array.from({ length: count }).map((_, index) => ({
+    const minLength = settings.hardMode ? Math.round(clamp(settings.logLengthMin, 1, 10)) : 2;
+    const maxLength = settings.hardMode
+      ? Math.round(clamp(settings.logLengthMax, minLength, 10))
+      : 4;
+    const lengths = Array.from({ length: Math.max(2, Math.floor(board.cols / 5)) }).map(() =>
+      Math.floor(randomBetween(random, minLength, maxLength + 1)),
+    );
+    const loopLength = board.cols + Math.max(...lengths) + MOVING_OFFSCREEN_BUFFER * 2;
+    const starts = makeSpacedStarts(lengths, loopLength, random);
+
+    return starts.map((start, index) => ({
       id: `log-${row}-${index}`,
-      start: -2 + index * (board.cols / count) + randomBetween(random, -0.6, 0.9),
-      length: randomBetween(random, 2.2, 3.9),
+      start,
+      length: lengths[index],
       asset: "log",
+      loopLength,
+      speedMultiplier: 1,
     }));
   }
 
   const carColors = ["#f6c945", "#e9504f", "#5da0f2", "#5fc47b", "#2f80ed"];
-  const count = Math.max(2, Math.floor(board.cols / 4));
-  return Array.from({ length: count }).map((_, index) => ({
-    id: `car-${row}-${index}`,
-    start: -1 + index * (board.cols / count) + randomBetween(random, -0.8, 0.8),
-    length: randomBetween(random, 1.05, 1.35),
-    asset: "car",
-    color: carColors[(row + index) % carColors.length],
-  }));
+  const lengths = Array.from({ length: Math.max(2, Math.floor(board.cols / 4)) }).map(() =>
+    randomBetween(random, 1.05, 1.35),
+  );
+  const loopLength = board.cols + Math.max(...lengths) + MOVING_OFFSCREEN_BUFFER * 2;
+  const starts = makeLoopStarts(lengths, loopLength);
+
+  return starts.map((start, index) => {
+    const driver = settings.hardMode ? pickDriverKind(random) : "normal";
+    const color =
+      driver === "aggressive"
+        ? "#f97316"
+        : driver === "granny"
+        ? "#94a3b8"
+        : carColors[(row + index) % carColors.length];
+
+    return {
+      id: `car-${row}-${index}`,
+      start,
+      length: lengths[index],
+      asset: "car",
+      color,
+      loopLength,
+      driver,
+      speedMultiplier: driverSpeedMultiplier(driver, settings),
+    };
+  });
 }
 
 function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefinition[] {
@@ -429,13 +796,15 @@ function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefiniti
     "road",
   ];
 
-  return Array.from({ length: board.rows }).map((_, row) => {
-    const direction: 1 | -1 = (row + Math.floor(settings.laneSeed)) % 2 === 0 ? 1 : -1;
+  const lanes: LaneDefinition[] = [];
+
+  for (let row = 0; row < board.rows; row += 1) {
     const isDefault = settings.laneSeed === DEFAULT_SETTINGS.laneSeed;
+    const isStartGrass = row >= board.startRow - (SAFE_START_ROWS - 1);
     const kind: LaneKind =
       row === 0
         ? "goal"
-        : row === board.startRow
+        : isStartGrass
         ? "grass"
         : isDefault
         ? defaultPattern[(row - 1) % defaultPattern.length]
@@ -446,24 +815,37 @@ function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefiniti
         : random() < 0.7
         ? "road"
         : "rail";
+    const previousLane = lanes[row - 1];
+    const direction: 1 | -1 =
+      settings.hardMode &&
+      previousLane &&
+      ((kind === "road" && previousLane.kind === "road") ||
+        (kind === "river" && previousLane.kind === "river"))
+        ? previousLane.direction
+        : (row + Math.floor(settings.laneSeed)) % 2 === 0
+        ? 1
+        : -1;
 
     const baseSpeed =
       kind === "road"
         ? randomBetween(random, 1.8, 3.05) * settings.carSpeed
         : kind === "rail"
-        ? randomBetween(random, 6.3, 8.2) * settings.trainSpeed
+        ? 7.2 * settings.trainSpeed
         : kind === "river"
         ? randomBetween(random, 1.0, 1.75) * settings.logSpeed
         : 0;
 
-    return {
+    lanes.push({
       row,
       kind,
       direction,
       speed: baseSpeed,
+      hardMode: settings.hardMode,
       things: makeMovingThings(kind, row, direction, settings, board, random),
-    };
-  });
+    });
+  }
+
+  return lanes;
 }
 
 function getLane(lanes: LaneDefinition[], row: number) {
@@ -493,18 +875,447 @@ function worldXFromThing(thing: RuntimeThing, board: BoardConfig) {
   return thing.x + thing.length / 2 - board.halfCols;
 }
 
-function getMovingX(thing: MovingThing, lane: LaneDefinition, seconds: number, board: BoardConfig) {
-  const loopWidth = board.cols + thing.length + 6;
-  return positiveModulo(thing.start + lane.direction * lane.speed * seconds + 3, loopWidth) - 3;
+function seededUnit(value: number) {
+  return positiveModulo(Math.sin(value * 12.9898) * 43758.5453, 1);
 }
 
-function getMovingThingsForLane(lane: LaneDefinition, seconds: number, board: BoardConfig): RuntimeThing[] {
-  if (!lane.things) return [];
-  return lane.things.map((thing) => ({
+function getThingLength(thing: MovingThing, lane: LaneDefinition, seconds: number) {
+  if (thing.asset !== "train" || thing.lengthMin == null || thing.lengthMax == null) {
+    return thing.length;
+  }
+
+  const loopWidth = thing.loopLength ?? 1;
+  const rawPhase = thing.start + lane.speed * (thing.speedMultiplier ?? 1) * seconds;
+  const loopIndex = Math.floor(rawPhase / loopWidth);
+  const minLength = Math.min(thing.lengthMin, thing.lengthMax);
+  const maxLength = Math.max(thing.lengthMin, thing.lengthMax);
+  return Math.floor(minLength + seededUnit((thing.lengthSeed ?? 1) + loopIndex * 31.17) * (maxLength - minLength + 1));
+}
+
+function getMovingX(thing: MovingThing, lane: LaneDefinition, seconds: number, board: BoardConfig, length = getThingLength(thing, lane, seconds)) {
+  const loopWidth = thing.loopLength ?? board.cols + thing.length + MOVING_OFFSCREEN_BUFFER * 2;
+  const phase = positiveModulo(thing.start + lane.speed * (thing.speedMultiplier ?? 1) * seconds, loopWidth);
+  if (lane.direction === 1) return phase - length - MOVING_OFFSCREEN_BUFFER;
+  return board.cols + MOVING_OFFSCREEN_BUFFER - phase;
+}
+
+function laneChangeProgress(thing: RuntimeThing, board: BoardConfig) {
+  if (thing.laneChangeProgress != null) return easeInOut(clamp(thing.laneChangeProgress, 0, 1));
+
+  const raw = (thing.x + thing.length + MOVING_OFFSCREEN_BUFFER) / (board.cols + thing.length + MOVING_OFFSCREEN_BUFFER * 2);
+  const progress = thing.lane.direction === 1 ? raw : 1 - raw;
+  return easeInOut(clamp(progress, 0, 1));
+}
+
+function worldZFromRuntimeThing(thing: RuntimeThing, board: BoardConfig) {
+  const targetZ = worldZFromCenter(thing.lane.row, board);
+  if (thing.laneChangeFromRow == null) return targetZ;
+
+  const fromZ = worldZFromCenter(thing.laneChangeFromRow, board);
+  const progress = laneChangeProgress(thing, board);
+  return THREE.MathUtils.lerp(fromZ, targetZ, progress) + Math.sin(progress * Math.PI * 2) * 0.08;
+}
+
+function intervalsOverlap(startA: number, endA: number, startB: number, endB: number, gap = 0.3) {
+  return startA < endB + gap && endA > startB - gap;
+}
+
+function runtimeThingOccupiesRow(thing: RuntimeThing, row: number) {
+  return thing.occupiedRows ? thing.occupiedRows.includes(row) : thing.lane.row === row;
+}
+
+function adjacentPassingLanes(lanes: LaneDefinition[], lane: LaneDefinition) {
+  return [lane.row - 1, lane.row + 1]
+    .map((row) => lanes[row])
+    .filter((candidate): candidate is LaneDefinition =>
+      Boolean(candidate && candidate.kind === "road"),
+    );
+}
+
+function carStateOccupiedRows(state: TrafficCarState) {
+  return state.targetLaneRow == null
+    ? [state.laneRow]
+    : Array.from(new Set([state.laneRow, state.targetLaneRow]));
+}
+
+function desiredCarSpeed(thing: RuntimeThing, lanes: LaneDefinition[]) {
+  const lane = lanes[thing.homeRow ?? thing.lane.row] ?? thing.lane;
+  return lane.speed * (thing.speedMultiplier ?? 1);
+}
+
+function makeTrafficSignature(lanes: LaneDefinition[], board: BoardConfig) {
+  return [
+    board.cols,
+    board.rows,
+    lanes
+      .map(
+        (lane) =>
+          `${lane.row}:${lane.kind}:${lane.direction}:${lane.speed.toFixed(3)}:${(lane.things ?? [])
+            .map(
+              (thing) =>
+                `${thing.id}:${thing.start.toFixed(3)}:${thing.length.toFixed(3)}:${thing.driver ?? ""}:${(
+                  thing.speedMultiplier ?? 1
+                ).toFixed(3)}`,
+            )
+            .join(",")}`,
+      )
+      .join("|"),
+  ].join(";");
+}
+
+let hardModeTrafficCache: TrafficSimulationCache | null = null;
+
+function makeInitialTrafficCarState(thing: RuntimeThing, lanes: LaneDefinition[]): TrafficCarState {
+  return {
+    id: thing.id,
+    laneRow: thing.homeRow ?? thing.lane.row,
+    targetLaneRow: null,
+    laneChangeFromRow: null,
+    laneChangeStartedAt: 0,
+    laneChangeEndsAt: 0,
+    x: thing.x,
+    speed: desiredCarSpeed(thing, lanes),
+  };
+}
+
+function syncTrafficCache(
+  carThings: RuntimeThing[],
+  lanes: LaneDefinition[],
+  seconds: number,
+  board: BoardConfig,
+) {
+  const signature = makeTrafficSignature(lanes, board);
+  if (!hardModeTrafficCache || hardModeTrafficCache.signature !== signature || seconds < hardModeTrafficCache.seconds) {
+    hardModeTrafficCache = {
+      signature,
+      seconds,
+      cars: carThings.reduce((acc, thing) => {
+        acc[thing.id] = makeInitialTrafficCarState(thing, lanes);
+        return acc;
+      }, {} as Record<string, TrafficCarState>),
+    };
+    return hardModeTrafficCache;
+  }
+
+  const validIds = new Set(carThings.map((thing) => thing.id));
+  Object.keys(hardModeTrafficCache.cars).forEach((id) => {
+    if (!validIds.has(id)) delete hardModeTrafficCache?.cars[id];
+  });
+  carThings.forEach((thing) => {
+    if (!hardModeTrafficCache?.cars[thing.id]) {
+      hardModeTrafficCache!.cars[thing.id] = makeInitialTrafficCarState(thing, lanes);
+    }
+  });
+
+  return hardModeTrafficCache;
+}
+
+function findFrontCar(
+  row: number,
+  state: TrafficCarState,
+  thing: RuntimeThing,
+  states: TrafficCarState[],
+  thingsById: Map<string, RuntimeThing>,
+  direction: 1 | -1,
+) {
+  let front:
+    | {
+        state: TrafficCarState;
+        thing: RuntimeThing;
+        gap: number;
+      }
+    | null = null;
+
+  states.forEach((otherState) => {
+    if (otherState.id === state.id || !carStateOccupiedRows(otherState).includes(row)) return;
+    const otherThing = thingsById.get(otherState.id);
+    if (!otherThing) return;
+
+    const gap =
+      direction === 1
+        ? otherState.x - (state.x + thing.length)
+        : state.x - (otherState.x + otherThing.length);
+    if (gap < -TRAFFIC_GAP) return;
+    if (!front || gap < front.gap) {
+      front = { state: otherState, thing: otherThing, gap };
+    }
+  });
+
+  return front;
+}
+
+function laneHasSwitchGap(
+  targetRow: number,
+  state: TrafficCarState,
+  thing: RuntimeThing,
+  states: TrafficCarState[],
+  thingsById: Map<string, RuntimeThing>,
+) {
+  return !states.some((otherState) => {
+    if (otherState.id === state.id || !carStateOccupiedRows(otherState).includes(targetRow)) return false;
+    const otherThing = thingsById.get(otherState.id);
+    if (!otherThing) return false;
+    return intervalsOverlap(
+      state.x,
+      state.x + thing.length,
+      otherState.x,
+      otherState.x + otherThing.length,
+      TRAFFIC_GAP + 0.18,
+    );
+  });
+}
+
+function pickPassingLane(
+  lanes: LaneDefinition[],
+  currentRow: number,
+  state: TrafficCarState,
+  thing: RuntimeThing,
+  states: TrafficCarState[],
+  thingsById: Map<string, RuntimeThing>,
+) {
+  const currentLane = lanes[currentRow] ?? lanes[thing.homeRow ?? thing.lane.row] ?? thing.lane;
+  return adjacentPassingLanes(lanes, currentLane).find(
+    (candidate) =>
+      candidate.direction === currentLane.direction &&
+      laneHasSwitchGap(candidate.row, state, thing, states, thingsById),
+  );
+}
+
+function keepLoopEntryClear(
+  state: TrafficCarState,
+  thing: RuntimeThing,
+  lane: LaneDefinition,
+  states: TrafficCarState[],
+  thingsById: Map<string, RuntimeThing>,
+  board: BoardConfig,
+) {
+  const rows = carStateOccupiedRows(state);
+  let attempts = states.length;
+  while (attempts > 0) {
+    const blocker = states.find((otherState) => {
+      if (otherState.id === state.id) return false;
+      const otherThing = thingsById.get(otherState.id);
+      if (!otherThing) return false;
+      const sharesRow = carStateOccupiedRows(otherState).some((row) => rows.includes(row));
+      return (
+        sharesRow &&
+        intervalsOverlap(state.x, state.x + thing.length, otherState.x, otherState.x + otherThing.length, TRAFFIC_GAP)
+      );
+    });
+    if (!blocker) return;
+
+    const blockerThing = thingsById.get(blocker.id);
+    if (!blockerThing) return;
+    state.x =
+      lane.direction === 1
+        ? blocker.x - thing.length - TRAFFIC_GAP
+        : blocker.x + blockerThing.length + TRAFFIC_GAP;
+    attempts -= 1;
+  }
+
+  state.x = lane.direction === 1 ? -thing.length - board.cols * 0.25 : board.cols + board.cols * 0.25;
+}
+
+function wrapTrafficCarState(
+  state: TrafficCarState,
+  thing: RuntimeThing,
+  lane: LaneDefinition,
+  states: TrafficCarState[],
+  thingsById: Map<string, RuntimeThing>,
+  board: BoardConfig,
+) {
+  const rightEdge = board.cols + MOVING_OFFSCREEN_BUFFER;
+  const leftEdge = -thing.length - MOVING_OFFSCREEN_BUFFER;
+  const wrapped =
+    lane.direction === 1
+      ? state.x > rightEdge
+      : state.x + thing.length < -MOVING_OFFSCREEN_BUFFER;
+
+  if (!wrapped) return;
+
+  if (state.targetLaneRow != null) {
+    state.laneRow = state.targetLaneRow;
+    state.targetLaneRow = null;
+    state.laneChangeFromRow = null;
+  }
+
+  state.x = lane.direction === 1 ? leftEdge : rightEdge;
+  keepLoopEntryClear(state, thing, lane, states, thingsById, board);
+}
+
+function stepTrafficSimulation(
+  cache: TrafficSimulationCache,
+  carThings: RuntimeThing[],
+  lanes: LaneDefinition[],
+  board: BoardConfig,
+  seconds: number,
+  dt: number,
+) {
+  const thingsById = new Map(carThings.map((thing) => [thing.id, thing]));
+  const states = Object.values(cache.cars);
+
+  states.forEach((state) => {
+    if (state.targetLaneRow != null && seconds >= state.laneChangeEndsAt) {
+      state.laneRow = state.targetLaneRow;
+      state.targetLaneRow = null;
+      state.laneChangeFromRow = null;
+    }
+  });
+
+  const orderedStates = [...states].sort((a, b) => {
+    const thingA = thingsById.get(a.id);
+    const thingB = thingsById.get(b.id);
+    const laneA = thingA ? lanes[thingA.homeRow ?? thingA.lane.row] ?? thingA.lane : null;
+    const laneB = thingB ? lanes[thingB.homeRow ?? thingB.lane.row] ?? thingB.lane : null;
+    const rowDelta = (a.targetLaneRow ?? a.laneRow) - (b.targetLaneRow ?? b.laneRow);
+    if (rowDelta !== 0) return rowDelta;
+    const direction = laneA?.direction ?? laneB?.direction ?? 1;
+    return direction === 1 ? b.x - a.x : a.x - b.x;
+  });
+
+  orderedStates.forEach((state) => {
+    const thing = thingsById.get(state.id);
+    if (!thing) return;
+    const homeLane = lanes[thing.homeRow ?? thing.lane.row] ?? thing.lane;
+    const currentRow = state.targetLaneRow ?? state.laneRow;
+    const desiredSpeed = desiredCarSpeed(thing, lanes);
+    const front = findFrontCar(currentRow, state, thing, states, thingsById, homeLane.direction);
+    const lookAhead = Math.max(TRAFFIC_GAP + 0.65, desiredSpeed * TRAFFIC_LOOK_AHEAD_SECONDS);
+    const closeToFront = Boolean(front && front.gap < TRAFFIC_GAP + 0.12);
+    const catchingFront = Boolean(front && desiredSpeed > front.state.speed + 0.02 && front.gap < lookAhead);
+    let speed = desiredSpeed;
+
+    if ((closeToFront || catchingFront) && state.targetLaneRow == null) {
+      const passLane = pickPassingLane(lanes, currentRow, state, thing, states, thingsById);
+      if (passLane) {
+        state.laneChangeFromRow = state.laneRow;
+        state.targetLaneRow = passLane.row;
+        state.laneChangeStartedAt = seconds;
+        state.laneChangeEndsAt = seconds + LANE_CHANGE_SECONDS;
+      }
+    }
+
+    if (front && (closeToFront || catchingFront || state.targetLaneRow != null)) {
+      speed = Math.min(speed, front.state.speed);
+    }
+
+    let nextX = state.x + homeLane.direction * speed * dt;
+    if (front && front.gap < TRAFFIC_GAP + speed * dt + 0.05) {
+      const limit =
+        homeLane.direction === 1
+          ? front.state.x - thing.length - TRAFFIC_GAP
+          : front.state.x + front.thing.length + TRAFFIC_GAP;
+      nextX = homeLane.direction === 1 ? Math.min(nextX, limit) : Math.max(nextX, limit);
+    }
+
+    state.x = nextX;
+    state.speed = speed;
+    wrapTrafficCarState(state, thing, homeLane, states, thingsById, board);
+  });
+}
+
+function runtimeThingFromTrafficState(
+  thing: RuntimeThing,
+  state: TrafficCarState,
+  lanes: LaneDefinition[],
+  seconds: number,
+) {
+  const visualLane = lanes[state.targetLaneRow ?? state.laneRow] ?? thing.lane;
+  const laneProgress =
+    state.targetLaneRow == null
+      ? undefined
+      : clamp(
+          (seconds - state.laneChangeStartedAt) /
+            Math.max(0.001, state.laneChangeEndsAt - state.laneChangeStartedAt),
+          0,
+          1,
+        );
+
+  return {
     ...thing,
-    lane,
-    x: getMovingX(thing, lane, seconds, board),
-  }));
+    lane: visualLane,
+    x: state.x,
+    speedMultiplier: visualLane.speed > 0 ? state.speed / visualLane.speed : thing.speedMultiplier,
+    laneChangeFromRow: state.targetLaneRow == null ? undefined : state.laneChangeFromRow ?? state.laneRow,
+    laneChangeProgress: laneProgress,
+    occupiedRows: carStateOccupiedRows(state),
+  };
+}
+
+function resolveHardModeCars(
+  runtimeThings: RuntimeThing[],
+  lanes: LaneDefinition[],
+  seconds: number,
+  board: BoardConfig,
+) {
+  const carThings = runtimeThings.filter((thing) => thing.asset === "car");
+  if (carThings.length === 0) return runtimeThings;
+
+  const cache = syncTrafficCache(carThings, lanes, seconds, board);
+  const elapsed = clamp(seconds - cache.seconds, 0, 0.5);
+  let remaining = elapsed;
+  let simulatedSeconds = cache.seconds;
+  while (remaining > 0.0001) {
+    const step = Math.min(TRAFFIC_SIMULATION_STEP, remaining);
+    simulatedSeconds += step;
+    stepTrafficSimulation(cache, carThings, lanes, board, simulatedSeconds, step);
+    remaining -= step;
+  }
+  cache.seconds = seconds;
+
+  const resolvedCars = new Map(
+    carThings.map((thing) => [thing.id, runtimeThingFromTrafficState(thing, cache.cars[thing.id], lanes, seconds)]),
+  );
+
+  return runtimeThings.map((thing) => (thing.asset === "car" ? resolvedCars.get(thing.id) ?? thing : thing));
+}
+
+function resolveHardModeTraffic(
+  runtimeThings: RuntimeThing[],
+  lanes: LaneDefinition[],
+  seconds: number,
+  board: BoardConfig,
+) {
+  return resolveHardModeCars(runtimeThings, lanes, seconds, board);
+}
+
+function getRuntimeThingsForLanes(lanes: LaneDefinition[], seconds: number, board: BoardConfig): RuntimeThing[] {
+  const runtimeThings = lanes.flatMap((lane) =>
+    (lane.things ?? []).map((thing) => {
+      const length = getThingLength(thing, lane, seconds);
+      return {
+        ...thing,
+        length,
+        homeRow: lane.row,
+        lane,
+        x: getMovingX(thing, lane, seconds, board, length),
+      };
+    }),
+  );
+
+  return lanes.some((lane) => lane.hardMode) ? resolveHardModeTraffic(runtimeThings, lanes, seconds, board) : runtimeThings;
+}
+
+function getMovingThingsForLane(
+  lane: LaneDefinition,
+  seconds: number,
+  board: BoardConfig,
+  lanes?: LaneDefinition[],
+): RuntimeThing[] {
+  if (lanes) {
+    return getRuntimeThingsForLanes(lanes, seconds, board).filter((thing) => runtimeThingOccupiesRow(thing, lane.row));
+  }
+  if (!lane.things) return [];
+  return lane.things.map((thing) => {
+    const length = getThingLength(thing, lane, seconds);
+    return {
+      ...thing,
+      length,
+      homeRow: lane.row,
+      lane,
+      x: getMovingX(thing, lane, seconds, board, length),
+    };
+  });
 }
 
 function overlapsThing(playerCol: number, thing: RuntimeThing, margin = 0.18) {
@@ -514,16 +1325,135 @@ function overlapsThing(playerCol: number, thing: RuntimeThing, margin = 0.18) {
 
 function isOnLog(playerCol: number, thing: RuntimeThing) {
   const playerCenter = playerCol + 0.5;
-  return playerCenter >= thing.x + 0.08 && playerCenter <= thing.x + thing.length - 0.08;
+  return logSlotCenters(thing).some((slotCenter) => Math.abs(playerCenter - slotCenter) <= 0.5);
+}
+
+function logSlotCount(log: RuntimeThing) {
+  return Math.max(1, Math.round(log.length));
+}
+
+function logSlotCenters(log: RuntimeThing) {
+  return Array.from({ length: logSlotCount(log) }, (_, index) => log.x + index + 0.5);
+}
+
+function logSlotColFromCenter(slotCenter: number) {
+  return slotCenter - 0.5;
+}
+
+function isPlayableLogSlot(slotCol: number, board: BoardConfig) {
+  return slotCol >= -0.45 && slotCol <= board.cols - 0.55;
+}
+
+function isBetween(value: number, a: number, b: number) {
+  return value >= Math.min(a, b) - 0.001 && value <= Math.max(a, b) + 0.001;
+}
+
+function findLogHopLandingCol(
+  lane: LaneDefinition,
+  requestedCol: number,
+  seconds: number,
+  board: BoardConfig,
+  lanes: LaneDefinition[],
+) {
+  const col = clamp(Math.round(requestedCol), 0, board.cols - 1);
+  const targetCenter = col + 0.5;
+  const logs = getMovingThingsForLane(lane, seconds, board, lanes).filter((thing) => thing.asset === "log");
+
+  const candidates = logs.flatMap((log) => {
+    const centers = logSlotCenters(log);
+    const frontIndex = lane.direction === 1 ? centers.length - 1 : 0;
+    const frontCenter = centers[frontIndex];
+    const frontSlotCol = logSlotColFromCenter(frontCenter);
+    const landingCandidates: Array<{ col: number; distance: number; priority: number }> = [];
+
+    if (isPlayableLogSlot(frontSlotCol, board) && isBetween(targetCenter, frontCenter, frontCenter + lane.direction)) {
+      landingCandidates.push({ col: frontSlotCol, distance: 0, priority: 0 });
+    }
+
+    centers.forEach((slotCenter) => {
+      const slotCol = logSlotColFromCenter(slotCenter);
+      const distance = Math.abs(targetCenter - slotCenter);
+      if (isPlayableLogSlot(slotCol, board) && distance <= 0.5 + 0.001) {
+        landingCandidates.push({ col: slotCol, distance, priority: 1 });
+      }
+    });
+
+    return landingCandidates;
+  });
+
+  const best = candidates.sort((a, b) => a.priority - b.priority || a.distance - b.distance)[0];
+  return best ? best.col : col;
+}
+
+function findLogExitCol(playerCol: number, board: BoardConfig) {
+  const playerCenter = playerCol + 0.5;
+  const candidates = Array.from(new Set([Math.floor(playerCol), Math.ceil(playerCol)]))
+    .filter((col) => col >= 0 && col < board.cols)
+    .map((col) => ({
+      col,
+      distance: Math.abs(playerCenter - (col + 0.5)),
+    }));
+  return candidates.sort((a, b) => a.distance - b.distance || a.col - b.col)[0]?.col ?? clamp(Math.round(playerCol), 0, board.cols - 1);
 }
 
 function getCellOccupant(players: PlayerState[], playerId: PlayerId, row: number, col: number) {
   return players.find(
     (player) =>
+      player.joined &&
       player.id !== playerId &&
       Math.round(player.row) === row &&
       Math.round(player.col) === col,
   );
+}
+
+function activePlayers(players: PlayerState[]) {
+  return players.filter((player) => player.joined);
+}
+
+function nextJoinedPlayerId(players: PlayerState[], currentId: PlayerId | null, includeCurrent = false) {
+  const joinedIds = PLAYER_IDS.filter((id) => players.some((player) => player.id === id && player.joined));
+  if (joinedIds.length === 0) return null;
+  if (!currentId) return joinedIds[0];
+
+  const currentIndex = joinedIds.indexOf(currentId);
+  if (currentIndex < 0) return joinedIds[0];
+  if (includeCurrent) return joinedIds[currentIndex];
+  return joinedIds[(currentIndex + 1) % joinedIds.length];
+}
+
+function mobileTurnPlayers(players: PlayerState[], activePlayerId: PlayerId | null) {
+  if (!activePlayerId) return players.map((player) => ({ ...player, joined: false }));
+  return players.map((player) => (player.id === activePlayerId ? player : { ...player, joined: false }));
+}
+
+function mergeMobileTurnPlayers(players: PlayerState[], simulatedPlayers: PlayerState[], activePlayerId: PlayerId | null) {
+  if (!activePlayerId) return players;
+  const activePlayer = simulatedPlayers.find((player) => player.id === activePlayerId);
+  if (!activePlayer) return players;
+  return players.map((player) => (player.id === activePlayerId ? activePlayer : player));
+}
+
+function resetPlayerForJoin(player: PlayerState, board: BoardConfig, players: PlayerState[]) {
+  return {
+    ...player,
+    name: DEFAULT_PLAYER_NAMES[player.id],
+    profileName: null,
+    joined: true,
+    row: board.playerStartRow,
+    col: findOpenStartCol(player.id, players, board),
+    score: 0,
+    leaderboardScoreCheckpoint: 0,
+    laps: 0,
+    misses: 0,
+    bestProgress: 0,
+    stunnedUntil: 0,
+    facing: "up" as Direction,
+    activePowerUp: null,
+    invincibleUntil: 0,
+    lastMoveAt: -Infinity,
+    jump: null,
+    lightning: null,
+  };
 }
 
 function findOpenStartCol(playerId: PlayerId, players: PlayerState[], board: BoardConfig) {
@@ -533,7 +1463,7 @@ function findOpenStartCol(playerId: PlayerId, players: PlayerState[], board: Boa
   );
   const openOffset = offsets.find((offset) => {
     const col = startCol + offset;
-    return col >= 0 && col < board.cols && !getCellOccupant(players, playerId, board.startRow, col);
+    return col >= 0 && col < board.cols && !getCellOccupant(players, playerId, board.playerStartRow, col);
   });
 
   return clamp(startCol + (openOffset ?? 0), 0, board.cols - 1);
@@ -543,13 +1473,17 @@ function copyPlayers(players: PlayerState[]) {
   return players.map((player) => ({ ...player }));
 }
 
-function makeInitialPlayers(board: BoardConfig): PlayerState[] {
-  return (["duck", "chicken"] as PlayerId[]).map((id) => ({
+function makeInitialPlayers(board: BoardConfig, playerNames: PlayerNames): PlayerState[] {
+  return PLAYER_IDS.map((id) => ({
     id,
     ...PLAYER_META[id],
-    row: board.startRow,
+    name: playerNames[id] || PLAYER_META[id].name,
+    profileName: null,
+    joined: true,
+    row: board.playerStartRow,
     col: board.startCols[id],
     score: 0,
+    leaderboardScoreCheckpoint: 0,
     laps: 0,
     misses: 0,
     bestProgress: 0,
@@ -586,9 +1520,10 @@ function restartPlayer(
   messages.push(text);
   return {
     ...player,
-    row: board.startRow,
+    row: board.playerStartRow,
     col: findOpenStartCol(player.id, players, board),
     misses: player.misses + 1,
+    score: player.score - 15,
     stunnedUntil: timestamp + 850,
     facing: "up" as Direction,
     jump: null,
@@ -606,6 +1541,8 @@ function resolvePlayers(
   messages: string[],
 ) {
   return players.map((rawPlayer) => {
+    if (!rawPlayer.joined) return rawPlayer;
+
     const player = clearExpiredPlayerEffects(rawPlayer, timestamp);
     if (player.jump || timestamp < player.stunnedUntil) return player;
 
@@ -615,7 +1552,7 @@ function resolvePlayers(
       messages.push(`${player.name} crossed the finish.`);
       return {
         ...player,
-        row: board.startRow,
+        row: board.playerStartRow,
         col: findOpenStartCol(player.id, players, board),
         score: player.score + 75,
         laps: player.laps + 1,
@@ -626,12 +1563,12 @@ function resolvePlayers(
     }
 
     if (lane.kind === "river") {
-      const log = getMovingThingsForLane(lane, seconds, board).find((thing) => isOnLog(player.col, thing));
+      const log = getMovingThingsForLane(lane, seconds, board, lanes).find((thing) => isOnLog(player.col, thing));
       if (!log) {
         return restartPlayer(player, timestamp, messages, `${player.name} fell in the river.`, players, board);
       }
 
-      const carriedCol = player.col + lane.direction * lane.speed * dt;
+      const carriedCol = player.col + lane.direction * lane.speed * (log.speedMultiplier ?? 1) * dt;
       if (carriedCol < -0.45 || carriedCol > board.cols - 0.55) {
         return restartPlayer(player, timestamp, messages, `${player.name} rode a log off the edge.`, players, board);
       }
@@ -650,12 +1587,20 @@ function resolvePlayers(
     if (lane.kind === "road" || lane.kind === "rail") {
       if (timestamp < player.invincibleUntil) return player;
 
-      const hazard = getMovingThingsForLane(lane, seconds, board).find((thing) => overlapsThing(player.col, thing));
+      const hazard = getMovingThingsForLane(lane, seconds, board, lanes).find((thing) => overlapsThing(player.col, thing));
       if (hazard) {
         if (player.activePowerUp?.type === "life") {
-          messages.push(`${player.name}'s extra life blocked the hit.`);
+          const expiresAt = player.activePowerUp.expiresAt - 5000;
+          messages.push(`${player.name}'s shield blocked the hit.`);
           return {
             ...player,
+            activePowerUp:
+              expiresAt > timestamp
+                ? {
+                    ...player.activePowerUp,
+                    expiresAt,
+                  }
+                : null,
             invincibleUntil: timestamp + 2000,
           };
         }
@@ -672,6 +1617,21 @@ function resolvePlayers(
   });
 }
 
+function isPickupCellOpen(
+  row: number,
+  col: number,
+  board: BoardConfig,
+  players: PlayerState[],
+  powerUps: PowerUpInstance[],
+) {
+  if (row < 0 || row >= board.rows || col < 0 || col >= board.cols) return false;
+  const occupiedByPlayer = players.some(
+    (player) => player.joined && Math.round(player.row) === row && Math.round(player.col) === col,
+  );
+  const occupiedByPowerUp = powerUps.some((powerUp) => powerUp.row === row && powerUp.col === col);
+  return !occupiedByPlayer && !occupiedByPowerUp;
+}
+
 function findSpawnCell(
   lanes: LaneDefinition[],
   board: BoardConfig,
@@ -682,16 +1642,63 @@ function findSpawnCell(
   const safeRows = lanes
     .filter((lane) => lane.kind === "grass" && lane.row !== board.startRow)
     .map((lane) => lane.row);
-  const candidateRows = safeRows.length > 0 ? safeRows : [board.startRow];
+  if (safeRows.length === 0) return null;
 
   for (let attempt = 0; attempt < 80; attempt += 1) {
-    const row = candidateRows[Math.floor(random() * candidateRows.length)];
+    const row = safeRows[Math.floor(random() * safeRows.length)];
     const col = Math.floor(random() * board.cols);
-    const occupiedByPlayer = players.some(
-      (player) => Math.round(player.row) === row && Math.round(player.col) === col,
-    );
-    const occupiedByPowerUp = powerUps.some((powerUp) => powerUp.row === row && powerUp.col === col);
-    if (!occupiedByPlayer && !occupiedByPowerUp) return { row, col };
+    if (isPickupCellOpen(row, col, board, players, powerUps)) return { row, col };
+  }
+
+  return null;
+}
+
+function getAdjacentGrassRows(lanes: LaneDefinition[], row: number) {
+  return [row - 1, row + 1].filter(
+    (candidateRow) =>
+      candidateRow >= 0 && candidateRow < lanes.length && getLane(lanes, candidateRow).kind === "grass",
+  );
+}
+
+function findBreadSpawnCell(
+  lanes: LaneDefinition[],
+  board: BoardConfig,
+  players: PlayerState[],
+  powerUps: PowerUpInstance[],
+  seconds: number,
+  random: () => number,
+) {
+  const roadLanes = lanes.filter(
+    (lane) =>
+      lane.kind === "road" &&
+      lane.things?.some((thing) => thing.asset === "car") &&
+      getAdjacentGrassRows(lanes, lane.row).length > 0,
+  );
+  if (roadLanes.length === 0) return null;
+
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const lane = roadLanes[Math.floor(random() * roadLanes.length)];
+    const visibleCars = getMovingThingsForLane(lane, seconds, board, lanes).filter((thing) => {
+      const center = thing.x + thing.length / 2;
+      return thing.asset === "car" && center >= 0 && center < board.cols;
+    });
+    if (visibleCars.length === 0) continue;
+
+    const car = visibleCars[Math.floor(random() * visibleCars.length)];
+    const col = clamp(Math.floor(car.x + car.length / 2), 0, board.cols - 1);
+    const grassRows = getAdjacentGrassRows(lanes, lane.row).sort(() => random() - 0.5);
+    const row = grassRows.find((grassRow) => isPickupCellOpen(grassRow, col, board, players, powerUps));
+    if (row == null) continue;
+
+    return {
+      row,
+      col,
+      entryOrigin: {
+        x: worldXFromThing(car, board),
+        y: 0.76,
+        z: worldZFromCenter(lane.row, board),
+      },
+    };
   }
 
   return null;
@@ -708,27 +1715,31 @@ function spawnPowerUps(
   randomRef: MutableRefObject<() => number>,
 ) {
   const random = randomRef.current;
-  let next = current.filter((powerUp) => seconds <= powerUp.expiresAt);
+  let next = current.filter((powerUp) => seconds <= powerUp.expiresAt + PICKUP_EXIT_SECONDS);
   let changed = next.length !== current.length;
 
   if (seconds < nextSpawnRef.current) return { powerUps: next, changed };
 
   nextSpawnRef.current = seconds + randomPowerUpSeconds(random);
 
-  if (next.length >= MAX_POWER_UPS_ON_BOARD) return { powerUps: next, changed };
+  const activeCount = next.filter((powerUp) => seconds <= powerUp.expiresAt).length;
+  if (activeCount >= MAX_POWER_UPS_ON_BOARD) return { powerUps: next, changed };
 
-  const type = pickPowerUpType(settings, random);
-  if (!type) return { powerUps: next, changed };
+  const item = pickSpawnItem(settings, random);
 
-  const cell = findSpawnCell(lanes, board, players, next, random);
+  const cell =
+    item.kind === "score" && item.type === "bread"
+      ? findBreadSpawnCell(lanes, board, players, next, seconds, random)
+      : findSpawnCell(lanes, board, players, next, random);
   if (!cell) return { powerUps: next, changed };
 
   next = [
     ...next,
     {
-      id: makeId(type),
-      type,
+      id: makeId(item.type),
+      ...item,
       ...cell,
+      spawnedAt: seconds,
       expiresAt: seconds + randomPowerUpSeconds(random),
     },
   ];
@@ -740,6 +1751,7 @@ function spawnPowerUps(
 function collectPowerUps(
   players: PlayerState[],
   powerUps: PowerUpInstance[],
+  seconds: number,
   timestamp: number,
   messages: string[],
 ) {
@@ -748,16 +1760,29 @@ function collectPowerUps(
   let changed = false;
   const collectedIds = new Set<string>();
   const nextPlayers = players.map((player) => {
+    if (!player.joined) return player;
+
     const collected = powerUps.find(
       (powerUp) =>
         powerUp.row === Math.round(player.row) &&
         powerUp.col === Math.round(player.col) &&
+        seconds <= powerUp.expiresAt &&
         !collectedIds.has(powerUp.id),
     );
 
     if (!collected) return player;
     collectedIds.add(collected.id);
     changed = true;
+
+    if (collected.kind === "score") {
+      const points = scoreItemValue(collected.type, player.id);
+      messages.push(`${player.name} picked up ${SCORE_ITEM_DEFS[collected.type].label} for ${points}.`);
+      return {
+        ...player,
+        score: player.score + points,
+      };
+    }
+
     messages.push(`${player.name} picked up ${POWER_UP_DEFS[collected.type].label}.`);
 
     return {
@@ -791,7 +1816,7 @@ function pathHasHazard(
     if (row === fromRow) continue;
     const lane = getLane(lanes, row);
     if (lane.kind !== "road" && lane.kind !== "rail") continue;
-    const hazard = getMovingThingsForLane(lane, seconds, board).find((thing) => overlapsThing(col, thing, 0.1));
+    const hazard = getMovingThingsForLane(lane, seconds, board, lanes).find((thing) => overlapsThing(col, thing, 0.1));
     if (hazard) return true;
   }
   return false;
@@ -876,6 +1901,42 @@ function ChickenAsset() {
   );
 }
 
+function FrogAsset() {
+  return (
+    <group>
+      <Block color="#42b85c" size={[0.56, 0.34, 0.56]} position={[0, 0.28, 0.03]} />
+      <Block color="#58d56f" size={[0.44, 0.28, 0.42]} position={[0, 0.55, -0.22]} />
+      <Block color="#f3fff0" size={[0.14, 0.12, 0.1]} position={[-0.16, 0.7, -0.42]} />
+      <Block color="#f3fff0" size={[0.14, 0.12, 0.1]} position={[0.16, 0.7, -0.42]} />
+      <Block color="#111827" size={[0.06, 0.07, 0.04]} position={[-0.16, 0.72, -0.48]} />
+      <Block color="#111827" size={[0.06, 0.07, 0.04]} position={[0.16, 0.72, -0.48]} />
+      <Block color="#f27aa0" size={[0.22, 0.04, 0.05]} position={[0, 0.52, -0.45]} />
+      <Block color="#2f8e45" size={[0.16, 0.12, 0.36]} position={[-0.34, 0.16, 0.03]} />
+      <Block color="#2f8e45" size={[0.16, 0.12, 0.36]} position={[0.34, 0.16, 0.03]} />
+      <Block color="#2f8e45" size={[0.26, 0.08, 0.2]} position={[-0.24, 0.08, -0.18]} />
+      <Block color="#2f8e45" size={[0.26, 0.08, 0.2]} position={[0.24, 0.08, -0.18]} />
+    </group>
+  );
+}
+
+function RabbitAsset() {
+  return (
+    <group>
+      <Block color="#8a5a35" size={[0.52, 0.42, 0.54]} position={[0, 0.34, 0.02]} />
+      <Block color="#9b6a43" size={[0.36, 0.34, 0.34]} position={[0, 0.72, -0.26]} />
+      <Block color="#9b6a43" size={[0.12, 0.42, 0.12]} position={[-0.12, 1.05, -0.25]} />
+      <Block color="#9b6a43" size={[0.12, 0.42, 0.12]} position={[0.12, 1.05, -0.25]} />
+      <Block color="#f5d7c4" size={[0.06, 0.3, 0.05]} position={[-0.12, 1.06, -0.31]} />
+      <Block color="#f5d7c4" size={[0.06, 0.3, 0.05]} position={[0.12, 1.06, -0.31]} />
+      <Block color="#111827" size={[0.06, 0.07, 0.04]} position={[-0.09, 0.78, -0.47]} />
+      <Block color="#111827" size={[0.06, 0.07, 0.04]} position={[0.09, 0.78, -0.47]} />
+      <Block color="#f3f4f6" size={[0.16, 0.16, 0.16]} position={[0, 0.36, 0.36]} />
+      <Block color="#6f4326" size={[0.12, 0.08, 0.3]} position={[-0.16, 0.08, -0.1]} />
+      <Block color="#6f4326" size={[0.12, 0.08, 0.3]} position={[0.16, 0.08, -0.1]} />
+    </group>
+  );
+}
+
 function getPowerGlowColor(player: PlayerState, timestamp: number) {
   if (timestamp < player.invincibleUntil) return "#9ddcff";
   if (!player.activePowerUp) return null;
@@ -912,18 +1973,25 @@ function getAnimatedPosition(player: PlayerState, timestamp: number, board: Boar
 function PlayerModels({
   playersRef,
   boardRef,
+  mobileTurnPlayerIdRef,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   boardRef: MutableRefObject<BoardConfig>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
 }) {
   const refs = useRef<Record<PlayerId, THREE.Group | null>>({
     duck: null,
+    frog: null,
     chicken: null,
+    rabbit: null,
   });
   const glowRefs = useRef<Record<PlayerId, THREE.Mesh | null>>({
     duck: null,
+    frog: null,
     chicken: null,
+    rabbit: null,
   });
+  const targetPositionRef = useRef(new THREE.Vector3());
 
   useFrame(() => {
     const timestamp = performance.now();
@@ -932,9 +2000,19 @@ function PlayerModels({
       const group = refs.current[player.id];
       if (!group) return;
 
+      const hiddenByMobileTurn =
+        mobileTurnPlayerIdRef?.current != null && player.id !== mobileTurnPlayerIdRef.current;
+      if (!player.joined || hiddenByMobileTurn) {
+        group.visible = false;
+        const glow = glowRefs.current[player.id];
+        if (glow) glow.visible = false;
+        return;
+      }
+
       const position = getAnimatedPosition(player, timestamp, board);
+      const targetPosition = targetPositionRef.current.set(position.x, position.y, position.z);
       group.position.lerp(
-        new THREE.Vector3(position.x, position.y, position.z),
+        targetPosition,
         player.lightning ? 0.95 : player.jump ? 0.72 : 0.42,
       );
       group.rotation.y =
@@ -975,9 +2053,25 @@ function PlayerModels({
         </mesh>
         <ChickenAsset />
       </group>
+      <group ref={(node) => (refs.current.frog = node)}>
+        <mesh ref={(node) => (glowRefs.current.frog = node)} position={[0, 0.36, 0]}>
+          <sphereGeometry args={[0.78, 12, 8]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.24} depthWrite={false} />
+        </mesh>
+        <FrogAsset />
+      </group>
+      <group ref={(node) => (refs.current.rabbit = node)}>
+        <mesh ref={(node) => (glowRefs.current.rabbit = node)} position={[0, 0.4, 0]}>
+          <sphereGeometry args={[0.82, 12, 8]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.24} depthWrite={false} />
+        </mesh>
+        <RabbitAsset />
+      </group>
     </>
   );
 }
+
+const MemoPlayerModels = React.memo(PlayerModels);
 
 function CarAsset({
   length,
@@ -1005,40 +2099,65 @@ function CarAsset({
   );
 }
 
+function trainCarCountForLength(length: number) {
+  return Math.max(1, Math.round(length / TRAIN_CAR_LENGTH));
+}
+
+function trainCarX(index: number, visibleCars: number) {
+  return -((visibleCars * TRAIN_CAR_LENGTH) / 2) + TRAIN_CAR_LENGTH / 2 + index * TRAIN_CAR_LENGTH;
+}
+
 function TrainAsset({
-  length,
-  direction,
+  thing,
+  lane,
+  secondsRef,
   clippingPlanes,
 }: {
-  length: number;
-  direction: 1 | -1;
+  thing: MovingThing;
+  lane: LaneDefinition;
+  secondsRef?: MutableRefObject<number>;
   clippingPlanes?: THREE.Plane[];
 }) {
-  const segmentCount = Math.max(1, Math.round(length / 1.45));
-  const segmentLength = length / segmentCount;
-  const start = -length / 2 + segmentLength / 2;
+  const segmentRefs = useRef<Array<THREE.Group | null>>([]);
+  const maxCars = trainCarCountForLength(thing.lengthMax ?? thing.length);
+  const initialCars = trainCarCountForLength(getThingLength(thing, lane, secondsRef?.current ?? 0));
+
+  useFrame(() => {
+    const visibleCars = trainCarCountForLength(getThingLength(thing, lane, secondsRef?.current ?? 0));
+    segmentRefs.current.forEach((segment, index) => {
+      if (!segment) return;
+      segment.visible = index < visibleCars;
+      segment.position.x = trainCarX(index, visibleCars);
+    });
+  });
 
   return (
-    <group rotation={[0, direction === 1 ? 0 : Math.PI, 0]}>
-      {Array.from({ length: segmentCount }).map((_, index) => {
-        const isEngine = index === segmentCount - 1;
-        const x = start + index * segmentLength;
+    <group rotation={[0, lane.direction === 1 ? 0 : Math.PI, 0]}>
+      {Array.from({ length: maxCars }).map((_, index) => {
+        const isEngine = index === 0;
         return (
-          <group key={index} position={[x, 0, 0]}>
+          <group
+            key={index}
+            ref={(node) => {
+              segmentRefs.current[index] = node;
+            }}
+            position={[trainCarX(index, initialCars), 0, 0]}
+            visible={index < initialCars}
+          >
             <Block
               color={isEngine ? "#27313d" : "#c53d36"}
-              size={[segmentLength * 0.88, 0.52, 0.68]}
+              size={[TRAIN_CAR_LENGTH * 0.86, 0.52, 0.68]}
               position={[0, 0.38, 0]}
               metalness={0.08}
               clippingPlanes={clippingPlanes}
             />
-            <Block color="#f1f5f9" size={[segmentLength * 0.44, 0.18, 0.06]} position={[0, 0.48, -0.37]} clippingPlanes={clippingPlanes} />
-            <Block color="#171f2a" size={[segmentLength * 0.72, 0.12, 0.12]} position={[0, 0.15, -0.42]} clippingPlanes={clippingPlanes} />
-            <Block color="#171f2a" size={[segmentLength * 0.72, 0.12, 0.12]} position={[0, 0.15, 0.42]} clippingPlanes={clippingPlanes} />
+            <Block color="#f1f5f9" size={[TRAIN_CAR_LENGTH * 0.42, 0.18, 0.06]} position={[0, 0.48, -0.37]} clippingPlanes={clippingPlanes} />
+            <Block color="#171f2a" size={[TRAIN_CAR_LENGTH * 0.72, 0.12, 0.12]} position={[0, 0.15, -0.42]} clippingPlanes={clippingPlanes} />
+            <Block color="#171f2a" size={[TRAIN_CAR_LENGTH * 0.72, 0.12, 0.12]} position={[0, 0.15, 0.42]} clippingPlanes={clippingPlanes} />
             {isEngine && (
               <>
-                <Block color="#171f2a" size={[0.28, 0.28, 0.28]} position={[segmentLength * 0.25, 0.77, 0]} clippingPlanes={clippingPlanes} />
-                <Block color="#f9d16a" size={[0.1, 0.12, 0.46]} position={[segmentLength * 0.46, 0.46, 0]} clippingPlanes={clippingPlanes} />
+                <Block color="#171f2a" size={[0.28, 0.28, 0.28]} position={[TRAIN_CAR_LENGTH * 0.22, 0.77, 0]} clippingPlanes={clippingPlanes} />
+                <Block color="#f9d16a" size={[0.1, 0.12, 0.46]} position={[TRAIN_CAR_LENGTH * 0.44, 0.46, 0]} clippingPlanes={clippingPlanes} />
               </>
             )}
           </group>
@@ -1071,13 +2190,15 @@ function MovingThingModel({
   thing,
   lane,
   board,
+  secondsRef,
 }: {
   thing: MovingThing;
   lane: LaneDefinition;
   board: BoardConfig;
+  secondsRef?: MutableRefObject<number>;
 }) {
   if (thing.asset === "train") {
-    return <TrainAsset length={thing.length} direction={lane.direction} clippingPlanes={board.clipPlanes} />;
+    return <TrainAsset thing={thing} lane={lane} secondsRef={secondsRef} clippingPlanes={board.clipPlanes} />;
   }
   if (thing.asset === "log") return <LogAsset length={thing.length} clippingPlanes={board.clipPlanes} />;
   return (
@@ -1090,38 +2211,6 @@ function MovingThingModel({
   );
 }
 
-function MovingThingGroup({
-  thing,
-  lane,
-  secondsRef,
-  boardRef,
-}: {
-  thing: MovingThing;
-  lane: LaneDefinition;
-  secondsRef: MutableRefObject<number>;
-  boardRef: MutableRefObject<BoardConfig>;
-}) {
-  const groupRef = useRef<THREE.Group>(null);
-
-  useFrame(() => {
-    const group = groupRef.current;
-    if (!group) return;
-    const board = boardRef.current;
-    const runtimeThing: RuntimeThing = {
-      ...thing,
-      lane,
-      x: getMovingX(thing, lane, secondsRef.current, board),
-    };
-    group.position.set(worldXFromThing(runtimeThing, board), 0, worldZFromCenter(lane.row, board));
-  });
-
-  return (
-    <group ref={groupRef}>
-      <MovingThingModel thing={thing} lane={lane} board={boardRef.current} />
-    </group>
-  );
-}
-
 function MovingObjects({
   lanes,
   secondsRef,
@@ -1131,22 +2220,55 @@ function MovingObjects({
   secondsRef: MutableRefObject<number>;
   boardRef: MutableRefObject<BoardConfig>;
 }) {
+  const refs = useRef<Record<string, THREE.Group | null>>({});
+
+  useFrame(() => {
+    const board = boardRef.current;
+    const runtimeThings = getRuntimeThingsForLanes(lanes, secondsRef.current, board);
+    runtimeThings.forEach((thing) => {
+      const group = refs.current[thing.id];
+      if (!group) return;
+      group.position.set(worldXFromThing(thing, board), 0, worldZFromRuntimeThing(thing, board));
+      group.scale.x = 1;
+    });
+  });
+
   return (
     <>
       {lanes.flatMap((lane) =>
-        (lane.things ?? []).map((thing) => (
-          <MovingThingGroup
+        (lane.things ?? []).map((thing) => {
+          const length = getThingLength(thing, lane, secondsRef.current);
+          const runtimeThing: RuntimeThing = {
+            ...thing,
+            length,
+            homeRow: lane.row,
+            lane,
+            x: getMovingX(thing, lane, secondsRef.current, boardRef.current, length),
+          };
+
+          return (
+          <group
             key={`${lane.row}-${thing.id}-${thing.length}`}
-            thing={thing}
-            lane={lane}
-            secondsRef={secondsRef}
-            boardRef={boardRef}
-          />
-        )),
+            ref={(node) => {
+              refs.current[thing.id] = node;
+            }}
+            position={[
+              worldXFromThing(runtimeThing, boardRef.current),
+              0,
+              worldZFromRuntimeThing(runtimeThing, boardRef.current),
+            ]}
+            scale={[1, 1, 1]}
+          >
+            <MovingThingModel thing={thing} lane={lane} board={boardRef.current} secondsRef={secondsRef} />
+          </group>
+        );
+        }),
       )}
     </>
   );
 }
+
+const MemoMovingObjects = React.memo(MovingObjects);
 
 function RoadLane({ lane, board }: { lane: LaneDefinition; board: BoardConfig }) {
   const z = worldZFromCenter(lane.row, board);
@@ -1244,6 +2366,8 @@ function LaneSurfaces({ lanes, board }: { lanes: LaneDefinition[]; board: BoardC
   );
 }
 
+const MemoLaneSurfaces = React.memo(LaneSurfaces);
+
 function PowerUpAsset({ type }: { type: PowerUpType }) {
   const ref = useRef<THREE.Group>(null);
   const def = POWER_UP_DEFS[type];
@@ -1268,26 +2392,213 @@ function PowerUpAsset({ type }: { type: PowerUpType }) {
   );
 }
 
+function ScoreItemAsset({ type }: { type: ScoreItemType }) {
+  const ref = useRef<THREE.Group>(null);
+  const def = SCORE_ITEM_DEFS[type];
+  const glowColor =
+    type === "flies" ? "#22c55e" : type === "seeds" ? "#ffffff" : type === "bread" ? "#facc15" : "#6f4326";
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    if (type === "carrot") {
+      ref.current.rotation.y = 0;
+      ref.current.position.y = 0;
+      return;
+    }
+    ref.current.rotation.y = state.clock.elapsedTime * 1.35;
+    ref.current.position.y = Math.sin(state.clock.elapsedTime * 2.4) * 0.05;
+  });
+
+  if (type === "bread") {
+    return (
+      <group ref={ref}>
+        <mesh position={[0, 0.02, 0]}>
+          <sphereGeometry args={[0.48, 12, 8]} />
+          <meshBasicMaterial color={glowColor} transparent opacity={0.22} depthWrite={false} />
+        </mesh>
+        <Block color={def.color} size={[0.48, 0.24, 0.34]} position={[0, 0, 0]} />
+        <Block color="#f7d38b" size={[0.38, 0.05, 0.24]} position={[0, 0.15, 0]} />
+        <Block color={def.accent} size={[0.08, 0.04, 0.26]} position={[-0.12, 0.18, 0]} />
+        <Block color={def.accent} size={[0.08, 0.04, 0.26]} position={[0.12, 0.18, 0]} />
+      </group>
+    );
+  }
+
+  if (type === "flies") {
+    return (
+      <group ref={ref}>
+        <mesh position={[0, 0.05, 0]}>
+          <sphereGeometry args={[0.5, 12, 8]} />
+          <meshBasicMaterial color={glowColor} transparent opacity={0.24} depthWrite={false} />
+        </mesh>
+        <Block color={def.color} size={[0.16, 0.12, 0.16]} position={[0, 0.04, 0]} />
+        <Block color={def.color} size={[0.12, 0.1, 0.12]} position={[0.18, 0.11, -0.1]} />
+        <Block color={def.accent} size={[0.16, 0.03, 0.08]} position={[-0.11, 0.09, 0]} transparent opacity={0.72} />
+        <Block color={def.accent} size={[0.16, 0.03, 0.08]} position={[0.11, 0.09, 0]} transparent opacity={0.72} />
+      </group>
+    );
+  }
+
+  if (type === "carrot") {
+    return (
+      <group ref={ref}>
+        <mesh position={[0, 0.02, 0]}>
+          <sphereGeometry args={[0.46, 12, 8]} />
+          <meshBasicMaterial color={glowColor} transparent opacity={0.2} depthWrite={false} />
+        </mesh>
+        <Block color={def.color} size={[0.2, 0.5, 0.2]} position={[0, -0.02, 0]} />
+        <Block color="#7fbf4d" size={[0.08, 0.18, 0.08]} position={[-0.08, 0.33, 0]} />
+        <Block color="#8bd65a" size={[0.08, 0.22, 0.08]} position={[0.02, 0.37, -0.04]} />
+        <Block color="#6da642" size={[0.08, 0.16, 0.08]} position={[0.1, 0.31, 0.04]} />
+        <Block color="#5f3b24" size={[0.44, 0.06, 0.36]} position={[0, -0.3, 0]} />
+      </group>
+    );
+  }
+
+  return (
+    <group ref={ref}>
+      <mesh position={[0, 0.04, 0]}>
+        <sphereGeometry args={[0.48, 12, 8]} />
+        <meshBasicMaterial color={glowColor} transparent opacity={0.24} depthWrite={false} />
+      </mesh>
+      {[-0.14, 0, 0.14].map((x, index) => (
+        <Block
+          key={index}
+          color={def.color}
+          size={[0.14, 0.11, 0.14]}
+          position={[x, 0.02 + index * 0.03, index % 2 === 0 ? -0.05 : 0.08]}
+        />
+      ))}
+      <Block color={def.accent} size={[0.5, 0.04, 0.28]} position={[0, -0.08, 0]} />
+    </group>
+  );
+}
+
+function easeInOut(value: number) {
+  return value * value * (3 - 2 * value);
+}
+
+function pickupSideX(pickup: PowerUpInstance, board: BoardConfig) {
+  return pickup.col < board.cols / 2 ? -board.halfCols - 1.8 : board.halfCols + 1.8;
+}
+
+function getPickupTransform(pickup: PowerUpInstance, board: BoardConfig, seconds: number) {
+  const targetX = worldXFromCenter(pickup.col, board);
+  const targetZ = worldZFromCenter(pickup.row, board);
+  const entry = easeInOut(clamp((seconds - pickup.spawnedAt) / PICKUP_ENTRY_SECONDS, 0, 1));
+  const exit = easeInOut(clamp((seconds - pickup.expiresAt) / PICKUP_EXIT_SECONDS, 0, 1));
+  const sideX = pickupSideX(pickup, board);
+  const oppositeSideX = sideX < 0 ? board.halfCols + 1.8 : -board.halfCols - 1.8;
+  const position = new THREE.Vector3(targetX, 0.34, targetZ);
+  const scale = new THREE.Vector3(1, 1, 1);
+
+  if (pickup.kind === "power") {
+    if (entry < 1) {
+      position.y = THREE.MathUtils.lerp(1.65, 0.34, entry);
+    }
+    if (exit > 0) {
+      position.y = THREE.MathUtils.lerp(0.34, 1.65, exit);
+      scale.setScalar(1 - exit * 0.45);
+    }
+    return { position, scale };
+  }
+
+  if (pickup.type === "flies") {
+    if (entry < 1) {
+      position.x = THREE.MathUtils.lerp(sideX, targetX, entry);
+      position.z = THREE.MathUtils.lerp(targetZ - 0.7, targetZ, entry) + Math.sin(entry * Math.PI * 7) * 0.38 * (1 - entry);
+      position.y = 0.58 + Math.sin(entry * Math.PI * 5) * 0.18;
+    }
+    if (exit > 0) {
+      position.x = THREE.MathUtils.lerp(targetX, oppositeSideX, exit);
+      position.z = targetZ + Math.sin(exit * Math.PI * 7) * 0.45;
+      position.y = 0.58 + Math.sin(exit * Math.PI * 5) * 0.2;
+    }
+    return { position, scale };
+  }
+
+  if (pickup.type === "bread") {
+    const fromX = pickup.entryOrigin?.x ?? sideX;
+    const fromY = pickup.entryOrigin?.y ?? 0.82;
+    const fromZ = pickup.entryOrigin?.z ?? targetZ + 0.45;
+    if (entry < 1) {
+      position.x = THREE.MathUtils.lerp(fromX, targetX, entry);
+      position.z = THREE.MathUtils.lerp(fromZ, targetZ, entry);
+      position.y = THREE.MathUtils.lerp(fromY, 0.34, entry) + Math.sin(entry * Math.PI) * 0.95;
+    }
+    if (exit > 0) {
+      position.y = THREE.MathUtils.lerp(0.34, -0.26, exit);
+      scale.setScalar(Math.max(0.08, 1 - exit));
+    }
+    return { position, scale };
+  }
+
+  if (pickup.type === "seeds") {
+    if (entry < 1) {
+      position.x = THREE.MathUtils.lerp(sideX, targetX, entry);
+      position.y = THREE.MathUtils.lerp(0.8, 0.34, entry);
+    }
+    if (exit > 0) {
+      position.x = THREE.MathUtils.lerp(targetX, oppositeSideX, exit);
+      position.y = THREE.MathUtils.lerp(0.34, 0.8, exit);
+    }
+    return { position, scale };
+  }
+
+  position.y = THREE.MathUtils.lerp(-0.32, 0.24, entry);
+  scale.y = Math.max(0.05, entry);
+  if (exit > 0) {
+    position.y = THREE.MathUtils.lerp(0.24, -0.32, exit);
+    scale.y = Math.max(0.05, 1 - exit);
+  }
+
+  return { position, scale };
+}
+
+function PickupInstanceModel({
+  pickup,
+  board,
+  secondsRef,
+}: {
+  pickup: PowerUpInstance;
+  board: BoardConfig;
+  secondsRef: MutableRefObject<number>;
+}) {
+  const ref = useRef<THREE.Group>(null);
+
+  useFrame(() => {
+    const group = ref.current;
+    if (!group) return;
+    const { position, scale } = getPickupTransform(pickup, board, secondsRef.current);
+    group.position.copy(position);
+    group.scale.copy(scale);
+  });
+
+  const initial = getPickupTransform(pickup, board, secondsRef.current);
+  return (
+    <group ref={ref} position={initial.position} scale={initial.scale}>
+      {pickup.kind === "power" ? (
+        <PowerUpAsset type={pickup.type} />
+      ) : (
+        <ScoreItemAsset type={pickup.type} />
+      )}
+    </group>
+  );
+}
+
 function PowerUpModels({
   powerUps,
   board,
+  secondsRef,
 }: {
   powerUps: PowerUpInstance[];
   board: BoardConfig;
+  secondsRef: MutableRefObject<number>;
 }) {
   return (
     <>
       {powerUps.map((powerUp) => (
-        <group
-          key={powerUp.id}
-          position={[
-            worldXFromCenter(powerUp.col, board),
-            0,
-            worldZFromCenter(powerUp.row, board),
-          ]}
-        >
-          <PowerUpAsset type={powerUp.type} />
-        </group>
+        <PickupInstanceModel key={powerUp.id} pickup={powerUp} board={board} secondsRef={secondsRef} />
       ))}
     </>
   );
@@ -1298,7 +2609,7 @@ function LightningBeams({ players, board }: { players: PlayerState[]; board: Boa
   return (
     <>
       {players
-        .filter((player) => player.lightning && now <= player.lightning.endsAt)
+        .filter((player) => player.joined && player.lightning && now <= player.lightning.endsAt)
         .map((player) => {
           const lightning = player.lightning!;
           const fromX = worldXFromCenter(lightning.fromCol, board);
@@ -1322,21 +2633,117 @@ function LightningBeams({ players, board }: { players: PlayerState[]; board: Boa
   );
 }
 
-function CameraRig({ board }: { board: BoardConfig }) {
+function getCameraFrame(
+  board: BoardConfig,
+  players: PlayerState[],
+  width: number,
+  defaultZoom: number,
+  cameraYaw: number,
+  cameraPitch: number,
+  focusPlayerId: PlayerId | null = null,
+) {
+  const framedPlayers = focusPlayerId
+    ? players.filter((player) => player.joined && player.id === focusPlayerId)
+    : activePlayers(players);
+  const rows = framedPlayers.length > 0 ? framedPlayers.map((player) => player.row) : [board.playerStartRow];
+  const cols = framedPlayers.length > 0 ? framedPlayers.map((player) => player.col) : [Math.floor(board.cols / 2)];
+  const minRow = Math.min(...rows);
+  const maxRow = Math.max(...rows);
+  const minCol = Math.min(...cols);
+  const maxCol = Math.max(...cols);
+  const averageRow = rows.reduce((sum, row) => sum + row, 0) / rows.length;
+  const averageCol = cols.reduce((sum, col) => sum + col, 0) / cols.length;
+  const rowSpread = maxRow - minRow;
+  const colSpread = maxCol - minCol;
+  const spread = Math.max(rowSpread, colSpread * 0.65);
+  const target = new THREE.Vector3(
+    worldXFromCenter(averageCol, board),
+    0,
+    worldZFromCenter(averageRow, board),
+  );
+  const pitch = clamp(cameraPitch, CAMERA_PITCH_MIN, CAMERA_PITCH_MAX);
+  const pitchT = (pitch - CAMERA_PITCH_MIN) / (CAMERA_PITCH_MAX - CAMERA_PITCH_MIN);
+  const orbitRadius = Math.max(board.cols, board.rows) * 0.72 + 6;
+  const horizontalRadius = Math.cos(pitch) * orbitRadius;
+  const baseZoom = Math.min(38, Math.max(17, 520 / Math.max(board.cols, board.rows))) * defaultZoom;
+  const viewportZoom = width < 760 ? baseZoom * 0.74 : baseZoom;
+  const pitchZoom = 0.84 + pitchT * 0.16;
+  const targetZoom = clamp((viewportZoom - spread * 1.18) * pitchZoom, viewportZoom * 0.38, viewportZoom * 1.02);
+
+  return {
+    target,
+    position: new THREE.Vector3(
+      target.x + Math.sin(cameraYaw) * horizontalRadius,
+      2.2 + Math.sin(pitch) * orbitRadius,
+      target.z + Math.cos(cameraYaw) * horizontalRadius,
+    ),
+    zoom: targetZoom,
+  };
+}
+
+function CameraRig({
+  board,
+  playersRef,
+  settingsRef,
+  cameraYawRef,
+  cameraPitchRef,
+  mobileTurnPlayerIdRef,
+}: {
+  board: BoardConfig;
+  playersRef: MutableRefObject<PlayerState[]>;
+  settingsRef: MutableRefObject<GameSettings>;
+  cameraYawRef: MutableRefObject<number>;
+  cameraPitchRef: MutableRefObject<number>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
+}) {
   const { camera, size } = useThree();
+  const lookTargetRef = useRef(new THREE.Vector3(0, 0, 0));
 
   useEffect(() => {
-    const zoomBase = Math.min(36, Math.max(18, 520 / Math.max(board.cols, board.rows)));
-    camera.position.set(board.halfCols + 2, 12 + board.rows * 0.08, board.halfRows + 5);
-    camera.lookAt(0, 0, 0);
+    const frame = getCameraFrame(
+      board,
+      playersRef.current,
+      size.width,
+      settingsRef.current.defaultZoom,
+      cameraYawRef.current,
+      cameraPitchRef.current,
+      mobileTurnPlayerIdRef?.current ?? null,
+    );
+    camera.position.copy(frame.position);
+    lookTargetRef.current.copy(frame.target);
+    camera.lookAt(lookTargetRef.current);
 
     if (camera instanceof THREE.OrthographicCamera) {
-      camera.zoom = size.width < 760 ? zoomBase * 0.76 : zoomBase;
+      camera.zoom = frame.zoom;
       camera.near = 0.1;
       camera.far = 120;
       camera.updateProjectionMatrix();
     }
-  }, [board.cols, board.halfCols, board.halfRows, board.rows, camera, size.width]);
+  }, [board, camera, cameraPitchRef, cameraYawRef, mobileTurnPlayerIdRef, playersRef, settingsRef, size.width]);
+
+  useFrame((_, delta) => {
+    const frame = getCameraFrame(
+      board,
+      playersRef.current,
+      size.width,
+      settingsRef.current.defaultZoom,
+      cameraYawRef.current,
+      cameraPitchRef.current,
+      mobileTurnPlayerIdRef?.current ?? null,
+    );
+    const ease = 1 - Math.pow(0.002, delta);
+    camera.position.lerp(frame.position, ease);
+    lookTargetRef.current.lerp(frame.target, ease);
+    camera.lookAt(lookTargetRef.current);
+
+    if (camera instanceof THREE.OrthographicCamera) {
+      const nextZoom = THREE.MathUtils.damp(camera.zoom, frame.zoom, 4.8, delta);
+      if (Math.abs(nextZoom - camera.zoom) > 0.001) {
+        camera.zoom = nextZoom;
+        camera.updateProjectionMatrix();
+      }
+    }
+  });
 
   return null;
 }
@@ -1345,6 +2752,8 @@ function CrossyGameLoop({
   playersRef,
   powerUpsRef,
   runningRef,
+  mobileModeRef,
+  mobileTurnPlayerIdRef,
   settingsRef,
   lanesRef,
   boardRef,
@@ -1353,10 +2762,14 @@ function CrossyGameLoop({
   randomRef,
   setPowerUps,
   onSnapshot,
+  onLeaderboardProgress,
+  onMobileTurnAdvance,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   powerUpsRef: MutableRefObject<PowerUpInstance[]>;
   runningRef: MutableRefObject<boolean>;
+  mobileModeRef?: MutableRefObject<boolean>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
   settingsRef: MutableRefObject<GameSettings>;
   lanesRef: MutableRefObject<LaneDefinition[]>;
   boardRef: MutableRefObject<BoardConfig>;
@@ -1365,8 +2778,13 @@ function CrossyGameLoop({
   randomRef: MutableRefObject<() => number>;
   setPowerUps: (powerUps: PowerUpInstance[]) => void;
   onSnapshot: (players: PlayerState[], messages: string[]) => void;
+  onLeaderboardProgress: (previousPlayers: PlayerState[], nextPlayers: PlayerState[], elapsedMs: number) => void;
+  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[]) => void;
 }) {
   const lastSnapshotRef = useRef(0);
+  const lastLeaderboardRef = useRef(0);
+  const leaderboardPlayersRef = useRef<PlayerState[]>(playersRef.current);
+  const leaderboardElapsedRef = useRef(0);
 
   useFrame((state, delta) => {
     if (!runningRef.current) return;
@@ -1376,8 +2794,16 @@ function CrossyGameLoop({
     const messages: string[] = [];
     secondsRef.current += dt;
 
+    const mobileMode = mobileModeRef?.current ?? false;
+    const mobileTurnPlayerId = mobileMode ? mobileTurnPlayerIdRef?.current ?? null : null;
+    const basePlayers = playersRef.current;
+    const simulatedPlayers = mobileMode ? mobileTurnPlayers(basePlayers, mobileTurnPlayerId) : basePlayers;
+    const previousTurnPlayer = mobileTurnPlayerId
+      ? simulatedPlayers.find((player) => player.id === mobileTurnPlayerId)
+      : null;
+
     let players = resolvePlayers(
-      playersRef.current,
+      simulatedPlayers,
       lanesRef.current,
       boardRef.current,
       secondsRef.current,
@@ -1398,19 +2824,41 @@ function CrossyGameLoop({
     );
 
     let powerUps = spawned.powerUps;
-    const collected = collectPowerUps(players, powerUps, timestamp, messages);
+    const collected = collectPowerUps(players, powerUps, secondsRef.current, timestamp, messages);
     players = collected.players;
     powerUps = collected.powerUps;
 
-    playersRef.current = players;
+    const nextPlayers = mobileMode ? mergeMobileTurnPlayers(basePlayers, players, mobileTurnPlayerId) : players;
+    playersRef.current = nextPlayers;
     if (spawned.changed || collected.changed) {
       powerUpsRef.current = powerUps;
       setPowerUps([...powerUps]);
     }
 
+    const nextTurnPlayer =
+      mobileTurnPlayerId && nextPlayers.find((player) => player.id === mobileTurnPlayerId);
+    if (
+      mobileMode &&
+      mobileTurnPlayerId &&
+      previousTurnPlayer &&
+      nextTurnPlayer &&
+      nextTurnPlayer.misses > previousTurnPlayer.misses
+    ) {
+      onMobileTurnAdvance?.(mobileTurnPlayerId, nextPlayers);
+    }
+
+    leaderboardElapsedRef.current += dt * 1000;
+    if (state.clock.elapsedTime - lastLeaderboardRef.current > 1) {
+      lastLeaderboardRef.current = state.clock.elapsedTime;
+      const leaderboardPlayers = mobileMode ? mobileTurnPlayers(nextPlayers, mobileTurnPlayerId) : nextPlayers;
+      onLeaderboardProgress(leaderboardPlayersRef.current, leaderboardPlayers, leaderboardElapsedRef.current);
+      leaderboardPlayersRef.current = copyPlayers(leaderboardPlayers);
+      leaderboardElapsedRef.current = 0;
+    }
+
     if (messages.length > 0 || state.clock.elapsedTime - lastSnapshotRef.current > 0.14) {
       lastSnapshotRef.current = state.clock.elapsedTime;
-      onSnapshot(playersRef.current, messages);
+      onSnapshot(nextPlayers, messages);
     }
   });
 
@@ -1422,6 +2870,8 @@ function CrossyScene({
   powerUps,
   powerUpsRef,
   runningRef,
+  mobileModeRef,
+  mobileTurnPlayerIdRef,
   settingsRef,
   lanes,
   lanesRef,
@@ -1430,13 +2880,19 @@ function CrossyScene({
   secondsRef,
   nextSpawnRef,
   randomRef,
+  cameraYawRef,
+  cameraPitchRef,
   setPowerUps,
   onSnapshot,
+  onLeaderboardProgress,
+  onMobileTurnAdvance,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   powerUps: PowerUpInstance[];
   powerUpsRef: MutableRefObject<PowerUpInstance[]>;
   runningRef: MutableRefObject<boolean>;
+  mobileModeRef?: MutableRefObject<boolean>;
+  mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
   settingsRef: MutableRefObject<GameSettings>;
   lanes: LaneDefinition[];
   lanesRef: MutableRefObject<LaneDefinition[]>;
@@ -1445,28 +2901,46 @@ function CrossyScene({
   secondsRef: MutableRefObject<number>;
   nextSpawnRef: MutableRefObject<number>;
   randomRef: MutableRefObject<() => number>;
+  cameraYawRef: MutableRefObject<number>;
+  cameraPitchRef: MutableRefObject<number>;
   setPowerUps: (powerUps: PowerUpInstance[]) => void;
   onSnapshot: (players: PlayerState[], messages: string[]) => void;
+  onLeaderboardProgress: (previousPlayers: PlayerState[], nextPlayers: PlayerState[], elapsedMs: number) => void;
+  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[]) => void;
 }) {
   return (
     <>
       <color attach="background" args={["#b9ecff"]} />
       <fog attach="fog" args={["#b9ecff", 22, 38]} />
-      <CameraRig board={board} />
+      <CameraRig
+        board={board}
+        playersRef={playersRef}
+        settingsRef={settingsRef}
+        cameraYawRef={cameraYawRef}
+        cameraPitchRef={cameraPitchRef}
+        mobileTurnPlayerIdRef={mobileTurnPlayerIdRef}
+      />
       <ambientLight intensity={1.55} />
       <directionalLight position={[5, 10, 4]} intensity={2.2} />
       <hemisphereLight args={["#d7f7ff", "#314b28", 1.2]} />
-      <group rotation={[0, 0, 0]}>
-        <LaneSurfaces lanes={lanes} board={board} />
-        <MovingObjects lanes={lanes} secondsRef={secondsRef} boardRef={boardRef} />
-        <PowerUpModels powerUps={powerUps} board={board} />
-        <PlayerModels playersRef={playersRef} boardRef={boardRef} />
-        <LightningBeams players={playersRef.current} board={board} />
-      </group>
+      <MemoLaneSurfaces lanes={lanes} board={board} />
+      <MemoMovingObjects lanes={lanes} secondsRef={secondsRef} boardRef={boardRef} />
+      <PowerUpModels powerUps={powerUps} board={board} secondsRef={secondsRef} />
+      <MemoPlayerModels playersRef={playersRef} boardRef={boardRef} mobileTurnPlayerIdRef={mobileTurnPlayerIdRef} />
+      <LightningBeams
+        players={
+          mobileTurnPlayerIdRef?.current
+            ? mobileTurnPlayers(playersRef.current, mobileTurnPlayerIdRef.current)
+            : playersRef.current
+        }
+        board={board}
+      />
       <CrossyGameLoop
         playersRef={playersRef}
         powerUpsRef={powerUpsRef}
         runningRef={runningRef}
+        mobileModeRef={mobileModeRef}
+        mobileTurnPlayerIdRef={mobileTurnPlayerIdRef}
         settingsRef={settingsRef}
         lanesRef={lanesRef}
         boardRef={boardRef}
@@ -1475,36 +2949,10 @@ function CrossyScene({
         randomRef={randomRef}
         setPowerUps={setPowerUps}
         onSnapshot={onSnapshot}
+        onLeaderboardProgress={onLeaderboardProgress}
+        onMobileTurnAdvance={onMobileTurnAdvance}
       />
     </>
-  );
-}
-
-function DPad({
-  player,
-  running,
-  onMove,
-}: {
-  player: PlayerState;
-  running: boolean;
-  onMove: (playerId: PlayerId, rowDelta: number, colDelta: number) => void;
-}) {
-  return (
-    <div className="crossy-pad" style={{ "--player-accent": player.accent } as React.CSSProperties}>
-      <div className="crossy-pad-avatar">{player.id === "duck" ? "D" : "C"}</div>
-      <button type="button" disabled={!running} aria-label={`${player.name} up`} onClick={() => onMove(player.id, -1, 0)}>
-        ↑
-      </button>
-      <button type="button" disabled={!running} aria-label={`${player.name} left`} onClick={() => onMove(player.id, 0, -1)}>
-        ←
-      </button>
-      <button type="button" disabled={!running} aria-label={`${player.name} down`} onClick={() => onMove(player.id, 1, 0)}>
-        ↓
-      </button>
-      <button type="button" disabled={!running} aria-label={`${player.name} right`} onClick={() => onMove(player.id, 0, 1)}>
-        →
-      </button>
-    </div>
   );
 }
 
@@ -1517,22 +2965,46 @@ function activeLabel(player: PlayerState, now: number) {
 export default function CrossyRoad() {
   const [settings, setSettings] = useState<GameSettings>(() => loadSettings());
   const board = useMemo(() => createBoard(settings), [settings]);
-  const lanes = useMemo(() => generateLanes(settings, board), [board, settings]);
-  const [playersSnapshot, setPlayersSnapshot] = useState<PlayerState[]>(() => makeInitialPlayers(board));
+  const lanes = useMemo(() => generateLanes(settings, board), [settings, board]);
+  const [playersSnapshot, setPlayersSnapshot] = useState<PlayerState[]>(() =>
+    makeInitialPlayers(board, settings.playerNames),
+  );
+  const [isMobileMode, setIsMobileMode] = useState(() =>
+    typeof window === "undefined" ? false : window.matchMedia("(max-width: 700px)").matches,
+  );
+  const [mobileTurnPlayerId, setMobileTurnPlayerId] = useState<PlayerId | null>(() =>
+    nextJoinedPlayerId(makeInitialPlayers(board, settings.playerNames), null, true),
+  );
   const [feed, setFeed] = useState<FeedItem[]>([{ id: "ready", text: "3D course loaded." }]);
   const [running, setRunning] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [powerUps, setPowerUpsState] = useState<PowerUpInstance[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardRecord[]>(() => readLeaderboard());
+  const [leaderboardTab, setLeaderboardTab] = useState<LeaderboardTab>("rank");
 
   const playersRef = useRef<PlayerState[]>(playersSnapshot);
   const powerUpsRef = useRef<PowerUpInstance[]>(powerUps);
+  const leaderboardRef = useRef<LeaderboardRecord[]>(leaderboard);
   const runningRef = useRef(running);
+  const mobileModeRef = useRef(isMobileMode);
+  const mobileTurnPlayerIdRef = useRef<PlayerId | null>(mobileTurnPlayerId);
   const settingsRef = useRef(settings);
   const boardRef = useRef(board);
   const lanesRef = useRef(lanes);
   const secondsRef = useRef(0);
   const randomRef = useRef(createSeededRandom(Date.now()));
   const nextSpawnRef = useRef(POWER_UP_MIN_SECONDS + Math.random() * (POWER_UP_MAX_SECONDS - POWER_UP_MIN_SECONDS));
+  const cameraYawRef = useRef(0);
+  const cameraPitchRef = useRef(CAMERA_PITCH_DEFAULT);
+  const pressedKeysRef = useRef(new Set<string>());
+  const mobilePressRef = useRef<MobilePressState | null>(null);
+  const swipeRef = useRef<SwipeState>({ active: false, startX: 0, startY: 0, pointerId: null });
+  const rotationDragRef = useRef<{ active: boolean; lastX: number; lastY: number; pointerId: number | null }>({
+    active: false,
+    lastX: 0,
+    lastY: 0,
+    pointerId: null,
+  });
 
   useEffect(() => {
     saveSettings(settings);
@@ -1542,6 +3014,33 @@ export default function CrossyRoad() {
   useEffect(() => {
     runningRef.current = running;
   }, [running]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+    const query = window.matchMedia("(max-width: 700px)");
+    const update = () => setIsMobileMode(query.matches);
+    update();
+    query.addEventListener?.("change", update);
+    return () => query.removeEventListener?.("change", update);
+  }, []);
+
+  useEffect(() => {
+    mobileModeRef.current = isMobileMode;
+    if (!isMobileMode) {
+      mobileTurnPlayerIdRef.current = null;
+      setMobileTurnPlayerId(null);
+      return;
+    }
+
+    const nextTurn = nextJoinedPlayerId(playersRef.current, mobileTurnPlayerIdRef.current, true);
+    mobileTurnPlayerIdRef.current = nextTurn;
+    setMobileTurnPlayerId(nextTurn);
+    rotationDragRef.current = { active: false, lastX: 0, lastY: 0, pointerId: null };
+  }, [isMobileMode]);
+
+  useEffect(() => {
+    mobileTurnPlayerIdRef.current = mobileTurnPlayerId;
+  }, [mobileTurnPlayerId]);
 
   useEffect(() => {
     boardRef.current = board;
@@ -1554,6 +3053,28 @@ export default function CrossyRoad() {
   useEffect(() => {
     powerUpsRef.current = powerUps;
   }, [powerUps]);
+
+  useEffect(() => {
+    leaderboardRef.current = leaderboard;
+  }, [leaderboard]);
+
+  useEffect(() => {
+    let changed = false;
+    const renamedPlayers = playersRef.current.map((player) => {
+      const name = settings.playerNames[player.id] || DEFAULT_PLAYER_NAMES[player.id];
+      const profileName =
+        player.profileName && normalizeProfileName(player.profileName) === normalizeProfileName(name)
+          ? player.profileName
+          : null;
+      if (player.name === name && player.profileName === profileName) return player;
+      changed = true;
+      return { ...player, name, profileName };
+    });
+
+    if (!changed) return;
+    playersRef.current = renamedPlayers;
+    setPlayersSnapshot(copyPlayers(renamedPlayers));
+  }, [settings.playerNames]);
 
   const appendFeed = useCallback((messages: string[]) => {
     if (messages.length === 0) return;
@@ -1581,10 +3102,262 @@ export default function CrossyRoad() {
     setPowerUpsState(next);
   }, []);
 
+  const setLeaderboardRecords = useCallback((updater: (records: LeaderboardRecord[]) => LeaderboardRecord[]) => {
+    setLeaderboard((current) => {
+      const next = updater(current);
+      leaderboardRef.current = next;
+      writeLeaderboard(next);
+      return next;
+    });
+  }, []);
+
+  const setPlayerProfile = useCallback(
+    (playerId: PlayerId, name: string, profileName: string | null) => {
+      setSettings((current) => ({
+        ...current,
+        playerNames: {
+          ...current.playerNames,
+          [playerId]: name,
+        },
+      }));
+
+      const nextPlayers = playersRef.current.map((player) =>
+        player.id === playerId
+          ? {
+              ...player,
+              name,
+              profileName,
+              leaderboardScoreCheckpoint: player.score,
+            }
+          : player,
+      );
+      playersRef.current = nextPlayers;
+      updateSnapshot(nextPlayers);
+    },
+    [updateSnapshot],
+  );
+
+  const finalizePlayerName = useCallback(
+    (playerId: PlayerId, rawName?: string) => {
+      const player = playersRef.current.find((currentPlayer) => currentPlayer.id === playerId);
+      if (!player) return;
+
+      const desiredName = cleanPlayerName(
+        rawName ?? settingsRef.current.playerNames[playerId],
+        DEFAULT_PLAYER_NAMES[playerId],
+      ).trim();
+      const defaultName = DEFAULT_PLAYER_NAMES[playerId];
+      if (!shouldTrackProfileName(desiredName)) {
+        setPlayerProfile(playerId, defaultName, null);
+        return;
+      }
+
+      const existing = findLeaderboardRecord(leaderboardRef.current, desiredName);
+      if (existing) {
+        const password = window.prompt(`Enter the password for ${existing.name}.`);
+        if (password === existing.password) {
+          setPlayerProfile(playerId, existing.name, existing.name);
+          return;
+        }
+
+        window.alert("That password did not match.");
+        setPlayerProfile(playerId, defaultName, null);
+        return;
+      }
+
+      const password = window.prompt(`Create a password for ${desiredName}.`);
+      if (!password) {
+        setPlayerProfile(playerId, defaultName, null);
+        return;
+      }
+
+      const record: LeaderboardRecord = {
+        name: desiredName,
+        password,
+        score: 0,
+        timeMs: 0,
+        updatedAt: Date.now(),
+      };
+      setLeaderboardRecords((records) => [...records, record]);
+      setPlayerProfile(playerId, desiredName, desiredName);
+    },
+    [setLeaderboardRecords, setPlayerProfile],
+  );
+
+  const updateLeaderboardProgress = useCallback(
+    (_previousPlayers: PlayerState[], nextPlayers: PlayerState[], elapsedMs: number) => {
+      const trackedPlayers = nextPlayers.filter(
+        (player) => player.joined && player.profileName && shouldTrackProfileName(player.profileName),
+      );
+      if (trackedPlayers.length === 0) return;
+      const trackedIds = new Set(trackedPlayers.map((player) => player.id));
+
+      setLeaderboardRecords((records) => {
+        let changed = false;
+        const nextRecords = [...records];
+
+        trackedPlayers.forEach((player) => {
+          const scoreDelta = player.score - player.leaderboardScoreCheckpoint;
+          const recordIndex = nextRecords.findIndex(
+            (record) => player.profileName && normalizeProfileName(record.name) === normalizeProfileName(player.profileName),
+          );
+          if (recordIndex < 0) return;
+
+          const record = nextRecords[recordIndex];
+          nextRecords[recordIndex] = {
+            ...record,
+            score: Math.max(0, record.score + scoreDelta),
+            timeMs: record.timeMs + elapsedMs,
+            updatedAt: Date.now(),
+          };
+          changed = true;
+        });
+
+        return changed ? nextRecords : records;
+      });
+
+      playersRef.current = playersRef.current.map((player) =>
+        trackedIds.has(player.id) ? { ...player, leaderboardScoreCheckpoint: player.score } : player,
+      );
+    },
+    [setLeaderboardRecords],
+  );
+
+  const joinPlayer = useCallback(
+    (playerId: PlayerId) => {
+      const currentPlayers = playersRef.current.map((player) => clearExpiredPlayerEffects(player, performance.now()));
+      const player = currentPlayers.find((candidate) => candidate.id === playerId);
+      if (!player || player.joined) return;
+
+      const nextPlayers = currentPlayers.map((candidate) =>
+        candidate.id === player.id ? resetPlayerForJoin(candidate, boardRef.current, currentPlayers) : candidate,
+      );
+      playersRef.current = nextPlayers;
+      setSettings((current) => ({
+        ...current,
+        playerNames: {
+          ...current.playerNames,
+          [player.id]: DEFAULT_PLAYER_NAMES[player.id],
+        },
+      }));
+
+      if (mobileModeRef.current && !mobileTurnPlayerIdRef.current) {
+        mobileTurnPlayerIdRef.current = player.id;
+        setMobileTurnPlayerId(player.id);
+      }
+      updateSnapshot(nextPlayers);
+    },
+    [updateSnapshot],
+  );
+
+  const removePlayer = useCallback(
+    (playerId: PlayerId) => {
+      const boardNow = boardRef.current;
+      const defaultName = DEFAULT_PLAYER_NAMES[playerId];
+      const removedPlayer = playersRef.current.find((player) => player.id === playerId);
+      if (removedPlayer?.profileName) {
+        const scoreDelta = removedPlayer.score - removedPlayer.leaderboardScoreCheckpoint;
+        if (scoreDelta !== 0) {
+          setLeaderboardRecords((records) =>
+            records.map((record) =>
+              normalizeProfileName(record.name) === normalizeProfileName(removedPlayer.profileName ?? "")
+                ? {
+                    ...record,
+                    score: Math.max(0, record.score + scoreDelta),
+                    updatedAt: Date.now(),
+                  }
+                : record,
+            ),
+          );
+        }
+      }
+      const nextPlayers = playersRef.current.map((player) =>
+        player.id === playerId
+          ? {
+              ...player,
+              name: defaultName,
+              profileName: null,
+              joined: false,
+              row: boardNow.playerStartRow,
+              col: boardNow.startCols[player.id],
+              score: 0,
+              leaderboardScoreCheckpoint: 0,
+              laps: 0,
+              misses: 0,
+              bestProgress: 0,
+              stunnedUntil: 0,
+              facing: "up" as Direction,
+              activePowerUp: null,
+              invincibleUntil: 0,
+              jump: null,
+              lightning: null,
+            }
+          : player,
+      );
+      playersRef.current = nextPlayers;
+      if (mobileModeRef.current && mobileTurnPlayerIdRef.current === playerId) {
+        const nextTurn = nextJoinedPlayerId(nextPlayers, playerId);
+        mobileTurnPlayerIdRef.current = nextTurn;
+        setMobileTurnPlayerId(nextTurn);
+      }
+      setSettings((current) => ({
+        ...current,
+        playerNames: {
+          ...current.playerNames,
+          [playerId]: defaultName,
+        },
+      }));
+      updateSnapshot(nextPlayers);
+    },
+    [setLeaderboardRecords, updateSnapshot],
+  );
+
+  const advanceMobileTurn = useCallback((playerId: PlayerId, players: PlayerState[]) => {
+    const nextTurn = nextJoinedPlayerId(players, playerId);
+    mobileTurnPlayerIdRef.current = nextTurn;
+    setMobileTurnPlayerId(nextTurn);
+  }, []);
+
   const resetRun = useCallback(
     (message = "New 3D run ready.") => {
-      const nextPlayers = makeInitialPlayers(boardRef.current);
+      const scoredPlayers = playersRef.current.filter(
+        (player) => player.profileName && player.score !== player.leaderboardScoreCheckpoint,
+      );
+      if (scoredPlayers.length > 0) {
+        setLeaderboardRecords((records) =>
+          records.map((record) => {
+            const player = scoredPlayers.find(
+              (candidate) =>
+                candidate.profileName && normalizeProfileName(candidate.profileName) === normalizeProfileName(record.name),
+            );
+            if (!player) return record;
+            return {
+              ...record,
+              score: Math.max(0, record.score + player.score - player.leaderboardScoreCheckpoint),
+              updatedAt: Date.now(),
+            };
+          }),
+        );
+      }
+
+      const previousById = playersRef.current.reduce((acc, player) => {
+        acc[player.id] = player;
+        return acc;
+      }, {} as Record<PlayerId, PlayerState>);
+      const nextPlayers = makeInitialPlayers(boardRef.current, settingsRef.current.playerNames).map((player) => ({
+        ...player,
+        joined: previousById[player.id]?.joined ?? true,
+        name: previousById[player.id]?.joined
+          ? previousById[player.id]?.name ?? player.name
+          : DEFAULT_PLAYER_NAMES[player.id],
+        profileName: previousById[player.id]?.joined ? previousById[player.id]?.profileName ?? null : null,
+      }));
       playersRef.current = nextPlayers;
+      if (mobileModeRef.current) {
+        const nextTurn = nextJoinedPlayerId(nextPlayers, mobileTurnPlayerIdRef.current, true);
+        mobileTurnPlayerIdRef.current = nextTurn;
+        setMobileTurnPlayerId(nextTurn);
+      }
       powerUpsRef.current = [];
       secondsRef.current = 0;
       nextSpawnRef.current = randomPowerUpSeconds(randomRef.current);
@@ -1593,12 +3366,23 @@ export default function CrossyRoad() {
       setFeed([{ id: "reset", text: message }]);
       setRunning(true);
     },
-    [],
+    [setLeaderboardRecords],
   );
 
   useEffect(() => {
     resetRun("Board rebuilt.");
-  }, [board.cols, board.rows, settings.laneSeed, settings.trainLengthMax, settings.trainLengthMin, resetRun]);
+  }, [
+    board.cols,
+    board.rows,
+    settings.grannyDriverSpeed,
+    settings.hardMode,
+    settings.laneSeed,
+    settings.logLengthMax,
+    settings.logLengthMin,
+    settings.trainLengthMax,
+    settings.trainLengthMin,
+    resetRun,
+  ]);
 
   const movePlayer = useCallback(
     (playerId: PlayerId, rowDelta: number, colDelta: number) => {
@@ -1606,7 +3390,24 @@ export default function CrossyRoad() {
       const timestamp = performance.now();
       const currentPlayers = playersRef.current.map((player) => clearExpiredPlayerEffects(player, timestamp));
       const actor = currentPlayers.find((player) => player.id === playerId);
-      if (!actor || timestamp < actor.stunnedUntil) return;
+      if (!actor) return;
+
+      if (
+        mobileModeRef.current &&
+        actor.joined &&
+        mobileTurnPlayerIdRef.current &&
+        actor.id !== mobileTurnPlayerIdRef.current
+      ) {
+        return;
+      }
+
+      if (!actor.joined) {
+        if (rowDelta !== -1 || colDelta !== 0) return;
+        joinPlayer(actor.id);
+        return;
+      }
+
+      if (timestamp < actor.stunnedUntil) return;
 
       const actorHasSpeed = actor.activePowerUp?.type === "speed";
       const cooldownMs = actorHasSpeed ? 0 : settingsRef.current.moveCooldown * 1000;
@@ -1651,7 +3452,7 @@ export default function CrossyRoad() {
         nextCol = clamp(Math.round(actor.col) + colDelta * moveDistance, 0, boardNow.cols - 1);
         if (moveDistance === 2) {
           jump = {
-            fromCol: Math.round(actor.col),
+            fromCol: actor.col,
             fromRow: Math.round(actor.row),
             toCol: nextCol,
             toRow: nextRow,
@@ -1661,7 +3462,25 @@ export default function CrossyRoad() {
         }
       }
 
-      const blocker = getCellOccupant(currentPlayers, actor.id, nextRow, nextCol);
+      const targetLane = getLane(lanesNow, nextRow);
+      if (!lightning) {
+        if (targetLane.kind === "river" && currentLane.kind !== "river") {
+          nextCol = findLogHopLandingCol(targetLane, nextCol, secondsRef.current, boardNow, lanesNow);
+        } else if (currentLane.kind === "river" && targetLane.kind !== "river") {
+          nextCol = findLogExitCol(actor.col, boardNow);
+        }
+
+        if (jump) {
+          jump = {
+            ...jump,
+            toCol: nextCol,
+            toRow: nextRow,
+          };
+        }
+      }
+
+      const collisionPlayers = mobileModeRef.current ? mobileTurnPlayers(currentPlayers, actor.id) : currentPlayers;
+      const blocker = getCellOccupant(collisionPlayers, actor.id, nextRow, nextCol);
       let pushedPlayer: PlayerState | null = null;
       if (blocker) {
         const pushRow = Math.round(blocker.row) + rowDelta;
@@ -1673,7 +3492,7 @@ export default function CrossyRoad() {
           pushRow <= boardNow.startRow &&
           pushCol >= 0 &&
           pushCol < boardNow.cols &&
-          !getCellOccupant(currentPlayers, blocker.id, pushRow, pushCol);
+          !getCellOccupant(collisionPlayers, blocker.id, pushRow, pushCol);
 
         if (!canShove) {
           const blockedPlayers = currentPlayers.map((player) =>
@@ -1696,7 +3515,7 @@ export default function CrossyRoad() {
         messages.push(`${actor.name} shoved ${blocker.name}.`);
       }
 
-      const progress = boardNow.startRow - nextRow;
+      const progress = boardNow.playerStartRow - nextRow;
       const progressGain = Math.max(0, progress - actor.bestProgress);
       const nextPlayers = currentPlayers.map((player) => {
         if (pushedPlayer && player.id === pushedPlayer.id) {
@@ -1719,20 +3538,50 @@ export default function CrossyRoad() {
       playersRef.current = nextPlayers;
       updateSnapshot(nextPlayers, messages);
     },
-    [updateSnapshot],
+    [joinPlayer, updateSnapshot],
   );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const control = KEYBOARD_CONTROLS[event.key.toLowerCase()];
+      const target = event.target;
+      if (target instanceof HTMLElement && target.closest("input, textarea, [contenteditable='true']")) return;
+
+      const key = event.key.toLowerCase();
+      pressedKeysRef.current.add(key);
+
+      const exitingPlayer = PLAYER_IDS.find((playerId) =>
+        PLAYER_EXIT_KEYS[playerId].every((exitKey) => pressedKeysRef.current.has(exitKey)),
+      );
+      if (exitingPlayer && playersRef.current.some((player) => player.id === exitingPlayer && player.joined)) {
+        event.preventDefault();
+        PLAYER_EXIT_KEYS[exitingPlayer].forEach((exitKey) => pressedKeysRef.current.delete(exitKey));
+        removePlayer(exitingPlayer);
+        return;
+      }
+
+      const control = KEYBOARD_CONTROLS[key];
       if (!control) return;
       event.preventDefault();
       movePlayer(control.playerId, control.rowDelta, control.colDelta);
     };
 
+    const handleKeyUp = (event: KeyboardEvent) => {
+      pressedKeysRef.current.delete(event.key.toLowerCase());
+    };
+
+    const clearPressedKeys = () => {
+      pressedKeysRef.current.clear();
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [movePlayer]);
+    window.addEventListener("keyup", handleKeyUp);
+    window.addEventListener("blur", clearPressedKeys);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+      window.removeEventListener("blur", clearPressedKeys);
+    };
+  }, [movePlayer, removePlayer]);
 
   const updateSetting = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
     setSettings((current) => {
@@ -1742,6 +3591,12 @@ export default function CrossyRoad() {
       }
       if (key === "trainLengthMax" && Number(value) < current.trainLengthMin) {
         next.trainLengthMin = Number(value);
+      }
+      if (key === "logLengthMin" && Number(value) > current.logLengthMax) {
+        next.logLengthMax = Number(value);
+      }
+      if (key === "logLengthMax" && Number(value) < current.logLengthMin) {
+        next.logLengthMin = Number(value);
       }
       return next;
     });
@@ -1760,10 +3615,216 @@ export default function CrossyRoad() {
     }));
   };
 
+  const updatePlayerName = useCallback((playerId: PlayerId, value: string) => {
+    setSettings((current) => ({
+      ...current,
+      playerNames: {
+        ...current.playerNames,
+        [playerId]: cleanPlayerName(value, current.playerNames[playerId] ?? DEFAULT_PLAYER_NAMES[playerId]),
+      },
+    }));
+  }, []);
+
+  const snapCameraDirection = useCallback((yaw: number) => {
+    cameraYawRef.current = yaw;
+  }, []);
+
+  const snapCameraTilt = useCallback((pitch: number) => {
+    cameraPitchRef.current = pitch;
+  }, []);
+
+  const resetLeaderboardRecord = useCallback(
+    (name: string) => {
+      const record = findLeaderboardRecord(leaderboardRef.current, name);
+      if (!record) return;
+      const password = window.prompt(`Enter the password for ${record.name}.`);
+      if (password !== record.password) {
+        window.alert("That password did not match.");
+        return;
+      }
+
+      setLeaderboardRecords((records) =>
+        records.map((candidate) =>
+          normalizeProfileName(candidate.name) === normalizeProfileName(record.name)
+            ? {
+                ...candidate,
+                score: 0,
+                timeMs: 0,
+                updatedAt: Date.now(),
+              }
+            : candidate,
+        ),
+      );
+    },
+    [setLeaderboardRecords],
+  );
+
+  const editMobilePlayerName = useCallback(
+    (player: PlayerState) => {
+      const rawName = window.prompt("Player name", settingsRef.current.playerNames[player.id] ?? player.name);
+      if (rawName == null) return;
+      updatePlayerName(player.id, rawName);
+      finalizePlayerName(player.id, rawName);
+    },
+    [finalizePlayerName, updatePlayerName],
+  );
+
+  const clearMobilePress = useCallback(() => {
+    if (mobilePressRef.current?.timer != null) {
+      window.clearTimeout(mobilePressRef.current.timer);
+    }
+    mobilePressRef.current = null;
+  }, []);
+
+  const handleMobilePlayerPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>, player: PlayerState) => {
+      if (!mobileModeRef.current) return;
+      event.preventDefault();
+      clearMobilePress();
+      const press: MobilePressState = {
+        playerId: player.id,
+        timer: null,
+        longPressed: false,
+      };
+      press.timer = window.setTimeout(() => {
+        press.longPressed = true;
+        const currentPlayer = playersRef.current.find((candidate) => candidate.id === player.id);
+        if (currentPlayer?.joined) {
+          removePlayer(player.id);
+        }
+      }, 650);
+      mobilePressRef.current = press;
+    },
+    [clearMobilePress, removePlayer],
+  );
+
+  const handleMobilePlayerPointerUp = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>, player: PlayerState) => {
+      if (!mobileModeRef.current) return;
+      event.preventDefault();
+      const press = mobilePressRef.current;
+      if (press?.timer != null) window.clearTimeout(press.timer);
+      mobilePressRef.current = null;
+      if (!press || press.playerId !== player.id || press.longPressed) return;
+
+      const currentPlayer = playersRef.current.find((candidate) => candidate.id === player.id);
+      if (!currentPlayer?.joined) {
+        joinPlayer(player.id);
+        return;
+      }
+      editMobilePlayerName(currentPlayer);
+    },
+    [editMobilePlayerName, joinPlayer],
+  );
+
+  useEffect(() => clearMobilePress, [clearMobilePress]);
+
   const now = performance.now();
+  const leaderboardRows = rankedLeaderboard(leaderboard, leaderboardTab);
+
+  const stopRotationDrag = useCallback((event?: React.PointerEvent<HTMLDivElement>) => {
+    if (event && rotationDragRef.current.pointerId != null) {
+      try {
+        event.currentTarget.releasePointerCapture?.(rotationDragRef.current.pointerId);
+      } catch {
+        // Pointer capture may already be gone if the cursor leaves the canvas.
+      }
+    }
+    rotationDragRef.current = { active: false, lastX: 0, lastY: 0, pointerId: null };
+  }, []);
+
+  const stopMobileSwipe = useCallback((event?: React.PointerEvent<HTMLDivElement>) => {
+    if (event && swipeRef.current.pointerId != null) {
+      try {
+        event.currentTarget.releasePointerCapture?.(swipeRef.current.pointerId);
+      } catch {
+        // Pointer capture may already be gone.
+      }
+    }
+    swipeRef.current = { active: false, startX: 0, startY: 0, pointerId: null };
+  }, []);
+
+  const handleStagePointerDown = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+
+    if (mobileModeRef.current) {
+      swipeRef.current = {
+        active: true,
+        startX: event.clientX,
+        startY: event.clientY,
+        pointerId: event.pointerId,
+      };
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      return;
+    }
+
+    rotationDragRef.current = {
+      active: true,
+      lastX: event.clientX,
+      lastY: event.clientY,
+      pointerId: event.pointerId,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  }, []);
+
+  const handleStagePointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (mobileModeRef.current) return;
+    if (!rotationDragRef.current.active) return;
+    event.preventDefault();
+    const deltaX = event.clientX - rotationDragRef.current.lastX;
+    const deltaY = event.clientY - rotationDragRef.current.lastY;
+    rotationDragRef.current.lastX = event.clientX;
+    rotationDragRef.current.lastY = event.clientY;
+    cameraYawRef.current += deltaX * 0.012;
+    cameraPitchRef.current = clamp(
+      cameraPitchRef.current - deltaY * 0.006,
+      CAMERA_PITCH_MIN,
+      CAMERA_PITCH_MAX,
+    );
+  }, []);
+
+  const handleStagePointerUp = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (!mobileModeRef.current) {
+        stopRotationDrag(event);
+        return;
+      }
+
+      const swipe = swipeRef.current;
+      stopMobileSwipe(event);
+      if (!swipe.active) return;
+      event.preventDefault();
+      const deltaX = event.clientX - swipe.startX;
+      const deltaY = event.clientY - swipe.startY;
+      const absX = Math.abs(deltaX);
+      const absY = Math.abs(deltaY);
+      if (Math.max(absX, absY) < 28) return;
+
+      const playerId = mobileTurnPlayerIdRef.current;
+      if (!playerId) return;
+      if (absX > absY) {
+        movePlayer(playerId, 0, deltaX > 0 ? 1 : -1);
+      } else {
+        movePlayer(playerId, deltaY > 0 ? 1 : -1, 0);
+      }
+    },
+    [movePlayer, stopMobileSwipe, stopRotationDrag],
+  );
+
+  const handleStagePointerLeave = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (mobileModeRef.current) {
+        stopMobileSwipe(event);
+        return;
+      }
+      stopRotationDrag(event);
+    },
+    [stopMobileSwipe, stopRotationDrag],
+  );
 
   return (
-    <main className="crossy-road-shell">
+    <main className={`crossy-road-shell${isMobileMode ? " crossy-mobile-mode" : ""}`}>
       <header className="crossy-topbar">
         <div className="crossy-title-row">
           <Tooltip title="Game settings">
@@ -1786,67 +3847,169 @@ export default function CrossyRoad() {
         </div>
       </header>
 
-      <section className="crossy-game-stage">
-        <Canvas
-          className="crossy-canvas"
-          dpr={[1, 1.5]}
-          orthographic
-          camera={{ position: [8.5, 12, 13.5], zoom: 34, near: 0.1, far: 120 }}
-          gl={{ antialias: true, powerPreference: "high-performance" }}
-          frameloop="always"
-          onCreated={({ gl }) => {
-            gl.localClippingEnabled = true;
-          }}
-        >
-          <CrossyScene
-            playersRef={playersRef}
-            powerUps={powerUps}
-            powerUpsRef={powerUpsRef}
-            runningRef={runningRef}
-            settingsRef={settingsRef}
-            lanes={lanes}
-            lanesRef={lanesRef}
-            board={board}
-            boardRef={boardRef}
-            secondsRef={secondsRef}
-            nextSpawnRef={nextSpawnRef}
-            randomRef={randomRef}
-            setPowerUps={setPowerUps}
-            onSnapshot={updateSnapshot}
-          />
-        </Canvas>
-
-        <div className="crossy-hud">
-          {playersSnapshot.map((player) => (
-            <div
-              key={player.id}
-              className="crossy-racer"
-              style={{ "--player-accent": player.accent } as React.CSSProperties}
-            >
-              <span className="crossy-racer-token">{player.id === "duck" ? "D" : "C"}</span>
-              <span className="crossy-racer-name">{player.name}</span>
-              <strong className="crossy-racer-stat">Points {player.score}</strong>
-              <span className="crossy-racer-stat">Flags {player.laps}</span>
-              <span className="crossy-racer-stat">Misses {player.misses}</span>
-              <span className="crossy-racer-stat crossy-racer-power">{activeLabel(player, now)}</span>
+      <section className="crossy-play-layout">
+        <aside className="crossy-left-panel">
+          <div className="crossy-scoreboard">
+            {playersSnapshot.map((player) =>
+              isMobileMode ? (
+                <button
+                  key={player.id}
+                  type="button"
+                  className={`crossy-mobile-racer${player.joined ? "" : " crossy-mobile-racer-empty"}${
+                    player.joined && mobileTurnPlayerId === player.id ? " crossy-mobile-racer-active" : ""
+                  }`}
+                  style={{ "--player-accent": player.accent } as React.CSSProperties}
+                  aria-label={`${player.name} score ${player.score}`}
+                  title={player.joined ? activeLabel(player, now) : `tap ${player.name} to join`}
+                  onPointerDown={(event) => handleMobilePlayerPointerDown(event, player)}
+                  onPointerUp={(event) => handleMobilePlayerPointerUp(event, player)}
+                  onPointerCancel={clearMobilePress}
+                  onPointerLeave={clearMobilePress}
+                >
+                  <span className="crossy-racer-token" aria-hidden="true">
+                    {animalIcon(player.id)}
+                  </span>
+                  <span className="crossy-mobile-score">
+                    <ScoreboardIcon fontSize="small" />
+                    <strong>{player.score}</strong>
+                  </span>
+                  {!player.joined && <span className="crossy-mobile-join" aria-hidden="true">+</span>}
+                </button>
+              ) : (
+                <div
+                  key={player.id}
+                  className={`crossy-racer${player.joined ? "" : " crossy-racer-empty"}`}
+                  style={{ "--player-accent": player.accent } as React.CSSProperties}
+                  title={player.joined ? activeLabel(player, now) : `press ${PLAYER_UP_KEYS[player.id]} to join`}
+                >
+                  {player.joined ? (
+                    <>
+                      <span className="crossy-racer-token" aria-label={`${player.name} icon`}>
+                        {animalIcon(player.id)}
+                      </span>
+                      <input
+                        className="crossy-racer-name-input"
+                        value={settings.playerNames[player.id] ?? player.name}
+                        aria-label={`${player.name} name`}
+                        onChange={(event) => updatePlayerName(player.id, event.target.value)}
+                        onBlur={(event) => finalizePlayerName(player.id, event.currentTarget.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.currentTarget.blur();
+                          }
+                        }}
+                      />
+                      <span className="crossy-stat-chip" aria-label={`${player.name} score`}>
+                        <ScoreboardIcon fontSize="small" />
+                        <strong>{player.score}</strong>
+                      </span>
+                      <span className="crossy-stat-chip" aria-label={`${player.name} flags`}>
+                        <FlagIcon fontSize="small" />
+                        <span>{player.laps}</span>
+                      </span>
+                      <span className="crossy-stat-chip" aria-label={`${player.name} misses`}>
+                        <span className="crossy-skull-icon" aria-hidden="true">{"\u2620"}</span>
+                        <span>{player.misses}</span>
+                      </span>
+                      <button
+                        type="button"
+                        className="crossy-racer-remove"
+                        aria-label={`Remove ${player.name}`}
+                        onClick={() => removePlayer(player.id)}
+                      >
+                        <CloseIcon fontSize="small" />
+                      </button>
+                    </>
+                  ) : (
+                    <span className="crossy-join-prompt">press {PLAYER_UP_KEYS[player.id]} to join</span>
+                  )}
+                </div>
+              ),
+            )}
+          </div>
+          {!isMobileMode && (
+            <div className="crossy-leaderboard">
+              <Tabs
+                value={leaderboardTab}
+                onChange={(_, value) => setLeaderboardTab(value as LeaderboardTab)}
+                variant="fullWidth"
+              >
+                <Tab value="rank" label="Rank" />
+                <Tab value="score" label="Score" />
+              </Tabs>
+              <div className="crossy-leaderboard-list">
+                {leaderboardRows.length === 0 ? (
+                  <div className="crossy-leaderboard-empty">No saved scores</div>
+                ) : (
+                  leaderboardRows.slice(0, 8).map((record, index) => {
+                    const rank = record.score / Math.max(record.timeMs / 60000, 1 / 60);
+                    return (
+                      <div key={record.name} className="crossy-leaderboard-row">
+                        <strong>{index + 1}</strong>
+                        <span>{record.name}</span>
+                        <span>{leaderboardTab === "rank" ? rank.toFixed(1) : Math.round(record.score)}</span>
+                        <small>{formatPlayTime(record.timeMs)}</small>
+                        <button type="button" onClick={() => resetLeaderboardRecord(record.name)}>
+                          Reset
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-
-        <aside className={settings.showDeathLog ? "crossy-side-panel" : "crossy-side-panel crossy-side-panel-compact"}>
-          {settings.showDeathLog && (
+          )}
+          {!isMobileMode && settings.showDeathLog && (
             <div className="crossy-feed" aria-live="polite">
               {feed.map((item) => (
                 <div key={item.id}>{item.text}</div>
               ))}
             </div>
           )}
-          <div className="crossy-pads">
-            {playersSnapshot.map((player) => (
-              <DPad key={player.id} player={player} running={running} onMove={movePlayer} />
-            ))}
-          </div>
         </aside>
+
+        <section className="crossy-game-stage">
+          <Canvas
+            className="crossy-canvas"
+            dpr={[1, 1.5]}
+            orthographic
+            camera={{ position: [8.5, 12, 13.5], zoom: 34, near: 0.1, far: 120 }}
+            gl={{ antialias: true, powerPreference: "high-performance" }}
+            frameloop="always"
+            onContextMenu={(event) => event.preventDefault()}
+            onPointerDown={handleStagePointerDown}
+            onPointerMove={handleStagePointerMove}
+            onPointerUp={handleStagePointerUp}
+            onPointerLeave={handleStagePointerLeave}
+            onPointerCancel={handleStagePointerLeave}
+            onCreated={({ gl }) => {
+              gl.localClippingEnabled = true;
+            }}
+          >
+            <CrossyScene
+              playersRef={playersRef}
+              powerUps={powerUps}
+              powerUpsRef={powerUpsRef}
+              runningRef={runningRef}
+              mobileModeRef={mobileModeRef}
+              mobileTurnPlayerIdRef={isMobileMode ? mobileTurnPlayerIdRef : undefined}
+              settingsRef={settingsRef}
+              lanes={lanes}
+              lanesRef={lanesRef}
+              board={board}
+              boardRef={boardRef}
+              secondsRef={secondsRef}
+              nextSpawnRef={nextSpawnRef}
+              randomRef={randomRef}
+              cameraYawRef={cameraYawRef}
+              cameraPitchRef={cameraPitchRef}
+              setPowerUps={setPowerUps}
+              onSnapshot={updateSnapshot}
+              onLeaderboardProgress={updateLeaderboardProgress}
+              onMobileTurnAdvance={advanceMobileTurn}
+            />
+          </Canvas>
+        </section>
       </section>
 
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
@@ -1890,6 +4053,15 @@ export default function CrossyRoad() {
             >
               Randomize Level Rows
             </Button>
+            <FormControlLabel
+              label="Hard mode traffic"
+              control={
+                <Switch
+                  checked={settings.hardMode}
+                  onChange={(event) => updateSetting("hardMode", event.target.checked)}
+                />
+              }
+            />
 
             <Divider />
 
@@ -1902,6 +4074,36 @@ export default function CrossyRoad() {
               inputProps={{ min: 0, max: 2, step: 0.05 }}
               onChange={(event) => updateSetting("moveCooldown", cleanNumber(event.target.value, settings.moveCooldown, 0, 2))}
             />
+            <Box>
+              <Typography variant="caption">Default zoom: {settings.defaultZoom.toFixed(2)}x</Typography>
+              <Slider
+                min={0.55}
+                max={1.45}
+                step={0.05}
+                value={settings.defaultZoom}
+                onChange={(_, value) => updateSetting("defaultZoom", value as number)}
+              />
+            </Box>
+            <Box>
+              <Typography variant="caption">Camera direction</Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {CAMERA_DIRECTION_PRESETS.map(([label, yaw]) => (
+                  <Button key={label} size="small" variant="outlined" onClick={() => snapCameraDirection(yaw)}>
+                    {label}
+                  </Button>
+                ))}
+              </Stack>
+            </Box>
+            <Box>
+              <Typography variant="caption">Camera tilt</Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                {CAMERA_TILT_PRESETS.map(([label, pitch]) => (
+                  <Button key={label} size="small" variant="outlined" onClick={() => snapCameraTilt(pitch)}>
+                    {label}
+                  </Button>
+                ))}
+              </Stack>
+            </Box>
             <FormControlLabel
               label="Show death log"
               control={
@@ -1923,8 +4125,8 @@ export default function CrossyRoad() {
               <Box key={key}>
                 <Typography variant="caption">{label}: {settings[key as "carSpeed" | "trainSpeed" | "logSpeed"].toFixed(2)}x</Typography>
                 <Slider
-                  min={0.1}
-                  max={4}
+                  min={0.5}
+                  max={1.5}
                   step={0.05}
                   value={settings[key as "carSpeed" | "trainSpeed" | "logSpeed"]}
                   onChange={(_, value) => updateSetting(key as "carSpeed" | "trainSpeed" | "logSpeed", value as number)}
@@ -1950,6 +4152,34 @@ export default function CrossyRoad() {
                 onChange={(event) => updateSetting("trainLengthMax", Math.round(cleanNumber(event.target.value, settings.trainLengthMax, 1, 50)))}
               />
             </Stack>
+            <Stack direction="row" spacing={1}>
+              <TextField
+                label="Log min"
+                type="number"
+                size="small"
+                value={settings.logLengthMin}
+                inputProps={{ min: 1, max: 10 }}
+                onChange={(event) => updateSetting("logLengthMin", Math.round(cleanNumber(event.target.value, settings.logLengthMin, 1, 10)))}
+              />
+              <TextField
+                label="Log max"
+                type="number"
+                size="small"
+                value={settings.logLengthMax}
+                inputProps={{ min: 1, max: 10 }}
+                onChange={(event) => updateSetting("logLengthMax", Math.round(cleanNumber(event.target.value, settings.logLengthMax, 1, 10)))}
+              />
+            </Stack>
+            <Box>
+              <Typography variant="caption">Granny driver speed: {settings.grannyDriverSpeed.toFixed(2)}x</Typography>
+              <Slider
+                min={0.5}
+                max={1.5}
+                step={0.01}
+                value={settings.grannyDriverSpeed}
+                onChange={(_, value) => updateSetting("grannyDriverSpeed", value as number)}
+              />
+            </Box>
 
             <Divider />
 

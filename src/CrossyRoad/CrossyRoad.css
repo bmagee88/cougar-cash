@@ -1,4 +1,5 @@
 .crossy-road-shell {
+  height: 100dvh;
   min-height: 100vh;
   overflow: hidden;
   background: #b9ecff;
@@ -66,8 +67,7 @@
   flex-wrap: wrap;
 }
 
-.crossy-actions button,
-.crossy-pad button {
+.crossy-actions button {
   border: 1px solid rgba(23, 33, 29, 0.18);
   background: #ffffff;
   color: #17211d;
@@ -83,29 +83,41 @@
   padding: 0 16px;
 }
 
-.crossy-actions button:hover,
-.crossy-pad button:hover {
+.crossy-actions button:hover {
   background: #f7fbff;
   transform: translateY(-1px);
   box-shadow: 0 5px 0 rgba(23, 33, 29, 0.2);
 }
 
-.crossy-actions button:active,
-.crossy-pad button:active {
+.crossy-actions button:active {
   transform: translateY(3px);
   box-shadow: 0 1px 0 rgba(23, 33, 29, 0.24);
 }
 
-.crossy-pad button:disabled {
-  opacity: 0.48;
-  cursor: default;
-  transform: none;
-  box-shadow: 0 2px 0 rgba(23, 33, 29, 0.12);
+.crossy-play-layout {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(260px, 25vw) minmax(0, 1fr);
+}
+
+.crossy-left-panel {
+  position: relative;
+  z-index: 3;
+  min-width: 0;
+  overflow: auto;
+  padding: 10px;
+  background: rgba(249, 255, 247, 0.78);
+  border-right: 1px solid rgba(23, 33, 29, 0.12);
+  backdrop-filter: blur(10px);
+  display: grid;
+  align-content: start;
+  gap: 10px;
 }
 
 .crossy-game-stage {
   position: relative;
-  min-height: calc(100vh - 78px);
+  min-height: 0;
   overflow: hidden;
   background:
     linear-gradient(180deg, rgba(185, 236, 255, 0.96) 0%, rgba(221, 247, 222, 0.82) 60%, rgba(236, 249, 220, 0.95) 100%),
@@ -118,31 +130,26 @@
   width: 100% !important;
   height: 100% !important;
   touch-action: none;
+  cursor: grab;
 }
 
-.crossy-hud {
-  position: absolute;
-  z-index: 3;
-  top: 14px;
-  left: 14px;
-  right: 14px;
-  width: auto;
+.crossy-scoreboard {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
 }
 
 .crossy-racer {
-  min-height: 48px;
+  min-height: 42px;
   border-radius: 8px;
   border: 1px solid rgba(23, 33, 29, 0.14);
   background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(10px);
   display: grid;
-  grid-template-columns: auto minmax(100px, 1fr) repeat(4, minmax(104px, 1fr));
+  grid-template-columns: 30px minmax(52px, 1fr) repeat(3, minmax(34px, auto)) 28px;
   align-items: center;
-  gap: 9px;
-  padding: 8px 10px;
+  gap: 5px;
+  padding: 6px 8px;
   box-shadow: inset 0 -4px 0 rgba(23, 33, 29, 0.08), 0 12px 26px rgba(26, 49, 54, 0.13);
   border-left: 6px solid var(--player-accent);
   font-weight: 850;
@@ -150,7 +157,7 @@
 }
 
 .crossy-racer strong {
-  font-size: 1.08rem;
+  font-size: 0.9rem;
   color: #0f5e4f;
 }
 
@@ -159,55 +166,174 @@
   white-space: nowrap;
 }
 
-.crossy-racer-name {
-  font-size: 1.05rem;
-  font-weight: 950;
-  color: #14251d;
-}
-
-.crossy-racer-stat {
-  min-height: 32px;
-  border-radius: 6px;
-  border: 1px solid rgba(23, 33, 29, 0.12);
-  background: rgba(255, 255, 255, 0.68);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 8px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.crossy-racer-power {
-  justify-content: flex-start;
-}
-
 .crossy-racer-token {
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   border: 2px solid var(--player-accent);
   display: grid;
   place-items: center;
   background: #ffffff;
   color: #17211d;
+  font-size: 1.15rem;
   font-weight: 950;
+  line-height: 1;
 }
 
-.crossy-side-panel {
-  position: absolute;
-  z-index: 4;
-  top: auto;
-  right: 14px;
-  bottom: 14px;
-  width: 286px;
-  display: grid;
-  gap: 12px;
-}
-
-.crossy-side-panel-compact {
+.crossy-racer.crossy-racer-empty {
   grid-template-columns: 1fr;
+  min-height: 42px;
+  border-left-color: rgba(23, 33, 29, 0.24);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.crossy-join-prompt {
+  width: 100%;
+  min-height: 30px;
+  display: grid;
+  place-items: center;
+  color: #426268;
+  font-size: 0.9rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  animation: crossy-join-pulse 2.4s ease-in-out infinite;
+}
+
+.crossy-racer-name-input {
+  min-width: 0;
+  width: 100%;
+  height: 30px;
+  border-radius: 6px;
+  border: 1px solid rgba(23, 33, 29, 0.12);
+  background: rgba(255, 255, 255, 0.78);
+  color: #14251d;
+  font-size: 0.88rem;
+  font-weight: 900;
+  padding: 0 6px;
+}
+
+.crossy-racer-name-input:focus {
+  outline: 2px solid var(--player-accent);
+  outline-offset: 1px;
+}
+
+.crossy-stat-chip {
+  min-height: 30px;
+  min-width: 34px;
+  border-radius: 6px;
+  border: 1px solid rgba(23, 33, 29, 0.12);
+  background: rgba(255, 255, 255, 0.68);
+  color: #17211d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 0 4px;
+  overflow: hidden;
+}
+
+.crossy-stat-chip svg {
+  color: #187064;
+  font-size: 0.96rem;
+  flex: 0 0 auto;
+}
+
+.crossy-skull-icon {
+  color: #2f3136;
+  font-size: 0.98rem;
+  line-height: 1;
+}
+
+.crossy-racer-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid rgba(23, 33, 29, 0.16);
+  background: rgba(255, 255, 255, 0.78);
+  color: #2f3136;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.crossy-racer-remove:hover {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.crossy-mobile-racer {
+  min-width: 0;
+  min-height: 46px;
+  border-radius: 8px;
+  border: 1px solid rgba(23, 33, 29, 0.16);
+  border-bottom: 4px solid var(--player-accent);
+  background: rgba(255, 255, 255, 0.84);
+  color: #17211d;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  padding: 5px;
+  box-shadow: inset 0 -3px 0 rgba(23, 33, 29, 0.08), 0 8px 18px rgba(26, 49, 54, 0.12);
+  touch-action: manipulation;
+  cursor: pointer;
+  position: relative;
+}
+
+.crossy-mobile-racer-active {
+  background: #ffffff;
+  outline: 3px solid var(--player-accent);
+  outline-offset: -3px;
+  box-shadow: inset 0 -3px 0 rgba(23, 33, 29, 0.08), 0 0 0 4px rgba(255, 255, 255, 0.74);
+}
+
+.crossy-mobile-racer-empty {
+  opacity: 0.56;
+  border-bottom-color: rgba(23, 33, 29, 0.24);
+}
+
+.crossy-mobile-score {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-weight: 950;
+  color: #0f5e4f;
+}
+
+.crossy-mobile-score svg {
+  color: #187064;
+  font-size: 0.95rem;
+  flex: 0 0 auto;
+}
+
+.crossy-mobile-join {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1px solid rgba(23, 33, 29, 0.18);
+  display: grid;
+  place-items: center;
+  font-size: 0.82rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+@keyframes crossy-join-pulse {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }
 
 .crossy-feed {
@@ -231,64 +357,75 @@
   font-weight: 760;
 }
 
-.crossy-pads {
-  display: grid;
-  gap: 12px;
-}
-
-.crossy-pad {
-  display: grid;
-  grid-template-columns: repeat(3, 48px);
-  grid-template-rows: repeat(3, 48px);
-  justify-content: center;
-  gap: 7px;
+.crossy-leaderboard {
   border-radius: 8px;
   border: 1px solid rgba(23, 33, 29, 0.14);
-  background: rgba(255, 255, 255, 0.84);
-  backdrop-filter: blur(10px);
-  padding: 12px;
-  box-shadow: inset 0 -4px 0 rgba(23, 33, 29, 0.07), 0 14px 28px rgba(26, 49, 54, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 -4px 0 rgba(23, 33, 29, 0.06);
+  overflow: hidden;
 }
 
-.crossy-pad-avatar {
-  grid-column: 1;
-  grid-row: 1;
-  width: 48px;
-  height: 48px;
+.crossy-leaderboard .MuiTabs-root {
+  min-height: 34px;
+}
+
+.crossy-leaderboard .MuiTab-root {
+  min-height: 34px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.crossy-leaderboard-list {
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+}
+
+.crossy-leaderboard-row {
+  min-height: 30px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 6px;
+  border-radius: 6px;
+  background: rgba(247, 251, 255, 0.8);
+  padding: 4px 6px;
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.crossy-leaderboard-row span,
+.crossy-leaderboard-row small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crossy-leaderboard-row small {
+  color: #426268;
+  font-weight: 800;
+}
+
+.crossy-leaderboard-row button {
+  min-height: 24px;
+  border-radius: 6px;
+  border: 1px solid rgba(23, 33, 29, 0.14);
+  background: #ffffff;
+  color: #17211d;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.crossy-leaderboard-empty {
+  min-height: 34px;
   display: grid;
   place-items: center;
-  border-radius: 8px;
-  background: #ffffff;
-  border: 2px solid var(--player-accent);
-  box-shadow: inset 0 -4px 0 rgba(23, 33, 29, 0.1);
-  font-size: 1.05rem;
-  font-weight: 950;
-}
-
-.crossy-pad button {
-  min-width: 48px;
-  min-height: 48px;
-  font-size: 1.35rem;
-}
-
-.crossy-pad button:nth-of-type(1) {
-  grid-column: 2;
-  grid-row: 1;
-}
-
-.crossy-pad button:nth-of-type(2) {
-  grid-column: 1;
-  grid-row: 2;
-}
-
-.crossy-pad button:nth-of-type(3) {
-  grid-column: 2;
-  grid-row: 3;
-}
-
-.crossy-pad button:nth-of-type(4) {
-  grid-column: 3;
-  grid-row: 2;
+  color: #426268;
+  font-size: 0.82rem;
+  font-weight: 900;
 }
 
 .crossy-settings-drawer {
@@ -339,107 +476,209 @@
     font-size: 1.75rem;
   }
 
-  .crossy-game-stage {
-    min-height: calc(100vh - 72px);
+  .crossy-play-layout {
+    grid-template-columns: minmax(230px, 30vw) minmax(0, 1fr);
   }
 
-  .crossy-hud {
+  .crossy-scoreboard {
     grid-template-columns: 1fr;
   }
 
   .crossy-racer {
-    grid-template-columns: auto minmax(92px, 1fr) repeat(4, minmax(88px, 1fr));
+    grid-template-columns: 30px minmax(52px, 1fr) repeat(3, minmax(34px, auto)) 28px;
   }
 
-  .crossy-side-panel {
-    top: auto;
-    right: 12px;
-    left: 12px;
-    bottom: 12px;
-    width: auto;
-    grid-template-columns: minmax(220px, 1fr) minmax(320px, 1.25fr);
-    align-items: end;
-  }
-
-  .crossy-side-panel-compact {
-    grid-template-columns: 1fr;
-  }
-
-  .crossy-pads {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 700px) {
   .crossy-road-shell {
-    overflow: auto;
+    height: 100dvh;
+    min-height: 100dvh;
+    overflow: hidden;
   }
 
   .crossy-topbar {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 10px;
+    min-height: 58px;
+    padding: 8px 10px;
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
   }
 
   .crossy-actions {
-    justify-content: stretch;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
   }
 
   .crossy-actions button {
-    flex: 1;
+    min-height: 34px;
+    padding: 0 10px;
+    flex: 0 0 auto;
+    font-size: 0.78rem;
   }
 
   .crossy-game-stage {
-    min-height: 760px;
+    height: auto;
+    min-height: 0;
   }
 
-  .crossy-hud {
-    top: 10px;
-    left: 10px;
-    right: 10px;
-    width: auto;
+  .crossy-play-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: 100%;
+    min-height: 0;
+  }
+
+  .crossy-left-panel {
+    max-height: none;
+    overflow: visible;
+    padding: 6px;
+    display: block;
+    border-right: 0;
+    border-bottom: 1px solid rgba(23, 33, 29, 0.12);
+  }
+
+  .crossy-scoreboard {
+    padding: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .crossy-racer {
-    grid-template-columns: auto repeat(2, minmax(0, 1fr));
-    gap: 7px;
-    font-size: 0.86rem;
-  }
-
-  .crossy-racer-name {
-    grid-column: 2 / -1;
-  }
-
-  .crossy-racer-stat {
-    min-height: 30px;
-    padding: 0 6px;
-  }
-
-  .crossy-racer-power {
-    grid-column: 1 / -1;
-  }
-
-  .crossy-side-panel,
-  .crossy-side-panel-compact {
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    grid-template-columns: 1fr;
+    grid-template-columns: 28px minmax(54px, 1fr) repeat(3, minmax(32px, auto)) 28px;
+    gap: 5px;
+    font-size: 0.82rem;
   }
 
   .crossy-feed {
     min-height: 112px;
   }
 
-  .crossy-pads {
-    grid-template-columns: 1fr;
+  .crossy-racer-token {
+    width: 28px;
+    height: 28px;
+    font-size: 1.05rem;
+  }
+
+  .crossy-racer-name-input {
+    height: 28px;
+    font-size: 0.82rem;
+    padding: 0 5px;
+  }
+
+  .crossy-stat-chip {
+    min-height: 28px;
+    min-width: 32px;
+    padding: 0 4px;
+  }
+}
+
+@media (max-width: 520px) {
+  .crossy-topbar {
+    min-height: 0;
+    padding: 10px;
+  }
+
+  .crossy-eyebrow {
+    display: none;
+  }
+
+  .crossy-topbar h1 {
+    font-size: 1.35rem;
+  }
+
+  .crossy-menu-button {
+    width: 38px;
+    height: 38px;
+  }
+
+  .crossy-actions button {
+    min-height: 36px;
+    padding: 0 10px;
+  }
+
+  .crossy-play-layout {
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .crossy-game-stage {
+    height: auto;
+    min-height: 0;
+  }
+
+  .crossy-left-panel {
+    max-height: none;
+    padding: 7px;
+  }
+
+  .crossy-scoreboard {
+    padding: 0;
+    gap: 6px;
+  }
+
+  .crossy-racer {
+    grid-template-columns: 26px minmax(42px, 1fr) repeat(3, minmax(26px, auto)) 26px;
+    gap: 4px;
+    padding: 5px 6px;
+    border-left-width: 4px;
+  }
+
+  .crossy-racer-token {
+    width: 26px;
+    height: 26px;
+    font-size: 0.98rem;
+  }
+
+  .crossy-racer-name-input {
+    height: 26px;
+    font-size: 0.78rem;
+  }
+
+  .crossy-stat-chip {
+    min-height: 26px;
+    min-width: 26px;
+    gap: 2px;
+    padding: 0 3px;
+    font-size: 0.76rem;
+  }
+
+  .crossy-stat-chip svg {
+    font-size: 0.86rem;
+  }
+
+  .crossy-racer-remove {
+    width: 26px;
+    height: 26px;
+  }
+
+  .crossy-mobile-racer {
+    min-height: 42px;
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 3px;
+    padding: 4px;
+  }
+
+  .crossy-mobile-score {
+    font-size: 0.78rem;
+  }
+
+  .crossy-leaderboard-row {
+    grid-template-columns: 22px minmax(0, 1fr) auto auto;
+    gap: 5px;
+  }
+
+  .crossy-leaderboard-row small {
+    display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .crossy-actions button,
-  .crossy-pad button {
+  .crossy-actions button {
     transition: none;
+  }
+
+  .crossy-join-prompt {
+    animation: none;
+    opacity: 1;
   }
 }
