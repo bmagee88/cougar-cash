@@ -86,6 +86,14 @@ const tiles = [
     multiplayer: true,
   },
   {
+    path: "/captive-chess",
+    title: "Captive Chess",
+    subtitle: "Chess with pieces held, freed, or executed.",
+    emoji: "CC",
+    gradient: "linear-gradient(135deg, #f0ddba, #6e8d72, #b64d34)",
+    category: "game",
+  },
+  {
     path: "/keyboard",
     title: "Drag & Drop Keyboard",
     subtitle: "Build the keyboard layout",
