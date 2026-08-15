@@ -14,6 +14,7 @@ import {
   Drawer,
   FormControlLabel,
   IconButton,
+  Popover,
   Slider,
   Stack,
   Switch,
@@ -24,6 +25,7 @@ import {
   Typography,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import ExploreIcon from "@mui/icons-material/Explore";
 import FlagIcon from "@mui/icons-material/Flag";
 import MenuIcon from "@mui/icons-material/Menu";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -62,6 +64,7 @@ type LaneDefinition = {
   direction: 1 | -1;
   speed: number;
   hardMode: boolean;
+  decorSeed: number;
   things?: MovingThing[];
 };
 
@@ -104,6 +107,19 @@ type SwipeState = {
   pointerId: number | null;
 };
 
+type DeathAnimation = {
+  type: "flat" | "splash";
+  col: number;
+  row: number;
+  startedAt: number;
+  endsAt: number;
+};
+
+type MobileLevelConfig = {
+  rows: number;
+  laneSeed: number;
+};
+
 type ActivePowerUp = {
   type: PowerUpType;
   expiresAt: number;
@@ -130,6 +146,7 @@ type PlayerState = {
   score: number;
   leaderboardScoreCheckpoint: number;
   laps: number;
+  crowns: number;
   misses: number;
   bestProgress: number;
   stunnedUntil: number;
@@ -139,6 +156,8 @@ type PlayerState = {
   lastMoveAt: number;
   jump: TravelAnimation | null;
   lightning: TravelAnimation | null;
+  deathAnimation: DeathAnimation | null;
+  celebrateUntil: number;
 };
 
 type FeedItem = {
@@ -211,6 +230,19 @@ type PowerUpInstance = {
   | { kind: "score"; type: ScoreItemType }
 );
 
+type NatureDecorKind = "tree" | "rock";
+type NatureDecorVariant = 0 | 1 | 2;
+
+type NatureDecorItem = {
+  id: string;
+  row: number;
+  col: number;
+  kind: NatureDecorKind;
+  variant: NatureDecorVariant;
+  rotation: number;
+  scale: number;
+};
+
 type BlockProps = {
   color: string;
   size: [number, number, number];
@@ -226,6 +258,7 @@ type BlockProps = {
 
 const SETTINGS_KEY = "crossy-road-3d-settings-v3";
 const LEADERBOARD_KEY = "crossy-road-leaderboard-v1";
+const MOBILE_LEVELS_KEY = "crossy-road-mobile-levels-v1";
 const MIN_COLS = 7;
 const MAX_COLS = 31;
 const MIN_ROWS = 7;
@@ -241,26 +274,60 @@ const TRAFFIC_GAP = 0.55;
 const TRAFFIC_LOOK_AHEAD_SECONDS = 0.82;
 const TRAFFIC_SIMULATION_STEP = 0.045;
 const TRAIN_CAR_LENGTH = 1;
+const MOBILE_TURN_MS = 60000;
+const FLAT_DEATH_MS = 2000;
+const SPLASH_DEATH_MS = 1000;
+const FLAG_CELEBRATION_MS = 2200;
+const ZOOM_MIN = 0.55;
+const ZOOM_MAX = 2.5;
 const CAMERA_PITCH_MIN = 0.34;
 const CAMERA_PITCH_MAX = 1.38;
 const CAMERA_PITCH_DEFAULT = 0.86;
+const CAMERA_TILT_45 = Math.PI / 4;
+const CAMERA_LOW_PITCH = (CAMERA_TILT_45 + CAMERA_PITCH_MIN) / 2;
+const PORTRAIT_CAMERA_YAW = Math.PI / 8;
+const PORTRAIT_CAMERA_ZOOM = 1.85;
 const CAMERA_DIRECTION_PRESETS = [
-  ["North", 0],
-  ["East", Math.PI / 2],
-  ["South", Math.PI],
-  ["West", -Math.PI / 2],
+  ["N", 0],
+  ["NE", Math.PI / 4],
+  ["E", Math.PI / 2],
+  ["SE", (Math.PI * 3) / 4],
+  ["S", Math.PI],
+  ["SW", (-Math.PI * 3) / 4],
+  ["W", -Math.PI / 2],
+  ["NW", -Math.PI / 4],
 ] as const;
+type CameraDirectionLabel = (typeof CAMERA_DIRECTION_PRESETS)[number][0];
+const CAMERA_COMPASS_LAYOUT: (CameraDirectionLabel | null)[] = [
+  "NW",
+  "N",
+  "NE",
+  "W",
+  null,
+  "E",
+  "SW",
+  "S",
+  "SE",
+];
 const CAMERA_TILT_PRESETS = [
   ["Top", CAMERA_PITCH_MAX],
-  ["High", (CAMERA_PITCH_MAX + Math.PI / 4) / 2],
-  ["45", Math.PI / 4],
-  ["Low", (Math.PI / 4 + CAMERA_PITCH_MIN) / 2],
+  ["High", (CAMERA_PITCH_MAX + CAMERA_TILT_45) / 2],
+  ["45", CAMERA_TILT_45],
+  ["Low", CAMERA_LOW_PITCH],
   ["Flat", CAMERA_PITCH_MIN],
 ] as const;
+type CameraTiltLabel = (typeof CAMERA_TILT_PRESETS)[number][0];
 const POWER_UP_TYPES: PowerUpType[] = ["control", "speed", "life", "jump", "lightning"];
 const SCORE_ITEM_TYPES: ScoreItemType[] = ["seeds", "bread", "flies", "carrot"];
 const PLAYER_IDS: PlayerId[] = ["duck", "frog", "chicken", "rabbit"];
 const SAFE_START_ROWS = 4;
+const START_BACKDROP_ROWS = 10;
+const START_BACKDROP_DECOR_FILL = 0.5;
+const CROWN_POINTS = 1000;
+const CROWN_BADGE_INLINE_LIMIT = 3;
+const LEVEL_REGEN_ATTEMPTS = 40;
+const GRASS_DECOR_D20_SIDES = 20;
+const GRASS_DECOR_D20_HIT = 1;
 
 const DEFAULT_PLAYER_NAMES: PlayerNames = {
   duck: "Duck",
@@ -436,6 +503,43 @@ function animalIcon(playerId: PlayerId) {
     : "\u{1F407}";
 }
 
+function CrownBadges({ crowns }: { crowns: number }) {
+  const count = Math.max(0, Math.floor(crowns));
+  if (count === 0) return null;
+
+  if (count <= CROWN_BADGE_INLINE_LIMIT) {
+    return (
+      <span className="crossy-crown-badges" aria-label={`${count} crowns`}>
+        {Array.from({ length: count }).map((_, index) => (
+          <span key={index} className="crossy-crown-badge" aria-hidden="true">
+            {"\u265B"}
+          </span>
+        ))}
+      </span>
+    );
+  }
+
+  return (
+    <span className="crossy-crown-badges crossy-crown-badges-compact" aria-label={`${count} crowns`}>
+      <span className="crossy-crown-badge" aria-hidden="true">
+        {"\u265B"}
+      </span>
+      <strong>{count}</strong>
+    </span>
+  );
+}
+
+function PlayerIcon({ player, ariaLabel }: { player: PlayerState; ariaLabel?: string }) {
+  return (
+    <span className="crossy-racer-token-shell">
+      <CrownBadges crowns={player.crowns} />
+      <span className="crossy-racer-token" aria-label={ariaLabel} aria-hidden={ariaLabel ? undefined : true}>
+        {animalIcon(player.id)}
+      </span>
+    </span>
+  );
+}
+
 function cleanPlayerName(value: unknown, fallback: string) {
   if (typeof value !== "string") return fallback;
   return value.slice(0, 18);
@@ -499,6 +603,45 @@ function rankedLeaderboard(records: LeaderboardRecord[], tab: LeaderboardTab) {
     const rankB = b.score / Math.max(b.timeMs / 60000, 1 / 60);
     return rankB - rankA || b.score - a.score || a.name.localeCompare(b.name);
   });
+}
+
+function makeMobileLevelConfigs(settings: GameSettings) {
+  return PLAYER_IDS.reduce((acc, id) => {
+    acc[id] = {
+      rows: settings.rows,
+      laneSeed: settings.laneSeed,
+    };
+    return acc;
+  }, {} as Record<PlayerId, MobileLevelConfig>);
+}
+
+function readMobileLevelConfigs(settings: GameSettings) {
+  const fallback = makeMobileLevelConfigs(settings);
+  if (typeof window === "undefined") return fallback;
+
+  try {
+    const saved = window.sessionStorage.getItem(MOBILE_LEVELS_KEY);
+    if (!saved) return fallback;
+    const parsed = JSON.parse(saved) as Partial<Record<PlayerId, Partial<MobileLevelConfig>>>;
+    return PLAYER_IDS.reduce((acc, id) => {
+      acc[id] = {
+        rows: Math.round(cleanNumber(parsed[id]?.rows, fallback[id].rows, MIN_ROWS, MAX_ROWS)),
+        laneSeed: cleanNumber(parsed[id]?.laneSeed, fallback[id].laneSeed, 1, 999999999),
+      };
+      return acc;
+    }, {} as Record<PlayerId, MobileLevelConfig>);
+  } catch {
+    return fallback;
+  }
+}
+
+function writeMobileLevelConfigs(configs: Record<PlayerId, MobileLevelConfig>) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(MOBILE_LEVELS_KEY, JSON.stringify(configs));
+}
+
+function randomLaneSeed() {
+  return Math.floor(Math.random() * 999999999) + 1;
 }
 
 function formatPlayTime(timeMs: number) {
@@ -626,7 +769,7 @@ function loadSettings(): GameSettings {
       trainSpeed: cleanNumber(parsed.trainSpeed, DEFAULT_SETTINGS.trainSpeed, 0.5, 1.5),
       logSpeed: cleanNumber(parsed.logSpeed, DEFAULT_SETTINGS.logSpeed, 0.5, 1.5),
       moveCooldown: cleanNumber(parsed.moveCooldown, DEFAULT_SETTINGS.moveCooldown, 0, 2),
-      defaultZoom: cleanNumber(parsed.defaultZoom, DEFAULT_SETTINGS.defaultZoom, 0.55, 1.45),
+      defaultZoom: cleanNumber(parsed.defaultZoom, DEFAULT_SETTINGS.defaultZoom, ZOOM_MIN, ZOOM_MAX),
       hardMode: parsed.hardMode ?? DEFAULT_SETTINGS.hardMode,
       logLengthMin: Math.min(logLengthMin, logLengthMax),
       logLengthMax: Math.max(logLengthMin, logLengthMax),
@@ -776,7 +919,7 @@ function makeMovingThings(
   });
 }
 
-function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefinition[] {
+function buildLanes(settings: GameSettings, board: BoardConfig): LaneDefinition[] {
   const random = createSeededRandom(settings.laneSeed + board.cols * 37 + board.rows * 53);
   const defaultPattern: LaneKind[] = [
     "road",
@@ -826,7 +969,7 @@ function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefiniti
         ? 1
         : -1;
 
-    const baseSpeed =
+    let baseSpeed =
       kind === "road"
         ? randomBetween(random, 1.8, 3.05) * settings.carSpeed
         : kind === "rail"
@@ -834,6 +977,13 @@ function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefiniti
         : kind === "river"
         ? randomBetween(random, 1.0, 1.75) * settings.logSpeed
         : 0;
+    if (kind === "river" && previousLane?.kind === "river") {
+      const speedBand = row % 2 === 0 ? 1.18 : 0.82;
+      baseSpeed *= speedBand;
+      if (Math.abs(baseSpeed - previousLane.speed) < 0.16) {
+        baseSpeed += (row % 2 === 0 ? 0.22 : -0.22) * settings.logSpeed;
+      }
+    }
 
     lanes.push({
       row,
@@ -841,11 +991,48 @@ function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefiniti
       direction,
       speed: baseSpeed,
       hardMode: settings.hardMode,
+      decorSeed: Math.floor(settings.laneSeed * 131 + row * 977 + board.cols * 37 + board.rows * 53),
       things: makeMovingThings(kind, row, direction, settings, board, random),
     });
   }
 
   return lanes;
+}
+
+function nextRegeneratedLaneSeed(seed: number, attempt: number) {
+  return Math.floor(positiveModulo(seed * 9301 + 49297 + attempt * 233280, 999999998)) + 1;
+}
+
+function hasFullyBlockedForestRow(lanes: LaneDefinition[], board: BoardConfig) {
+  for (let row = 0; row <= maxPlayableRow(board); row += 1) {
+    const isForestRow =
+      isStartBacklotRow(row, board) ||
+      (row < board.playerStartRow && getLane(lanes, row).kind === "grass");
+    if (!isForestRow) continue;
+
+    const openCol = Array.from({ length: board.cols }).find(
+      (_, col) => !hasForestBlocker(row, col, lanes, board),
+    );
+    if (openCol == null) return true;
+  }
+
+  return false;
+}
+
+function generateLanes(settings: GameSettings, board: BoardConfig): LaneDefinition[] {
+  let seed = settings.laneSeed;
+  let fallback = buildLanes(settings, board);
+
+  for (let attempt = 0; attempt < LEVEL_REGEN_ATTEMPTS; attempt += 1) {
+    const candidateSettings = attempt === 0 ? settings : { ...settings, laneSeed: seed };
+    const lanes = attempt === 0 ? fallback : buildLanes(candidateSettings, board);
+    if (!hasFullyBlockedForestRow(lanes, board)) return lanes;
+
+    fallback = lanes;
+    seed = nextRegeneratedLaneSeed(seed, attempt);
+  }
+
+  return fallback;
 }
 
 function getLane(lanes: LaneDefinition[], row: number) {
@@ -871,12 +1058,82 @@ function worldZFromCenter(row: number, board: BoardConfig) {
   return row + 0.5 - board.halfRows;
 }
 
+function maxPlayableRow(board: BoardConfig) {
+  return board.rows + START_BACKDROP_ROWS - 1;
+}
+
+function isStartBacklotRow(row: number, board: BoardConfig) {
+  return row >= board.rows && row <= maxPlayableRow(board);
+}
+
+function crownCell(board: BoardConfig) {
+  return {
+    row: maxPlayableRow(board),
+    col: Math.floor(board.cols / 2),
+  };
+}
+
+function isCrownCell(row: number, col: number, board: BoardConfig) {
+  const crown = crownCell(board);
+  return row === crown.row && col === crown.col;
+}
+
 function worldXFromThing(thing: RuntimeThing, board: BoardConfig) {
   return thing.x + thing.length / 2 - board.halfCols;
 }
 
 function seededUnit(value: number) {
   return positiveModulo(Math.sin(value * 12.9898) * 43758.5453, 1);
+}
+
+function laneDecorSeed(lanes: LaneDefinition[], board: BoardConfig) {
+  return (lanes[0]?.decorSeed ?? 101) + board.cols * 409 + board.rows * 257;
+}
+
+function natureDecorForCell(row: number, col: number, seedBase: number, fillChance: number) {
+  const cellSeed = seedBase + row * 15485863 + col * 32452843;
+  if (seededUnit(cellSeed) >= fillChance) return null;
+
+  const kind: NatureDecorKind = seededUnit(cellSeed + 11) < 0.58 ? "tree" : "rock";
+  const variant = Math.floor(seededUnit(cellSeed + 23) * 3) as NatureDecorVariant;
+  return {
+    id: `${kind}-${row}-${col}`,
+    row,
+    col,
+    kind,
+    variant,
+    rotation: Math.floor(seededUnit(cellSeed + 31) * 4) * (Math.PI / 2),
+    scale: kind === "tree" ? 0.88 + seededUnit(cellSeed + 47) * 0.18 : 0.82 + seededUnit(cellSeed + 47) * 0.22,
+  };
+}
+
+function grassDecorD20Hit(row: number, col: number, seedBase: number) {
+  const roll =
+    Math.floor(seededUnit(seedBase + row * 49999 + col * 7867 + 19) * GRASS_DECOR_D20_SIDES) + 1;
+  return roll === GRASS_DECOR_D20_HIT;
+}
+
+function hasPlayableGrassDecor(row: number, col: number, lanes: LaneDefinition[], board: BoardConfig) {
+  if (row < 0 || row >= board.rows || col < 0 || col >= board.cols) return false;
+  if (row >= board.playerStartRow) return false;
+  const lane = getLane(lanes, row);
+  if (lane.kind !== "grass") return false;
+  return grassDecorD20Hit(row, col, lane.decorSeed);
+}
+
+function hasStartBacklotDecor(row: number, col: number, lanes: LaneDefinition[], board: BoardConfig) {
+  if (!isStartBacklotRow(row, board) || col < 0 || col >= board.cols) return false;
+  if (isCrownCell(row, col, board)) return false;
+  const seedBase = laneDecorSeed(lanes, board) + 88711;
+  return natureDecorForCell(row, col, seedBase, START_BACKDROP_DECOR_FILL) != null;
+}
+
+function hasForestBlocker(row: number, col: number, lanes: LaneDefinition[], board: BoardConfig) {
+  return hasPlayableGrassDecor(row, col, lanes, board) || hasStartBacklotDecor(row, col, lanes, board);
+}
+
+function crownLevelKey(lanes: LaneDefinition[], board: BoardConfig) {
+  return `${board.cols}x${board.rows}:${lanes.map((lane) => lane.decorSeed).join(".")}`;
 }
 
 function getThingLength(thing: MovingThing, lane: LaneDefinition, seconds: number) {
@@ -1444,6 +1701,7 @@ function resetPlayerForJoin(player: PlayerState, board: BoardConfig, players: Pl
     score: 0,
     leaderboardScoreCheckpoint: 0,
     laps: 0,
+    crowns: 0,
     misses: 0,
     bestProgress: 0,
     stunnedUntil: 0,
@@ -1453,6 +1711,8 @@ function resetPlayerForJoin(player: PlayerState, board: BoardConfig, players: Pl
     lastMoveAt: -Infinity,
     jump: null,
     lightning: null,
+    deathAnimation: null,
+    celebrateUntil: 0,
   };
 }
 
@@ -1485,6 +1745,7 @@ function makeInitialPlayers(board: BoardConfig, playerNames: PlayerNames): Playe
     score: 0,
     leaderboardScoreCheckpoint: 0,
     laps: 0,
+    crowns: 0,
     misses: 0,
     bestProgress: 0,
     stunnedUntil: 0,
@@ -1494,6 +1755,8 @@ function makeInitialPlayers(board: BoardConfig, playerNames: PlayerNames): Playe
     lastMoveAt: -Infinity,
     jump: null,
     lightning: null,
+    deathAnimation: null,
+    celebrateUntil: 0,
   }));
 }
 
@@ -1506,6 +1769,10 @@ function clearExpiredPlayerEffects(player: PlayerState, timestamp: number) {
         : null,
     jump: player.jump && timestamp <= player.jump.endsAt ? player.jump : null,
     lightning: player.lightning && timestamp <= player.lightning.endsAt ? player.lightning : null,
+    deathAnimation:
+      player.deathAnimation && timestamp <= player.deathAnimation.endsAt
+        ? player.deathAnimation
+        : null,
   };
 }
 
@@ -1516,18 +1783,27 @@ function restartPlayer(
   text: string,
   players: PlayerState[],
   board: BoardConfig,
+  deathType: DeathAnimation["type"] = "flat",
 ) {
   messages.push(text);
+  const deathDuration = deathType === "splash" ? SPLASH_DEATH_MS : FLAT_DEATH_MS;
   return {
     ...player,
     row: board.playerStartRow,
     col: findOpenStartCol(player.id, players, board),
     misses: player.misses + 1,
     score: player.score - 15,
-    stunnedUntil: timestamp + 850,
+    stunnedUntil: timestamp + deathDuration,
     facing: "up" as Direction,
     jump: null,
     lightning: null,
+    deathAnimation: {
+      type: deathType,
+      col: player.col,
+      row: player.row,
+      startedAt: timestamp,
+      endsAt: timestamp + deathDuration,
+    },
   };
 }
 
@@ -1539,14 +1815,38 @@ function resolvePlayers(
   timestamp: number,
   dt: number,
   messages: string[],
+  crownAvailable: boolean,
 ) {
-  return players.map((rawPlayer) => {
+  let crownCollected = false;
+  const nextPlayers = players.map((rawPlayer) => {
     if (!rawPlayer.joined) return rawPlayer;
 
     const player = clearExpiredPlayerEffects(rawPlayer, timestamp);
     if (player.jump || timestamp < player.stunnedUntil) return player;
 
-    const lane = getLane(lanes, Math.round(player.row));
+    const row = Math.round(player.row);
+    const col = Math.round(player.col);
+
+    if (crownAvailable && !crownCollected && isCrownCell(row, col, board)) {
+      crownCollected = true;
+      messages.push(`${player.name} claimed the crown for ${CROWN_POINTS}.`);
+      return {
+        ...player,
+        row: board.playerStartRow,
+        col: findOpenStartCol(player.id, players, board),
+        score: player.score + CROWN_POINTS,
+        crowns: player.crowns + 1,
+        bestProgress: 0,
+        stunnedUntil: timestamp + 650,
+        facing: "up" as Direction,
+        jump: null,
+        lightning: null,
+        deathAnimation: null,
+        celebrateUntil: timestamp + FLAG_CELEBRATION_MS,
+      };
+    }
+
+    const lane = getLane(lanes, row);
 
     if (lane.kind === "goal") {
       messages.push(`${player.name} crossed the finish.`);
@@ -1559,18 +1859,20 @@ function resolvePlayers(
         bestProgress: 0,
         stunnedUntil: timestamp + 650,
         facing: "up" as Direction,
+        deathAnimation: null,
+        celebrateUntil: timestamp + FLAG_CELEBRATION_MS,
       };
     }
 
     if (lane.kind === "river") {
       const log = getMovingThingsForLane(lane, seconds, board, lanes).find((thing) => isOnLog(player.col, thing));
       if (!log) {
-        return restartPlayer(player, timestamp, messages, `${player.name} fell in the river.`, players, board);
+        return restartPlayer(player, timestamp, messages, `${player.name} fell in the river.`, players, board, "splash");
       }
 
       const carriedCol = player.col + lane.direction * lane.speed * (log.speedMultiplier ?? 1) * dt;
       if (carriedCol < -0.45 || carriedCol > board.cols - 0.55) {
-        return restartPlayer(player, timestamp, messages, `${player.name} rode a log off the edge.`, players, board);
+        return restartPlayer(player, timestamp, messages, `${player.name} rode a log off the edge.`, players, board, "splash");
       }
 
       const carriedCell = clamp(Math.round(carriedCol), 0, board.cols - 1);
@@ -1615,6 +1917,8 @@ function resolvePlayers(
 
     return player;
   });
+
+  return { players: nextPlayers, crownCollected };
 }
 
 function isPickupCellOpen(
@@ -1623,8 +1927,10 @@ function isPickupCellOpen(
   board: BoardConfig,
   players: PlayerState[],
   powerUps: PowerUpInstance[],
+  lanes?: LaneDefinition[],
 ) {
   if (row < 0 || row >= board.rows || col < 0 || col >= board.cols) return false;
+  if (lanes && hasForestBlocker(row, col, lanes, board)) return false;
   const occupiedByPlayer = players.some(
     (player) => player.joined && Math.round(player.row) === row && Math.round(player.col) === col,
   );
@@ -1647,7 +1953,7 @@ function findSpawnCell(
   for (let attempt = 0; attempt < 80; attempt += 1) {
     const row = safeRows[Math.floor(random() * safeRows.length)];
     const col = Math.floor(random() * board.cols);
-    if (isPickupCellOpen(row, col, board, players, powerUps)) return { row, col };
+    if (isPickupCellOpen(row, col, board, players, powerUps, lanes)) return { row, col };
   }
 
   return null;
@@ -1687,7 +1993,7 @@ function findBreadSpawnCell(
     const car = visibleCars[Math.floor(random() * visibleCars.length)];
     const col = clamp(Math.floor(car.x + car.length / 2), 0, board.cols - 1);
     const grassRows = getAdjacentGrassRows(lanes, lane.row).sort(() => random() - 0.5);
-    const row = grassRows.find((grassRow) => isPickupCellOpen(grassRow, col, board, players, powerUps));
+    const row = grassRows.find((grassRow) => isPickupCellOpen(grassRow, col, board, players, powerUps, lanes));
     if (row == null) continue;
 
     return {
@@ -1991,7 +2297,14 @@ function PlayerModels({
     chicken: null,
     rabbit: null,
   });
+  const effectRefs = useRef<Record<PlayerId, THREE.Group | null>>({
+    duck: null,
+    frog: null,
+    chicken: null,
+    rabbit: null,
+  });
   const targetPositionRef = useRef(new THREE.Vector3());
+  const targetScaleRef = useRef(new THREE.Vector3(1, 1, 1));
 
   useFrame(() => {
     const timestamp = performance.now();
@@ -2002,19 +2315,37 @@ function PlayerModels({
 
       const hiddenByMobileTurn =
         mobileTurnPlayerIdRef?.current != null && player.id !== mobileTurnPlayerIdRef.current;
+      const effect = effectRefs.current[player.id];
       if (!player.joined || hiddenByMobileTurn) {
         group.visible = false;
         const glow = glowRefs.current[player.id];
         if (glow) glow.visible = false;
+        if (effect) effect.visible = false;
         return;
       }
 
-      const position = getAnimatedPosition(player, timestamp, board);
+      const deathAnimation =
+        player.deathAnimation && timestamp <= player.deathAnimation.endsAt
+          ? player.deathAnimation
+          : null;
+      const position = deathAnimation
+        ? {
+            x: worldXFromCenter(deathAnimation.col, board),
+            y: 0.02,
+            z: worldZFromCenter(deathAnimation.row, board),
+          }
+        : getAnimatedPosition(player, timestamp, board);
       const targetPosition = targetPositionRef.current.set(position.x, position.y, position.z);
       group.position.lerp(
         targetPosition,
-        player.lightning ? 0.95 : player.jump ? 0.72 : 0.42,
+        deathAnimation ? 0.82 : player.lightning ? 0.95 : player.jump ? 0.72 : 0.42,
       );
+      const targetScale = targetScaleRef.current.set(
+        deathAnimation?.type === "flat" ? 1.14 : 1,
+        deathAnimation?.type === "flat" ? 0.12 : 1,
+        deathAnimation?.type === "flat" ? 1.14 : 1,
+      );
+      group.scale.lerp(targetScale, deathAnimation ? 0.65 : 0.3);
       group.rotation.y =
         player.facing === "up"
           ? 0
@@ -2023,19 +2354,61 @@ function PlayerModels({
           : player.facing === "left"
           ? Math.PI / 2
           : -Math.PI / 2;
-      group.visible = timestamp >= player.stunnedUntil || Math.sin(timestamp * 0.035) > 0;
+      group.visible =
+        deathAnimation?.type !== "splash" &&
+        (deathAnimation?.type === "flat" || timestamp >= player.stunnedUntil || Math.sin(timestamp * 0.035) > 0);
 
       const glow = glowRefs.current[player.id];
-      if (!glow) return;
-      const glowColor = getPowerGlowColor(player, timestamp);
-      glow.visible = Boolean(glowColor);
-      if (glowColor && glow.material instanceof THREE.MeshBasicMaterial) {
-        glow.material.color.set(glowColor);
-        glow.material.opacity = glowColor === "#ffffff" ? 0.36 : 0.24;
+      const glowColor = deathAnimation ? null : getPowerGlowColor(player, timestamp);
+      if (glow) {
+        glow.visible = Boolean(glowColor);
+        if (glowColor && glow.material instanceof THREE.MeshBasicMaterial) {
+          glow.material.color.set(glowColor);
+          glow.material.opacity = glowColor === "#ffffff" ? 0.36 : 0.24;
+        }
+        glow.scale.setScalar(1 + Math.sin(timestamp * 0.01) * 0.08);
       }
-      glow.scale.setScalar(1 + Math.sin(timestamp * 0.01) * 0.08);
+
+      if (!effect) return;
+      if (deathAnimation?.type === "splash") {
+        const progress = clamp(
+          (timestamp - deathAnimation.startedAt) /
+            Math.max(1, deathAnimation.endsAt - deathAnimation.startedAt),
+          0,
+          1,
+        );
+        effect.visible = true;
+        effect.position.set(
+          worldXFromCenter(deathAnimation.col, board),
+          0.28 + Math.sin(progress * Math.PI) * 0.28,
+          worldZFromCenter(deathAnimation.row, board),
+        );
+        effect.rotation.y += 0.08;
+        effect.scale.setScalar(0.45 + Math.sin(progress * Math.PI) * 0.85);
+        return;
+      }
+
+      if (timestamp < player.celebrateUntil) {
+        const progress = 1 - clamp((player.celebrateUntil - timestamp) / FLAG_CELEBRATION_MS, 0, 1);
+        effect.visible = true;
+        effect.position.set(position.x, 1.25 + Math.sin(timestamp * 0.014) * 0.16, position.z);
+        effect.rotation.y += 0.11;
+        effect.scale.setScalar(0.8 + Math.sin(progress * Math.PI * 3) * 0.16);
+        return;
+      }
+
+      effect.visible = false;
     });
   });
+
+  const effectBits = [
+    ["#ffffff", 0.48, 0.08],
+    ["#38bdf8", -0.48, 0.06],
+    ["#facc15", 0.1, 0.5],
+    ["#ef4444", -0.12, -0.48],
+    ["#22c55e", 0.48, -0.08],
+    ["#fb7185", -0.48, -0.08],
+  ] as const;
 
   return (
     <>
@@ -2067,6 +2440,27 @@ function PlayerModels({
         </mesh>
         <RabbitAsset />
       </group>
+      {PLAYER_IDS.map((playerId) => (
+        <group
+          key={`${playerId}-effect`}
+          ref={(node) => {
+            effectRefs.current[playerId] = node;
+          }}
+          visible={false}
+        >
+          {effectBits.map(([color, x, z], index) => (
+            <Block
+              key={index}
+              color={color}
+              size={[0.12, 0.12, 0.12]}
+              position={[x, 0.2 + (index % 3) * 0.2, z]}
+              emissive={color}
+              emissiveIntensity={0.9}
+            />
+          ))}
+          <Block color="#60a5fa" size={[0.46, 0.05, 0.46]} position={[0, 0.02, 0]} transparent opacity={0.65} />
+        </group>
+      ))}
     </>
   );
 }
@@ -2182,6 +2576,120 @@ function LogAsset({ length, clippingPlanes }: { length: number; clippingPlanes?:
           clippingPlanes={clippingPlanes}
         />
       ))}
+    </group>
+  );
+}
+
+function TreeAsset({ variant }: { variant: NatureDecorVariant }) {
+  if (variant === 0) {
+    return (
+      <group>
+        <Block color="#7a4a24" size={[0.18, 0.58, 0.18]} position={[0, 0.29, 0]} />
+        <Block color="#236338" size={[0.72, 0.34, 0.72]} position={[0, 0.72, 0]} />
+        <Block color="#2f8d4e" size={[0.56, 0.3, 0.56]} position={[0, 1.0, 0]} />
+        <Block color="#3aa45d" size={[0.38, 0.26, 0.38]} position={[0, 1.24, 0]} />
+      </group>
+    );
+  }
+
+  if (variant === 1) {
+    return (
+      <group>
+        <Block color="#81512a" size={[0.22, 0.64, 0.22]} position={[0, 0.32, 0]} />
+        <Block color="#2f7f44" size={[0.72, 0.52, 0.62]} position={[0, 0.86, 0]} />
+        <Block color="#3b9652" size={[0.5, 0.42, 0.78]} position={[0, 0.98, 0]} />
+        <Block color="#46a85f" size={[0.42, 0.32, 0.42]} position={[0.22, 1.16, -0.12]} />
+      </group>
+    );
+  }
+
+  return (
+    <group>
+      <Block color="#6f4326" size={[0.16, 0.82, 0.16]} position={[0, 0.41, 0]} />
+      <Block color="#1f5d34" size={[0.46, 0.46, 0.46]} position={[0, 0.86, 0]} />
+      <Block color="#28733f" size={[0.58, 0.34, 0.34]} position={[0, 1.08, 0]} />
+      <Block color="#34904f" size={[0.34, 0.36, 0.58]} position={[0, 1.24, 0]} />
+    </group>
+  );
+}
+
+function RockAsset({ variant }: { variant: NatureDecorVariant }) {
+  if (variant === 0) {
+    return (
+      <group>
+        <Block color="#8b9290" size={[0.52, 0.24, 0.42]} position={[0, 0.12, 0]} />
+        <Block color="#a3aaa7" size={[0.28, 0.18, 0.24]} position={[0.12, 0.31, -0.08]} />
+      </group>
+    );
+  }
+
+  if (variant === 1) {
+    return (
+      <group>
+        <Block color="#747b7c" size={[0.36, 0.2, 0.48]} position={[-0.12, 0.1, 0.04]} />
+        <Block color="#9aa1a0" size={[0.34, 0.28, 0.3]} position={[0.16, 0.14, -0.06]} />
+        <Block color="#6b7374" size={[0.22, 0.16, 0.22]} position={[0.02, 0.3, 0.12]} />
+      </group>
+    );
+  }
+
+  return (
+    <group>
+      <Block color="#9ca3a2" size={[0.6, 0.18, 0.26]} position={[0, 0.09, 0]} />
+      <Block color="#7d8584" size={[0.26, 0.28, 0.32]} position={[-0.18, 0.2, 0.02]} />
+      <Block color="#b0b7b5" size={[0.24, 0.22, 0.24]} position={[0.2, 0.18, -0.04]} />
+    </group>
+  );
+}
+
+function renderNatureDecor(item: NatureDecorItem, board: BoardConfig) {
+  return (
+    <group
+      key={item.id}
+      position={[worldXFromCenter(item.col, board), 0.01, worldZFromCenter(item.row, board)]}
+      rotation={[0, item.rotation, 0]}
+      scale={[item.scale, item.scale, item.scale]}
+    >
+      {item.kind === "tree" ? <TreeAsset variant={item.variant} /> : <RockAsset variant={item.variant} />}
+    </group>
+  );
+}
+
+function CrownAsset() {
+  return (
+    <group>
+      <Block color="#b7791f" size={[0.72, 0.12, 0.46]} position={[0, 0.12, 0]} metalness={0.35} roughness={0.3} />
+      <Block color="#facc15" size={[0.64, 0.18, 0.38]} position={[0, 0.22, 0]} metalness={0.55} roughness={0.22} />
+      {[-0.24, 0, 0.24].map((x, index) => (
+        <group key={x} position={[x, 0, index === 1 ? 0 : 0.02]}>
+          <Block color="#facc15" size={[0.14, index === 1 ? 0.42 : 0.34, 0.14]} position={[0, 0.48, 0]} metalness={0.55} roughness={0.22} />
+          <Block color="#ffe47a" size={[0.2, 0.12, 0.2]} position={[0, index === 1 ? 0.75 : 0.68, 0]} emissive="#facc15" emissiveIntensity={0.35} />
+        </group>
+      ))}
+      <Block color="#38bdf8" size={[0.1, 0.08, 0.06]} position={[-0.2, 0.32, -0.2]} emissive="#38bdf8" emissiveIntensity={0.65} />
+      <Block color="#ef4444" size={[0.1, 0.08, 0.06]} position={[0, 0.34, -0.2]} emissive="#ef4444" emissiveIntensity={0.65} />
+      <Block color="#22c55e" size={[0.1, 0.08, 0.06]} position={[0.2, 0.32, -0.2]} emissive="#22c55e" emissiveIntensity={0.65} />
+    </group>
+  );
+}
+
+function CrownPrize({ board }: { board: BoardConfig }) {
+  const ref = useRef<THREE.Group>(null);
+  const crown = crownCell(board);
+
+  useFrame((state) => {
+    if (!ref.current) return;
+    ref.current.rotation.y = state.clock.elapsedTime * 0.95;
+    ref.current.position.y = 0.08 + Math.sin(state.clock.elapsedTime * 2.6) * 0.08;
+  });
+
+  return (
+    <group ref={ref} position={[worldXFromCenter(crown.col, board), 0.08, worldZFromCenter(crown.row, board)]}>
+      <mesh position={[0, 0.32, 0]}>
+        <sphereGeometry args={[0.72, 16, 10]} />
+        <meshBasicMaterial color="#facc15" transparent opacity={0.2} depthWrite={false} />
+      </mesh>
+      <CrownAsset />
     </group>
   );
 }
@@ -2349,7 +2857,89 @@ function RailLane({ lane, board }: { lane: LaneDefinition; board: BoardConfig })
   );
 }
 
-function LaneSurfaces({ lanes, board }: { lanes: LaneDefinition[]; board: BoardConfig }) {
+function StartBacklot({
+  lanes,
+  board,
+  crownAvailable,
+}: {
+  lanes: LaneDefinition[];
+  board: BoardConfig;
+  crownAvailable: boolean;
+}) {
+  const decor = useMemo(() => {
+    const seedBase = laneDecorSeed(lanes, board) + 88711;
+    const nextDecor: NatureDecorItem[] = [];
+    for (let row = board.rows; row < board.rows + START_BACKDROP_ROWS; row += 1) {
+      for (let col = 0; col < board.cols; col += 1) {
+        if (isCrownCell(row, col, board)) continue;
+        const item = natureDecorForCell(row, col, seedBase, START_BACKDROP_DECOR_FILL);
+        if (item) nextDecor.push(item);
+      }
+    }
+    return nextDecor;
+  }, [lanes, board]);
+  const backlotCenterZ = board.halfRows + START_BACKDROP_ROWS / 2;
+  return (
+    <>
+      {Array.from({ length: START_BACKDROP_ROWS }).map((_, index) => (
+        <group key={`start-backlot-row-${index}`} position={[0, 0, worldZFromCenter(board.rows + index, board)]}>
+          <Block
+            color={index % 2 === 0 ? "#3f9b4f" : "#459f55"}
+            size={[board.cols, 0.18, 1]}
+            position={[0, -0.09, 0]}
+          />
+        </group>
+      ))}
+      {decor.map((item) => renderNatureDecor(item, board))}
+      {crownAvailable && <CrownPrize board={board} />}
+      <Block
+        color="#243729"
+        size={[0.18, 0.3, START_BACKDROP_ROWS]}
+        position={[-board.halfCols - 0.06, -0.05, backlotCenterZ]}
+      />
+      <Block
+        color="#243729"
+        size={[0.18, 0.3, START_BACKDROP_ROWS]}
+        position={[board.halfCols + 0.06, -0.05, backlotCenterZ]}
+      />
+      <Block
+        color="#243729"
+        size={[board.cols + 0.36, 0.3, 0.18]}
+        position={[0, -0.05, board.halfRows + START_BACKDROP_ROWS + 0.06]}
+      />
+    </>
+  );
+}
+
+function PlayableGrassDecor({ lanes, board }: { lanes: LaneDefinition[]; board: BoardConfig }) {
+  const decor = useMemo(() => {
+    const nextDecor: NatureDecorItem[] = [];
+    lanes.forEach((lane) => {
+      if (lane.kind !== "grass" || lane.row >= board.playerStartRow) return;
+      for (let col = 0; col < board.cols; col += 1) {
+        if (!grassDecorD20Hit(lane.row, col, lane.decorSeed)) continue;
+        const item = natureDecorForCell(lane.row, col, lane.decorSeed, 1);
+        if (item) nextDecor.push(item);
+      }
+    });
+    return nextDecor;
+  }, [lanes, board]);
+  return (
+    <>
+      {decor.map((item) => renderNatureDecor(item, board))}
+    </>
+  );
+}
+
+function LaneSurfaces({
+  lanes,
+  board,
+  crownAvailable,
+}: {
+  lanes: LaneDefinition[];
+  board: BoardConfig;
+  crownAvailable: boolean;
+}) {
   return (
     <>
       {lanes.map((lane) => {
@@ -2358,8 +2948,9 @@ function LaneSurfaces({ lanes, board }: { lanes: LaneDefinition[]; board: BoardC
         if (lane.kind === "rail") return <RailLane key={lane.row} lane={lane} board={board} />;
         return <GrassLane key={lane.row} lane={lane} board={board} />;
       })}
+      <StartBacklot lanes={lanes} board={board} crownAvailable={crownAvailable} />
+      <PlayableGrassDecor lanes={lanes} board={board} />
       <Block color="#243729" size={[board.cols + 0.36, 0.3, 0.18]} position={[0, -0.05, -board.halfRows - 0.06]} />
-      <Block color="#243729" size={[board.cols + 0.36, 0.3, 0.18]} position={[0, -0.05, board.halfRows + 0.06]} />
       <Block color="#243729" size={[0.18, 0.3, board.rows]} position={[-board.halfCols - 0.06, -0.05, 0]} />
       <Block color="#243729" size={[0.18, 0.3, board.rows]} position={[board.halfCols + 0.06, -0.05, 0]} />
     </>
@@ -2754,9 +3345,12 @@ function CrossyGameLoop({
   runningRef,
   mobileModeRef,
   mobileTurnPlayerIdRef,
+  mobileReadyOpenRef,
+  mobileTurnEndsAtRef,
   settingsRef,
   lanesRef,
   boardRef,
+  crownAvailableRef,
   secondsRef,
   nextSpawnRef,
   randomRef,
@@ -2764,22 +3358,33 @@ function CrossyGameLoop({
   onSnapshot,
   onLeaderboardProgress,
   onMobileTurnAdvance,
+  onMobileTurnTimeout,
+  onMobilePlayerFlag,
+  onDesktopPlayerFlag,
+  onCrownCollected,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   powerUpsRef: MutableRefObject<PowerUpInstance[]>;
   runningRef: MutableRefObject<boolean>;
   mobileModeRef?: MutableRefObject<boolean>;
   mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
+  mobileReadyOpenRef?: MutableRefObject<boolean>;
+  mobileTurnEndsAtRef?: MutableRefObject<number>;
   settingsRef: MutableRefObject<GameSettings>;
   lanesRef: MutableRefObject<LaneDefinition[]>;
   boardRef: MutableRefObject<BoardConfig>;
+  crownAvailableRef: MutableRefObject<boolean>;
   secondsRef: MutableRefObject<number>;
   nextSpawnRef: MutableRefObject<number>;
   randomRef: MutableRefObject<() => number>;
   setPowerUps: (powerUps: PowerUpInstance[]) => void;
   onSnapshot: (players: PlayerState[], messages: string[]) => void;
   onLeaderboardProgress: (previousPlayers: PlayerState[], nextPlayers: PlayerState[], elapsedMs: number) => void;
-  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[], delayMs?: number) => void;
+  onMobileTurnTimeout?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onMobilePlayerFlag?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onDesktopPlayerFlag?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onCrownCollected: () => void;
 }) {
   const lastSnapshotRef = useRef(0);
   const lastLeaderboardRef = useRef(0);
@@ -2791,18 +3396,27 @@ function CrossyGameLoop({
 
     const dt = Math.min(delta, 0.06);
     const timestamp = performance.now();
-    const messages: string[] = [];
-    secondsRef.current += dt;
-
     const mobileMode = mobileModeRef?.current ?? false;
     const mobileTurnPlayerId = mobileMode ? mobileTurnPlayerIdRef?.current ?? null : null;
     const basePlayers = playersRef.current;
+    if (mobileMode) {
+      if ((mobileReadyOpenRef?.current ?? false) || !mobileTurnPlayerId) return;
+      const turnEndsAt = mobileTurnEndsAtRef?.current ?? 0;
+      if (turnEndsAt > 0 && timestamp >= turnEndsAt) {
+        onMobileTurnTimeout?.(mobileTurnPlayerId, basePlayers);
+        return;
+      }
+    }
+
+    const messages: string[] = [];
+    secondsRef.current += dt;
+
     const simulatedPlayers = mobileMode ? mobileTurnPlayers(basePlayers, mobileTurnPlayerId) : basePlayers;
     const previousTurnPlayer = mobileTurnPlayerId
       ? simulatedPlayers.find((player) => player.id === mobileTurnPlayerId)
       : null;
 
-    let players = resolvePlayers(
+    const resolved = resolvePlayers(
       simulatedPlayers,
       lanesRef.current,
       boardRef.current,
@@ -2810,7 +3424,13 @@ function CrossyGameLoop({
       timestamp,
       dt,
       messages,
+      crownAvailableRef.current,
     );
+    let players = resolved.players;
+    if (resolved.crownCollected) {
+      crownAvailableRef.current = false;
+      onCrownCollected();
+    }
 
     const spawned = spawnPowerUps(
       powerUpsRef.current,
@@ -2837,6 +3457,26 @@ function CrossyGameLoop({
 
     const nextTurnPlayer =
       mobileTurnPlayerId && nextPlayers.find((player) => player.id === mobileTurnPlayerId);
+    const desktopFlagPlayer = !mobileMode
+      ? nextPlayers.find((player) => {
+          const previousPlayer = basePlayers.find((candidate) => candidate.id === player.id);
+          return previousPlayer && player.laps > previousPlayer.laps;
+        })
+      : null;
+    if (desktopFlagPlayer) {
+      onDesktopPlayerFlag?.(desktopFlagPlayer.id, nextPlayers);
+    }
+
+    if (
+      mobileMode &&
+      mobileTurnPlayerId &&
+      previousTurnPlayer &&
+      nextTurnPlayer &&
+      nextTurnPlayer.laps > previousTurnPlayer.laps
+    ) {
+      onMobilePlayerFlag?.(mobileTurnPlayerId, nextPlayers);
+    }
+
     if (
       mobileMode &&
       mobileTurnPlayerId &&
@@ -2844,7 +3484,8 @@ function CrossyGameLoop({
       nextTurnPlayer &&
       nextTurnPlayer.misses > previousTurnPlayer.misses
     ) {
-      onMobileTurnAdvance?.(mobileTurnPlayerId, nextPlayers);
+      const delayMs = nextTurnPlayer.deathAnimation?.type === "splash" ? SPLASH_DEATH_MS : FLAT_DEATH_MS;
+      onMobileTurnAdvance?.(mobileTurnPlayerId, nextPlayers, delayMs);
     }
 
     leaderboardElapsedRef.current += dt * 1000;
@@ -2872,11 +3513,15 @@ function CrossyScene({
   runningRef,
   mobileModeRef,
   mobileTurnPlayerIdRef,
+  mobileReadyOpenRef,
+  mobileTurnEndsAtRef,
   settingsRef,
   lanes,
   lanesRef,
   board,
   boardRef,
+  crownAvailable,
+  crownAvailableRef,
   secondsRef,
   nextSpawnRef,
   randomRef,
@@ -2886,6 +3531,10 @@ function CrossyScene({
   onSnapshot,
   onLeaderboardProgress,
   onMobileTurnAdvance,
+  onMobileTurnTimeout,
+  onMobilePlayerFlag,
+  onDesktopPlayerFlag,
+  onCrownCollected,
 }: {
   playersRef: MutableRefObject<PlayerState[]>;
   powerUps: PowerUpInstance[];
@@ -2893,11 +3542,15 @@ function CrossyScene({
   runningRef: MutableRefObject<boolean>;
   mobileModeRef?: MutableRefObject<boolean>;
   mobileTurnPlayerIdRef?: MutableRefObject<PlayerId | null>;
+  mobileReadyOpenRef?: MutableRefObject<boolean>;
+  mobileTurnEndsAtRef?: MutableRefObject<number>;
   settingsRef: MutableRefObject<GameSettings>;
   lanes: LaneDefinition[];
   lanesRef: MutableRefObject<LaneDefinition[]>;
   board: BoardConfig;
   boardRef: MutableRefObject<BoardConfig>;
+  crownAvailable: boolean;
+  crownAvailableRef: MutableRefObject<boolean>;
   secondsRef: MutableRefObject<number>;
   nextSpawnRef: MutableRefObject<number>;
   randomRef: MutableRefObject<() => number>;
@@ -2906,12 +3559,15 @@ function CrossyScene({
   setPowerUps: (powerUps: PowerUpInstance[]) => void;
   onSnapshot: (players: PlayerState[], messages: string[]) => void;
   onLeaderboardProgress: (previousPlayers: PlayerState[], nextPlayers: PlayerState[], elapsedMs: number) => void;
-  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onMobileTurnAdvance?: (playerId: PlayerId, players: PlayerState[], delayMs?: number) => void;
+  onMobileTurnTimeout?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onMobilePlayerFlag?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onDesktopPlayerFlag?: (playerId: PlayerId, players: PlayerState[]) => void;
+  onCrownCollected: () => void;
 }) {
   return (
     <>
       <color attach="background" args={["#b9ecff"]} />
-      <fog attach="fog" args={["#b9ecff", 22, 38]} />
       <CameraRig
         board={board}
         playersRef={playersRef}
@@ -2923,7 +3579,7 @@ function CrossyScene({
       <ambientLight intensity={1.55} />
       <directionalLight position={[5, 10, 4]} intensity={2.2} />
       <hemisphereLight args={["#d7f7ff", "#314b28", 1.2]} />
-      <MemoLaneSurfaces lanes={lanes} board={board} />
+      <MemoLaneSurfaces lanes={lanes} board={board} crownAvailable={crownAvailable} />
       <MemoMovingObjects lanes={lanes} secondsRef={secondsRef} boardRef={boardRef} />
       <PowerUpModels powerUps={powerUps} board={board} secondsRef={secondsRef} />
       <MemoPlayerModels playersRef={playersRef} boardRef={boardRef} mobileTurnPlayerIdRef={mobileTurnPlayerIdRef} />
@@ -2941,9 +3597,12 @@ function CrossyScene({
         runningRef={runningRef}
         mobileModeRef={mobileModeRef}
         mobileTurnPlayerIdRef={mobileTurnPlayerIdRef}
+        mobileReadyOpenRef={mobileReadyOpenRef}
+        mobileTurnEndsAtRef={mobileTurnEndsAtRef}
         settingsRef={settingsRef}
         lanesRef={lanesRef}
         boardRef={boardRef}
+        crownAvailableRef={crownAvailableRef}
         secondsRef={secondsRef}
         nextSpawnRef={nextSpawnRef}
         randomRef={randomRef}
@@ -2951,6 +3610,10 @@ function CrossyScene({
         onSnapshot={onSnapshot}
         onLeaderboardProgress={onLeaderboardProgress}
         onMobileTurnAdvance={onMobileTurnAdvance}
+        onMobileTurnTimeout={onMobileTurnTimeout}
+        onMobilePlayerFlag={onMobilePlayerFlag}
+        onDesktopPlayerFlag={onDesktopPlayerFlag}
+        onCrownCollected={onCrownCollected}
       />
     </>
   );
@@ -2975,19 +3638,38 @@ export default function CrossyRoad() {
   const [mobileTurnPlayerId, setMobileTurnPlayerId] = useState<PlayerId | null>(() =>
     nextJoinedPlayerId(makeInitialPlayers(board, settings.playerNames), null, true),
   );
+  const [mobileLevelConfigs, setMobileLevelConfigs] = useState(() => readMobileLevelConfigs(settings));
+  const [mobileReadyOpen, setMobileReadyOpen] = useState(isMobileMode);
+  const [mobileTurnTimeLeft, setMobileTurnTimeLeft] = useState(MOBILE_TURN_MS);
   const [feed, setFeed] = useState<FeedItem[]>([{ id: "ready", text: "3D course loaded." }]);
   const [running, setRunning] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [powerUps, setPowerUpsState] = useState<PowerUpInstance[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardRecord[]>(() => readLeaderboard());
   const [leaderboardTab, setLeaderboardTab] = useState<LeaderboardTab>("rank");
+  const [cameraPopoverAnchor, setCameraPopoverAnchor] = useState<HTMLButtonElement | null>(null);
+  const [cameraDirectionLabel, setCameraDirectionLabel] = useState<CameraDirectionLabel | null>("N");
+  const [cameraTiltLabel, setCameraTiltLabel] = useState<CameraTiltLabel | null>(null);
+  const [portraitCameraView, setPortraitCameraView] = useState(false);
+  const [numberInputDrafts, setNumberInputDrafts] = useState<Record<string, string>>({});
+  const [claimedCrownLevelKeys, setClaimedCrownLevelKeys] = useState<Set<string>>(() => new Set());
+  const currentCrownLevelKey = useMemo(() => crownLevelKey(lanes, board), [lanes, board]);
+  const crownAvailable = !claimedCrownLevelKeys.has(currentCrownLevelKey);
 
   const playersRef = useRef<PlayerState[]>(playersSnapshot);
   const powerUpsRef = useRef<PowerUpInstance[]>(powerUps);
+  const crownAvailableRef = useRef(crownAvailable);
   const leaderboardRef = useRef<LeaderboardRecord[]>(leaderboard);
   const runningRef = useRef(running);
   const mobileModeRef = useRef(isMobileMode);
   const mobileTurnPlayerIdRef = useRef<PlayerId | null>(mobileTurnPlayerId);
+  const mobileLevelConfigsRef = useRef(mobileLevelConfigs);
+  const mobileReadyOpenRef = useRef(mobileReadyOpen);
+  const mobileTurnEndsAtRef = useRef(0);
+  const mobileTurnDelayRef = useRef<number | null>(null);
+  const preserveNextBoardRebuildRef = useRef(false);
+  const preserveNextBoardPositionsRef = useRef(false);
+  const pendingBoardRebuildMessageRef = useRef<string | null>(null);
   const settingsRef = useRef(settings);
   const boardRef = useRef(board);
   const lanesRef = useRef(lanes);
@@ -3016,6 +3698,10 @@ export default function CrossyRoad() {
   }, [running]);
 
   useEffect(() => {
+    crownAvailableRef.current = crownAvailable;
+  }, [crownAvailable]);
+
+  useEffect(() => {
     if (typeof window === "undefined") return undefined;
     const query = window.matchMedia("(max-width: 700px)");
     const update = () => setIsMobileMode(query.matches);
@@ -3028,19 +3714,62 @@ export default function CrossyRoad() {
     mobileModeRef.current = isMobileMode;
     if (!isMobileMode) {
       mobileTurnPlayerIdRef.current = null;
+      mobileReadyOpenRef.current = false;
+      mobileTurnEndsAtRef.current = 0;
       setMobileTurnPlayerId(null);
+      setMobileReadyOpen(false);
       return;
     }
 
     const nextTurn = nextJoinedPlayerId(playersRef.current, mobileTurnPlayerIdRef.current, true);
     mobileTurnPlayerIdRef.current = nextTurn;
     setMobileTurnPlayerId(nextTurn);
+    const config = nextTurn ? mobileLevelConfigsRef.current[nextTurn] : null;
+    if (config) {
+      preserveNextBoardRebuildRef.current = true;
+      setSettings((current) => ({
+        ...current,
+        rows: Math.round(clamp(config.rows, MIN_ROWS, MAX_ROWS)),
+        laneSeed: cleanNumber(config.laneSeed, current.laneSeed, 1, 999999999),
+      }));
+    }
+    mobileReadyOpenRef.current = true;
+    mobileTurnEndsAtRef.current = 0;
+    setMobileReadyOpen(true);
     rotationDragRef.current = { active: false, lastX: 0, lastY: 0, pointerId: null };
   }, [isMobileMode]);
 
   useEffect(() => {
     mobileTurnPlayerIdRef.current = mobileTurnPlayerId;
   }, [mobileTurnPlayerId]);
+
+  useEffect(() => {
+    mobileLevelConfigsRef.current = mobileLevelConfigs;
+    writeMobileLevelConfigs(mobileLevelConfigs);
+  }, [mobileLevelConfigs]);
+
+  useEffect(() => {
+    if (!isMobileMode || mobileReadyOpen) return undefined;
+    const update = () => {
+      if (mobileReadyOpenRef.current) {
+        setMobileTurnTimeLeft(MOBILE_TURN_MS);
+        return;
+      }
+      setMobileTurnTimeLeft(Math.max(0, mobileTurnEndsAtRef.current - performance.now()));
+    };
+    update();
+    const timer = window.setInterval(update, 250);
+    return () => window.clearInterval(timer);
+  }, [isMobileMode, mobileReadyOpen, mobileTurnPlayerId]);
+
+  useEffect(
+    () => () => {
+      if (mobileTurnDelayRef.current != null) {
+        window.clearTimeout(mobileTurnDelayRef.current);
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     boardRef.current = board;
@@ -3101,6 +3830,16 @@ export default function CrossyRoad() {
     powerUpsRef.current = next;
     setPowerUpsState(next);
   }, []);
+
+  const handleCrownCollected = useCallback(() => {
+    crownAvailableRef.current = false;
+    setClaimedCrownLevelKeys((current) => {
+      if (current.has(currentCrownLevelKey)) return current;
+      const next = new Set(current);
+      next.add(currentCrownLevelKey);
+      return next;
+    });
+  }, [currentCrownLevelKey]);
 
   const setLeaderboardRecords = useCallback((updater: (records: LeaderboardRecord[]) => LeaderboardRecord[]) => {
     setLeaderboard((current) => {
@@ -3223,6 +3962,59 @@ export default function CrossyRoad() {
     [setLeaderboardRecords],
   );
 
+  const applyMobileLevelConfig = useCallback((playerId: PlayerId, configs = mobileLevelConfigsRef.current) => {
+    const config =
+      configs[playerId] ??
+      ({
+        rows: settingsRef.current.rows,
+        laneSeed: settingsRef.current.laneSeed,
+      } as MobileLevelConfig);
+    preserveNextBoardRebuildRef.current = true;
+    setSettings((current) => ({
+      ...current,
+      rows: Math.round(clamp(config.rows, MIN_ROWS, MAX_ROWS)),
+      laneSeed: cleanNumber(config.laneSeed, current.laneSeed, 1, 999999999),
+    }));
+  }, []);
+
+  const openMobileReadyForPlayer = useCallback(
+    (playerId: PlayerId | null, delayMs = 0) => {
+      if (mobileTurnDelayRef.current != null) {
+        window.clearTimeout(mobileTurnDelayRef.current);
+        mobileTurnDelayRef.current = null;
+      }
+
+      mobileReadyOpenRef.current = true;
+      mobileTurnEndsAtRef.current = 0;
+      setMobileReadyOpen(delayMs <= 0);
+      setMobileTurnTimeLeft(MOBILE_TURN_MS);
+
+      const open = () => {
+        mobileTurnDelayRef.current = null;
+        mobileTurnPlayerIdRef.current = playerId;
+        setMobileTurnPlayerId(playerId);
+        if (playerId) applyMobileLevelConfig(playerId);
+        mobileReadyOpenRef.current = true;
+        setMobileReadyOpen(true);
+      };
+
+      if (delayMs > 0) {
+        mobileTurnDelayRef.current = window.setTimeout(open, delayMs);
+      } else {
+        open();
+      }
+    },
+    [applyMobileLevelConfig],
+  );
+
+  const startMobileTurn = useCallback(() => {
+    if (!mobileTurnPlayerIdRef.current) return;
+    mobileTurnEndsAtRef.current = performance.now() + MOBILE_TURN_MS;
+    mobileReadyOpenRef.current = false;
+    setMobileReadyOpen(false);
+    setMobileTurnTimeLeft(MOBILE_TURN_MS);
+  }, []);
+
   const joinPlayer = useCallback(
     (playerId: PlayerId) => {
       const currentPlayers = playersRef.current.map((player) => clearExpiredPlayerEffects(player, performance.now()));
@@ -3244,10 +4036,11 @@ export default function CrossyRoad() {
       if (mobileModeRef.current && !mobileTurnPlayerIdRef.current) {
         mobileTurnPlayerIdRef.current = player.id;
         setMobileTurnPlayerId(player.id);
+        openMobileReadyForPlayer(player.id);
       }
       updateSnapshot(nextPlayers);
     },
-    [updateSnapshot],
+    [openMobileReadyForPlayer, updateSnapshot],
   );
 
   const removePlayer = useCallback(
@@ -3283,6 +4076,7 @@ export default function CrossyRoad() {
               score: 0,
               leaderboardScoreCheckpoint: 0,
               laps: 0,
+              crowns: 0,
               misses: 0,
               bestProgress: 0,
               stunnedUntil: 0,
@@ -3291,14 +4085,15 @@ export default function CrossyRoad() {
               invincibleUntil: 0,
               jump: null,
               lightning: null,
+              deathAnimation: null,
+              celebrateUntil: 0,
             }
           : player,
       );
       playersRef.current = nextPlayers;
       if (mobileModeRef.current && mobileTurnPlayerIdRef.current === playerId) {
         const nextTurn = nextJoinedPlayerId(nextPlayers, playerId);
-        mobileTurnPlayerIdRef.current = nextTurn;
-        setMobileTurnPlayerId(nextTurn);
+        openMobileReadyForPlayer(nextTurn);
       }
       setSettings((current) => ({
         ...current,
@@ -3309,13 +4104,71 @@ export default function CrossyRoad() {
       }));
       updateSnapshot(nextPlayers);
     },
-    [setLeaderboardRecords, updateSnapshot],
+    [openMobileReadyForPlayer, setLeaderboardRecords, updateSnapshot],
   );
 
-  const advanceMobileTurn = useCallback((playerId: PlayerId, players: PlayerState[]) => {
-    const nextTurn = nextJoinedPlayerId(players, playerId);
-    mobileTurnPlayerIdRef.current = nextTurn;
-    setMobileTurnPlayerId(nextTurn);
+  const saveMobileLevelForPlayer = useCallback((playerId: PlayerId) => {
+    setMobileLevelConfigs((current) => {
+      const next = {
+        ...current,
+        [playerId]: {
+          rows: Math.round(clamp(settingsRef.current.rows, MIN_ROWS, MAX_ROWS)),
+          laneSeed: cleanNumber(settingsRef.current.laneSeed, current[playerId]?.laneSeed ?? DEFAULT_SETTINGS.laneSeed, 1, 999999999),
+        },
+      };
+      mobileLevelConfigsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const advanceMobileTurn = useCallback(
+    (playerId: PlayerId, players: PlayerState[], delayMs = 0) => {
+      saveMobileLevelForPlayer(playerId);
+      const nextTurn = nextJoinedPlayerId(players, playerId);
+      openMobileReadyForPlayer(nextTurn, delayMs);
+    },
+    [openMobileReadyForPlayer, saveMobileLevelForPlayer],
+  );
+
+  const handleMobileTurnTimeout = useCallback(
+    (playerId: PlayerId, players: PlayerState[]) => {
+      advanceMobileTurn(playerId, players, 0);
+    },
+    [advanceMobileTurn],
+  );
+
+  const handleMobilePlayerFlag = useCallback((playerId: PlayerId) => {
+    const nextConfig = {
+      rows: Math.round(clamp(settingsRef.current.rows + 1, MIN_ROWS, MAX_ROWS)),
+      laneSeed: randomLaneSeed(),
+    };
+    setMobileLevelConfigs((current) => {
+      const next = {
+        ...current,
+        [playerId]: nextConfig,
+      };
+      mobileLevelConfigsRef.current = next;
+      return next;
+    });
+    preserveNextBoardRebuildRef.current = true;
+    setSettings((current) => ({
+      ...current,
+      rows: nextConfig.rows,
+      laneSeed: nextConfig.laneSeed,
+    }));
+  }, []);
+
+  const handleDesktopPlayerFlag = useCallback((playerId: PlayerId, players: PlayerState[]) => {
+    if (mobileModeRef.current) return;
+    const winner = players.find((player) => player.id === playerId);
+    playersRef.current = players;
+    preserveNextBoardRebuildRef.current = true;
+    preserveNextBoardPositionsRef.current = true;
+    pendingBoardRebuildMessageRef.current = `${winner?.name ?? "A player"} changed the level.`;
+    setSettings((current) => ({
+      ...current,
+      laneSeed: randomLaneSeed(),
+    }));
   }, []);
 
   const resetRun = useCallback(
@@ -3344,14 +4197,47 @@ export default function CrossyRoad() {
         acc[player.id] = player;
         return acc;
       }, {} as Record<PlayerId, PlayerState>);
-      const nextPlayers = makeInitialPlayers(boardRef.current, settingsRef.current.playerNames).map((player) => ({
-        ...player,
-        joined: previousById[player.id]?.joined ?? true,
-        name: previousById[player.id]?.joined
-          ? previousById[player.id]?.name ?? player.name
-          : DEFAULT_PLAYER_NAMES[player.id],
-        profileName: previousById[player.id]?.joined ? previousById[player.id]?.profileName ?? null : null,
-      }));
+      const preserveStats = preserveNextBoardRebuildRef.current;
+      const preservePositions = preserveNextBoardPositionsRef.current;
+      const boardNow = boardRef.current;
+      const lanesNow = lanesRef.current;
+      const resetMessage = pendingBoardRebuildMessageRef.current ?? message;
+      const resetMessages: string[] = [];
+      preserveNextBoardRebuildRef.current = false;
+      preserveNextBoardPositionsRef.current = false;
+      pendingBoardRebuildMessageRef.current = null;
+      const nextPlayers = makeInitialPlayers(boardRef.current, settingsRef.current.playerNames).map((player) => {
+        const previous = previousById[player.id];
+        const joined = previous?.joined ?? true;
+        const preservedRow =
+          preservePositions && previous ? clamp(previous.row, 0, maxPlayableRow(boardNow)) : player.row;
+        const preservedCol =
+          preservePositions && previous ? clamp(previous.col, 0, boardNow.cols - 1) : player.col;
+        const resetForForest =
+          joined &&
+          preservePositions &&
+          hasForestBlocker(Math.round(preservedRow), Math.round(preservedCol), lanesNow, boardNow);
+        if (resetForForest) {
+          resetMessages.push(`${previous?.name ?? player.name} was pushed back by the new trees and rocks.`);
+        }
+        return {
+          ...player,
+          joined,
+          name: joined ? previous?.name ?? player.name : DEFAULT_PLAYER_NAMES[player.id],
+          profileName: joined ? previous?.profileName ?? null : null,
+          row: resetForForest ? boardNow.playerStartRow : preservedRow,
+          col: resetForForest ? boardNow.startCols[player.id] : preservedCol,
+          score: preserveStats ? previous?.score ?? player.score : player.score,
+          leaderboardScoreCheckpoint: preserveStats
+            ? previous?.score ?? player.leaderboardScoreCheckpoint
+            : player.leaderboardScoreCheckpoint,
+          laps: preserveStats ? previous?.laps ?? player.laps : player.laps,
+          crowns: preserveStats ? previous?.crowns ?? player.crowns : player.crowns,
+          misses: preserveStats ? previous?.misses ?? player.misses : player.misses,
+          bestProgress: preserveStats ? previous?.bestProgress ?? player.bestProgress : player.bestProgress,
+          activePowerUp: preserveStats ? previous?.activePowerUp ?? null : null,
+        };
+      });
       playersRef.current = nextPlayers;
       if (mobileModeRef.current) {
         const nextTurn = nextJoinedPlayerId(nextPlayers, mobileTurnPlayerIdRef.current, true);
@@ -3363,7 +4249,10 @@ export default function CrossyRoad() {
       nextSpawnRef.current = randomPowerUpSeconds(randomRef.current);
       setPlayersSnapshot(copyPlayers(nextPlayers));
       setPowerUpsState([]);
-      setFeed([{ id: "reset", text: message }]);
+      setFeed([
+        { id: "reset", text: resetMessage },
+        ...resetMessages.map((text, index) => ({ id: `reset-forest-${index}`, text })),
+      ].slice(0, 5));
       setRunning(true);
     },
     [setLeaderboardRecords],
@@ -3387,6 +4276,7 @@ export default function CrossyRoad() {
   const movePlayer = useCallback(
     (playerId: PlayerId, rowDelta: number, colDelta: number) => {
       if (!runningRef.current) return;
+      if (mobileModeRef.current && mobileReadyOpenRef.current) return;
       const timestamp = performance.now();
       const currentPlayers = playersRef.current.map((player) => clearExpiredPlayerEffects(player, timestamp));
       const actor = currentPlayers.find((player) => player.id === playerId);
@@ -3433,6 +4323,8 @@ export default function CrossyRoad() {
         const landingRow = findLightningLandingRow(Math.round(actor.row), rowDelta, lanesNow, boardNow);
         if (landingRow == null) {
           messages.push(`${actor.name}'s lightning found no grass.`);
+        } else if (hasForestBlocker(landingRow, nextCol, lanesNow, boardNow)) {
+          messages.push(`${actor.name}'s lightning landing was blocked.`);
         } else if (pathHasHazard(Math.round(actor.row), landingRow, nextCol, lanesNow, boardNow, secondsRef.current)) {
           messages.push(`${actor.name}'s lightning path was blocked.`);
         } else {
@@ -3448,7 +4340,7 @@ export default function CrossyRoad() {
         }
       } else {
         const moveDistance = actor.activePowerUp?.type === "jump" ? 2 : 1;
-        nextRow = clamp(Math.round(actor.row) + rowDelta * moveDistance, 0, boardNow.startRow);
+        nextRow = clamp(Math.round(actor.row) + rowDelta * moveDistance, 0, maxPlayableRow(boardNow));
         nextCol = clamp(Math.round(actor.col) + colDelta * moveDistance, 0, boardNow.cols - 1);
         if (moveDistance === 2) {
           jump = {
@@ -3479,6 +4371,15 @@ export default function CrossyRoad() {
         }
       }
 
+      if (hasForestBlocker(nextRow, nextCol, lanesNow, boardNow)) {
+        const blockedPlayers = currentPlayers.map((player) =>
+          player.id === actor.id ? { ...player, facing, lastMoveAt: timestamp } : player,
+        );
+        playersRef.current = blockedPlayers;
+        updateSnapshot(blockedPlayers, [`${actor.name} ran into the rocks and trees.`]);
+        return;
+      }
+
       const collisionPlayers = mobileModeRef.current ? mobileTurnPlayers(currentPlayers, actor.id) : currentPlayers;
       const blocker = getCellOccupant(collisionPlayers, actor.id, nextRow, nextCol);
       let pushedPlayer: PlayerState | null = null;
@@ -3489,9 +4390,10 @@ export default function CrossyRoad() {
           actor.activePowerUp?.type === "control" &&
           !blocker.jump &&
           pushRow >= 0 &&
-          pushRow <= boardNow.startRow &&
+          pushRow <= maxPlayableRow(boardNow) &&
           pushCol >= 0 &&
           pushCol < boardNow.cols &&
+          !hasForestBlocker(pushRow, pushCol, lanesNow, boardNow) &&
           !getCellOccupant(collisionPlayers, blocker.id, pushRow, pushCol);
 
         if (!canShove) {
@@ -3615,6 +4517,47 @@ export default function CrossyRoad() {
     }));
   };
 
+  const numberFieldProps = (
+    key: string,
+    currentValue: number,
+    commit: (rawValue: string) => void,
+  ) => {
+    const draft = Object.prototype.hasOwnProperty.call(numberInputDrafts, key)
+      ? numberInputDrafts[key]
+      : undefined;
+
+    const commitDraft = () => {
+      if (draft == null) return;
+      const trimmed = draft.trim();
+      if (trimmed.length > 0) {
+        commit(trimmed);
+      }
+      setNumberInputDrafts((current) => {
+        const next = { ...current };
+        delete next[key];
+        return next;
+      });
+    };
+
+    return {
+      value: draft ?? String(currentValue),
+      onChange: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const value = event.target.value;
+        setNumberInputDrafts((current) => ({
+          ...current,
+          [key]: value,
+        }));
+      },
+      onBlur: commitDraft,
+      onKeyDown: (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === "Enter") {
+          commitDraft();
+          event.currentTarget.blur();
+        }
+      },
+    };
+  };
+
   const updatePlayerName = useCallback((playerId: PlayerId, value: string) => {
     setSettings((current) => ({
       ...current,
@@ -3625,12 +4568,33 @@ export default function CrossyRoad() {
     }));
   }, []);
 
-  const snapCameraDirection = useCallback((yaw: number) => {
+  const snapCameraDirection = useCallback((yaw: number, label: CameraDirectionLabel) => {
     cameraYawRef.current = yaw;
+    setCameraDirectionLabel(label);
+    setPortraitCameraView(false);
   }, []);
 
-  const snapCameraTilt = useCallback((pitch: number) => {
+  const snapCameraTilt = useCallback((pitch: number, label: CameraTiltLabel) => {
     cameraPitchRef.current = pitch;
+    setCameraTiltLabel(label);
+    setPortraitCameraView(false);
+  }, []);
+
+  const togglePortraitCameraView = useCallback(() => {
+    setPortraitCameraView((enabled) => {
+      const next = !enabled;
+      if (next) {
+        cameraYawRef.current = PORTRAIT_CAMERA_YAW;
+        cameraPitchRef.current = CAMERA_LOW_PITCH;
+        setCameraDirectionLabel(null);
+        setCameraTiltLabel("Low");
+        setSettings((current) => ({
+          ...current,
+          defaultZoom: PORTRAIT_CAMERA_ZOOM,
+        }));
+      }
+      return next;
+    });
   }, []);
 
   const resetLeaderboardRecord = useCallback(
@@ -3721,6 +4685,12 @@ export default function CrossyRoad() {
 
   const now = performance.now();
   const leaderboardRows = rankedLeaderboard(leaderboard, leaderboardTab);
+  const mobileTurnPlayer =
+    mobileTurnPlayerId == null ? null : playersSnapshot.find((player) => player.id === mobileTurnPlayerId && player.joined) ?? null;
+  const mobileTurnSeconds = Math.max(0, Math.ceil(mobileTurnTimeLeft / 1000));
+  const mobileTurnRunning =
+    isMobileMode && !mobileReadyOpen && !mobileReadyOpenRef.current && mobileTurnEndsAtRef.current > 0;
+  const cameraPopoverOpen = Boolean(cameraPopoverAnchor);
 
   const stopRotationDrag = useCallback((event?: React.PointerEvent<HTMLDivElement>) => {
     if (event && rotationDragRef.current.pointerId != null) {
@@ -3749,6 +4719,7 @@ export default function CrossyRoad() {
     event.preventDefault();
 
     if (mobileModeRef.current) {
+      if (mobileReadyOpenRef.current) return;
       swipeRef.current = {
         active: true,
         startX: event.clientX,
@@ -3803,6 +4774,7 @@ export default function CrossyRoad() {
 
       const playerId = mobileTurnPlayerIdRef.current;
       if (!playerId) return;
+      if (mobileReadyOpenRef.current) return;
       if (absX > absY) {
         movePlayer(playerId, 0, deltaX > 0 ? 1 : -1);
       } else {
@@ -3824,7 +4796,11 @@ export default function CrossyRoad() {
   );
 
   return (
-    <main className={`crossy-road-shell${isMobileMode ? " crossy-mobile-mode" : ""}`}>
+    <main
+      className={`crossy-road-shell${isMobileMode ? " crossy-mobile-mode" : ""}${
+        portraitCameraView ? " crossy-portrait-view" : ""
+      }`}
+    >
       <header className="crossy-topbar">
         <div className="crossy-title-row">
           <Tooltip title="Game settings">
@@ -3838,6 +4814,28 @@ export default function CrossyRoad() {
           </div>
         </div>
         <div className="crossy-actions">
+          <div className="crossy-topbar-zoom" aria-label="Camera zoom">
+            <span>{settings.defaultZoom.toFixed(2)}x</span>
+            <Slider
+              size="small"
+              min={ZOOM_MIN}
+              max={ZOOM_MAX}
+              step={0.05}
+              value={settings.defaultZoom}
+              onChange={(_, value) => updateSetting("defaultZoom", value as number)}
+              aria-label="Camera zoom"
+            />
+          </div>
+          <Tooltip title="Camera view">
+            <IconButton
+              className="crossy-camera-menu-button"
+              aria-label="Open camera controls"
+              aria-describedby={cameraPopoverOpen ? "crossy-camera-popover" : undefined}
+              onClick={(event) => setCameraPopoverAnchor(event.currentTarget)}
+            >
+              <ExploreIcon />
+            </IconButton>
+          </Tooltip>
           <button type="button" onClick={() => setRunning((value) => !value)}>
             {running ? "Pause" : "Play"}
           </button>
@@ -3846,6 +4844,71 @@ export default function CrossyRoad() {
           </button>
         </div>
       </header>
+
+      <Popover
+        id="crossy-camera-popover"
+        open={cameraPopoverOpen}
+        anchorEl={cameraPopoverAnchor}
+        onClose={() => setCameraPopoverAnchor(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        PaperProps={{ className: "crossy-camera-popover-paper" }}
+      >
+        <Box className="crossy-camera-popover">
+          <div className="crossy-camera-panel">
+            <Typography variant="caption" fontWeight={900}>Compass</Typography>
+            <div className="crossy-compass-grid" role="group" aria-label="Camera direction">
+              {CAMERA_COMPASS_LAYOUT.map((label, index) => {
+                if (!label) {
+                  return (
+                    <span key={`center-${index}`} className="crossy-compass-center" aria-hidden="true">
+                      <ExploreIcon fontSize="small" />
+                    </span>
+                  );
+                }
+                const preset = CAMERA_DIRECTION_PRESETS.find(([presetLabel]) => presetLabel === label);
+                if (!preset) return null;
+                const [, yaw] = preset;
+                return (
+                  <button
+                    key={label}
+                    type="button"
+                    className={`crossy-compass-button${cameraDirectionLabel === label ? " crossy-camera-choice-active" : ""}`}
+                    aria-pressed={cameraDirectionLabel === label}
+                    onClick={() => snapCameraDirection(yaw, label)}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <div className="crossy-camera-panel">
+            <Typography variant="caption" fontWeight={900}>Tilt</Typography>
+            <div className="crossy-tilt-buttons" role="group" aria-label="Camera tilt">
+              {CAMERA_TILT_PRESETS.map(([label, pitch]) => (
+                <button
+                  key={label}
+                  type="button"
+                  className={`crossy-tilt-button${cameraTiltLabel === label ? " crossy-camera-choice-active" : ""}`}
+                  aria-pressed={cameraTiltLabel === label}
+                  onClick={() => snapCameraTilt(pitch, label)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <button
+            type="button"
+            className={`crossy-portrait-toggle${portraitCameraView ? " crossy-camera-choice-active" : ""}`}
+            aria-pressed={portraitCameraView}
+            onClick={togglePortraitCameraView}
+          >
+            Portrait N-NE Low
+          </button>
+        </Box>
+      </Popover>
 
       <section className="crossy-play-layout">
         <aside className="crossy-left-panel">
@@ -3859,20 +4922,27 @@ export default function CrossyRoad() {
                     player.joined && mobileTurnPlayerId === player.id ? " crossy-mobile-racer-active" : ""
                   }`}
                   style={{ "--player-accent": player.accent } as React.CSSProperties}
-                  aria-label={`${player.name} score ${player.score}`}
+                  aria-label={`${player.name} crowns ${player.crowns}, flags ${player.laps}, score ${player.score}`}
                   title={player.joined ? activeLabel(player, now) : `tap ${player.name} to join`}
                   onPointerDown={(event) => handleMobilePlayerPointerDown(event, player)}
                   onPointerUp={(event) => handleMobilePlayerPointerUp(event, player)}
                   onPointerCancel={clearMobilePress}
                   onPointerLeave={clearMobilePress}
                 >
-                  <span className="crossy-racer-token" aria-hidden="true">
-                    {animalIcon(player.id)}
+                  <PlayerIcon player={player} />
+                  <span className="crossy-mobile-stats">
+                    <span className="crossy-mobile-stat" aria-label={`${player.name} flags`}>
+                      {player.laps}
+                    </span>
+                    <span className="crossy-mobile-stat crossy-mobile-score" aria-label={`${player.name} score`}>
+                      <strong>{player.score}</strong>
+                    </span>
                   </span>
-                  <span className="crossy-mobile-score">
-                    <ScoreboardIcon fontSize="small" />
-                    <strong>{player.score}</strong>
-                  </span>
+                  {player.joined && mobileTurnPlayerId === player.id && mobileTurnRunning && (
+                    <span className="crossy-mobile-timer" aria-label={`${mobileTurnSeconds} seconds left`}>
+                      {mobileTurnSeconds}
+                    </span>
+                  )}
                   {!player.joined && <span className="crossy-mobile-join" aria-hidden="true">+</span>}
                 </button>
               ) : (
@@ -3884,9 +4954,7 @@ export default function CrossyRoad() {
                 >
                   {player.joined ? (
                     <>
-                      <span className="crossy-racer-token" aria-label={`${player.name} icon`}>
-                        {animalIcon(player.id)}
-                      </span>
+                      <PlayerIcon player={player} ariaLabel={`${player.name} icon`} />
                       <input
                         className="crossy-racer-name-input"
                         value={settings.playerNames[player.id] ?? player.name}
@@ -3993,11 +5061,15 @@ export default function CrossyRoad() {
               runningRef={runningRef}
               mobileModeRef={mobileModeRef}
               mobileTurnPlayerIdRef={isMobileMode ? mobileTurnPlayerIdRef : undefined}
+              mobileReadyOpenRef={isMobileMode ? mobileReadyOpenRef : undefined}
+              mobileTurnEndsAtRef={isMobileMode ? mobileTurnEndsAtRef : undefined}
               settingsRef={settingsRef}
               lanes={lanes}
               lanesRef={lanesRef}
               board={board}
               boardRef={boardRef}
+              crownAvailable={crownAvailable}
+              crownAvailableRef={crownAvailableRef}
               secondsRef={secondsRef}
               nextSpawnRef={nextSpawnRef}
               randomRef={randomRef}
@@ -4007,10 +5079,32 @@ export default function CrossyRoad() {
               onSnapshot={updateSnapshot}
               onLeaderboardProgress={updateLeaderboardProgress}
               onMobileTurnAdvance={advanceMobileTurn}
+              onMobileTurnTimeout={handleMobileTurnTimeout}
+              onMobilePlayerFlag={handleMobilePlayerFlag}
+              onDesktopPlayerFlag={handleDesktopPlayerFlag}
+              onCrownCollected={handleCrownCollected}
             />
           </Canvas>
         </section>
       </section>
+
+      {isMobileMode && mobileReadyOpen && mobileTurnPlayer && (
+        <div className="crossy-mobile-ready-backdrop" role="dialog" aria-modal="true" aria-labelledby="crossy-ready-title">
+          <div
+            className="crossy-mobile-ready-modal"
+            style={{ "--player-accent": mobileTurnPlayer.accent } as React.CSSProperties}
+          >
+            <div className="crossy-mobile-ready-icon" aria-hidden="true">
+              {animalIcon(mobileTurnPlayer.id)}
+            </div>
+            <p>Next Turn</p>
+            <h2 id="crossy-ready-title">{mobileTurnPlayer.name}</h2>
+            <button type="button" className="crossy-mobile-ready-button" onClick={startMobileTurn}>
+              Ready
+            </button>
+          </div>
+        </div>
+      )}
 
       <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box className="crossy-settings-drawer" role="presentation">
@@ -4033,17 +5127,19 @@ export default function CrossyRoad() {
                 label="Rows"
                 type="number"
                 size="small"
-                value={settings.rows}
                 inputProps={{ min: MIN_ROWS, max: MAX_ROWS }}
-                onChange={(event) => updateSetting("rows", Math.round(cleanNumber(event.target.value, settings.rows, MIN_ROWS, MAX_ROWS)))}
+                {...numberFieldProps("rows", settings.rows, (value) =>
+                  updateSetting("rows", Math.round(cleanNumber(value, settings.rows, MIN_ROWS, MAX_ROWS)))
+                )}
               />
               <TextField
                 label="Width"
                 type="number"
                 size="small"
-                value={settings.cols}
                 inputProps={{ min: MIN_COLS, max: MAX_COLS }}
-                onChange={(event) => updateSetting("cols", Math.round(cleanNumber(event.target.value, settings.cols, MIN_COLS, MAX_COLS)))}
+                {...numberFieldProps("cols", settings.cols, (value) =>
+                  updateSetting("cols", Math.round(cleanNumber(value, settings.cols, MIN_COLS, MAX_COLS)))
+                )}
               />
             </Stack>
             <Button
@@ -4070,15 +5166,16 @@ export default function CrossyRoad() {
               label="Move cooldown seconds"
               type="number"
               size="small"
-              value={settings.moveCooldown}
               inputProps={{ min: 0, max: 2, step: 0.05 }}
-              onChange={(event) => updateSetting("moveCooldown", cleanNumber(event.target.value, settings.moveCooldown, 0, 2))}
+              {...numberFieldProps("moveCooldown", settings.moveCooldown, (value) =>
+                updateSetting("moveCooldown", cleanNumber(value, settings.moveCooldown, 0, 2))
+              )}
             />
             <Box>
               <Typography variant="caption">Default zoom: {settings.defaultZoom.toFixed(2)}x</Typography>
               <Slider
-                min={0.55}
-                max={1.45}
+                min={ZOOM_MIN}
+                max={ZOOM_MAX}
                 step={0.05}
                 value={settings.defaultZoom}
                 onChange={(_, value) => updateSetting("defaultZoom", value as number)}
@@ -4088,7 +5185,12 @@ export default function CrossyRoad() {
               <Typography variant="caption">Camera direction</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {CAMERA_DIRECTION_PRESETS.map(([label, yaw]) => (
-                  <Button key={label} size="small" variant="outlined" onClick={() => snapCameraDirection(yaw)}>
+                  <Button
+                    key={label}
+                    size="small"
+                    variant={cameraDirectionLabel === label ? "contained" : "outlined"}
+                    onClick={() => snapCameraDirection(yaw, label)}
+                  >
                     {label}
                   </Button>
                 ))}
@@ -4098,7 +5200,12 @@ export default function CrossyRoad() {
               <Typography variant="caption">Camera tilt</Typography>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {CAMERA_TILT_PRESETS.map(([label, pitch]) => (
-                  <Button key={label} size="small" variant="outlined" onClick={() => snapCameraTilt(pitch)}>
+                  <Button
+                    key={label}
+                    size="small"
+                    variant={cameraTiltLabel === label ? "contained" : "outlined"}
+                    onClick={() => snapCameraTilt(pitch, label)}
+                  >
                     {label}
                   </Button>
                 ))}
@@ -4139,17 +5246,19 @@ export default function CrossyRoad() {
                 label="Train min"
                 type="number"
                 size="small"
-                value={settings.trainLengthMin}
                 inputProps={{ min: 1, max: 50 }}
-                onChange={(event) => updateSetting("trainLengthMin", Math.round(cleanNumber(event.target.value, settings.trainLengthMin, 1, 50)))}
+                {...numberFieldProps("trainLengthMin", settings.trainLengthMin, (value) =>
+                  updateSetting("trainLengthMin", Math.round(cleanNumber(value, settings.trainLengthMin, 1, 50)))
+                )}
               />
               <TextField
                 label="Train max"
                 type="number"
                 size="small"
-                value={settings.trainLengthMax}
                 inputProps={{ min: 1, max: 50 }}
-                onChange={(event) => updateSetting("trainLengthMax", Math.round(cleanNumber(event.target.value, settings.trainLengthMax, 1, 50)))}
+                {...numberFieldProps("trainLengthMax", settings.trainLengthMax, (value) =>
+                  updateSetting("trainLengthMax", Math.round(cleanNumber(value, settings.trainLengthMax, 1, 50)))
+                )}
               />
             </Stack>
             <Stack direction="row" spacing={1}>
@@ -4157,17 +5266,19 @@ export default function CrossyRoad() {
                 label="Log min"
                 type="number"
                 size="small"
-                value={settings.logLengthMin}
                 inputProps={{ min: 1, max: 10 }}
-                onChange={(event) => updateSetting("logLengthMin", Math.round(cleanNumber(event.target.value, settings.logLengthMin, 1, 10)))}
+                {...numberFieldProps("logLengthMin", settings.logLengthMin, (value) =>
+                  updateSetting("logLengthMin", Math.round(cleanNumber(value, settings.logLengthMin, 1, 10)))
+                )}
               />
               <TextField
                 label="Log max"
                 type="number"
                 size="small"
-                value={settings.logLengthMax}
                 inputProps={{ min: 1, max: 10 }}
-                onChange={(event) => updateSetting("logLengthMax", Math.round(cleanNumber(event.target.value, settings.logLengthMax, 1, 10)))}
+                {...numberFieldProps("logLengthMax", settings.logLengthMax, (value) =>
+                  updateSetting("logLengthMax", Math.round(cleanNumber(value, settings.logLengthMax, 1, 10)))
+                )}
               />
             </Stack>
             <Box>
@@ -4208,13 +5319,12 @@ export default function CrossyRoad() {
                   type="number"
                   size="small"
                   fullWidth
-                  value={settings.powerUps[type].frequency}
                   inputProps={{ min: 1, max: 10, step: 1 }}
-                  onChange={(event) =>
+                  {...numberFieldProps(`powerUpFrequency-${type}`, settings.powerUps[type].frequency, (value) =>
                     updatePowerUpSetting(type, {
-                      frequency: cleanNumber(event.target.value, settings.powerUps[type].frequency, 1, 10),
+                      frequency: cleanNumber(value, settings.powerUps[type].frequency, 1, 10),
                     })
-                  }
+                  )}
                 />
               </Box>
             ))}
