@@ -1,6 +1,12 @@
 const crypto = require("crypto");
 const http = require("http");
 const { URL } = require("url");
+const {
+  closePatternSessionsForShutdown,
+  handlePatternRequest,
+  refreshAllPatternSessionStatuses,
+} = require("./patternGame");
+const { closePawPassPool, handlePawPassRequest } = require("./pawPass");
 
 const PORT = Number(
   process.env.APP_SERVER_PORT ||
@@ -2713,8 +2719,18 @@ async function requestHandler(req, res) {
       sendJson(res, 200, {
         ok: true,
         service: "cougar-classroom-backend",
-        features: ["padlet-sessions", "typing-boss"],
+        features: ["padlet-sessions", "typing-boss", "the-pattern", "paw-pass"],
       });
+      return;
+    }
+
+    if (parts[0] === "api" && parts[1] === "paw-pass") {
+      await handlePawPassRequest(req, res, url, parts);
+      return;
+    }
+
+    if (parts[0] === "api" && parts[1] === "pattern") {
+      await handlePatternRequest(req, res, url, parts);
       return;
     }
 
@@ -2855,6 +2871,7 @@ const server = http.createServer(requestHandler);
 const statusSweepTimer = setInterval(() => {
   refreshAllSessionStatuses();
   refreshAllTypingBossSessionStatuses();
+  refreshAllPatternSessionStatuses();
 }, 15 * 1000);
 statusSweepTimer.unref?.();
 
@@ -2881,6 +2898,10 @@ function shutdown(signal) {
   );
   clearInterval(statusSweepTimer);
   closeSessionsForShutdown();
+  closePatternSessionsForShutdown();
+  closePawPassPool().catch((error) => {
+    console.error("Paw Pass pool did not close cleanly.", error);
+  });
   server.close(() => process.exit(0));
   setTimeout(() => process.exit(0), 1000).unref?.();
 }
