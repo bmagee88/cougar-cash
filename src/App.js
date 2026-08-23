@@ -30,10 +30,12 @@ import IrregularShapeGenerator from "./IrregularShapeGenerator/IrregularShapeGen
 import PadletSessionApp from "./PadletSessions/PadletSessionApp";
 import TypingBossApp from "./TypingBoss/TypingBossApp";
 import FishingCardGame from "./FishingCardGame/FishingCardGame";
+import PatternGameApp from "./PatternGame/PatternGameApp";
 import CrossyRoad from "./CrossyRoad/CrossyRoad";
 import CaptiveChess from "./CaptiveChess/CaptiveChess";
 
 import HallPassRoutes from "./HallPassApp/HallPassRoutes";
+import PawPassApp from "./PawPassApp/PawPassApp";
 
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
@@ -67,6 +69,7 @@ function App() {
           <Route path="/one-word" element={<OneWordTenSeconds />}></Route>
           <Route path="/pong" element={<TypingPong />}></Route>
           <Route path="/hall-pass/*" element={<HallPassRoutes />} />
+          <Route path="/paw-pass" element={<PawPassApp />} />
           <Route path="/mc-quiz" element={<MultipleChoiceQuiz />} />
           <Route path="/parent-letter" element={<ParentLetter />} />
           <Route path="/sound" element={<SoundButton />} />
@@ -78,6 +81,7 @@ function App() {
           />
           <Route path="/padlet/*" element={<PadletSessionApp />} />
           <Route path="/typing-boss/*" element={<TypingBossApp />} />
+          <Route path="/the-pattern/*" element={<PatternGameApp />} />
           <Route path="/fishing-card-game" element={<FishingCardGame />} />
           <Route path="/crossy-road" element={<CrossyRoad />} />
           <Route path="/captive-chess" element={<CaptiveChess />} />
