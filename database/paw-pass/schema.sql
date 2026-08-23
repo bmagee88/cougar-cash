@@ -117,6 +117,20 @@ CREATE TABLE IF NOT EXISTS paw_room_states (
   updated_at timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS paw_destination_states (
+  destination text PRIMARY KEY
+    CHECK (destination IN ('office', 'nurse', 'library', 'counselor')),
+  blocked boolean NOT NULL DEFAULT false,
+  blocked_at timestamptz,
+  blocked_by_user_id uuid REFERENCES paw_staff_users(id) ON DELETE SET NULL,
+  auto_block_after_count integer NOT NULL DEFAULT 0 CHECK (auto_block_after_count >= 0),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+INSERT INTO paw_destination_states (destination)
+VALUES ('office'), ('nurse'), ('library'), ('counselor')
+ON CONFLICT (destination) DO NOTHING;
+
 CREATE TABLE IF NOT EXISTS paw_students (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   username text NOT NULL UNIQUE
@@ -186,6 +200,7 @@ CREATE TABLE IF NOT EXISTS paw_pass_requests (
   requested_at timestamptz NOT NULL DEFAULT now(),
   delay_until timestamptz,
   snooze_until timestamptz,
+  skipped_this_cycle boolean NOT NULL DEFAULT false,
   offered_at timestamptz,
   offer_expires_at timestamptz,
   pass_over_count integer NOT NULL DEFAULT 0,

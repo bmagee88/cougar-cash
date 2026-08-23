@@ -55,6 +55,8 @@ export type AuditAction =
   | "student_returned"
   | "eloper_flagged"
   | "eloper_accounted_for"
+  | "destination_block_changed"
+  | "destination_settings_updated"
   | "settings_updated";
 
 export type StaffUser = {
@@ -126,6 +128,14 @@ export type RoomState = {
   frozenByUserId?: string;
 };
 
+export type DestinationState = {
+  destination: DestinationKey;
+  blocked: boolean;
+  blockedAt?: number;
+  blockedByUserId?: string;
+  autoBlockAfterCount: number;
+};
+
 export type AppSettings = {
   permitWindowMs: number;
   eloperAfterMs: number;
@@ -153,6 +163,7 @@ export type PassRequest = {
   isMedicalOverride: boolean;
   delayUntil?: number;
   snoozeUntil?: number;
+  skippedThisCycle?: boolean;
   offeredAt?: number;
   offerExpiresAt?: number;
   passOverCount: number;
@@ -208,6 +219,7 @@ export type PawPassState = {
   periodOverrideId: string;
   groups: TeacherGroup[];
   rooms: RoomState[];
+  destinationStates: DestinationState[];
   requests: PassRequest[];
   elopers: EloperRecord[];
   audits: AuditEntry[];
@@ -268,6 +280,8 @@ export const destinationForStaffRole = (role: StaffRole) =>
 export const isDestinationStaff = (user: StaffUser | null) =>
   Boolean(user && destinationForStaffRole(user.role));
 
+export const specialDestinationKeys: DestinationKey[] = ["office", "nurse", "library", "counselor"];
+
 export const activePassStatuses: PassStatus[] = [
   "delayed",
   "waiting",
@@ -300,6 +314,15 @@ export const destinationInboundStatuses: PassStatus[] = [
   "returning",
 ];
 
+type QueueLane = "hall" | DestinationKey;
+
+const queueLaneKeys: QueueLane[] = ["hall", ...specialDestinationKeys];
+
+const destinationQueueLane = (destination: DestinationKey): QueueLane =>
+  specialDestinationKeys.includes(destination) ? destination : "hall";
+
+const requestQueueLane = (request: PassRequest) => destinationQueueLane(request.destination);
+
 export const settingsDefaults: AppSettings = {
   permitWindowMs: 90_000,
   eloperAfterMs: 5 * 60_000,
@@ -318,6 +341,9 @@ const makeId = (prefix: string) =>
 
 const stableId = (prefix: string, value: string) =>
   `${prefix}-${String(value || "item").toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+
+const formatStoreTime = (value: number) =>
+  new Date(value).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
 
 export const createStudentUsername = (
   firstName: string,
@@ -676,6 +702,11 @@ export const createInitialState = (): PawPassState => {
     rooms: staffUsers
       .filter((user) => user.role === "teacher")
       .map((teacher) => ({ teacherId: teacher.id, frozen: false })),
+    destinationStates: specialDestinationKeys.map((destination) => ({
+      destination,
+      blocked: false,
+      autoBlockAfterCount: 0,
+    })),
     requests: [],
     elopers: [],
     audits: [],
@@ -719,10 +750,22 @@ export const loadPawPassState = (): PawPassState => {
       staffUsers: mergeMissingById(initial.staffUsers, parsed.staffUsers),
       students: mergeMissingById(initial.students, parsed.students),
       rosters: mergeMissingById(initial.rosters, parsed.rosters),
-      rosterEntries: mergeMissingById(initial.rosterEntries, parsed.rosterEntries),
+      rosterEntries: mergeMissingById(initial.rosterEntries, parsed.rosterEntries).map(
+        ({ nickname: _nickname, ...entry }: RosterEntry & { nickname?: string }) => entry,
+      ),
       schedules: mergeMissingById(initial.schedules, parsed.schedules),
       groups: mergeMissingById(initial.groups, parsed.groups),
       rooms: mergeMissingById(initial.rooms.map((room) => ({ id: room.teacherId, ...room })), parsed.rooms?.map((room) => ({ id: room.teacherId, ...room }))).map(({ id, ...room }) => room),
+      destinationStates: mergeMissingById(
+        initial.destinationStates.map((destinationState) => ({
+          id: destinationState.destination,
+          ...destinationState,
+        })),
+        parsed.destinationStates?.map((destinationState) => ({
+          id: destinationState.destination,
+          ...destinationState,
+        })),
+      ).map(({ id, ...destinationState }) => destinationState),
       settings: { ...settingsDefaults, ...(parsed.settings || {}) },
     };
   } catch {
@@ -732,7 +775,13 @@ export const loadPawPassState = (): PawPassState => {
 
 export const savePawPassState = (state: PawPassState) => {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+  const sanitizedState = {
+    ...state,
+    rosterEntries: state.rosterEntries.map(
+      ({ nickname: _nickname, ...entry }: RosterEntry & { nickname?: string }) => entry,
+    ),
+  };
+  window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sanitizedState));
   window.localStorage.setItem(SCHEDULE_STORAGE_KEY, state.selectedScheduleId);
   window.localStorage.setItem(PERIOD_OVERRIDE_STORAGE_KEY, state.periodOverrideId);
 };
@@ -874,6 +923,21 @@ export const getRosterStudents = (
     .filter(Boolean) as StudentRecord[];
 };
 
+export const getRosterEntry = (
+  state: PawPassState,
+  teacherId: string,
+  periodId: string,
+  studentId: string,
+) => {
+  const roster = state.rosters.find(
+    (item) => item.teacherId === teacherId && item.periodId === periodId && item.active,
+  );
+  if (!roster) return undefined;
+  return state.rosterEntries.find(
+    (entry) => entry.rosterId === roster.id && entry.studentId === studentId && entry.active,
+  );
+};
+
 export const getTeacherGroup = (state: PawPassState, teacherId: string) =>
   state.groups.find((group) => group.teacherIds.includes(teacherId)) || state.groups[0];
 
@@ -884,6 +948,49 @@ export const getRoomState = (state: PawPassState, teacherId: string) => {
     state.rooms.push(room);
   }
   return room;
+};
+
+export const getDestinationState = (state: PawPassState, destination: DestinationKey): DestinationState =>
+  state.destinationStates.find((item) => item.destination === destination) || {
+    destination,
+    blocked: false,
+    autoBlockAfterCount: 0,
+  };
+
+const ensureDestinationState = (state: PawPassState, destination: DestinationKey) => {
+  let destinationState = state.destinationStates.find((item) => item.destination === destination);
+  if (!destinationState) {
+    destinationState = { destination, blocked: false, autoBlockAfterCount: 0 };
+    state.destinationStates.push(destinationState);
+  }
+  return destinationState;
+};
+
+const isActiveEloperRequest = (state: PawPassState, requestId: string) =>
+  state.elopers.some((eloper) => eloper.requestId === requestId && eloper.active);
+
+export const activeDestinationRequestCount = (
+  state: PawPassState,
+  destination: DestinationKey,
+) =>
+  state.requests.filter(
+    (request) =>
+      request.destination === destination &&
+      !isActiveEloperRequest(state, request.id) &&
+      ["offered", "out", "received", "return_waiting", "return_offered", "returning"].includes(request.status),
+  ).length;
+
+export const isDestinationBlocked = (
+  state: PawPassState,
+  destination: DestinationKey,
+) => {
+  if (!specialDestinationKeys.includes(destination)) return false;
+  const destinationState = getDestinationState(state, destination);
+  if (destinationState.blocked) return true;
+  return (
+    destinationState.autoBlockAfterCount > 0 &&
+    activeDestinationRequestCount(state, destination) >= destinationState.autoBlockAfterCount
+  );
 };
 
 export const addAudit = (
@@ -910,20 +1017,32 @@ export const addAudit = (
   state.audits = state.audits.slice(0, 500);
 };
 
-const activeNormalOutCount = (state: PawPassState, groupId: string) =>
+const activeNormalOutCount = (
+  state: PawPassState,
+  groupId: string,
+  lane: QueueLane,
+) =>
   state.requests.filter(
     (request) =>
       request.groupId === groupId &&
       request.status === "out" &&
-      !request.isMedicalOverride,
+      !request.isMedicalOverride &&
+      !isActiveEloperRequest(state, request.id) &&
+      requestQueueLane(request) === lane,
   ).length;
 
-const hasOfferedNormal = (state: PawPassState, groupId: string) =>
+const hasOfferedNormal = (
+  state: PawPassState,
+  groupId: string,
+  lane: QueueLane,
+) =>
   state.requests.some(
     (request) =>
       request.groupId === groupId &&
       request.status === "offered" &&
-      !request.isMedicalOverride,
+      !request.isMedicalOverride &&
+      !isActiveEloperRequest(state, request.id) &&
+      requestQueueLane(request) === lane,
   );
 
 const hasOfferedMedical = (state: PawPassState, groupId: string) =>
@@ -931,7 +1050,8 @@ const hasOfferedMedical = (state: PawPassState, groupId: string) =>
     (request) =>
       request.groupId === groupId &&
       request.status === "offered" &&
-      request.isMedicalOverride,
+      request.isMedicalOverride &&
+      !isActiveEloperRequest(state, request.id),
   );
 
 const requestIsReady = (request: PassRequest, now: number) => {
@@ -941,24 +1061,156 @@ const requestIsReady = (request: PassRequest, now: number) => {
   return true;
 };
 
+const clearSkippedPassCycle = (
+  state: PawPassState,
+  groupId: string,
+  medical: boolean,
+  lane?: QueueLane,
+) => {
+  state.requests.forEach((request) => {
+    if (
+      request.groupId === groupId &&
+      request.isMedicalOverride === medical &&
+      (!lane || requestQueueLane(request) === lane)
+    ) {
+      request.skippedThisCycle = undefined;
+    }
+  });
+};
+
+const moveRequestToEnd = (state: PawPassState, requestId: string) => {
+  const index = state.requests.findIndex((request) => request.id === requestId);
+  if (index < 0) return;
+  const [request] = state.requests.splice(index, 1);
+  state.requests.push(request);
+};
+
+const moveNextEligibleToFrontOfCheck = (
+  state: PawPassState,
+  request: PassRequest,
+  now: number,
+) => {
+  const currentIndex = state.requests.findIndex((item) => item.id === request.id);
+  if (currentIndex < 0) return undefined;
+  const lane = requestQueueLane(request);
+
+  const nextIndex = state.requests.findIndex(
+    (candidate, index) =>
+      index > currentIndex &&
+      candidate.groupId === request.groupId &&
+      candidate.isMedicalOverride === request.isMedicalOverride &&
+      requestQueueLane(candidate) === lane &&
+      requestIsReady(candidate, now) &&
+      !isActiveEloperRequest(state, candidate.id) &&
+      !candidate.skippedThisCycle &&
+      !isDestinationBlocked(state, candidate.destination) &&
+      !getRoomState(state, candidate.teacherId).frozen,
+  );
+  if (nextIndex < 0) return undefined;
+
+  const promotedRequest = state.requests[nextIndex];
+  const between = state.requests.slice(currentIndex + 1, nextIndex);
+  const priorityBlockers = between.filter(
+    (candidate) =>
+      candidate.groupId !== request.groupId ||
+      candidate.isMedicalOverride !== request.isMedicalOverride ||
+      requestQueueLane(candidate) !== lane ||
+      ["out", "received", "returning"].includes(candidate.status) ||
+      isDestinationBlocked(state, candidate.destination) ||
+      getRoomState(state, candidate.teacherId).frozen,
+  );
+  const passedRequests = between.filter((candidate) => !priorityBlockers.includes(candidate));
+
+  state.requests.splice(
+    currentIndex,
+    nextIndex - currentIndex + 1,
+    ...priorityBlockers,
+    promotedRequest,
+    ...passedRequests,
+    request,
+  );
+  return promotedRequest.id;
+};
+
+const restoreSkippedPassCycleOrder = (
+  state: PawPassState,
+  request: PassRequest,
+) => {
+  const currentIndex = state.requests.findIndex((item) => item.id === request.id);
+  if (currentIndex < 0) return false;
+  const lane = requestQueueLane(request);
+
+  const lastSkippedIndex = state.requests.reduce(
+    (lastIndex, candidate, index) =>
+      candidate.groupId === request.groupId &&
+      candidate.isMedicalOverride === request.isMedicalOverride &&
+      requestQueueLane(candidate) === lane &&
+      candidate.skippedThisCycle
+        ? index
+        : lastIndex,
+    -1,
+  );
+
+  if (lastSkippedIndex > currentIndex) {
+    const [timedOutRequest] = state.requests.splice(currentIndex, 1);
+    state.requests.splice(lastSkippedIndex, 0, timedOutRequest);
+  }
+  clearSkippedPassCycle(state, request.groupId, request.isMedicalOverride, lane);
+  return lastSkippedIndex >= 0;
+};
+
 const averageReturnedDuration = (
   state: PawPassState,
   studentId: string,
   sampleSize = 5,
 ) => {
+  const eloperRequestIds = new Set(state.elopers.map((eloper) => eloper.requestId));
   const durations = state.requests
     .filter(
       (request) =>
         request.studentId === studentId &&
         request.permittedAt &&
         request.returnedAt &&
-        request.returnedAt > request.permittedAt,
+        request.returnedAt > request.permittedAt &&
+        !eloperRequestIds.has(request.id),
     )
     .slice(-sampleSize)
     .map((request) => Number(request.returnedAt) - Number(request.permittedAt));
   if (!durations.length) return 0;
   return durations.reduce((total, item) => total + item, 0) / durations.length;
 };
+
+export const getStudentQueuePenaltyScore = (state: PawPassState, studentId: string) => {
+  const eloperRequestIds = new Set(
+    state.elopers
+      .filter((eloper) => eloper.studentId === studentId)
+      .map((eloper) => eloper.requestId),
+  );
+  const events = state.requests
+    .filter((request) => request.studentId === studentId && request.permittedAt)
+    .map((request) => {
+      const wasEloper = eloperRequestIds.has(request.id);
+      if (wasEloper) {
+        const eloper = state.elopers.find((item) => item.requestId === request.id);
+        return {
+          at: Number(request.returnedAt || eloper?.accountedForAt || eloper?.flaggedAt || request.permittedAt),
+          delta: 1,
+        };
+      }
+      if (request.status === "returned" && request.returnedAt) {
+        return { at: Number(request.returnedAt), delta: -1 };
+      }
+      return null;
+    })
+    .filter(Boolean) as Array<{ at: number; delta: 1 | -1 }>;
+
+  return events
+    .sort((left, right) => left.at - right.at)
+    .reduce((score, event) => Math.max(0, score + event.delta), 0);
+};
+
+export const getStudentQueuePenaltyMs = (state: PawPassState, studentId: string) =>
+  getStudentQueuePenaltyScore(state, studentId) * state.settings.habitDelayMs;
 
 export const createPassRequest = (
   state: PawPassState,
@@ -979,6 +1231,9 @@ export const createPassRequest = (
   if (room.frozen) {
     throw new Error("This room is frozen. Students already in line keep their place.");
   }
+  if (isDestinationBlocked(state, destination)) {
+    throw new Error(`${destinationLabels[destination]} is not taking new requests right now.`);
+  }
 
   const duplicate = state.requests.find(
     (request) =>
@@ -992,7 +1247,10 @@ export const createPassRequest = (
   const now = Date.now();
   const group = getTeacherGroup(state, effectiveTeacherId);
   const averageDuration = averageReturnedDuration(state, studentId);
-  const delayed = averageDuration > state.settings.longReturnMs && !student.medicalPriority;
+  const penaltyDelayMs = getStudentQueuePenaltyMs(state, studentId);
+  const habitDelayMs = averageDuration > state.settings.longReturnMs ? state.settings.habitDelayMs : 0;
+  const delayMs = student.medicalPriority ? 0 : Math.max(penaltyDelayMs, habitDelayMs);
+  const delayed = delayMs > 0;
   const request: PassRequest = {
     id: makeId("req"),
     rosterId: roster.id,
@@ -1006,12 +1264,14 @@ export const createPassRequest = (
     status: delayed ? "delayed" : "waiting",
     requestedAt: now,
     queueReason: delayed
-      ? "Delay queue: recent returns were longer than the room threshold."
+      ? penaltyDelayMs >= habitDelayMs && penaltyDelayMs > 0
+        ? `Penalty delay: ${Math.ceil(penaltyDelayMs / 60_000)} min before joining the queue.`
+        : "Delay queue: recent returns were longer than the room threshold."
       : student.medicalPriority
         ? "Medical priority: may be permitted in addition to the normal active pass."
         : "Waiting for the group pass to open.",
     isMedicalOverride: student.medicalPriority,
-    delayUntil: delayed ? now + state.settings.habitDelayMs : undefined,
+    delayUntil: delayed ? now + delayMs : undefined,
     passOverCount: 0,
   };
 
@@ -1098,6 +1358,7 @@ const offerRequest = (state: PawPassState, request: PassRequest, now: number) =>
   request.status = "offered";
   request.offeredAt = now;
   request.offerExpiresAt = now + state.settings.permitWindowMs;
+  request.skippedThisCycle = undefined;
   request.queueReason = request.isMedicalOverride
     ? "Ready now because this student has a medical priority note."
     : "Ready now: the group pass is open.";
@@ -1119,18 +1380,31 @@ const findNextEligibleRequest = (
   group: TeacherGroup,
   now: number,
   medical: boolean,
-) =>
-  [...state.requests]
-    .filter(
+  lane?: QueueLane,
+) => {
+  const candidates = () =>
+    state.requests.filter(
       (request) =>
         request.groupId === group.id &&
         request.isMedicalOverride === medical &&
-        requestIsReady(request, now),
-    )
-    .sort((left, right) => left.requestedAt - right.requestedAt)
-    .find((request) => !getRoomState(state, request.teacherId).frozen);
+        (!lane || requestQueueLane(request) === lane) &&
+        requestIsReady(request, now) &&
+        !isActiveEloperRequest(state, request.id) &&
+        !isDestinationBlocked(state, request.destination),
+    );
 
-const specialDestinationKeys: DestinationKey[] = ["office", "nurse", "library", "counselor"];
+  const next = candidates().find(
+    (request) => !request.skippedThisCycle && !getRoomState(state, request.teacherId).frozen,
+  );
+  if (next) return next;
+
+  const skippedCandidates = candidates().filter((request) => request.skippedThisCycle);
+  if (!skippedCandidates.length) return undefined;
+  skippedCandidates.forEach((request) => {
+    request.skippedThisCycle = undefined;
+  });
+  return candidates().find((request) => !getRoomState(state, request.teacherId).frozen);
+};
 
 export const isSpecialDestination = (destination: DestinationKey) =>
   specialDestinationKeys.includes(destination);
@@ -1204,7 +1478,11 @@ const offerReturnRequest = (state: PawPassState, request: PassRequest, now: numb
 };
 
 export const advanceQueues = (state: PawPassState, now = Date.now()) => {
+  let changed = false;
+
   state.requests.forEach((request) => {
+    if (isActiveEloperRequest(state, request.id)) return;
+
     if (
       request.status === "return_offered" &&
       request.returnOfferExpiresAt &&
@@ -1215,6 +1493,7 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
       request.snoozeUntil = now + state.settings.retrySkippedAfterMs;
       request.queueReason =
         "Teacher did not respond to the return call. Keeping this return ahead of hallway departures.";
+      changed = true;
       addAudit(
         state,
         request.actorUserId,
@@ -1231,14 +1510,29 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
     if (request.status === "offered" && request.offerExpiresAt && request.offerExpiresAt <= now) {
       request.status = "waiting";
       request.passOverCount += 1;
-      request.snoozeUntil = now + state.settings.retrySkippedAfterMs;
+      request.skippedThisCycle = true;
+      request.snoozeUntil = undefined;
+      request.offeredAt = undefined;
+      request.offerExpiresAt = undefined;
+      const promotedRequestId = moveNextEligibleToFrontOfCheck(state, request, now);
+      const completedPassCycle = promotedRequestId
+        ? false
+        : restoreSkippedPassCycleOrder(state, request);
       request.queueReason =
-        "Teacher did not respond in time. Keeping this student in place and trying again soon.";
+        completedPassCycle
+          ? "Teacher did not respond in time. Restarting the pass cycle in the original order."
+          : "Teacher did not respond in time. Trying the next student while this student stays in the pass cycle.";
+      changed = true;
       addAudit(
         state,
         request.actorUserId,
         "request_offer_expired",
-        { retryAt: request.snoozeUntil, passOverCount: request.passOverCount },
+        {
+          skippedThisCycle: !completedPassCycle,
+          promotedRequestId,
+          completedPassCycle,
+          passOverCount: request.passOverCount,
+        },
         {
           effectiveTeacherId: request.teacherId,
           targetStudentId: request.studentId,
@@ -1249,7 +1543,10 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
 
     if (request.status === "delayed" && request.delayUntil && request.delayUntil <= now) {
       request.status = "waiting";
-      request.queueReason = "Delay complete. Waiting for the group pass to open.";
+      request.delayUntil = undefined;
+      request.queueReason = "Delay complete. Added to the end of the queue.";
+      moveRequestToEnd(state, request.id);
+      changed = true;
     }
   });
 
@@ -1268,15 +1565,17 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
           groupId: request.groupId,
           manual: false,
         });
+        changed = true;
       }
     }
   });
 
   const activeReturnPriority = state.requests.some((request) =>
-    returnPriorityStatuses.includes(request.status),
+    returnPriorityStatuses.includes(request.status) && !isActiveEloperRequest(state, request.id),
   );
   const returnAlreadyOfferedOrMoving = state.requests.some((request) =>
-    request.status === "return_offered" || request.status === "returning",
+    (request.status === "return_offered" || request.status === "returning") &&
+    !isActiveEloperRequest(state, request.id),
   );
 
   let returnWasOffered = false;
@@ -1285,6 +1584,7 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
       .filter(
         (request) =>
           request.status === "return_waiting" &&
+          !isActiveEloperRequest(state, request.id) &&
           (!request.snoozeUntil || request.snoozeUntil <= now),
       )
       .sort(
@@ -1296,27 +1596,38 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
     if (nextReturn) {
       offerReturnRequest(state, nextReturn, now);
       returnWasOffered = true;
+      changed = true;
     }
   }
 
-  if (activeReturnPriority || returnWasOffered) return;
+  if (activeReturnPriority || returnWasOffered) return changed;
 
-  if (getAutoFreezeWindow(state, new Date(now))) return;
+  if (getAutoFreezeWindow(state, new Date(now))) return changed;
 
   state.groups.forEach((group) => {
-    if (
-      activeNormalOutCount(state, group.id) < group.normalCapacity &&
-      !hasOfferedNormal(state, group.id)
-    ) {
-      const next = findNextEligibleRequest(state, group, now, false);
-      if (next) offerRequest(state, next, now);
-    }
+    queueLaneKeys.forEach((lane) => {
+      if (
+        activeNormalOutCount(state, group.id, lane) < group.normalCapacity &&
+        !hasOfferedNormal(state, group.id, lane)
+      ) {
+        const next = findNextEligibleRequest(state, group, now, false, lane);
+        if (next) {
+          offerRequest(state, next, now);
+          changed = true;
+        }
+      }
+    });
 
     if (!hasOfferedMedical(state, group.id)) {
       const nextMedical = findNextEligibleRequest(state, group, now, true);
-      if (nextMedical) offerRequest(state, nextMedical, now);
+      if (nextMedical) {
+        offerRequest(state, nextMedical, now);
+        changed = true;
+      }
     }
   });
+
+  return changed;
 };
 
 export const permitRequest = (
@@ -1327,7 +1638,9 @@ export const permitRequest = (
   const request = state.requests.find((item) => item.id === requestId);
   if (!request || request.status !== "offered") return;
   const now = Date.now();
+  clearSkippedPassCycle(state, request.groupId, request.isMedicalOverride, requestQueueLane(request));
   request.status = "out";
+  request.skippedThisCycle = undefined;
   request.permittedAt = now;
   request.dueAt = now + state.settings.eloperAfterMs;
   request.queueReason = request.isMedicalOverride
@@ -1353,7 +1666,12 @@ export const dismissRequest = (
 ) => {
   const request = state.requests.find((item) => item.id === requestId);
   if (!request || !["offered", "waiting", "delayed"].includes(request.status)) return;
+  const wasRequesting = request.status === "offered";
+  if (wasRequesting) {
+    clearSkippedPassCycle(state, request.groupId, request.isMedicalOverride, requestQueueLane(request));
+  }
   request.status = "dismissed";
+  request.skippedThisCycle = undefined;
   request.dismissedAt = Date.now();
   request.dismissedByUserId = actor.id;
   request.queueReason = "Dismissed by staff.";
@@ -1386,7 +1704,7 @@ export const receiveDestinationStudent = (
   request.receivedAt = now;
   request.receivedByUserId = actor.id;
   request.dueAt = undefined;
-  request.queueReason = `Received at ${destinationLabels[request.destination]}. The group pass is open for the next student.`;
+  request.queueReason = `${actor.displayName || destinationLabels[request.destination]} received this student at ${formatStoreTime(now)}.`;
 
   const activeEloper = state.elopers.find(
     (eloper) => eloper.requestId === requestId && eloper.active,
@@ -1498,17 +1816,30 @@ export const returnStudent = (
   const request = state.requests.find((item) => item.id === requestId);
   if (!request || !["out", "returning"].includes(request.status)) return;
   const now = Date.now();
+  const skippedDestinationCheckIn =
+    request.status === "out" &&
+    isSpecialDestination(request.destination) &&
+    !request.receivedAt;
+  const checkInEloper = skippedDestinationCheckIn
+    ? createOrActivateEloper(state, actor, request, now, {
+        source: "returned_without_destination_check_in",
+        checkedInAtDestination: false,
+      })
+    : undefined;
   request.status = "returned";
   request.returnedAt = now;
-  request.queueReason = "Returned to class.";
+  request.queueReason = skippedDestinationCheckIn
+    ? `Returned without checking in at ${destinationLabels[request.destination]}; recorded as an eloper trip.`
+    : "Returned to class.";
 
   const activeEloper = state.elopers.find(
     (eloper) => eloper.requestId === requestId && eloper.active,
   );
-  if (activeEloper) {
-    activeEloper.active = false;
-    activeEloper.accountedForAt = now;
-    activeEloper.accountedForByUserId = actor.id;
+  const resolvedEloper = activeEloper || checkInEloper;
+  if (resolvedEloper) {
+    resolvedEloper.active = false;
+    resolvedEloper.accountedForAt = now;
+    resolvedEloper.accountedForByUserId = actor.id;
   }
 
   addAudit(
@@ -1518,7 +1849,8 @@ export const returnStudent = (
     {
       destination: request.destination,
       elapsedMs: request.permittedAt ? now - request.permittedAt : 0,
-      resolvedEloper: Boolean(activeEloper),
+      resolvedEloper: Boolean(resolvedEloper),
+      skippedDestinationCheckIn,
     },
     {
       effectiveTeacherId: request.teacherId,
@@ -1580,6 +1912,7 @@ export const setRoomFrozen = (
         request.status = "waiting";
         request.snoozeUntil = undefined;
       }
+      request.skippedThisCycle = undefined;
       request.queueReason = frozen
         ? "Room frozen. This student keeps the original queue position."
         : "Room thawed. Earlier frozen requests get priority again.";
@@ -1592,6 +1925,97 @@ export const setRoomFrozen = (
     "room_freeze_changed",
     { frozen },
     { effectiveTeacherId: teacherId },
+  );
+};
+
+export const moveTeacherToGroup = (
+  state: PawPassState,
+  actor: StaffUser,
+  teacherId: string,
+  groupId: string,
+) => {
+  if (actor.role !== "admin") {
+    throw new Error("Only admin accounts can move teachers between groups.");
+  }
+
+  const teacher = state.staffUsers.find(
+    (user) => user.id === teacherId && user.role === "teacher" && user.active,
+  );
+  if (!teacher) throw new Error("Teacher not found.");
+
+  const targetGroup = state.groups.find((group) => group.id === groupId);
+  if (!targetGroup) throw new Error("Group not found.");
+
+  const previousGroup = state.groups.find((group) => group.teacherIds.includes(teacherId));
+  if (previousGroup?.id === groupId) return;
+
+  state.groups.forEach((group) => {
+    group.teacherIds = group.teacherIds.filter((item) => item !== teacherId);
+  });
+  targetGroup.teacherIds.push(teacherId);
+
+  state.requests.forEach((request) => {
+    if (request.teacherId === teacherId && activePassStatuses.includes(request.status)) {
+      request.groupId = groupId;
+    }
+  });
+  state.elopers.forEach((eloper) => {
+    if (eloper.teacherId === teacherId && eloper.active) {
+      eloper.groupId = groupId;
+    }
+  });
+
+  addAudit(
+    state,
+    actor.id,
+    "settings_updated",
+    {
+      key: "teacher_group",
+      teacherId,
+      previousGroupId: previousGroup?.id,
+      groupId,
+    },
+    { effectiveTeacherId: teacherId },
+  );
+};
+
+export const setDestinationBlocked = (
+  state: PawPassState,
+  actor: StaffUser,
+  destination: DestinationKey,
+  blocked: boolean,
+) => {
+  if (!canManageDestination(actor, destination)) {
+    throw new Error(`Only ${destinationLabels[destination]} staff, admin, or security can block this destination.`);
+  }
+  const destinationState = ensureDestinationState(state, destination);
+  destinationState.blocked = blocked;
+  destinationState.blockedAt = blocked ? Date.now() : undefined;
+  destinationState.blockedByUserId = blocked ? actor.id : undefined;
+  addAudit(
+    state,
+    actor.id,
+    "destination_block_changed",
+    { destination, blocked },
+  );
+};
+
+export const setDestinationAutoBlockLimit = (
+  state: PawPassState,
+  actor: StaffUser,
+  destination: DestinationKey,
+  autoBlockAfterCount: number,
+) => {
+  if (!canManageDestination(actor, destination)) {
+    throw new Error(`Only ${destinationLabels[destination]} staff, admin, or security can change this destination.`);
+  }
+  const destinationState = ensureDestinationState(state, destination);
+  destinationState.autoBlockAfterCount = Math.max(0, Math.floor(autoBlockAfterCount || 0));
+  addAudit(
+    state,
+    actor.id,
+    "destination_settings_updated",
+    { destination, autoBlockAfterCount: destinationState.autoBlockAfterCount },
   );
 };
 

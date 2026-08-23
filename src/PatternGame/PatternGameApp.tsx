@@ -346,10 +346,6 @@ function abilityRuleText(value: string | null) {
   return `${label}: ${detail}`;
 }
 
-function battleActionLabel(value: BattleAction) {
-  return value === "giveLine" ? "Give Line" : value === "pressure" ? "Pressure" : "Reel";
-}
-
 function FishEmojiIcon({ size = 18 }: { size?: number }) {
   return (
     <Box
@@ -782,24 +778,27 @@ function randomDiceValue(sides: number) {
 
 function DiceRoller({ session }: { session: PatternSessionSnapshot }) {
   const latest = getLatestDiceRoll(session);
+  const latestKey = latest?.key;
+  const latestSides = latest?.sides;
+  const latestValue = latest?.value;
   const [rolling, setRolling] = useState(false);
-  const [displayValue, setDisplayValue] = useState<number | null>(latest?.value || null);
+  const [displayValue, setDisplayValue] = useState<number | null>(latestValue || null);
 
   useEffect(() => {
-    if (!latest) {
+    if (!latestKey || !latestSides || latestValue == null) {
       setRolling(false);
       setDisplayValue(null);
       return undefined;
     }
 
     setRolling(true);
-    setDisplayValue(randomDiceValue(latest.sides));
+    setDisplayValue(randomDiceValue(latestSides));
     const interval = window.setInterval(() => {
-      setDisplayValue(randomDiceValue(latest.sides));
+      setDisplayValue(randomDiceValue(latestSides));
     }, 85);
     const timeout = window.setTimeout(() => {
       window.clearInterval(interval);
-      setDisplayValue(latest.value);
+      setDisplayValue(latestValue);
       setRolling(false);
     }, DICE_ROLL_ANIMATION_MS);
 
@@ -807,7 +806,7 @@ function DiceRoller({ session }: { session: PatternSessionSnapshot }) {
       window.clearInterval(interval);
       window.clearTimeout(timeout);
     };
-  }, [latest?.key, latest?.sides, latest?.value]);
+  }, [latestKey, latestSides, latestValue]);
 
   const toneColor =
     latest?.tone === "hit" || latest?.tone === "victory"

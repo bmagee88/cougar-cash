@@ -1,11 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import {
-  Accordion,
-  AccordionDetails,
-  AccordionSummary,
   Alert,
   AppBar,
+  Autocomplete,
   Avatar,
   Box,
   Button,
@@ -34,6 +32,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  TableSortLabel,
   Tabs,
   TextField,
   ThemeProvider,
@@ -47,7 +46,6 @@ import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FactCheckIcon from "@mui/icons-material/FactCheck";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import GoogleIcon from "@mui/icons-material/Google";
@@ -69,6 +67,7 @@ import {
   PawPassState,
   StaffUser,
   accountForEloper,
+  activeDestinationRequestCount,
   activePassStatuses,
   addAudit,
   addStudentForRosterPeriods,
@@ -88,28 +87,35 @@ import {
   formatDuration,
   getCurrentPeriod,
   getAutoFreezeWindow,
+  getDestinationState,
   getEffectiveTeacherId,
   getRosterStudents,
   getRoomState,
   getSchedule,
   getStudent,
+  getStudentQueuePenaltyMs,
   getStudentUsername,
   getTeacherGroup,
   getTeacherName,
   getTeachers,
   getVisibleTeacherIds,
   isDestinationStaff,
+  isDestinationBlocked,
   isValidStudentUsername,
   markRequestEloper,
   loadPawPassState,
+  moveTeacherToGroup,
   permitRequest,
   receiveDestinationStudent,
   returnStudent,
   roleLabels,
   savePawPassState,
+  setDestinationAutoBlockLimit,
+  setDestinationBlocked,
   setRoomFrozen,
   settingsDefaults,
   softDeleteRosterStudent,
+  specialDestinationKeys,
   statusOrder,
   teacherAwayStatuses,
   updateStudent,
@@ -176,9 +182,91 @@ const destinationEmojis: Record<DestinationKey, string> = {
 
 const requestActionKeys: DestinationKey[] = [...destinationKeys, "eloper"];
 
+type ReportSortKey =
+  | "requests_desc"
+  | "requests_asc"
+  | "username_asc"
+  | "username_desc"
+  | "avg_wait_desc"
+  | "avg_wait_asc"
+  | "avg_out_desc"
+  | "avg_out_asc"
+  | "elopers_desc"
+  | "elopers_asc"
+  | "penalty_desc"
+  | "penalty_asc";
+
 const deepClone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
+const getRoomSnapshot = (state: PawPassState, teacherId: string) =>
+  state.rooms.find((room) => room.teacherId === teacherId) || { teacherId, frozen: false };
+
 const currentUserStorageKey = "paw-pass-current-user";
+const localNicknamesStorageKey = "paw-pass-local-nicknames";
+
+type LocalNicknameMap = Record<string, string>;
+type LocalImportPreviewRow = ImportPreviewRow & { localNickname?: string };
+
+const localNicknameKey = (teacherId: string, periodId: string, username: string) =>
+  `${teacherId}::${periodId}::${username.toLowerCase()}`;
+
+function normalizeNickname(value: unknown) {
+  return String(value ?? "").trim().slice(0, 40);
+}
+
+function readCsvLocalNickname(row: Record<string, unknown>) {
+  return normalizeNickname(
+    String(row.nickname || row.nick_name || row.preferredName || row.preferred_name || ""),
+  );
+}
+
+function loadLocalNicknames(): LocalNicknameMap {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(localNicknamesStorageKey);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? Object.fromEntries(
+          Object.entries(parsed as Record<string, unknown>)
+            .filter(([, value]) => typeof value === "string")
+            .map(([key, value]) => [key, normalizeNickname(value as string)])
+            .filter(([, value]) => value),
+        )
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveLocalNicknames(nicknames: LocalNicknameMap) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(localNicknamesStorageKey, JSON.stringify(nicknames));
+}
+
+function getLocalStudentDisplayName(
+  state: PawPassState,
+  nicknames: LocalNicknameMap,
+  studentId: string,
+  teacherId?: string,
+  periodId?: string,
+) {
+  const username = getStudentUsername(state, studentId);
+  if (teacherId && periodId) {
+    return nicknames[localNicknameKey(teacherId, periodId, username)] || username;
+  }
+  if (teacherId) {
+    const rosterIds = state.rosters
+      .filter((roster) => roster.active && roster.teacherId === teacherId)
+      .map((roster) => roster.id);
+    const entry = state.rosterEntries.find(
+      (item) => item.active && item.studentId === studentId && rosterIds.includes(item.rosterId),
+    );
+    const roster = entry ? state.rosters.find((item) => item.id === entry.rosterId) : undefined;
+    if (roster) return nicknames[localNicknameKey(teacherId, roster.periodId, username)] || username;
+  }
+  return username;
+}
 
 function playDing() {
   try {
@@ -222,18 +310,38 @@ function formatTime(value?: number) {
 
 function displayStatus(status: PassRequest["status"]) {
   const labels: Record<PassRequest["status"], string> = {
-    delayed: "delayed",
-    waiting: "waiting",
-    offered: "pending",
+    delayed: "pending",
+    waiting: "pending",
+    offered: "requesting",
     out: "out",
     received: "received",
-    return_waiting: "waiting return",
-    return_offered: "return pending",
+    return_waiting: "pending return",
+    return_offered: "return requesting",
     returning: "returning",
     returned: "returned",
     dismissed: "dismissed",
   };
   return labels[status];
+}
+
+function dateInputToStartMs(value: string) {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date.getTime();
+}
+
+function dateInputToEndMs(value: string) {
+  if (!value) return null;
+  const date = new Date(`${value}T23:59:59.999`);
+  return Number.isNaN(date.getTime()) ? null : date.getTime();
+}
+
+function msToDateInput(value: number) {
+  const date = new Date(value);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 function msUntil(value: number | undefined, now: number) {
@@ -486,6 +594,7 @@ function Sidebar({
   }> = destinationStaff
     ? [
         { key: "inbound", label: "Inbound", icon: <AssignmentIndIcon /> },
+        { key: "settings", label: "Settings", icon: <SettingsIcon /> },
         { key: "terms", label: "Terms", icon: <PrivacyTipIcon /> },
       ]
     : [
@@ -774,11 +883,13 @@ function TopBar({
 
 function RequestDestinationDialog({
   open,
+  state,
   studentUsername,
   onClose,
   onSelect,
 }: {
   open: boolean;
+  state: PawPassState;
   studentUsername: string;
   onClose: () => void;
   onSelect: (destination: DestinationKey) => void;
@@ -795,25 +906,38 @@ function RequestDestinationDialog({
             pt: 1,
           }}
         >
-          {requestActionKeys.map((destination) => (
-            <Tooltip key={destination} title={destinationLabels[destination]}>
-              <Button
-                aria-label={destinationLabels[destination]}
-                variant="outlined"
-                onClick={() => onSelect(destination)}
-                sx={{
-                  aspectRatio: "1 / 1",
-                  minWidth: 0,
-                  p: 1,
-                  bgcolor: destination === "eloper" ? "#fef2f2" : "#f8fafc",
-                  borderColor: destination === "eloper" ? "#fca5a5" : undefined,
-                  "&:hover": { bgcolor: destination === "eloper" ? "#fee2e2" : "#e8f4f1" },
-                }}
+          {requestActionKeys.map((destination) => {
+            const blocked = destination !== "eloper" && isDestinationBlocked(state, destination);
+            return (
+              <Tooltip
+                key={destination}
+                title={
+                  blocked
+                    ? `${destinationLabels[destination]} is blocking requests`
+                    : destinationLabels[destination]
+                }
               >
-                <DestinationArt destination={destination} />
-              </Button>
-            </Tooltip>
-          ))}
+                <span>
+                  <Button
+                    aria-label={destinationLabels[destination]}
+                    variant="outlined"
+                    disabled={blocked}
+                    onClick={() => onSelect(destination)}
+                    sx={{
+                      aspectRatio: "1 / 1",
+                      minWidth: 0,
+                      p: 1,
+                      bgcolor: destination === "eloper" ? "#fef2f2" : "#f8fafc",
+                      borderColor: destination === "eloper" ? "#fca5a5" : undefined,
+                      "&:hover": { bgcolor: destination === "eloper" ? "#fee2e2" : "#e8f4f1" },
+                    }}
+                  >
+                    <DestinationArt destination={destination} />
+                  </Button>
+                </span>
+              </Tooltip>
+            );
+          })}
         </Box>
       </DialogContent>
     </Dialog>
@@ -824,12 +948,14 @@ function HomeView({
   state,
   user,
   effectiveTeacherId,
+  localNicknames,
   now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
   effectiveTeacherId: string;
+  localNicknames: LocalNicknameMap;
   now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
@@ -838,22 +964,45 @@ function HomeView({
   const lastDingRef = useRef("");
   const currentPeriod = getCurrentPeriod(state, new Date(now));
   const autoFreezeWindow = getAutoFreezeWindow(state, new Date(now));
-  const room = getRoomState(deepClone(state), effectiveTeacherId);
+  const room = getRoomSnapshot(state, effectiveTeacherId);
   const group = getTeacherGroup(state, effectiveTeacherId);
   const rosterStudents = getRosterStudents(state, effectiveTeacherId, currentPeriod.id);
   const quiet = state.quietModeByUserId[user.id] ?? state.settings.quietModeDefault;
+  const activeEloperRequestIds = new Set(
+    state.elopers.filter((eloper) => eloper.active).map((eloper) => eloper.requestId),
+  );
 
   const offered = state.requests
-    .filter((request) => request.teacherId === effectiveTeacherId && request.status === "offered")
+    .filter(
+      (request) =>
+        request.teacherId === effectiveTeacherId &&
+        request.status === "offered" &&
+        !activeEloperRequestIds.has(request.id),
+    )
     .sort((left, right) => left.requestedAt - right.requestedAt);
   const returnOffered = state.requests
-    .filter((request) => request.teacherId === effectiveTeacherId && request.status === "return_offered")
+    .filter(
+      (request) =>
+        request.teacherId === effectiveTeacherId &&
+        request.status === "return_offered" &&
+        !activeEloperRequestIds.has(request.id),
+    )
     .sort((left, right) => Number(left.returnRequestedAt || left.requestedAt) - Number(right.returnRequestedAt || right.requestedAt));
   const activeAway = state.requests
-    .filter((request) => request.teacherId === effectiveTeacherId && teacherAwayStatuses.includes(request.status))
+    .filter(
+      (request) =>
+        request.teacherId === effectiveTeacherId &&
+        teacherAwayStatuses.includes(request.status) &&
+        !activeEloperRequestIds.has(request.id),
+    )
     .sort((left, right) => Number(left.permittedAt || 0) - Number(right.permittedAt || 0));
   const groupNormalOut = state.requests.find(
-    (request) => request.groupId === group.id && request.status === "out" && !request.isMedicalOverride,
+    (request) =>
+      request.groupId === group.id &&
+      request.status === "out" &&
+      !request.isMedicalOverride &&
+      !activeEloperRequestIds.has(request.id) &&
+      !specialDestinationKeys.includes(request.destination),
   );
   useEffect(() => {
     const ids = [...returnOffered, ...offered].map((request) => request.id).join("|");
@@ -940,6 +1089,7 @@ function HomeView({
               key={request.id}
               state={state}
               request={request}
+              localNicknames={localNicknames}
               now={now}
               onCallBack={() =>
                 onMutate((draft) => {
@@ -957,6 +1107,7 @@ function HomeView({
               key={request.id}
               state={state}
               request={request}
+              localNicknames={localNicknames}
               now={now}
               onPermit={() =>
                 onMutate((draft) => {
@@ -983,6 +1134,7 @@ function HomeView({
               key={request.id}
               state={state}
               request={request}
+              localNicknames={localNicknames}
               now={now}
               onReturn={() =>
                 onMutate((draft) => {
@@ -1015,20 +1167,22 @@ function HomeView({
                 </Typography>
                 <Typography sx={{ maxWidth: 560, opacity: groupNormalOut ? 0.92 : 0.72 }}>
                   {groupNormalOut
-                    ? `${getStudentUsername(state, groupNormalOut.studentId)} from ${getTeacherName(
+                    ? `${getLocalStudentDisplayName(
+                        state,
+                        localNicknames,
+                        groupNormalOut.studentId,
+                        groupNormalOut.teacherId,
+                        groupNormalOut.periodId,
+                      )} from ${getTeacherName(
                         state,
                         groupNormalOut.teacherId,
                       )} is out. Your queued students keep their position.`
-                    : "No student from this room is out or pending right now."}
+                    : "No student from this room is out or requesting right now."}
                 </Typography>
               </Stack>
             </Paper>
           ) : null}
 
-          <TeacherQueueAccordions
-            state={state}
-            effectiveTeacherId={effectiveTeacherId}
-          />
         </Stack>
       ) : (
         <SectionPaper>
@@ -1046,27 +1200,101 @@ function HomeView({
                 }}
               >
                 {rosterStudents.map((student) => {
-                  const alreadyActive = state.requests.some(
+                  const activeEloper = state.elopers.find(
+                    (eloper) =>
+                      eloper.active &&
+                      eloper.studentId === student.id &&
+                      eloper.teacherId === effectiveTeacherId,
+                  );
+                  const cancellableRequest = state.requests.find(
                     (request) =>
                       request.studentId === student.id &&
-                      activePassStatuses.includes(request.status),
+                      request.teacherId === effectiveTeacherId &&
+                      ["waiting", "delayed", "offered"].includes(request.status),
+                  );
+                  const alreadyAway = state.requests.some(
+                    (request) =>
+                      request.studentId === student.id &&
+                      request.teacherId === effectiveTeacherId &&
+                      ["out", "received", "return_waiting", "return_offered", "returning"].includes(request.status),
+                  );
+                  const displayName = getLocalStudentDisplayName(
+                    state,
+                    localNicknames,
+                    student.id,
+                    effectiveTeacherId,
+                    currentPeriod.id,
                   );
                   return (
                     <Button
                       key={student.id}
                       variant="contained"
-                      disabled={room.frozen || alreadyActive}
-                      onClick={() => setSelectedStudentId(student.id)}
+                      disabled={
+                        (room.frozen && !cancellableRequest && !activeEloper) ||
+                        (alreadyAway && !activeEloper)
+                      }
+                      onClick={() => {
+                        if (activeEloper) {
+                          onMutate((draft) => {
+                            const actor = draft.staffUsers.find((item) => item.id === user.id);
+                            if (!actor) return;
+                            accountForEloper(draft, actor, activeEloper.id);
+                            advanceQueues(draft);
+                          });
+                          return;
+                        }
+                        if (cancellableRequest) {
+                          onMutate((draft) => {
+                            const actor = draft.staffUsers.find((item) => item.id === user.id);
+                            if (!actor) return;
+                            dismissRequest(draft, actor, cancellableRequest.id);
+                            advanceQueues(draft);
+                          });
+                          return;
+                        }
+                        setSelectedStudentId(student.id);
+                      }}
                       sx={{
                         minHeight: 86,
                         fontSize: { xs: 15, sm: 17 },
                         overflowWrap: "anywhere",
-                        bgcolor: student.medicalPriority ? "#0f766e" : "#1f2937",
-                        "&:hover": { bgcolor: student.medicalPriority ? "#115e59" : "#111827" },
+                        bgcolor: activeEloper
+                          ? "#b91c1c"
+                          : cancellableRequest
+                          ? "#64748b"
+                          : student.medicalPriority
+                            ? "#0f766e"
+                            : "#1f2937",
+                        "&:hover": {
+                          bgcolor: activeEloper
+                            ? "#991b1b"
+                            : cancellableRequest
+                            ? "#475569"
+                            : student.medicalPriority
+                              ? "#115e59"
+                              : "#111827",
+                        },
                       }}
                     >
                       <Stack spacing={0.5} alignItems="center">
-                        <span>{student.username}</span>
+                        <span>{displayName}</span>
+                        {displayName !== student.username ? (
+                          <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.78)" }}>
+                            {student.username}
+                          </Typography>
+                        ) : null}
+                        {activeEloper ? (
+                          <Chip
+                            size="small"
+                            label="Eloper"
+                            sx={{
+                              bgcolor: "rgba(255,255,255,0.92)",
+                              color: "#991b1b",
+                              fontWeight: 900,
+                            }}
+                          />
+                        ) : null}
+                        {!activeEloper && cancellableRequest ? <Chip size="small" label="Requested" /> : null}
                         {student.medicalPriority ? <Chip size="small" color="success" label="Medical" /> : null}
                       </Stack>
                     </Button>
@@ -1084,7 +1312,18 @@ function HomeView({
 
       <RequestDestinationDialog
         open={Boolean(selectedStudentId)}
-        studentUsername={selectedStudentId ? getStudentUsername(state, selectedStudentId) : ""}
+        state={state}
+        studentUsername={
+          selectedStudentId
+            ? getLocalStudentDisplayName(
+                state,
+                localNicknames,
+                selectedStudentId,
+                effectiveTeacherId,
+                currentPeriod.id,
+              )
+            : ""
+        }
         onClose={() => setSelectedStudentId("")}
         onSelect={requestForStudent}
       />
@@ -1095,6 +1334,7 @@ function HomeView({
 function OfferPanel({
   state,
   request,
+  localNicknames,
   now,
   onPermit,
   onDismiss,
@@ -1102,6 +1342,7 @@ function OfferPanel({
 }: {
   state: PawPassState;
   request: PassRequest;
+  localNicknames: LocalNicknameMap;
   now: number;
   onPermit: () => void;
   onDismiss: () => void;
@@ -1123,10 +1364,16 @@ function OfferPanel({
         <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems={{ md: "center" }}>
           <Box flex={1}>
             <Typography variant="overline" sx={{ color: "rgba(255,255,255,0.78)" }}>
-              Pending
+              Requesting
             </Typography>
             <Typography variant="h4" sx={{ overflowWrap: "anywhere" }}>
-              {getStudentUsername(state, request.studentId)}
+              {getLocalStudentDisplayName(
+                state,
+                localNicknames,
+                request.studentId,
+                request.teacherId,
+                request.periodId,
+              )}
             </Typography>
             <Typography sx={{ opacity: 0.9 }}>
               {destinationLabels[request.destination]} - respond in {formatDuration(remaining)}
@@ -1169,11 +1416,13 @@ function OfferPanel({
 function ReturnCallPanel({
   state,
   request,
+  localNicknames,
   now,
   onCallBack,
 }: {
   state: PawPassState;
   request: PassRequest;
+  localNicknames: LocalNicknameMap;
   now: number;
   onCallBack: () => void;
 }) {
@@ -1196,7 +1445,13 @@ function ReturnCallPanel({
               Return To Learning
             </Typography>
             <Typography variant="h4" sx={{ overflowWrap: "anywhere" }}>
-              {getStudentUsername(state, request.studentId)}
+              {getLocalStudentDisplayName(
+                state,
+                localNicknames,
+                request.studentId,
+                request.teacherId,
+                request.periodId,
+              )}
             </Typography>
             <Typography sx={{ opacity: 0.92 }}>
               {destinationLabels[request.destination]} dismissed this student. Call them back in{" "}
@@ -1232,11 +1487,13 @@ function ReturnCallPanel({
 function ActiveAwayPanel({
   state,
   request,
+  localNicknames,
   now,
   onReturn,
 }: {
   state: PawPassState;
   request: PassRequest;
+  localNicknames: LocalNicknameMap;
   now: number;
   onReturn: () => void;
 }) {
@@ -1256,7 +1513,7 @@ function ActiveAwayPanel({
       overline: "Received",
       detail: `${receivedBy || destinationLabels[request.destination]} received this student${
         request.receivedAt ? ` at ${formatTime(request.receivedAt)}` : ""
-      }. The group pass can keep moving.`,
+      }.`,
       color: "#166534",
       button: false,
     },
@@ -1294,7 +1551,13 @@ function ActiveAwayPanel({
               {content.overline}
             </Typography>
             <Typography variant="h4" sx={{ overflowWrap: "anywhere" }}>
-              {getStudentUsername(state, request.studentId)}
+              {getLocalStudentDisplayName(
+                state,
+                localNicknames,
+                request.studentId,
+                request.teacherId,
+                request.periodId,
+              )}
             </Typography>
             <Typography sx={{ opacity: 0.92 }}>
               {content.detail}
@@ -1332,98 +1595,141 @@ function ActiveAwayPanel({
   );
 }
 
-function TeacherQueueAccordions({
+function GroupQueueList({
   state,
-  effectiveTeacherId,
+  groupId,
+  localNicknames,
 }: {
   state: PawPassState;
-  effectiveTeacherId: string;
+  groupId: string;
+  localNicknames: LocalNicknameMap;
 }) {
-  const group = getTeacherGroup(state, effectiveTeacherId);
-  const activeQueue = state.requests
-    .filter(
-      (request) =>
-        request.groupId === group.id &&
-        activePassStatuses.includes(request.status),
-    )
-    .sort(
-      (left, right) =>
-        statusOrder(left.status) - statusOrder(right.status) ||
-        left.requestedAt - right.requestedAt,
-    );
+  const group = state.groups.find((item) => item.id === groupId);
+  const isActiveEloper = (request: PassRequest) =>
+    state.elopers.some((eloper) => eloper.requestId === request.id && eloper.active);
+  const frozenTeacherIds = new Set(
+    state.rooms.filter((room) => room.frozen).map((room) => room.teacherId),
+  );
+  const queueStatus = (request: PassRequest) => {
+    if (frozenTeacherIds.has(request.teacherId)) return "Frozen";
+    if (isActiveEloper(request)) return "eloping";
+    if (["out", "received", "returning"].includes(request.status)) return "out";
+    if (request.status === "offered") return "requesting";
+    return "pending";
+  };
+  if (!group) return null;
+
+  const visibleQueue = state.requests.filter(
+    (request) =>
+      (request.groupId === group.id || specialDestinationKeys.includes(request.destination)) &&
+      activePassStatuses.includes(request.status) &&
+      request.status !== "delayed" &&
+      !isActiveEloper(request),
+  );
 
   return (
-    <SectionPaper>
-      <Stack spacing={1.25}>
-        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-          <Typography variant="h6">Queue</Typography>
-          <Chip size="small" label={group.name} />
-        </Stack>
+    <Stack spacing={1.25}>
+      <Typography variant="subtitle2" fontWeight={900}>
+        Queue
+      </Typography>
 
-        {group.teacherIds.map((teacherId) => {
-          const room = getRoomState(deepClone(state), teacherId);
-          const teacherRequests = activeQueue.filter(
-            (request) => request.teacherId === teacherId,
-          );
-
-          return (
-            <Accordion key={teacherId} disableGutters>
-              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                  <Typography fontWeight={900}>{getTeacherName(state, teacherId)}</Typography>
-                  {room.frozen ? (
-                    <Chip size="small" color="warning" label="Frozen" />
-                  ) : (
-                    <Chip size="small" variant="outlined" label="Open" />
+      {visibleQueue.length ? (
+        <Stack spacing={0.75}>
+          {visibleQueue.map((request, index) => {
+            const status = queueStatus(request);
+            const onDeck = Boolean(request.skippedThisCycle);
+            return (
+              <Box
+                key={request.id}
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "36px minmax(0, 1fr) 42px 96px",
+                    sm: "38px minmax(0, 1.1fr) minmax(0, 0.9fr) 46px 100px",
+                  },
+                  gap: 0.75,
+                  alignItems: "center",
+                  border: "1px solid rgba(15, 23, 42, 0.1)",
+                  borderRadius: 1,
+                  p: 0.75,
+                  bgcolor: onDeck
+                    ? "#f1f5f9"
+                    : status === "eloping"
+                      ? "#fef2f2"
+                      : "#ffffff",
+                  opacity: onDeck ? 0.68 : 1,
+                }}
+              >
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={index + 1}
+                  sx={{
+                    justifySelf: "center",
+                    minWidth: 30,
+                    fontWeight: 900,
+                    bgcolor: onDeck ? "#e2e8f0" : undefined,
+                    borderColor: onDeck ? "#94a3b8" : undefined,
+                    color: onDeck ? "#475569" : undefined,
+                  }}
+                />
+                <Typography fontWeight={900} sx={{ overflowWrap: "anywhere" }}>
+                  {getLocalStudentDisplayName(
+                    state,
+                    localNicknames,
+                    request.studentId,
+                    request.teacherId,
+                    request.periodId,
                   )}
-                </Stack>
-              </AccordionSummary>
-              <AccordionDetails>
-                {teacherRequests.length ? (
-                  <Stack spacing={0.75}>
-                    {teacherRequests.map((request) => (
-                      <Box
-                        key={request.id}
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: {
-                            xs: "1fr",
-                            sm: "1fr 1fr auto auto",
-                          },
-                          gap: 1,
-                          alignItems: "center",
-                          borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
-                          pb: 0.75,
-                        }}
-                      >
-                        <Typography fontWeight={900}>
-                          {getStudentUsername(state, request.studentId)}
-                        </Typography>
-                        <Typography variant="body2">
-                          {getTeacherName(state, request.teacherId)}
-                        </Typography>
-                        <Chip
-                          size="small"
-                          color={room.frozen ? "warning" : "success"}
-                          variant={room.frozen ? "filled" : "outlined"}
-                          label={room.frozen ? "Frozen" : "Open"}
-                        />
-                        <Chip
-                          size="small"
-                          label={`${destinationEmojis[request.destination]} ${destinationLabels[request.destination]}`}
-                        />
-                      </Box>
-                    ))}
-                  </Stack>
-                ) : (
-                  <Typography color="text.secondary">No students in this queue.</Typography>
-                )}
-              </AccordionDetails>
-            </Accordion>
-          );
-        })}
-      </Stack>
-    </SectionPaper>
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    display: { xs: "none", sm: "block" },
+                    overflowWrap: "anywhere",
+                  }}
+                >
+                  {getTeacherName(state, request.teacherId)}
+                </Typography>
+                <Tooltip title={destinationLabels[request.destination]}>
+                  <Box sx={{ width: 38, justifySelf: "center" }}>
+                    <DestinationArt destination={request.destination} size={34} />
+                  </Box>
+                </Tooltip>
+                <Chip
+                  size="small"
+                  color={
+                    status === "Frozen"
+                      ? "default"
+                      : status === "eloping"
+                        ? "error"
+                        : status === "out"
+                          ? "warning"
+                          : status === "requesting"
+                            ? "success"
+                            : "primary"
+                  }
+                  variant={status === "pending" ? "outlined" : "filled"}
+                  label={status === "pending" ? "Pending" : status}
+                  sx={
+                    status === "Frozen"
+                      ? {
+                          bgcolor: "#e0f2fe",
+                          border: "1px solid #7dd3fc",
+                          color: "#075985",
+                          fontWeight: 900,
+                        }
+                      : undefined
+                  }
+                />
+              </Box>
+            );
+          })}
+        </Stack>
+      ) : (
+        <Typography color="text.secondary">No students in this queue.</Typography>
+      )}
+    </Stack>
   );
 }
 
@@ -1431,11 +1737,21 @@ function RosterView({
   state,
   user,
   effectiveTeacherId,
+  localNicknames,
+  onLocalNicknameChange,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
   effectiveTeacherId: string;
+  localNicknames: LocalNicknameMap;
+  onLocalNicknameChange: (
+    teacherId: string,
+    periodId: string,
+    username: string,
+    nickname: string,
+    previousUsername?: string,
+  ) => void;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
   const currentPeriod = getCurrentPeriod(state);
@@ -1447,7 +1763,7 @@ function RosterView({
   const [internalStudentId, setInternalStudentId] = useState("");
   const [medicalPriority, setMedicalPriority] = useState(false);
   const [message, setMessage] = useState("");
-  const [preview, setPreview] = useState<ImportPreviewRow[]>([]);
+  const [preview, setPreview] = useState<LocalImportPreviewRow[]>([]);
   const students = getRosterStudents(state, effectiveTeacherId, periodId);
 
   const toggleAddPeriod = (targetPeriodId: string) => {
@@ -1485,7 +1801,13 @@ function RosterView({
       header: true,
       skipEmptyLines: true,
       complete: (result) => {
-        setPreview(buildImportPreview(state, result.data || []));
+        const rows = result.data || [];
+        setPreview(
+          buildImportPreview(state, rows).map((row, index) => ({
+            ...row,
+            localNickname: readCsvLocalNickname(rows[index] || {}),
+          })),
+        );
       },
       error: (error) => setMessage(error.message),
     });
@@ -1498,6 +1820,11 @@ function RosterView({
         if (!actor) return;
         commitImportPreview(draft, actor, effectiveTeacherId, periodId, preview);
       });
+      preview
+        .filter((row) => row.localNickname?.trim())
+        .forEach((row) =>
+          onLocalNicknameChange(effectiveTeacherId, periodId, row.username, row.localNickname || ""),
+        );
       setMessage(`Imported ${preview.length} students.`);
       setPreview([]);
     } catch (error) {
@@ -1598,7 +1925,7 @@ function RosterView({
             <Box flex={1}>
               <Typography variant="h6">CSV Import Preview</Typography>
               <Typography variant="body2" color="text.secondary">
-                Accepted headers: firstName, lastName, internalStudentId, medicalPriority.
+                Accepted headers: firstName, lastName, nickname, internalStudentId, medicalPriority.
               </Typography>
             </Box>
             <Button variant="outlined" component="label" startIcon={<FileUploadIcon />}>
@@ -1629,6 +1956,7 @@ function RosterView({
                 <TableRow>
                   <TableCell>Row</TableCell>
                   <TableCell>Generated Username</TableCell>
+                  <TableCell>Nickname</TableCell>
                   <TableCell>Medical</TableCell>
                   <TableCell>Issues</TableCell>
                 </TableRow>
@@ -1638,6 +1966,7 @@ function RosterView({
                   <TableRow key={row.id}>
                     <TableCell>{row.rowNumber}</TableCell>
                     <TableCell>{row.username}</TableCell>
+                    <TableCell>{row.localNickname || "None"}</TableCell>
                     <TableCell>{row.medicalPriority ? "Yes" : "No"}</TableCell>
                     <TableCell>
                       {row.issues.length ? (
@@ -1663,6 +1992,7 @@ function RosterView({
             <TableHead>
               <TableRow>
                 <TableCell>Username</TableCell>
+                <TableCell>Nickname</TableCell>
                 <TableCell>Medical Priority</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
@@ -1676,6 +2006,8 @@ function RosterView({
                   teacherId={effectiveTeacherId}
                   periodId={periodId}
                   studentId={student.id}
+                  localNicknames={localNicknames}
+                  onLocalNicknameChange={onLocalNicknameChange}
                   onMutate={onMutate}
                 />
               ))}
@@ -1695,6 +2027,8 @@ function RosterStudentRow({
   teacherId,
   periodId,
   studentId,
+  localNicknames,
+  onLocalNicknameChange,
   onMutate,
 }: {
   state: PawPassState;
@@ -1702,30 +2036,83 @@ function RosterStudentRow({
   teacherId: string;
   periodId: string;
   studentId: string;
+  localNicknames: LocalNicknameMap;
+  onLocalNicknameChange: (
+    teacherId: string,
+    periodId: string,
+    username: string,
+    nickname: string,
+    previousUsername?: string,
+  ) => void;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
   const student = getStudent(state, studentId);
+  const savedNickname = student
+    ? localNicknames[localNicknameKey(teacherId, periodId, student.username)] || ""
+    : "";
   const [editing, setEditing] = useState(false);
   const [username, setUsername] = useState(student?.username || "");
+  const [nickname, setNickname] = useState(savedNickname);
   const [medical, setMedical] = useState(Boolean(student?.medicalPriority));
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    setUsername(student?.username || "");
+    setNickname(savedNickname);
+    setMedical(Boolean(student?.medicalPriority));
+  }, [savedNickname, student?.medicalPriority, student?.username]);
+
   if (!student) return null;
+
+  const cancel = () => {
+    setUsername(student.username);
+    setNickname(savedNickname);
+    setMedical(student.medicalPriority);
+    setError("");
+    setEditing(false);
+  };
 
   const save = () => {
     try {
+      const cleanedUsername = username.trim().toLowerCase();
+      const cleanedNickname = normalizeNickname(nickname);
+      if (!isValidStudentUsername(cleanedUsername)) {
+        setError("Username must look like j_smi_123.");
+        return;
+      }
+      if (
+        state.students.some(
+          (item) => item.id !== studentId && item.username === cleanedUsername && item.active,
+        )
+      ) {
+        setError("That username already belongs to another student.");
+        return;
+      }
+      const previousUsername = student.username;
       onMutate((draft) => {
         const actor = draft.staffUsers.find((item) => item.id === user.id);
         if (!actor) return;
         updateStudent(draft, actor, teacherId, studentId, {
-          username,
+          username: cleanedUsername,
           medicalPriority: medical,
         });
       });
+      onLocalNicknameChange(teacherId, periodId, cleanedUsername, cleanedNickname, previousUsername);
       setError("");
       setEditing(false);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "Could not save student.");
+    }
+  };
+
+  const handleEditKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      save();
+    }
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancel();
     }
   };
 
@@ -1739,11 +2126,29 @@ function RosterStudentRow({
               value={username}
               error={!isValidStudentUsername(username)}
               onChange={(event) => setUsername(event.target.value)}
+              onKeyDown={handleEditKeyDown}
             />
             {error ? <Typography variant="caption" color="error">{error}</Typography> : null}
           </Stack>
         ) : (
           <Typography fontWeight={900}>{student.username}</Typography>
+        )}
+      </TableCell>
+      <TableCell>
+        {editing ? (
+          <TextField
+            size="small"
+            label="Nickname"
+            value={nickname}
+            helperText="Optional classroom display name"
+            onChange={(event) => setNickname(event.target.value)}
+            onKeyDown={handleEditKeyDown}
+            inputProps={{ maxLength: 40 }}
+          />
+        ) : savedNickname ? (
+          <Typography fontWeight={900}>{savedNickname}</Typography>
+        ) : (
+          <Typography color="text.secondary">None</Typography>
         )}
       </TableCell>
       <TableCell>
@@ -1756,9 +2161,18 @@ function RosterStudentRow({
       <TableCell align="right">
         <Stack direction="row" spacing={0.5} justifyContent="flex-end">
           {editing ? (
-            <Button size="small" variant="contained" onClick={save}>
-              Save
-            </Button>
+            <>
+              <Button size="small" variant="contained" onClick={save}>
+                Save
+              </Button>
+              <Button
+                size="small"
+                variant="text"
+                onClick={cancel}
+              >
+                Cancel
+              </Button>
+            </>
           ) : (
             <Tooltip title="Edit">
               <IconButton size="small" onClick={() => setEditing(true)}>
@@ -1790,11 +2204,13 @@ function RosterStudentRow({
 function ElopersView({
   state,
   user,
+  localNicknames,
   now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
+  localNicknames: LocalNicknameMap;
   now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
@@ -1849,11 +2265,18 @@ function ElopersView({
                           <TableBody>
                             {teacherElopers.map((eloper) => {
                               const student = getStudent(state, eloper.studentId);
+                              const request = state.requests.find((item) => item.id === eloper.requestId);
                               return (
                                 <TableRow key={eloper.id}>
                                   <TableCell>
                                     <Typography fontWeight={900}>
-                                      {getStudentUsername(state, eloper.studentId)}
+                                      {getLocalStudentDisplayName(
+                                        state,
+                                        localNicknames,
+                                        eloper.studentId,
+                                        eloper.teacherId,
+                                        request?.periodId,
+                                      )}
                                     </Typography>
                                   </TableCell>
                                   <TableCell>{group.name}</TableCell>
@@ -1900,7 +2323,7 @@ function ElopersView({
                                         })
                                       }
                                     >
-                                      Accounted For
+                                      Returned
                                     </Button>
                                   </TableCell>
                                 </TableRow>
@@ -1927,11 +2350,13 @@ function ElopersView({
 function DestinationInboundView({
   state,
   user,
+  localNicknames,
   now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
+  localNicknames: LocalNicknameMap;
   now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
@@ -1969,6 +2394,13 @@ function DestinationInboundView({
 
   return (
     <Stack spacing={2}>
+      <DestinationBlockControls
+        state={state}
+        user={user}
+        destinations={[destination]}
+        onMutate={onMutate}
+      />
+
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
         <Metric label="Inbound" value={enRoute.length} />
         <Metric label="Received" value={received.length} />
@@ -1992,7 +2424,13 @@ function DestinationInboundView({
                 <TableRow key={request.id}>
                   <TableCell>
                     <Typography fontWeight={900}>
-                      {getStudentUsername(state, request.studentId)}
+                      {getLocalStudentDisplayName(
+                        state,
+                        localNicknames,
+                        request.studentId,
+                        request.teacherId,
+                        request.periodId,
+                      )}
                     </Typography>
                   </TableCell>
                   <TableCell>{getTeacherName(state, request.teacherId)}</TableCell>
@@ -2082,6 +2520,99 @@ function DestinationInboundView({
   );
 }
 
+function DestinationBlockControls({
+  state,
+  user,
+  destinations,
+  onMutate,
+}: {
+  state: PawPassState;
+  user: StaffUser;
+  destinations: DestinationKey[];
+  onMutate: (mutator: (draft: PawPassState) => void) => void;
+}) {
+  const updateBlocked = (destination: DestinationKey, blocked: boolean) => {
+    onMutate((draft) => {
+      const actor = draft.staffUsers.find((item) => item.id === user.id);
+      if (!actor) return;
+      setDestinationBlocked(draft, actor, destination, blocked);
+      advanceQueues(draft);
+    });
+  };
+
+  const updateLimit = (destination: DestinationKey, value: number) => {
+    onMutate((draft) => {
+      const actor = draft.staffUsers.find((item) => item.id === user.id);
+      if (!actor) return;
+      setDestinationAutoBlockLimit(draft, actor, destination, value);
+      advanceQueues(draft);
+    });
+  };
+
+  return (
+    <SectionPaper>
+      <Stack spacing={1.5}>
+        {destinations.map((destination) => {
+          const destinationState = getDestinationState(state, destination);
+          const activeCount = activeDestinationRequestCount(state, destination);
+          const autoBlocked =
+            destinationState.autoBlockAfterCount > 0 &&
+            activeCount >= destinationState.autoBlockAfterCount;
+          const blocked = isDestinationBlocked(state, destination);
+
+          return (
+            <Box
+              key={destination}
+              sx={{
+                display: "grid",
+                gridTemplateColumns: { xs: "1fr", md: "56px 1fr auto minmax(210px, 260px)" },
+                gap: 1.25,
+                alignItems: "center",
+                borderBottom:
+                  destinations.length > 1 ? "1px solid rgba(15, 23, 42, 0.08)" : "none",
+                pb: destinations.length > 1 ? 1.25 : 0,
+              }}
+            >
+              <Box sx={{ width: 48 }}>
+                <DestinationArt destination={destination} size={44} />
+              </Box>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                <Typography fontWeight={900}>{destinationLabels[destination]}</Typography>
+                <Chip size="small" label={`${activeCount} active`} />
+                {blocked ? (
+                  <Chip
+                    size="small"
+                    color="warning"
+                    label={autoBlocked ? "Auto-blocking" : "Blocking"}
+                  />
+                ) : (
+                  <Chip size="small" variant="outlined" label="Taking requests" />
+                )}
+              </Stack>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={destinationState.blocked}
+                    onChange={(event) => updateBlocked(destination, event.target.checked)}
+                  />
+                }
+                label="Block requests"
+              />
+              <TextField
+                size="small"
+                type="number"
+                label="Auto-block after active requests"
+                value={destinationState.autoBlockAfterCount}
+                onChange={(event) => updateLimit(destination, Number(event.target.value))}
+              />
+            </Box>
+          );
+        })}
+      </Stack>
+    </SectionPaper>
+  );
+}
+
 function EditableGroupName({
   user,
   groupId,
@@ -2143,7 +2674,7 @@ function EditableGroupName({
         variant="standard"
         value={draftName}
         onChange={(event) => setDraftName(event.target.value)}
-        onBlur={cancelEditing}
+        onBlur={commitName}
         onFocus={(event) => event.target.select()}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
@@ -2203,84 +2734,204 @@ function EditableGroupName({
 function LiveMapView({
   state,
   user,
+  localNicknames,
   now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
+  localNicknames: LocalNicknameMap;
   now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
   const visibleTeachers = new Set(getVisibleTeacherIds(user, state));
-  const visibleGroups = state.groups.filter((group) =>
-    group.teacherIds.some((teacherId) => visibleTeachers.has(teacherId)),
+  const canMoveTeachers = user.role === "admin";
+  const canFilterGroups = user.role === "admin";
+  const visibleGroups = canViewAll(user)
+    ? state.groups
+    : state.groups.filter((group) =>
+        group.teacherIds.some((teacherId) => visibleTeachers.has(teacherId)),
+      );
+  const [selectedGroupId, setSelectedGroupId] = useState("all");
+  const [draggedTeacherId, setDraggedTeacherId] = useState("");
+  const selectedGroupIsVisible = visibleGroups.some((group) => group.id === selectedGroupId);
+  const effectiveSelectedGroupId =
+    canFilterGroups && selectedGroupIsVisible ? selectedGroupId : "all";
+  const filteredGroups =
+    effectiveSelectedGroupId === "all"
+      ? visibleGroups
+      : visibleGroups.filter((group) => group.id === effectiveSelectedGroupId);
+  const activeEloperRequestIds = new Set(
+    state.elopers.filter((eloper) => eloper.active).map((eloper) => eloper.requestId),
   );
+
+  const handleGroupDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    if (!canMoveTeachers) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  };
+
+  const handleGroupDrop = (groupId: string) => (event: React.DragEvent<HTMLDivElement>) => {
+    if (!canMoveTeachers) return;
+    event.preventDefault();
+    const teacherId = event.dataTransfer.getData("text/plain") || draggedTeacherId;
+    if (!teacherId) return;
+    onMutate((draft) => {
+      const actor = draft.staffUsers.find((item) => item.id === user.id);
+      if (!actor) return;
+      moveTeacherToGroup(draft, actor, teacherId, groupId);
+      advanceQueues(draft);
+    });
+    setDraggedTeacherId("");
+  };
 
   return (
     <Stack spacing={2}>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 2 }}>
-        {visibleGroups.map((group) => {
+      {canFilterGroups ? (
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <FormControl size="small" sx={{ minWidth: 220 }}>
+            <InputLabel id="live-map-group-filter-label">Group</InputLabel>
+            <Select
+              labelId="live-map-group-filter-label"
+              label="Group"
+              value={effectiveSelectedGroupId}
+              onChange={(event) => setSelectedGroupId(String(event.target.value))}
+            >
+              <MenuItem value="all">All groups</MenuItem>
+              {visibleGroups.map((group) => (
+                <MenuItem key={group.id} value={group.id}>
+                  {group.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Box>
+      ) : null}
+
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            md: canViewAll(user) ? "repeat(2, minmax(0, 1fr))" : "1fr",
+          },
+          gap: 2,
+        }}
+      >
+        {filteredGroups.map((group) => {
           const groupRequests = state.requests.filter(
             (request) =>
               request.groupId === group.id &&
-              activePassStatuses.includes(request.status),
+              activePassStatuses.includes(request.status) &&
+              request.status !== "delayed" &&
+              !activeEloperRequestIds.has(request.id),
           );
-          const active = groupRequests.filter((request) => request.status === "out");
-          const pending = groupRequests.filter((request) => request.status === "offered");
-          const waiting = groupRequests.filter((request) => request.status === "waiting" || request.status === "delayed");
-          const totalWaiting = groupRequests.filter((request) => request.status !== "out").length;
           const activeElopers = state.elopers.filter((eloper) => eloper.groupId === group.id && eloper.active);
 
           return (
-            <SectionPaper key={group.id}>
-              <Stack spacing={1.5}>
-                <Stack direction="row" spacing={1} alignItems="center">
-                  <GroupsIcon color="primary" />
-                  <Box flex={1}>
-                    <EditableGroupName
-                      user={user}
-                      groupId={group.id}
-                      name={group.name}
-                      onMutate={onMutate}
-                    />
-                  </Box>
-                  <Chip
-                    color={totalWaiting ? "warning" : "default"}
-                    label={`Total Waiting ${totalWaiting}`}
+            <Box
+              key={group.id}
+              onDragOver={handleGroupDragOver}
+              onDrop={handleGroupDrop(group.id)}
+            >
+              <SectionPaper
+                sx={{
+                  height: "100%",
+                  borderColor:
+                    canMoveTeachers && draggedTeacherId && !group.teacherIds.includes(draggedTeacherId)
+                      ? "#38bdf8"
+                      : "rgba(15, 23, 42, 0.12)",
+                  bgcolor:
+                    canMoveTeachers && draggedTeacherId && !group.teacherIds.includes(draggedTeacherId)
+                      ? "#f0f9ff"
+                      : "#ffffff",
+                }}
+              >
+                <Stack spacing={1.5}>
+                  <Stack spacing={0.75}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <GroupsIcon color="primary" />
+                      <Box flex={1}>
+                        <EditableGroupName
+                          user={user}
+                          groupId={group.id}
+                          name={group.name}
+                          onMutate={onMutate}
+                        />
+                      </Box>
+                      {activeElopers.length ? <Chip color="error" label={`${activeElopers.length} eloper`} /> : null}
+                    </Stack>
+                  </Stack>
+
+                  <Divider />
+
+                  <GroupQueueList
+                    state={state}
+                    groupId={group.id}
+                    localNicknames={localNicknames}
                   />
-                  {activeElopers.length ? <Chip color="error" label={`${activeElopers.length} eloper`} /> : null}
-                </Stack>
 
-                <Divider />
+                  <Divider />
 
-                {group.teacherIds
-                  .map((teacherId) => {
-                    const room = getRoomState(deepClone(state), teacherId);
+                  {group.teacherIds.map((teacherId) => {
+                    const room = getRoomSnapshot(state, teacherId);
                     const teacherRequests = groupRequests.filter((request) => request.teacherId === teacherId);
                     return (
                       <Box
                         key={teacherId}
+                        draggable={canMoveTeachers}
+                        onDragStart={(event) => {
+                          if (!canMoveTeachers) return;
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", teacherId);
+                          setDraggedTeacherId(teacherId);
+                        }}
+                        onDragEnd={() => setDraggedTeacherId("")}
                         sx={{
                           display: "grid",
                           gridTemplateColumns: { xs: "1fr", sm: "1fr auto" },
                           gap: 1,
                           py: 0.75,
                           borderBottom: "1px solid rgba(15, 23, 42, 0.08)",
+                          cursor: canMoveTeachers ? "grab" : "default",
+                          opacity: draggedTeacherId === teacherId ? 0.55 : 1,
+                          borderRadius: 0.75,
+                          px: canMoveTeachers ? 0.75 : 0,
+                          "&:hover": canMoveTeachers
+                            ? {
+                                bgcolor: "rgba(14, 165, 233, 0.08)",
+                              }
+                            : undefined,
                         }}
                       >
                         <Box>
                           <Typography fontWeight={900}>{getTeacherName(state, teacherId)}</Typography>
-                          <Typography variant="body2" color="text.secondary">
-                            {teacherRequests.length
-                              ? teacherRequests
-                                  .map((request) =>
-                                    `${getStudentUsername(state, request.studentId)}: ${displayStatus(
-                                      request.status,
-                                    )} - ${destinationEmojis[request.destination]} ${destinationLabels[request.destination]}`,
-                                  )
-                                  .join(", ")
-                              : "No active queue items"}
-                          </Typography>
+                          {teacherRequests.length ? (
+                            <Stack spacing={0.25} sx={{ mt: 0.25 }}>
+                              {teacherRequests.map((request) => (
+                                <Typography
+                                  key={request.id}
+                                  variant="body2"
+                                  color="text.secondary"
+                                  sx={{ overflowWrap: "anywhere" }}
+                                >
+                                  {getLocalStudentDisplayName(
+                                    state,
+                                    localNicknames,
+                                    request.studentId,
+                                    request.teacherId,
+                                    request.periodId,
+                                  )}
+                                  : {room.frozen ? "Frozen" : displayStatus(request.status)} -{" "}
+                                  {destinationEmojis[request.destination]} {destinationLabels[request.destination]}
+                                </Typography>
+                              ))}
+                            </Stack>
+                          ) : (
+                            <Typography variant="body2" color="text.secondary">
+                              No active queue items
+                            </Typography>
+                          )}
                         </Box>
                         <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap">
                           {room.frozen ? <Chip size="small" color="warning" label="Frozen" /> : null}
@@ -2288,15 +2939,9 @@ function LiveMapView({
                       </Box>
                     );
                   })}
-
-                <Stack direction="row" spacing={1} flexWrap="wrap">
-                  <Chip color={active.length ? "error" : "default"} label={`Out ${active.length}`} />
-                  <Chip color={pending.length ? "success" : "default"} label={`Pending ${pending.length}`} />
-                  <Chip label={`Waiting ${waiting.length}`} />
-                  <Chip label={`Updated ${formatTime(now)}`} />
                 </Stack>
-              </Stack>
-            </SectionPaper>
+              </SectionPaper>
+            </Box>
           );
         })}
       </Box>
@@ -2304,73 +2949,175 @@ function LiveMapView({
   );
 }
 
-function ReportsView({ state, user, now }: { state: PawPassState; user: StaffUser; now: number }) {
-  const [teacherFilterId, setTeacherFilterId] = useState("all");
+function ReportsView({
+  state,
+  user,
+  localNicknames,
+  now,
+}: {
+  state: PawPassState;
+  user: StaffUser;
+  localNicknames: LocalNicknameMap;
+  now: number;
+}) {
+  const todayInput = msToDateInput(now);
+  const [teacherFilterIds, setTeacherFilterIds] = useState<string[]>([]);
+  const [teacherSearch, setTeacherSearch] = useState("");
+  const [startDate, setStartDate] = useState(() => todayInput);
+  const [endDate, setEndDate] = useState(() => todayInput);
+  const [requestTypeFilter, setRequestTypeFilter] = useState<"all" | DestinationKey>("all");
+  const [sortKey, setSortKey] = useState<ReportSortKey>("requests_desc");
   const fullAccess = canViewAll(user);
-  const teachers = getTeachers(state);
-  const selectedTeacherFilterId =
-    fullAccess && (teacherFilterId === "all" || teachers.some((teacher) => teacher.id === teacherFilterId))
-      ? teacherFilterId
-      : "all";
-  const reportTeacherIds = fullAccess
-    ? selectedTeacherFilterId === "all"
-      ? teachers.map((teacher) => teacher.id)
-      : [selectedTeacherFilterId]
-    : [getEffectiveTeacherId(user, state)].filter(Boolean);
-  const reportTeacherSet = new Set(reportTeacherIds);
-  const rosterStudentIds = new Set<string>();
-  const rosterTeacherIdsByStudent = new Map<string, Set<string>>();
+  const teachers = useMemo(
+    () => state.staffUsers.filter((staff) => staff.role === "teacher" && staff.active),
+    [state.staffUsers],
+  );
+  const teacherIdSet = useMemo(() => new Set(teachers.map((teacher) => teacher.id)), [teachers]);
+  const validTeacherFilterIds = useMemo(
+    () => (fullAccess ? teacherFilterIds.filter((teacherId) => teacherIdSet.has(teacherId)) : []),
+    [fullAccess, teacherFilterIds, teacherIdSet],
+  );
+  const allTeachersSelected = !validTeacherFilterIds.length;
+  const selectedTeachers = useMemo(
+    () => teachers.filter((teacher) => validTeacherFilterIds.includes(teacher.id)),
+    [teachers, validTeacherFilterIds],
+  );
+  const reportTeacherIds = useMemo(
+    () =>
+      fullAccess
+        ? allTeachersSelected
+          ? teachers.map((teacher) => teacher.id)
+          : validTeacherFilterIds
+        : [getEffectiveTeacherId(user, state)].filter(Boolean),
+    [allTeachersSelected, fullAccess, state, teachers, user, validTeacherFilterIds],
+  );
+  const reportTeacherSet = useMemo(() => new Set(reportTeacherIds), [reportTeacherIds]);
+  const { rosterStudentIds, rosterTeacherIdsByStudent } = useMemo(() => {
+    const studentIds = new Set<string>();
+    const teacherIdsByStudent = new Map<string, Set<string>>();
+    const rosterIdsByTeacher = state.rosters.filter(
+      (roster) => roster.active && reportTeacherSet.has(roster.teacherId),
+    );
 
-  state.rosters
-    .filter((roster) => roster.active && reportTeacherSet.has(roster.teacherId))
-    .forEach((roster) => {
+    rosterIdsByTeacher.forEach((roster) => {
       state.rosterEntries
         .filter((entry) => entry.active && entry.rosterId === roster.id)
         .forEach((entry) => {
-          rosterStudentIds.add(entry.studentId);
-          const teacherIds = rosterTeacherIdsByStudent.get(entry.studentId) || new Set<string>();
+          studentIds.add(entry.studentId);
+          const teacherIds = teacherIdsByStudent.get(entry.studentId) || new Set<string>();
           teacherIds.add(roster.teacherId);
-          rosterTeacherIdsByStudent.set(entry.studentId, teacherIds);
+          teacherIdsByStudent.set(entry.studentId, teacherIds);
         });
     });
 
-  const eligibleStudents =
-    fullAccess && selectedTeacherFilterId === "all"
-      ? state.students.filter((student) => student.active)
-      : state.students.filter((student) => student.active && rosterStudentIds.has(student.id));
+    return { rosterStudentIds: studentIds, rosterTeacherIdsByStudent: teacherIdsByStudent };
+  }, [reportTeacherSet, state.rosterEntries, state.rosters]);
 
-  const eligibleStudentIds = new Set(eligibleStudents.map((student) => student.id));
-  const scopedRequests = state.requests.filter(
-    (request) =>
-      reportTeacherSet.has(request.teacherId) &&
-      (fullAccess && selectedTeacherFilterId === "all"
-        ? true
-        : eligibleStudentIds.has(request.studentId)),
+  const eligibleStudents = useMemo(
+    () =>
+      fullAccess && allTeachersSelected
+        ? state.students.filter((student) => student.active)
+        : state.students.filter((student) => student.active && rosterStudentIds.has(student.id)),
+    [allTeachersSelected, fullAccess, rosterStudentIds, state.students],
   );
-  const returned = scopedRequests.filter((request) => request.status === "returned" && request.permittedAt && request.returnedAt);
-  const calledRequests = scopedRequests.filter((request) => request.offeredAt);
+
+  const eligibleStudentIds = useMemo(
+    () => new Set(eligibleStudents.map((student) => student.id)),
+    [eligibleStudents],
+  );
+  const startMs = useMemo(() => dateInputToStartMs(startDate), [startDate]);
+  const endMs = useMemo(() => dateInputToEndMs(endDate), [endDate]);
+  const scopedRequests = useMemo(
+    () =>
+      state.requests.filter(
+        (request) =>
+          reportTeacherSet.has(request.teacherId) &&
+          (fullAccess && allTeachersSelected
+            ? true
+            : eligibleStudentIds.has(request.studentId)) &&
+          (startMs === null || request.requestedAt >= startMs) &&
+          (endMs === null || request.requestedAt <= endMs) &&
+          (requestTypeFilter === "all" || request.destination === requestTypeFilter),
+      ),
+    [
+      allTeachersSelected,
+      eligibleStudentIds,
+      endMs,
+      fullAccess,
+      reportTeacherSet,
+      requestTypeFilter,
+      startMs,
+      state.requests,
+    ],
+  );
+  const scopedRequestIds = useMemo(
+    () => new Set(scopedRequests.map((request) => request.id)),
+    [scopedRequests],
+  );
+  const scopedRequestById = useMemo(
+    () => new Map(scopedRequests.map((request) => [request.id, request])),
+    [scopedRequests],
+  );
+  const requestsByStudentId = useMemo(() => {
+    const requestsByStudent = new Map<string, PassRequest[]>();
+    scopedRequests.forEach((request) => {
+      const requests = requestsByStudent.get(request.studentId) || [];
+      requests.push(request);
+      requestsByStudent.set(request.studentId, requests);
+    });
+    return requestsByStudent;
+  }, [scopedRequests]);
+  const returned = useMemo(
+    () =>
+      scopedRequests.filter(
+        (request) => request.status === "returned" && request.permittedAt && request.returnedAt,
+      ),
+    [scopedRequests],
+  );
+  const calledRequests = useMemo(
+    () => scopedRequests.filter((request) => request.offeredAt),
+    [scopedRequests],
+  );
   const averageWaitMs = calledRequests.length
     ? calledRequests.reduce(
         (total, request) => total + Number(request.offeredAt! - request.requestedAt),
         0,
       ) / calledRequests.length
     : 0;
-  const totalElopers = state.elopers.filter(
-    (eloper) =>
-      reportTeacherSet.has(eloper.teacherId) &&
-      (fullAccess && selectedTeacherFilterId === "all"
-        ? true
-        : eligibleStudentIds.has(eloper.studentId)),
+  const totalElopers = useMemo(
+    () =>
+      state.elopers.filter(
+        (eloper) =>
+          reportTeacherSet.has(eloper.teacherId) &&
+          (fullAccess && allTeachersSelected
+            ? true
+            : eligibleStudentIds.has(eloper.studentId)) &&
+          scopedRequestIds.has(eloper.requestId),
+      ),
+    [
+      allTeachersSelected,
+      eligibleStudentIds,
+      fullAccess,
+      reportTeacherSet,
+      scopedRequestIds,
+      state.elopers,
+    ],
   );
-  const eloperRequestIds = new Set(totalElopers.map((eloper) => eloper.requestId));
-  const nonEloperReturned = returned.filter((request) => !eloperRequestIds.has(request.id));
+  const eloperRequestIds = useMemo(
+    () => new Set(totalElopers.map((eloper) => eloper.requestId)),
+    [totalElopers],
+  );
+  const nonEloperReturned = useMemo(
+    () => returned.filter((request) => !eloperRequestIds.has(request.id)),
+    [eloperRequestIds, returned],
+  );
   const averageNonEloperMs = nonEloperReturned.length
     ? nonEloperReturned.reduce((total, request) => total + Number(request.returnedAt! - request.permittedAt!), 0) /
       nonEloperReturned.length
     : 0;
   const eloperDurations = totalElopers
     .map((eloper) => {
-      const request = scopedRequests.find((item) => item.id === eloper.requestId);
+      const request = scopedRequestById.get(eloper.requestId);
       const start = request?.permittedAt || eloper.permittedAt;
       const end = request?.returnedAt || eloper.accountedForAt || (eloper.active ? now : eloper.flaggedAt);
       return Math.max(0, Number(end) - Number(start));
@@ -2380,14 +3127,33 @@ function ReportsView({ state, user, now }: { state: PawPassState; user: StaffUse
     ? eloperDurations.reduce((total, duration) => total + duration, 0) / eloperDurations.length
     : 0;
 
-  const requestCounts = requestActionKeys.map((destination) => ({
-    destination,
-    count: scopedRequests.filter((request) => request.destination === destination).length,
-  }));
+  const requestCounts = useMemo(
+    () =>
+      requestActionKeys.map((destination) => ({
+        destination,
+        count: scopedRequests.filter((request) => request.destination === destination).length,
+      })),
+    [scopedRequests],
+  );
+  const eloperCountByStudentId = useMemo(() => {
+    const counts = new Map<string, number>();
+    totalElopers.forEach((eloper) => {
+      counts.set(eloper.studentId, (counts.get(eloper.studentId) || 0) + 1);
+    });
+    return counts;
+  }, [totalElopers]);
+  const penaltyByStudentId = useMemo(() => {
+    const penalties = new Map<string, number>();
+    eligibleStudents.forEach((student) => {
+      penalties.set(student.id, getStudentQueuePenaltyMs(state, student.id));
+    });
+    return penalties;
+  }, [eligibleStudents, state]);
 
-  const studentStats = eligibleStudents
-    .map((student) => {
-      const requests = scopedRequests.filter((request) => request.studentId === student.id);
+  const studentStats = useMemo(
+    () =>
+      eligibleStudents.map((student) => {
+      const requests = requestsByStudentId.get(student.id) || [];
       const completed = requests.filter((request) => request.permittedAt && request.returnedAt && !eloperRequestIds.has(request.id));
       const avg = completed.length
         ? completed.reduce((total, request) => total + Number(request.returnedAt! - request.permittedAt!), 0) / completed.length
@@ -2399,45 +3165,169 @@ function ReportsView({ state, user, now }: { state: PawPassState; user: StaffUse
             0,
           ) / called.length
         : 0;
-      const eloperCount = state.elopers.filter(
-        (eloper) => eloper.studentId === student.id && reportTeacherSet.has(eloper.teacherId),
-      ).length;
+      const eloperCount = eloperCountByStudentId.get(student.id) || 0;
+      const penaltyMs = penaltyByStudentId.get(student.id) || 0;
       const teacherNames = Array.from(rosterTeacherIdsByStudent.get(student.id) || [])
         .map((teacherId) => getTeacherName(state, teacherId))
         .join(", ");
+      const firstTeacherId = Array.from(rosterTeacherIdsByStudent.get(student.id) || [])[0];
+      const displayName = getLocalStudentDisplayName(state, localNicknames, student.id, firstTeacherId);
       return {
         student,
+        displayName,
         teacherNames: teacherNames || "No active roster",
         requests: requests.length,
         averageMs: avg,
         averageWaitMs: avgWait,
         eloperCount,
+        penaltyMs,
       };
     })
-    .sort((left, right) => right.requests - left.requests || left.student.username.localeCompare(right.student.username));
+    .sort((left, right) => {
+      if (sortKey === "requests_asc") return left.requests - right.requests || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "username_asc") return left.displayName.localeCompare(right.displayName);
+      if (sortKey === "username_desc") return right.displayName.localeCompare(left.displayName);
+      if (sortKey === "avg_wait_desc") return right.averageWaitMs - left.averageWaitMs || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "avg_wait_asc") return left.averageWaitMs - right.averageWaitMs || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "avg_out_desc") return right.averageMs - left.averageMs || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "avg_out_asc") return left.averageMs - right.averageMs || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "elopers_desc") return right.eloperCount - left.eloperCount || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "elopers_asc") return left.eloperCount - right.eloperCount || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "penalty_desc") return right.penaltyMs - left.penaltyMs || left.displayName.localeCompare(right.displayName);
+      if (sortKey === "penalty_asc") return left.penaltyMs - right.penaltyMs || left.displayName.localeCompare(right.displayName);
+      return right.requests - left.requests || left.displayName.localeCompare(right.displayName);
+    }),
+    [
+      eligibleStudents,
+      eloperCountByStudentId,
+      eloperRequestIds,
+      localNicknames,
+      penaltyByStudentId,
+      requestsByStudentId,
+      rosterTeacherIdsByStudent,
+      sortKey,
+      state,
+    ],
+  );
+
+  const sortableHeader = (
+    label: string,
+    ascendingKey: ReportSortKey,
+    descendingKey: ReportSortKey,
+  ) => {
+    const active = sortKey === ascendingKey || sortKey === descendingKey;
+    const direction: "asc" | "desc" = sortKey.endsWith("_asc") ? "asc" : "desc";
+    const nextKey = active && sortKey === descendingKey ? ascendingKey : descendingKey;
+    return (
+      <TableSortLabel
+        active={active}
+        direction={active ? direction : "desc"}
+        onClick={() => setSortKey(nextKey)}
+      >
+        {label}
+      </TableSortLabel>
+    );
+  };
 
   return (
     <Stack spacing={2}>
-      {fullAccess ? (
-        <SectionPaper>
-          <FormControl size="small" sx={{ minWidth: 260 }}>
-            <InputLabel id="report-teacher-filter-label">Teacher</InputLabel>
+      <SectionPaper>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, minmax(0, 1fr))",
+              lg: fullAccess
+                ? "1.25fr repeat(3, minmax(0, 1fr)) auto"
+                : "repeat(3, minmax(0, 1fr)) auto",
+            },
+            gap: 1,
+            alignItems: "center",
+          }}
+        >
+          {fullAccess ? (
+            <Autocomplete
+              multiple
+              size="small"
+              options={teachers}
+              value={selectedTeachers}
+              inputValue={teacherSearch}
+              filterSelectedOptions
+              getOptionLabel={(teacher) => teacher.displayName}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
+              onInputChange={(_, value, reason) => {
+                if (reason !== "reset") setTeacherSearch(value);
+              }}
+              onChange={(_, selected) => {
+                setTeacherFilterIds(selected.map((teacher) => teacher.id));
+                setTeacherSearch("");
+              }}
+              renderTags={(selected, getTagProps) =>
+                selected.map((teacher, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return <Chip key={key} size="small" label={teacher.displayName} {...tagProps} />;
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Teachers"
+                  placeholder={selectedTeachers.length ? "" : "All teachers"}
+                />
+              )}
+              sx={{ minWidth: 260 }}
+            />
+          ) : null}
+
+          <TextField
+            size="small"
+            type="date"
+            label="Start date"
+            value={startDate}
+            InputLabelProps={{ shrink: true }}
+            onChange={(event) => setStartDate(event.target.value)}
+          />
+          <TextField
+            size="small"
+            type="date"
+            label="End date"
+            value={endDate}
+            InputLabelProps={{ shrink: true }}
+            onChange={(event) => setEndDate(event.target.value)}
+          />
+          <FormControl size="small">
+            <InputLabel id="report-request-type-label">Request</InputLabel>
             <Select
-              labelId="report-teacher-filter-label"
-              label="Teacher"
-              value={selectedTeacherFilterId}
-              onChange={(event) => setTeacherFilterId(String(event.target.value))}
+              labelId="report-request-type-label"
+              label="Request"
+              value={requestTypeFilter}
+              onChange={(event) => setRequestTypeFilter(event.target.value as "all" | DestinationKey)}
             >
-              <MenuItem value="all">All teachers</MenuItem>
-              {teachers.map((teacher) => (
-                <MenuItem key={teacher.id} value={teacher.id}>
-                  {teacher.displayName}
+              <MenuItem value="all">All requests</MenuItem>
+              {requestActionKeys.map((destination) => (
+                <MenuItem key={destination} value={destination}>
+                  {destinationEmojis[destination]} {destinationLabels[destination]}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
-        </SectionPaper>
-      ) : null}
+          <Tooltip title="Reset report filters">
+            <IconButton
+              onClick={() => {
+                setTeacherFilterIds([]);
+                setTeacherSearch("");
+                setStartDate(todayInput);
+                setEndDate(todayInput);
+                setRequestTypeFilter("all");
+                setSortKey("requests_desc");
+              }}
+            >
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </SectionPaper>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(6, 1fr)" }, gap: 1.5 }}>
         <Metric label="Requests" value={scopedRequests.length} />
@@ -2477,23 +3367,44 @@ function ReportsView({ state, user, now }: { state: PawPassState; user: StaffUse
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Username</TableCell>
+                  <TableCell>
+                    {sortableHeader("Student", "username_asc", "username_desc")}
+                  </TableCell>
                   {fullAccess ? <TableCell>Teacher</TableCell> : null}
-                  <TableCell>Requests</TableCell>
-                  <TableCell>Avg Wait</TableCell>
-                  <TableCell>Avg Out Non-Elopers</TableCell>
-                  <TableCell>Elopers</TableCell>
+                  <TableCell>
+                    {sortableHeader("Requests", "requests_asc", "requests_desc")}
+                  </TableCell>
+                  <TableCell>
+                    {sortableHeader("Avg Wait", "avg_wait_asc", "avg_wait_desc")}
+                  </TableCell>
+                  <TableCell>
+                    {sortableHeader("Avg Out Non-Elopers", "avg_out_asc", "avg_out_desc")}
+                  </TableCell>
+                  <TableCell>
+                    {sortableHeader("Elopers", "elopers_asc", "elopers_desc")}
+                  </TableCell>
+                  <TableCell align="right">
+                    {sortableHeader("Penalty", "penalty_asc", "penalty_desc")}
+                  </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {studentStats.map((row) => (
                   <TableRow key={row.student.id}>
-                    <TableCell>{row.student.username}</TableCell>
+                    <TableCell>
+                      <Typography fontWeight={900}>{row.displayName}</Typography>
+                      {row.displayName !== row.student.username ? (
+                        <Typography variant="caption" color="text.secondary">
+                          {row.student.username}
+                        </Typography>
+                      ) : null}
+                    </TableCell>
                     {fullAccess ? <TableCell>{row.teacherNames}</TableCell> : null}
                     <TableCell>{row.requests}</TableCell>
                     <TableCell>{row.averageWaitMs ? formatDuration(row.averageWaitMs) : "0:00"}</TableCell>
                     <TableCell>{row.averageMs ? formatDuration(row.averageMs) : "0:00"}</TableCell>
                     <TableCell>{row.eloperCount}</TableCell>
+                    <TableCell align="right">{row.penaltyMs ? formatDuration(row.penaltyMs) : "0:00"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -2529,10 +3440,12 @@ function SettingsView({
   user: StaffUser;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
-  if (user.role !== "admin") {
+  const staffDestination = destinationForStaffRole(user.role);
+  const canUseSettings = user.role === "admin" || Boolean(staffDestination);
+  if (!canUseSettings) {
     return (
       <Alert severity="warning">
-        Settings are admin-only. Teachers and substitutes can still use quiet mode from the top bar.
+        Settings are admin-only for school thresholds. Destination accounts can manage their own request blocks.
       </Alert>
     );
   }
@@ -2551,6 +3464,25 @@ function SettingsView({
       addAudit(draft, user.id, "settings_updated", { key, minutes });
     });
   };
+
+  if (staffDestination && user.role !== "admin") {
+    return (
+      <Stack spacing={2}>
+        <Box>
+          <Typography variant="h5">Settings</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {destinationLabels[staffDestination]} can pause new requests or auto-block when the active list reaches a limit.
+          </Typography>
+        </Box>
+        <DestinationBlockControls
+          state={state}
+          user={user}
+          destinations={[staffDestination]}
+          onMutate={onMutate}
+        />
+      </Stack>
+    );
+  }
 
   return (
     <Stack spacing={2}>
@@ -2619,6 +3551,20 @@ function SettingsView({
           label="Quiet mode on by default"
         />
       </SectionPaper>
+
+      <Box>
+        <Typography variant="h5">Destination Blocks</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Office, Nurse, Counselor, and Library can pause requests or auto-block after the active list reaches a limit.
+        </Typography>
+      </Box>
+
+      <DestinationBlockControls
+        state={state}
+        user={user}
+        destinations={specialDestinationKeys}
+        onMutate={onMutate}
+      />
 
       <SectionPaper>
         <Typography variant="h6" sx={{ mb: 1 }}>
@@ -2691,6 +3637,7 @@ function TermsView() {
 
 function PawPassApp() {
   const [state, setState] = useState<PawPassState>(() => loadPawPassState());
+  const [localNicknames, setLocalNicknames] = useState<LocalNicknameMap>(() => loadLocalNicknames());
   const [now, setNow] = useState(Date.now());
   const [view, setView] = useState<ViewKey>("home");
   const [currentUserId, setCurrentUserId] = useState(() =>
@@ -2706,7 +3653,9 @@ function PawPassApp() {
   const activeView = destinationStaff
     ? view === "terms"
       ? "terms"
-      : "inbound"
+      : view === "settings"
+        ? "settings"
+        : "inbound"
     : view === "inbound"
       ? "home"
       : view;
@@ -2730,13 +3679,35 @@ function PawPassApp() {
     }
   };
 
+  const updateLocalNickname = (
+    teacherId: string,
+    periodId: string,
+    username: string,
+    nickname: string,
+    previousUsername = username,
+  ) => {
+    setLocalNicknames((previous) => {
+      const next = { ...previous };
+      const key = localNicknameKey(teacherId, periodId, username);
+      const previousKey = localNicknameKey(teacherId, periodId, previousUsername);
+      if (previousKey !== key) delete next[previousKey];
+      const cleanedNickname = normalizeNickname(nickname);
+      if (cleanedNickname) {
+        next[key] = cleanedNickname;
+      } else {
+        delete next[key];
+      }
+      saveLocalNicknames(next);
+      return next;
+    });
+  };
+
   useEffect(() => {
     const tick = window.setInterval(() => {
       setNow(Date.now());
       setState((previous) => {
         const draft = deepClone(previous);
-        advanceQueues(draft);
-        return draft;
+        return advanceQueues(draft) ? draft : previous;
       });
     }, 1000);
     return () => window.clearInterval(tick);
@@ -2771,7 +3742,9 @@ function PawPassApp() {
   const resetDemo = () => {
     const fresh = createInitialState();
     setState(fresh);
+    setLocalNicknames({});
     savePawPassState(fresh);
+    saveLocalNicknames({});
   };
 
   return (
@@ -2807,6 +3780,7 @@ function PawPassApp() {
                     state={state}
                     user={currentUser}
                     effectiveTeacherId={effectiveTeacherId}
+                    localNicknames={localNicknames}
                     now={now}
                     onMutate={mutate}
                   />
@@ -2815,6 +3789,7 @@ function PawPassApp() {
                   <DestinationInboundView
                     state={state}
                     user={currentUser}
+                    localNicknames={localNicknames}
                     now={now}
                     onMutate={mutate}
                   />
@@ -2824,6 +3799,8 @@ function PawPassApp() {
                     state={state}
                     user={currentUser}
                     effectiveTeacherId={effectiveTeacherId}
+                    localNicknames={localNicknames}
+                    onLocalNicknameChange={updateLocalNickname}
                     onMutate={mutate}
                   />
                 ) : null}
@@ -2831,6 +3808,7 @@ function PawPassApp() {
                   <ElopersView
                     state={state}
                     user={currentUser}
+                    localNicknames={localNicknames}
                     now={now}
                     onMutate={mutate}
                   />
@@ -2839,11 +3817,19 @@ function PawPassApp() {
                   <LiveMapView
                     state={state}
                     user={currentUser}
+                    localNicknames={localNicknames}
                     now={now}
                     onMutate={mutate}
                   />
                 ) : null}
-                {activeView === "reports" ? <ReportsView state={state} user={currentUser} now={now} /> : null}
+                {activeView === "reports" ? (
+                  <ReportsView
+                    state={state}
+                    user={currentUser}
+                    localNicknames={localNicknames}
+                    now={now}
+                  />
+                ) : null}
                 {activeView === "settings" ? <SettingsView state={state} user={currentUser} onMutate={mutate} /> : null}
                 {activeView === "terms" ? <TermsView /> : null}
 
