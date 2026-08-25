@@ -1,6 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Papa from "papaparse";
 import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   AppBar,
   Autocomplete,
@@ -10,9 +29,11 @@ import {
   Checkbox,
   Chip,
   Dialog,
+  DialogActions,
   DialogContent,
   DialogTitle,
   Divider,
+  Drawer,
   FormControl,
   FormControlLabel,
   IconButton,
@@ -24,6 +45,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Snackbar,
   Stack,
   Switch,
   Tab,
@@ -41,30 +63,37 @@ import {
   Typography,
   createTheme,
 } from "@mui/material";
+import AcUnitIcon from "@mui/icons-material/AcUnit";
 import AddIcon from "@mui/icons-material/Add";
 import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
 import EditIcon from "@mui/icons-material/Edit";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import FactCheckIcon from "@mui/icons-material/FactCheck";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
+import FilterListIcon from "@mui/icons-material/FilterList";
 import GoogleIcon from "@mui/icons-material/Google";
 import GroupsIcon from "@mui/icons-material/Groups";
 import LogoutIcon from "@mui/icons-material/Logout";
+import MenuIcon from "@mui/icons-material/Menu";
 import MapIcon from "@mui/icons-material/Map";
-import PauseCircleIcon from "@mui/icons-material/PauseCircle";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import PrivacyTipIcon from "@mui/icons-material/PrivacyTip";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import ReportIcon from "@mui/icons-material/Report";
 import SettingsIcon from "@mui/icons-material/Settings";
+import ViewColumnIcon from "@mui/icons-material/ViewColumn";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   DestinationKey,
   ImportPreviewRow,
   PassRequest,
   PawPassState,
+  SchedulePeriod,
+  ScheduleTemplate,
   StaffUser,
   accountForEloper,
   activeDestinationRequestCount,
@@ -89,15 +118,19 @@ import {
   getAutoFreezeWindow,
   getDestinationState,
   getEffectiveTeacherId,
+  getGlobalSelectedScheduleId,
+  getPersonalScheduleForSharedSchedule,
   getRosterStudents,
   getRoomState,
   getSchedule,
+  getScheduleSelectionKey,
   getStudent,
   getStudentQueuePenaltyMs,
   getStudentUsername,
   getTeacherGroup,
   getTeacherName,
   getTeachers,
+  getVisibleSchedules,
   getVisibleTeacherIds,
   isDestinationStaff,
   isDestinationBlocked,
@@ -159,6 +192,17 @@ const theme = createTheme({
 
 type ViewKey = "home" | "inbound" | "rosters" | "elopers" | "map" | "reports" | "settings" | "terms";
 
+const viewLabels: Record<ViewKey, string> = {
+  home: "Home",
+  inbound: "Inbound",
+  rosters: "Edit Rosters",
+  elopers: "Elopers",
+  map: "Live Map",
+  reports: "Reports",
+  settings: "Settings",
+  terms: "Terms",
+};
+
 const destinationKeys: DestinationKey[] = [
   "bathroom",
   "water_fountain",
@@ -195,6 +239,28 @@ type ReportSortKey =
   | "elopers_asc"
   | "penalty_desc"
   | "penalty_asc";
+
+type ReportColumnKey = "student" | "teacher" | "requests" | "avgWait" | "avgOut" | "elopers" | "penalty";
+
+const reportColumnOrder: ReportColumnKey[] = [
+  "student",
+  "teacher",
+  "requests",
+  "avgWait",
+  "avgOut",
+  "elopers",
+  "penalty",
+];
+
+const reportColumnLabels: Record<ReportColumnKey, string> = {
+  student: "Student",
+  teacher: "Teacher",
+  requests: "Requests",
+  avgWait: "Avg Wait",
+  avgOut: "Avg Out Non-Elopers",
+  elopers: "Elopers",
+  penalty: "Penalty",
+};
 
 const deepClone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
 
@@ -308,6 +374,14 @@ function formatTime(value?: number) {
   });
 }
 
+function formatPeriodClock(value?: number) {
+  if (!value) return "";
+  return new Date(value).toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function displayStatus(status: PassRequest["status"]) {
   const labels: Record<PassRequest["status"], string> = {
     delayed: "pending",
@@ -347,6 +421,64 @@ function msToDateInput(value: number) {
 function msUntil(value: number | undefined, now: number) {
   if (!value) return 0;
   return Math.max(0, value - now);
+}
+
+function hhmmToMinutes(value: string) {
+  const input = String(value || "").trim();
+  const match = input.match(/^(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?$/i);
+  if (!match) return null;
+  let hours = Number(match[1]);
+  const minutes = Number(match[2] || "0");
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes < 0 || minutes > 59) {
+    return null;
+  }
+  const meridiem = match[3]?.toLowerCase().replace(/\./g, "");
+  if (meridiem) {
+    if (hours < 1 || hours > 12) return null;
+    hours = (hours % 12) + (meridiem === "pm" ? 12 : 0);
+  } else if (hours < 0 || hours > 23) {
+    return null;
+  }
+  return hours * 60 + minutes;
+}
+
+function minutesToHHMM(value: number) {
+  const normalized = ((Math.round(value) % 1440) + 1440) % 1440;
+  const hours = String(Math.floor(normalized / 60)).padStart(2, "0");
+  const minutes = String(normalized % 60).padStart(2, "0");
+  return `${hours}:${minutes}`;
+}
+
+function addMinutesToHHMM(start: string, durationMinutes: number) {
+  const startMinutes = hhmmToMinutes(start);
+  if (startMinutes === null) return "--:--";
+  return minutesToHHMM(startMinutes + Math.max(1, Math.round(durationMinutes || 1)));
+}
+
+function periodDurationMinutes(period: SchedulePeriod) {
+  const start = hhmmToMinutes(period.start);
+  const end = hhmmToMinutes(period.end);
+  if (start === null || end === null) return 45;
+  return Math.max(1, end >= start ? end - start : end + 1440 - start);
+}
+
+function makePeriodId(label: string, index: number, usedIds: Set<string>) {
+  const periodMatch = String(label || "").match(/period\s*(\d+)/i);
+  const base = periodMatch
+    ? `p${periodMatch[1]}`
+    : String(label || `period-${index + 1}`)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "") || `period-${index + 1}`;
+  let id = base;
+  let suffix = 2;
+  while (usedIds.has(id)) {
+    id = `${base}-${suffix}`;
+    suffix += 1;
+  }
+  usedIds.add(id);
+  return id;
 }
 
 function DestinationArt({
@@ -579,11 +711,15 @@ function Sidebar({
   setView,
   user,
   activeEloperCount,
+  scheduleWarningCount,
+  onNavigate,
 }: {
   view: ViewKey;
   setView: (view: ViewKey) => void;
   user: StaffUser;
   activeEloperCount: number;
+  scheduleWarningCount: number;
+  onNavigate?: () => void;
 }) {
   const destinationStaff = isDestinationStaff(user);
   const items: Array<{
@@ -603,7 +739,7 @@ function Sidebar({
         { key: "elopers", label: "Elopers", icon: <ReportIcon /> },
         { key: "map", label: "Live Map", icon: <MapIcon /> },
         { key: "reports", label: "Reports", icon: <FactCheckIcon /> },
-        { key: "settings", label: "Settings", icon: <SettingsIcon />, adminOnly: true },
+        { key: "settings", label: "Settings", icon: <SettingsIcon /> },
         { key: "terms", label: "Terms", icon: <PrivacyTipIcon /> },
       ];
 
@@ -652,7 +788,10 @@ function Sidebar({
             <ListItemButton
               key={item.key}
               selected={view === item.key}
-              onClick={() => setView(item.key)}
+              onClick={() => {
+                setView(item.key);
+                onNavigate?.();
+              }}
               sx={{
                 borderRadius: 1,
                 mb: 0.5,
@@ -669,6 +808,17 @@ function Sidebar({
               {item.key === "elopers" && activeEloperCount > 0 ? (
                 <Chip size="small" color="error" label={activeEloperCount} />
               ) : null}
+              {item.key === "settings" && scheduleWarningCount > 0 ? (
+                <Tooltip title={`${scheduleWarningCount} schedule update warning${scheduleWarningCount === 1 ? "" : "s"}`}>
+                  <Chip
+                    size="small"
+                    color="warning"
+                    icon={<WarningAmberIcon sx={{ fontSize: 16 }} />}
+                    label={scheduleWarningCount}
+                    sx={{ fontWeight: 900 }}
+                  />
+                </Tooltip>
+              ) : null}
             </ListItemButton>
           ))}
       </List>
@@ -676,26 +826,182 @@ function Sidebar({
   );
 }
 
+function PeriodCarousel({
+  state,
+  user,
+  now,
+  onSelectPeriod,
+}: {
+  state: PawPassState;
+  user: StaffUser;
+  now: number;
+  onSelectPeriod: (periodId: string) => void;
+}) {
+  const schedule = getSchedule(state, user);
+  const currentPeriod = getCurrentPeriod(state, new Date(now), user);
+  const selectedPeriodRef = useRef<HTMLDivElement | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const longPressTriggeredRef = useRef(false);
+  const [periodDetails, setPeriodDetails] = useState<SchedulePeriod | null>(null);
+
+  useEffect(() => {
+    selectedPeriodRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }, [currentPeriod.id, schedule.id]);
+
+  const clearLongPress = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  useEffect(
+    () => () => {
+      if (longPressTimerRef.current !== null) {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+    },
+    [],
+  );
+
+  const startLongPress = (event: React.PointerEvent, period: SchedulePeriod) => {
+    if (event.pointerType === "mouse") return;
+    longPressTriggeredRef.current = false;
+    clearLongPress();
+    longPressTimerRef.current = window.setTimeout(() => {
+      longPressTriggeredRef.current = true;
+      setPeriodDetails(period);
+    }, 550);
+  };
+
+  return (
+    <Box sx={{ px: { xs: 1, sm: 2 }, pb: 1.25 }}>
+      <Stack direction="row" spacing={1} alignItems="center">
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            gap: 0.75,
+            overflowX: "auto",
+            overflowY: "hidden",
+            scrollSnapType: "x proximity",
+            scrollbarWidth: "none",
+            WebkitOverflowScrolling: "touch",
+            "&::-webkit-scrollbar": { display: "none" },
+          }}
+        >
+          <Box sx={{ flex: "0 0 calc(50% - 48px)" }} />
+          {schedule.periods.map((period) => {
+            const selected = currentPeriod.id === period.id;
+            return (
+              <Box
+                key={period.id}
+                ref={selected ? selectedPeriodRef : undefined}
+                sx={{ flex: "0 0 auto", scrollSnapAlign: "center" }}
+              >
+                <Tooltip title={`${period.label}: ${period.start}-${period.end}`}>
+                  <Chip
+                    label={period.label}
+                    color={selected ? "primary" : "default"}
+                    variant={selected ? "filled" : "outlined"}
+                    onPointerDown={(event) => startLongPress(event, period)}
+                    onPointerUp={clearLongPress}
+                    onPointerCancel={clearLongPress}
+                    onPointerLeave={clearLongPress}
+                    onClick={() => {
+                      if (longPressTriggeredRef.current) {
+                        longPressTriggeredRef.current = false;
+                        return;
+                      }
+                      onSelectPeriod(period.id);
+                    }}
+                    sx={{
+                      minWidth: 76,
+                      fontWeight: selected ? 900 : 700,
+                    }}
+                  />
+                </Tooltip>
+              </Box>
+            );
+          })}
+          <Box sx={{ flex: "0 0 calc(50% - 48px)" }} />
+        </Box>
+        <Typography
+          variant="body2"
+          sx={{
+            flex: "0 0 auto",
+            minWidth: 74,
+            textAlign: "right",
+            fontWeight: 900,
+            color: "#0f766e",
+            bgcolor: "rgba(15, 118, 110, 0.1)",
+            border: "1px solid rgba(15, 118, 110, 0.22)",
+            borderRadius: 1,
+            px: 0.75,
+            py: 0.25,
+            lineHeight: 1.2,
+          }}
+        >
+          {formatPeriodClock(now)}
+        </Typography>
+      </Stack>
+      <Dialog open={Boolean(periodDetails)} onClose={() => setPeriodDetails(null)} fullWidth maxWidth="xs">
+        <DialogTitle>{periodDetails?.label}</DialogTitle>
+        <DialogContent>
+          <Stack spacing={1} sx={{ pt: 1 }}>
+            <Typography variant="body2" color="text.secondary">
+              Start
+            </Typography>
+            <Typography variant="h6">{periodDetails?.start}</Typography>
+            <Typography variant="body2" color="text.secondary">
+              End
+            </Typography>
+            <Typography variant="h6">{periodDetails?.end}</Typography>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button variant="contained" onClick={() => setPeriodDetails(null)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
+}
 function TopBar({
   state,
   user,
+  activeView,
   effectiveTeacherId,
   now,
   onMutate,
   onLogout,
+  onOpenMenu,
 }: {
   state: PawPassState;
   user: StaffUser;
+  activeView: ViewKey;
   effectiveTeacherId: string;
   now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
   onLogout: () => void;
+  onOpenMenu: () => void;
 }) {
-  const schedule = getSchedule(state);
-  const currentPeriod = getCurrentPeriod(state, new Date(now));
   const teachers = getTeachers(state);
+  const actingOptions =
+    user.role === "admin"
+      ? [{ id: user.id, displayName: `${user.displayName} (Admin)` }, ...teachers]
+      : teachers;
   const quiet = state.quietModeByUserId[user.id] ?? state.settings.quietModeDefault;
   const staffDestination = destinationForStaffRole(user.role);
+  const scheduleProfileUser =
+    teachers.find((teacher) => teacher.id === effectiveTeacherId) || user;
 
   if (staffDestination) {
     return (
@@ -705,44 +1011,65 @@ function TopBar({
         elevation={0}
         sx={{ borderBottom: "1px solid rgba(15, 23, 42, 0.12)" }}
       >
-        <Toolbar sx={{ gap: 1.5, flexWrap: "wrap", py: 1 }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
-            <Box sx={{ width: 54 }}>
-              <DestinationArt destination={staffDestination} size={48} />
-            </Box>
-            <Box>
-              <Typography variant="h6" lineHeight={1.1}>
-                {destinationLabels[staffDestination]} Desk
-              </Typography>
-              <Chip size="small" color="success" label="Inbound students" />
-            </Box>
-          </Stack>
-
-          <Tooltip title={quiet ? "Quiet mode on" : "Quiet mode off"}>
-            <IconButton
-              onClick={() => {
-                onMutate((draft) => {
-                  const next = !(draft.quietModeByUserId[user.id] ?? draft.settings.quietModeDefault);
-                  draft.quietModeByUserId[user.id] = next;
-                  addAudit(draft, user.id, "quiet_mode_changed", { quiet: next });
-                });
-              }}
-            >
-              {quiet ? <VolumeOffIcon /> : <VolumeUpIcon />}
-            </IconButton>
-          </Tooltip>
-
-          <Stack direction="row" spacing={1} alignItems="center">
-            <Tooltip title={`${user.displayName} - ${roleLabels[user.role]}`}>
-              <Avatar sx={{ width: 34, height: 34, bgcolor: "#0f766e" }}>
-                {user.displayName.slice(0, 1)}
-              </Avatar>
-            </Tooltip>
-            <Tooltip title="Sign out">
-              <IconButton onClick={onLogout}>
-                <LogoutIcon />
+        <Toolbar sx={{ gap: { xs: 0.75, sm: 1.5 }, flexWrap: "nowrap", py: 1 }}>
+          <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }} alignItems="center" sx={{ width: "100%", minWidth: 0 }}>
+            <Tooltip title="Open menu">
+              <IconButton
+                onClick={onOpenMenu}
+                sx={{ display: { xs: "inline-flex", md: "none" }, flex: "0 0 auto" }}
+              >
+                <MenuIcon />
               </IconButton>
             </Tooltip>
+            <Typography
+              fontWeight={900}
+              sx={{
+                display: { xs: "block", md: "none" },
+                flex: "0 0 auto",
+                whiteSpace: "nowrap",
+              }}
+            >
+              {viewLabels[activeView]}
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+              <Box sx={{ width: { xs: 42, sm: 54 }, flex: "0 0 auto" }}>
+                <DestinationArt destination={staffDestination} size={48} />
+              </Box>
+              <Box minWidth={0}>
+                <Typography variant="h6" lineHeight={1.1} noWrap>
+                  {destinationLabels[staffDestination]} Desk
+                </Typography>
+                <Chip size="small" color="success" label="Inbound students" sx={{ display: { xs: "none", sm: "inline-flex" } }} />
+              </Box>
+            </Stack>
+
+            <Tooltip title={quiet ? "Quiet mode on" : "Quiet mode off"}>
+              <IconButton
+                onClick={() => {
+                  onMutate((draft) => {
+                    const next = !(draft.quietModeByUserId[user.id] ?? draft.settings.quietModeDefault);
+                    draft.quietModeByUserId[user.id] = next;
+                    addAudit(draft, user.id, "quiet_mode_changed", { quiet: next });
+                  });
+                }}
+                sx={{ flex: "0 0 auto" }}
+              >
+                {quiet ? <VolumeOffIcon /> : <VolumeUpIcon />}
+              </IconButton>
+            </Tooltip>
+
+            <Stack direction="row" spacing={{ xs: 0.25, sm: 1 }} alignItems="center" sx={{ flex: "0 0 auto" }}>
+              <Tooltip title={`${user.displayName} - ${roleLabels[user.role]}`}>
+                <Avatar sx={{ width: 34, height: 34, bgcolor: "#0f766e" }}>
+                  {user.displayName.slice(0, 1)}
+                </Avatar>
+              </Tooltip>
+              <Tooltip title="Sign out">
+                <IconButton onClick={onLogout}>
+                  <LogoutIcon />
+                </IconButton>
+              </Tooltip>
+            </Stack>
           </Stack>
         </Toolbar>
       </AppBar>
@@ -784,39 +1111,73 @@ function TopBar({
       elevation={0}
       sx={{ borderBottom: "1px solid rgba(15, 23, 42, 0.12)" }}
     >
-      <Toolbar sx={{ gap: 1.5, flexWrap: "wrap", py: 1 }}>
-        <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1, minWidth: 180 }}>
-          <FormControl size="small" sx={{ minWidth: 170 }}>
-            <InputLabel id="schedule-label">Schedule</InputLabel>
-            <Select
-              labelId="schedule-label"
-              label="Schedule"
-              value={state.selectedScheduleId}
-              onChange={(event) => {
-                const scheduleId = String(event.target.value);
+      <Toolbar sx={{ gap: { xs: 0.75, sm: 1.5 }, flexWrap: "wrap", py: 1 }}>
+        <Stack
+          direction="row"
+          spacing={{ xs: 0.5, sm: 1 }}
+          alignItems="center"
+          sx={{ width: { xs: "100%", sm: "auto" }, flex: { xs: "0 0 100%", sm: 1 }, minWidth: 0 }}
+        >
+          <Tooltip title="Open menu">
+            <IconButton
+              onClick={onOpenMenu}
+              sx={{ display: { xs: "inline-flex", md: "none" }, flex: "0 0 auto" }}
+            >
+              <MenuIcon />
+            </IconButton>
+          </Tooltip>
+          <Typography
+            fontWeight={900}
+            sx={{
+              display: { xs: "block", md: "none" },
+              flex: "0 0 auto",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {viewLabels[activeView]}
+          </Typography>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+          {user.role === "substitute" ? (
+            <Chip
+              size="small"
+              color="warning"
+              label={`Audit actor: ${user.displayName}`}
+              sx={{ maxWidth: "100%" }}
+            />
+          ) : null}
+          </Box>
+
+          <Tooltip title={quiet ? "Quiet mode on" : "Quiet mode off"}>
+            <IconButton
+              onClick={() => {
                 onMutate((draft) => {
-                  draft.selectedScheduleId = scheduleId;
-                  draft.periodOverrideId = "";
-                  addAudit(draft, user.id, "schedule_selected", { scheduleId }, { effectiveTeacherId });
+                  const next = !(draft.quietModeByUserId[user.id] ?? draft.settings.quietModeDefault);
+                  draft.quietModeByUserId[user.id] = next;
+                  addAudit(draft, user.id, "quiet_mode_changed", { quiet: next }, { effectiveTeacherId });
                 });
               }}
+              sx={{ flex: "0 0 auto" }}
             >
-              {state.schedules
-                .filter((item) => item.active)
-                .map((item) => (
-                  <MenuItem key={item.id} value={item.id}>
-                    {item.name}
-                  </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {user.role === "substitute" ? (
-            <Chip size="small" color="warning" label={`Audit actor: ${user.displayName}`} />
-          ) : null}
+              {quiet ? <VolumeOffIcon /> : <VolumeUpIcon />}
+            </IconButton>
+          </Tooltip>
+
+          <Stack direction="row" spacing={{ xs: 0.25, sm: 1 }} alignItems="center" sx={{ flex: "0 0 auto" }}>
+            <Tooltip title={`${user.displayName} - ${roleLabels[user.role]}`}>
+              <Avatar sx={{ width: 34, height: 34, bgcolor: "#0f766e" }}>
+                {user.displayName.slice(0, 1)}
+              </Avatar>
+            </Tooltip>
+            <Tooltip title="Sign out">
+              <IconButton onClick={onLogout}>
+                <LogoutIcon />
+              </IconButton>
+            </Tooltip>
+          </Stack>
         </Stack>
 
         {(user.role === "substitute" || canViewAll(user)) && (
-          <FormControl size="small" sx={{ minWidth: 210 }}>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 210 }, width: { xs: "100%", sm: "auto" } }}>
             <InputLabel id="acting-teacher-label">Acting for</InputLabel>
             <Select
               labelId="acting-teacher-label"
@@ -824,59 +1185,21 @@ function TopBar({
               value={effectiveTeacherId}
               onChange={(event) => selectTeacher(String(event.target.value))}
             >
-              {teachers.map((teacher) => (
-                <MenuItem key={teacher.id} value={teacher.id}>
-                  {teacher.displayName}
+              {actingOptions.map((option) => (
+                <MenuItem key={option.id} value={option.id}>
+                  {option.displayName}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
         )}
-
-        <Tooltip title={quiet ? "Quiet mode on" : "Quiet mode off"}>
-          <IconButton
-            onClick={() => {
-              onMutate((draft) => {
-                const next = !(draft.quietModeByUserId[user.id] ?? draft.settings.quietModeDefault);
-                draft.quietModeByUserId[user.id] = next;
-                addAudit(draft, user.id, "quiet_mode_changed", { quiet: next }, { effectiveTeacherId });
-              });
-            }}
-          >
-            {quiet ? <VolumeOffIcon /> : <VolumeUpIcon />}
-          </IconButton>
-        </Tooltip>
-
-        <Stack direction="row" spacing={1} alignItems="center">
-          <Tooltip title={`${user.displayName} - ${roleLabels[user.role]}`}>
-            <Avatar sx={{ width: 34, height: 34, bgcolor: "#0f766e" }}>
-              {user.displayName.slice(0, 1)}
-            </Avatar>
-          </Tooltip>
-          <Tooltip title="Sign out">
-            <IconButton onClick={onLogout}>
-              <LogoutIcon />
-            </IconButton>
-          </Tooltip>
-        </Stack>
       </Toolbar>
-      <Box sx={{ px: 2, pb: 1.25 }}>
-        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap" sx={{ rowGap: 0.75 }}>
-          {schedule.periods.map((period) => {
-            const selected = currentPeriod.id === period.id;
-            return (
-              <Chip
-                key={period.id}
-                label={period.label}
-                color={selected ? "primary" : "default"}
-                variant={selected ? "filled" : "outlined"}
-                onClick={() => selectPeriod(period.id)}
-                sx={{ fontWeight: selected ? 900 : 700 }}
-              />
-            );
-          })}
-        </Stack>
-      </Box>
+      <PeriodCarousel
+        state={state}
+        user={scheduleProfileUser}
+        now={now}
+        onSelectPeriod={selectPeriod}
+      />
     </AppBar>
   );
 }
@@ -909,14 +1232,14 @@ function RequestDestinationDialog({
           {requestActionKeys.map((destination) => {
             const blocked = destination !== "eloper" && isDestinationBlocked(state, destination);
             return (
-              <Tooltip
-                key={destination}
-                title={
-                  blocked
-                    ? `${destinationLabels[destination]} is blocking requests`
+                <Tooltip
+                  key={destination}
+                  title={
+                    blocked
+                    ? `${destinationLabels[destination]} is paused`
                     : destinationLabels[destination]
-                }
-              >
+                  }
+                >
                 <span>
                   <Button
                     aria-label={destinationLabels[destination]}
@@ -961,9 +1284,14 @@ function HomeView({
 }) {
   const [tab, setTab] = useState(0);
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [requestNotice, setRequestNotice] = useState<{
+    id: number;
+    message: string;
+    severity: "success" | "info" | "warning";
+  } | null>(null);
   const lastDingRef = useRef("");
-  const currentPeriod = getCurrentPeriod(state, new Date(now));
-  const autoFreezeWindow = getAutoFreezeWindow(state, new Date(now));
+  const currentPeriod = getCurrentPeriod(state, new Date(now), user);
+  const autoFreezeWindow = getAutoFreezeWindow(state, new Date(now), user);
   const room = getRoomSnapshot(state, effectiveTeacherId);
   const group = getTeacherGroup(state, effectiveTeacherId);
   const rosterStudents = getRosterStudents(state, effectiveTeacherId, currentPeriod.id);
@@ -1012,11 +1340,35 @@ function HomeView({
     lastDingRef.current = ids;
   }, [offered, quiet, returnOffered]);
 
+  const queuePositionForRequest = (draft: PawPassState, requestId: string) => {
+    const request = draft.requests.find((item) => item.id === requestId);
+    if (!request) return null;
+    const isActiveEloper = (item: PassRequest) =>
+      draft.elopers.some((eloper) => eloper.requestId === item.id && eloper.active);
+    const visibleQueue = draft.requests.filter(
+      (item) =>
+        (item.groupId === request.groupId || specialDestinationKeys.includes(item.destination)) &&
+        activePassStatuses.includes(item.status) &&
+        item.status !== "delayed" &&
+        !isActiveEloper(item),
+    );
+    const index = visibleQueue.findIndex((item) => item.id === requestId);
+    return index >= 0 ? index + 1 : null;
+  };
+
   const requestForStudent = (destination: DestinationKey) => {
     if (!selectedStudentId) return;
+    let nextNotice: typeof requestNotice = null;
     onMutate((draft) => {
       const actor = draft.staffUsers.find((item) => item.id === user.id);
       if (!actor) return;
+      const studentName = getLocalStudentDisplayName(
+        draft,
+        localNicknames,
+        selectedStudentId,
+        effectiveTeacherId,
+        currentPeriod.id,
+      );
       if (destination === "eloper") {
         createEloperRequest(
           draft,
@@ -1025,8 +1377,14 @@ function HomeView({
           currentPeriod.id,
           selectedStudentId,
         );
+        advanceQueues(draft);
+        nextNotice = {
+          id: Date.now(),
+          message: `${studentName} was marked as an eloper.`,
+          severity: "warning",
+        };
       } else {
-        createPassRequest(
+        const request = createPassRequest(
           draft,
           actor,
           effectiveTeacherId,
@@ -1034,9 +1392,25 @@ function HomeView({
           destination,
           selectedStudentId,
         );
+        advanceQueues(draft);
+        if (request.status === "delayed" && request.delayUntil) {
+          const remainingMinutes = Math.max(1, Math.ceil((request.delayUntil - Date.now()) / 60_000));
+          nextNotice = {
+            id: Date.now(),
+            message: `${studentName} will be added to queue in ${remainingMinutes} ${remainingMinutes === 1 ? "min" : "mins"}.`,
+            severity: "info",
+          };
+        } else {
+          const position = queuePositionForRequest(draft, request.id);
+          nextNotice = {
+            id: Date.now(),
+            message: `${studentName} was added to queue${position ? ` at #${position}` : ""}.`,
+            severity: "success",
+          };
+        }
       }
-      advanceQueues(draft);
     });
+    if (nextNotice) setRequestNotice(nextNotice);
     setSelectedStudentId("");
     setTab(0);
   };
@@ -1052,34 +1426,41 @@ function HomeView({
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" spacing={1} justifyContent="flex-end">
-        <Button
-          variant={room.frozen ? "contained" : "outlined"}
-          color={room.frozen ? "warning" : "primary"}
-          startIcon={room.frozen ? <PauseCircleIcon /> : <PlayArrowIcon />}
-          onClick={toggleFreeze}
-        >
-          {room.frozen ? "Room Frozen" : "Freeze Requests"}
-        </Button>
-      </Stack>
-
       {autoFreezeWindow ? (
         <Alert severity="info">
           Auto-freeze is active at the {autoFreezeWindow.phase} of {autoFreezeWindow.period.label}. Requests can line up, but new hall departures wait.
         </Alert>
       ) : null}
 
-      {room.frozen ? (
-        <Alert severity="warning">
-          Requests from this room are frozen. Existing queued students keep their original place and will get priority when thawed.
-        </Alert>
-      ) : null}
-
       <SectionPaper sx={{ p: 0 }}>
-        <Tabs value={tab} onChange={(_, value) => setTab(value)} aria-label="Paw Pass home tabs">
-          <Tab label="Active" />
-          <Tab label="Request" />
-        </Tabs>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Tabs
+            value={tab}
+            onChange={(_, value) => setTab(value)}
+            aria-label="Paw Pass home tabs"
+            sx={{ flex: 1, minWidth: 0 }}
+          >
+            <Tab label="Active" />
+            <Tab label="Request" />
+          </Tabs>
+          <Tooltip title={room.frozen ? "Thaw requests" : "Freeze requests"}>
+            <IconButton
+              aria-label={room.frozen ? "Thaw requests" : "Freeze requests"}
+              onClick={toggleFreeze}
+              sx={{
+                mr: 1,
+                color: room.frozen ? "#075985" : "#0f766e",
+                bgcolor: room.frozen ? "#e0f2fe" : "transparent",
+                border: room.frozen ? "1px solid #7dd3fc" : "1px solid transparent",
+                "&:hover": {
+                  bgcolor: room.frozen ? "#bae6fd" : "rgba(15, 118, 110, 0.08)",
+                },
+              }}
+            >
+              <AcUnitIcon />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </SectionPaper>
 
       {tab === 0 ? (
@@ -1125,7 +1506,6 @@ function HomeView({
                   advanceQueues(draft);
                 })
               }
-              onFreeze={toggleFreeze}
             />
           ))}
 
@@ -1185,7 +1565,7 @@ function HomeView({
 
         </Stack>
       ) : (
-        <SectionPaper>
+        <SectionPaper sx={{ position: "relative", overflow: "hidden" }}>
           <Stack spacing={2}>
             {rosterStudents.length ? (
               <Box
@@ -1307,6 +1687,20 @@ function HomeView({
               </Alert>
             )}
           </Stack>
+          {room.frozen ? (
+            <Box
+              aria-hidden="true"
+              sx={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 1,
+                pointerEvents: "none",
+                background:
+                  "radial-gradient(circle at center, rgba(224, 242, 254, 0.18) 0%, rgba(186, 230, 253, 0.38) 58%, rgba(14, 165, 233, 0.3) 100%)",
+                boxShadow: "inset 0 0 92px rgba(14, 165, 233, 0.55)",
+              }}
+            />
+          ) : null}
         </SectionPaper>
       )}
 
@@ -1327,6 +1721,24 @@ function HomeView({
         onClose={() => setSelectedStudentId("")}
         onSelect={requestForStudent}
       />
+      <Snackbar
+        key={requestNotice?.id}
+        open={Boolean(requestNotice)}
+        autoHideDuration={4000}
+        onClose={(_, reason) => {
+          if (reason !== "clickaway") setRequestNotice(null);
+        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert
+          severity={requestNotice?.severity || "success"}
+          variant="filled"
+          onClose={() => setRequestNotice(null)}
+          sx={{ width: "100%" }}
+        >
+          {requestNotice?.message}
+        </Alert>
+      </Snackbar>
     </Stack>
   );
 }
@@ -1338,7 +1750,6 @@ function OfferPanel({
   now,
   onPermit,
   onDismiss,
-  onFreeze,
 }: {
   state: PawPassState;
   request: PassRequest;
@@ -1346,7 +1757,6 @@ function OfferPanel({
   now: number;
   onPermit: () => void;
   onDismiss: () => void;
-  onFreeze: () => void;
 }) {
   const remaining = msUntil(request.offerExpiresAt, now);
   return (
@@ -1403,9 +1813,6 @@ function OfferPanel({
           </Button>
           <Button color="inherit" variant="outlined" onClick={onDismiss} sx={{ color: "white", borderColor: "white" }}>
             Dismiss
-          </Button>
-          <Button color="inherit" variant="outlined" onClick={onFreeze} sx={{ color: "white", borderColor: "white" }}>
-            Freeze
           </Button>
         </Stack>
       </Stack>
@@ -1754,14 +2161,15 @@ function RosterView({
   ) => void;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
-  const currentPeriod = getCurrentPeriod(state);
-  const schedule = getSchedule(state);
+  const currentPeriod = getCurrentPeriod(state, new Date(), user);
+  const schedule = getSchedule(state, user);
   const [periodId, setPeriodId] = useState(currentPeriod.id === "off" ? schedule.periods[0]?.id || "p1" : currentPeriod.id);
   const [addPeriodIds, setAddPeriodIds] = useState<string[]>([currentPeriod.id === "off" ? schedule.periods[0]?.id || "p1" : currentPeriod.id]);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [internalStudentId, setInternalStudentId] = useState("");
   const [medicalPriority, setMedicalPriority] = useState(false);
+  const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<LocalImportPreviewRow[]>([]);
   const students = getRosterStudents(state, effectiveTeacherId, periodId);
@@ -1791,6 +2199,7 @@ function RosterView({
       setInternalStudentId("");
       setMedicalPriority(false);
       setMessage(`Student added to ${addPeriodIds.length} period${addPeriodIds.length === 1 ? "" : "s"}.`);
+      setAddStudentOpen(false);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Could not add student.");
     }
@@ -1843,34 +2252,15 @@ function RosterView({
 
       {message ? <Alert onClose={() => setMessage("")}>{message}</Alert> : null}
 
-      <SectionPaper>
-        <Stack spacing={2}>
-          <FormControl size="small" sx={{ maxWidth: 260 }}>
-            <InputLabel id="roster-period-label">Period</InputLabel>
-            <Select
-              labelId="roster-period-label"
-              label="Period"
-              value={periodId}
-              onChange={(event) => {
-                const nextPeriodId = String(event.target.value);
-                setPeriodId(nextPeriodId);
-                setAddPeriodIds((current) =>
-                  current.includes(nextPeriodId) ? current : [...current, nextPeriodId],
-                );
-              }}
-            >
-              {schedule.periods.map((period) => (
-                <MenuItem key={period.id} value={period.id}>
-                  {period.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <Alert severity="info">
-            {usernameHelpText} Paw Pass stores the username and a server-side fingerprint of the
-            internal id, not the full internal id.
-          </Alert>
+      <Dialog open={addStudentOpen} onClose={() => setAddStudentOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>Add New Student</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Typography variant="h6">New Student</Typography>
+            <Alert severity="info">
+              {usernameHelpText} Paw Pass stores the username and a server-side fingerprint of the
+              internal id, not the full internal id.
+            </Alert>
 
           <Box
             sx={{
@@ -1913,21 +2303,28 @@ function RosterView({
               ))}
             </Stack>
           </Box>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={addStudent} sx={{ alignSelf: "flex-start" }}>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={() => setAddStudentOpen(false)}>Cancel</Button>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={addStudent}>
             Add Student
           </Button>
-        </Stack>
-      </SectionPaper>
+        </DialogActions>
+      </Dialog>
 
       <SectionPaper>
         <Stack spacing={1.5}>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={1} alignItems={{ sm: "center" }}>
             <Box flex={1}>
-              <Typography variant="h6">CSV Import Preview</Typography>
+              <Typography variant="h6">Add Students</Typography>
               <Typography variant="body2" color="text.secondary">
                 Accepted headers: firstName, lastName, nickname, internalStudentId, medicalPriority.
               </Typography>
             </Box>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setAddStudentOpen(true)}>
+              Add New Student
+            </Button>
             <Button variant="outlined" component="label" startIcon={<FileUploadIcon />}>
               Choose CSV
               <input
@@ -1984,38 +2381,61 @@ function RosterView({
       </SectionPaper>
 
       <SectionPaper>
-        <Typography variant="h6" sx={{ mb: 1 }}>
-          Current Roster
-        </Typography>
-        {students.length ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Username</TableCell>
-                <TableCell>Nickname</TableCell>
-                <TableCell>Medical Priority</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {students.map((student) => (
-                <RosterStudentRow
-                  key={student.id}
-                  state={state}
-                  user={user}
-                  teacherId={effectiveTeacherId}
-                  periodId={periodId}
-                  studentId={student.id}
-                  localNicknames={localNicknames}
-                  onLocalNicknameChange={onLocalNicknameChange}
-                  onMutate={onMutate}
-                />
+        <Stack spacing={1.5}>
+          <Typography variant="h6">
+            Current Roster
+          </Typography>
+          <FormControl size="small" sx={{ maxWidth: 260 }}>
+            <InputLabel id="roster-period-label">Period</InputLabel>
+            <Select
+              labelId="roster-period-label"
+              label="Period"
+              value={periodId}
+              onChange={(event) => {
+                const nextPeriodId = String(event.target.value);
+                setPeriodId(nextPeriodId);
+                setAddPeriodIds((current) =>
+                  current.includes(nextPeriodId) ? current : [...current, nextPeriodId],
+                );
+              }}
+            >
+              {schedule.periods.map((period) => (
+                <MenuItem key={period.id} value={period.id}>
+                  {period.label}
+                </MenuItem>
               ))}
-            </TableBody>
-          </Table>
-        ) : (
-          <Typography color="text.secondary">No students in this period yet.</Typography>
-        )}
+            </Select>
+          </FormControl>
+          {students.length ? (
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Username</TableCell>
+                  <TableCell>Nickname</TableCell>
+                  <TableCell>Medical Priority</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {students.map((student) => (
+                  <RosterStudentRow
+                    key={student.id}
+                    state={state}
+                    user={user}
+                    teacherId={effectiveTeacherId}
+                    periodId={periodId}
+                    studentId={student.id}
+                    localNicknames={localNicknames}
+                    onLocalNicknameChange={onLocalNicknameChange}
+                    onMutate={onMutate}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Typography color="text.secondary">No students in this period yet.</Typography>
+          )}
+        </Stack>
       </SectionPaper>
     </Stack>
   );
@@ -2552,6 +2972,12 @@ function DestinationBlockControls({
   return (
     <SectionPaper>
       <Stack spacing={1.5}>
+        <Box>
+          <Typography variant="h6">Destinations</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Office, Nurse, Counselor, and Library can pause requests or auto-pause after the active list reaches a limit.
+          </Typography>
+        </Box>
         {destinations.map((destination) => {
           const destinationState = getDestinationState(state, destination);
           const activeCount = activeDestinationRequestCount(state, destination);
@@ -2561,51 +2987,64 @@ function DestinationBlockControls({
           const blocked = isDestinationBlocked(state, destination);
 
           return (
-            <Box
+            <Accordion
               key={destination}
+              defaultExpanded={destinations.length === 1}
+              disableGutters
+              variant="outlined"
               sx={{
-                display: "grid",
-                gridTemplateColumns: { xs: "1fr", md: "56px 1fr auto minmax(210px, 260px)" },
-                gap: 1.25,
-                alignItems: "center",
-                borderBottom:
-                  destinations.length > 1 ? "1px solid rgba(15, 23, 42, 0.08)" : "none",
-                pb: destinations.length > 1 ? 1.25 : 0,
+                borderColor: "rgba(15, 23, 42, 0.12)",
+                borderRadius: 1,
+                "&:before": { display: "none" },
+                "&.Mui-expanded": { m: 0 },
               }}
             >
-              <Box sx={{ width: 48 }}>
-                <DestinationArt destination={destination} size={44} />
-              </Box>
-              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                <Typography fontWeight={900}>{destinationLabels[destination]}</Typography>
-                <Chip size="small" label={`${activeCount} active`} />
-                {blocked ? (
-                  <Chip
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" width="100%">
+                  <Box sx={{ width: 38, flex: "0 0 auto" }}>
+                    <DestinationArt destination={destination} size={34} />
+                  </Box>
+                  <Typography fontWeight={900}>{destinationLabels[destination]}</Typography>
+                  <Chip size="small" label={`${activeCount} active`} />
+                  {blocked ? (
+                    <Chip
+                      size="small"
+                      color="warning"
+                      label={autoBlocked ? "Auto-paused" : "Paused"}
+                    />
+                  ) : (
+                    <Chip size="small" variant="outlined" label="Taking requests" />
+                  )}
+                </Stack>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Box
+                  sx={{
+                    display: "grid",
+                    gridTemplateColumns: { xs: "1fr", md: "1fr minmax(220px, 280px)" },
+                    gap: 1.25,
+                    alignItems: "center",
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={destinationState.blocked}
+                        onChange={(event) => updateBlocked(destination, event.target.checked)}
+                      />
+                    }
+                    label="Pause requests"
+                  />
+                  <TextField
                     size="small"
-                    color="warning"
-                    label={autoBlocked ? "Auto-blocking" : "Blocking"}
+                    type="number"
+                    label="Auto-pause after active requests"
+                    value={destinationState.autoBlockAfterCount}
+                    onChange={(event) => updateLimit(destination, Number(event.target.value))}
                   />
-                ) : (
-                  <Chip size="small" variant="outlined" label="Taking requests" />
-                )}
-              </Stack>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={destinationState.blocked}
-                    onChange={(event) => updateBlocked(destination, event.target.checked)}
-                  />
-                }
-                label="Block requests"
-              />
-              <TextField
-                size="small"
-                type="number"
-                label="Auto-block after active requests"
-                value={destinationState.autoBlockAfterCount}
-                onChange={(event) => updateLimit(destination, Number(event.target.value))}
-              />
-            </Box>
+                </Box>
+              </AccordionDetails>
+            </Accordion>
           );
         })}
       </Stack>
@@ -2967,7 +3406,15 @@ function ReportsView({
   const [endDate, setEndDate] = useState(() => todayInput);
   const [requestTypeFilter, setRequestTypeFilter] = useState<"all" | DestinationKey>("all");
   const [sortKey, setSortKey] = useState<ReportSortKey>("requests_desc");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [columnsOpen, setColumnsOpen] = useState(false);
+  const [visibleReportColumns, setVisibleReportColumns] = useState<ReportColumnKey[]>(() => reportColumnOrder);
   const fullAccess = canViewAll(user);
+  const availableReportColumns = reportColumnOrder.filter((column) => column !== "teacher" || fullAccess);
+  const isReportColumnVisible = (column: ReportColumnKey) =>
+    column === "student" || ((column !== "teacher" || fullAccess) && visibleReportColumns.includes(column));
+  const visibleReportColumnCount = availableReportColumns.filter(isReportColumnVisible).length;
+  const studentHabitTableMinWidth = Math.max(360, visibleReportColumnCount * 128);
   const teachers = useMemo(
     () => state.staffUsers.filter((staff) => staff.role === "teacher" && staff.active),
     [state.staffUsers],
@@ -3229,107 +3676,173 @@ function ReportsView({
     );
   };
 
+  const resetReportFilters = () => {
+    setTeacherFilterIds([]);
+    setTeacherSearch("");
+    setStartDate(todayInput);
+    setEndDate(todayInput);
+    setRequestTypeFilter("all");
+    setSortKey("requests_desc");
+  };
+
+  const toggleReportColumn = (column: ReportColumnKey) => {
+    if (column === "student") return;
+    setVisibleReportColumns((current) =>
+      current.includes(column)
+        ? current.filter((item) => item !== column)
+        : [...current, column],
+    );
+  };
+
+  const renderFilterFields = (mode: "inline" | "dialog") => {
+    const isDialog = mode === "dialog";
+    const requestLabelId = `${mode}-report-request-type-label`;
+    return (
+      <>
+        {fullAccess ? (
+          <Autocomplete
+            multiple
+            size="small"
+            limitTags={1}
+            options={teachers}
+            value={selectedTeachers}
+            inputValue={teacherSearch}
+            filterSelectedOptions
+            getOptionLabel={(teacher) => teacher.displayName}
+            isOptionEqualToValue={(option, value) => option.id === value.id}
+            onInputChange={(_, value, reason) => {
+              if (reason !== "reset") setTeacherSearch(value);
+            }}
+            onChange={(_, selected) => {
+              setTeacherFilterIds(selected.map((teacher) => teacher.id));
+              setTeacherSearch("");
+            }}
+            renderTags={(selected, getTagProps) =>
+              selected.map((teacher, index) => {
+                const { key, ...tagProps } = getTagProps({ index });
+                return <Chip key={key} size="small" label={teacher.displayName} {...tagProps} />;
+              })
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Teachers"
+                placeholder={selectedTeachers.length ? "" : "All teachers"}
+              />
+            )}
+            sx={
+              isDialog
+                ? { width: "100%" }
+                : {
+                    flex: "0 0 auto",
+                    width: { sm: 300, lg: 340 },
+                    "& .MuiInputBase-root": { flexWrap: "nowrap" },
+                  }
+            }
+          />
+        ) : null}
+
+        <TextField
+          size="small"
+          type="date"
+          label="Start date"
+          value={startDate}
+          InputLabelProps={{ shrink: true }}
+          onChange={(event) => setStartDate(event.target.value)}
+          sx={isDialog ? { width: "100%" } : { flex: "0 0 auto", width: { sm: 170 } }}
+        />
+        <TextField
+          size="small"
+          type="date"
+          label="End date"
+          value={endDate}
+          InputLabelProps={{ shrink: true }}
+          onChange={(event) => setEndDate(event.target.value)}
+          sx={isDialog ? { width: "100%" } : { flex: "0 0 auto", width: { sm: 170 } }}
+        />
+        <FormControl
+          size="small"
+          sx={isDialog ? { width: "100%" } : { flex: "0 0 auto", width: { sm: 220 } }}
+        >
+          <InputLabel id={requestLabelId}>Request</InputLabel>
+          <Select
+            labelId={requestLabelId}
+            label="Request"
+            value={requestTypeFilter}
+            onChange={(event) => setRequestTypeFilter(event.target.value as "all" | DestinationKey)}
+          >
+            <MenuItem value="all">All requests</MenuItem>
+            {requestActionKeys.map((destination) => (
+              <MenuItem key={destination} value={destination}>
+                {destinationEmojis[destination]} {destinationLabels[destination]}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        {!isDialog ? (
+          <Tooltip title="Reset report filters">
+            <IconButton onClick={resetReportFilters} sx={{ flex: "0 0 auto" }}>
+              <RefreshIcon />
+            </IconButton>
+          </Tooltip>
+        ) : null}
+      </>
+    );
+  };
+
   return (
     <Stack spacing={2}>
-      <SectionPaper>
+      <Box sx={{ display: { xs: "block", sm: "none" } }}>
+        <Button
+          fullWidth
+          variant="contained"
+          startIcon={<FilterListIcon />}
+          onClick={() => setFiltersOpen(true)}
+        >
+          Filter
+        </Button>
+      </Box>
+
+      <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle>Filter Reports</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            {renderFilterFields("dialog")}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button onClick={resetReportFilters}>Reset</Button>
+          <Button variant="contained" onClick={() => setFiltersOpen(false)}>
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <SectionPaper sx={{ display: { xs: "none", sm: "block" } }}>
         <Box
           sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, minmax(0, 1fr))",
-              lg: fullAccess
-                ? "1.25fr repeat(3, minmax(0, 1fr)) auto"
-                : "repeat(3, minmax(0, 1fr)) auto",
-            },
+            display: "flex",
+            flexWrap: "nowrap",
+            overflowX: "auto",
+            overflowY: "hidden",
+            WebkitOverflowScrolling: "touch",
+            scrollbarWidth: "none",
+            "&::-webkit-scrollbar": { display: "none" },
             gap: 1,
             alignItems: "center",
           }}
         >
-          {fullAccess ? (
-            <Autocomplete
-              multiple
-              size="small"
-              options={teachers}
-              value={selectedTeachers}
-              inputValue={teacherSearch}
-              filterSelectedOptions
-              getOptionLabel={(teacher) => teacher.displayName}
-              isOptionEqualToValue={(option, value) => option.id === value.id}
-              onInputChange={(_, value, reason) => {
-                if (reason !== "reset") setTeacherSearch(value);
-              }}
-              onChange={(_, selected) => {
-                setTeacherFilterIds(selected.map((teacher) => teacher.id));
-                setTeacherSearch("");
-              }}
-              renderTags={(selected, getTagProps) =>
-                selected.map((teacher, index) => {
-                  const { key, ...tagProps } = getTagProps({ index });
-                  return <Chip key={key} size="small" label={teacher.displayName} {...tagProps} />;
-                })
-              }
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Teachers"
-                  placeholder={selectedTeachers.length ? "" : "All teachers"}
-                />
-              )}
-              sx={{ minWidth: 260 }}
-            />
-          ) : null}
-
-          <TextField
-            size="small"
-            type="date"
-            label="Start date"
-            value={startDate}
-            InputLabelProps={{ shrink: true }}
-            onChange={(event) => setStartDate(event.target.value)}
-          />
-          <TextField
-            size="small"
-            type="date"
-            label="End date"
-            value={endDate}
-            InputLabelProps={{ shrink: true }}
-            onChange={(event) => setEndDate(event.target.value)}
-          />
-          <FormControl size="small">
-            <InputLabel id="report-request-type-label">Request</InputLabel>
-            <Select
-              labelId="report-request-type-label"
-              label="Request"
-              value={requestTypeFilter}
-              onChange={(event) => setRequestTypeFilter(event.target.value as "all" | DestinationKey)}
-            >
-              <MenuItem value="all">All requests</MenuItem>
-              {requestActionKeys.map((destination) => (
-                <MenuItem key={destination} value={destination}>
-                  {destinationEmojis[destination]} {destinationLabels[destination]}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <Tooltip title="Reset report filters">
-            <IconButton
-              onClick={() => {
-                setTeacherFilterIds([]);
-                setTeacherSearch("");
-                setStartDate(todayInput);
-                setEndDate(todayInput);
-                setRequestTypeFilter("all");
-                setSortKey("requests_desc");
-              }}
-            >
-              <RefreshIcon />
-            </IconButton>
-          </Tooltip>
+          {renderFilterFields("inline")}
         </Box>
       </SectionPaper>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(6, 1fr)" }, gap: 1.5 }}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "repeat(3, minmax(0, 1fr))", md: "repeat(6, minmax(0, 1fr))" },
+          gap: { xs: 0.75, sm: 1.5 },
+        }}
+      >
         <Metric label="Requests" value={scopedRequests.length} />
         <Metric label="Returned" value={returned.length} />
         <Metric label="Total Elopers" value={totalElopers.length} danger={totalElopers.length > 0} />
@@ -3338,95 +3851,1156 @@ function ReportsView({
         <Metric label="Avg Wait To Call" value={averageWaitMs ? formatDuration(averageWaitMs) : "0:00"} />
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "0.85fr 1.15fr" }, gap: 2 }}>
+      <Stack spacing={2}>
+        <Accordion
+          disableGutters
+          variant="outlined"
+          sx={{
+            borderRadius: 1,
+            overflow: "hidden",
+            bgcolor: "#ffffff",
+            "&:before": { display: "none" },
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ width: "100%" }}>
+              <Typography variant="h6" flex={1}>
+                Request
+              </Typography>
+              <Chip label={scopedRequests.length} />
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails sx={{ pt: 0 }}>
+            <Stack spacing={1}>
+              {requestCounts.map((item) => (
+                <Stack key={item.destination} direction="row" spacing={1} alignItems="center">
+                  <Box sx={{ width: 42 }}>
+                    <DestinationArt destination={item.destination} size={40} />
+                  </Box>
+                  <Typography flex={1}>{destinationLabels[item.destination]}</Typography>
+                  <Chip label={item.count} />
+                </Stack>
+              ))}
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+
         <SectionPaper>
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
             <Typography variant="h6" flex={1}>
-              Requests
+              Student Habits
             </Typography>
-            <Chip label={scopedRequests.length} />
+            <Button
+              size="small"
+              variant="outlined"
+              startIcon={<ViewColumnIcon />}
+              onClick={() => setColumnsOpen(true)}
+            >
+              Columns
+            </Button>
           </Stack>
-          <Stack spacing={1}>
-            {requestCounts.map((item) => (
-              <Stack key={item.destination} direction="row" spacing={1} alignItems="center">
-                <Box sx={{ width: 42 }}>
-                  <DestinationArt destination={item.destination} size={40} />
-                </Box>
-                <Typography flex={1}>{destinationLabels[item.destination]}</Typography>
-                <Chip label={item.count} />
-              </Stack>
-            ))}
-          </Stack>
-        </SectionPaper>
-
-        <SectionPaper>
-          <Typography variant="h6" sx={{ mb: 1 }}>
-            Student Habits
-          </Typography>
-          {studentStats.length ? (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>
-                    {sortableHeader("Student", "username_asc", "username_desc")}
-                  </TableCell>
-                  {fullAccess ? <TableCell>Teacher</TableCell> : null}
-                  <TableCell>
-                    {sortableHeader("Requests", "requests_asc", "requests_desc")}
-                  </TableCell>
-                  <TableCell>
-                    {sortableHeader("Avg Wait", "avg_wait_asc", "avg_wait_desc")}
-                  </TableCell>
-                  <TableCell>
-                    {sortableHeader("Avg Out Non-Elopers", "avg_out_asc", "avg_out_desc")}
-                  </TableCell>
-                  <TableCell>
-                    {sortableHeader("Elopers", "elopers_asc", "elopers_desc")}
-                  </TableCell>
-                  <TableCell align="right">
-                    {sortableHeader("Penalty", "penalty_asc", "penalty_desc")}
-                  </TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {studentStats.map((row) => (
-                  <TableRow key={row.student.id}>
-                    <TableCell>
-                      <Typography fontWeight={900}>{row.displayName}</Typography>
-                      {row.displayName !== row.student.username ? (
-                        <Typography variant="caption" color="text.secondary">
-                          {row.student.username}
-                        </Typography>
-                      ) : null}
-                    </TableCell>
-                    {fullAccess ? <TableCell>{row.teacherNames}</TableCell> : null}
-                    <TableCell>{row.requests}</TableCell>
-                    <TableCell>{row.averageWaitMs ? formatDuration(row.averageWaitMs) : "0:00"}</TableCell>
-                    <TableCell>{row.averageMs ? formatDuration(row.averageMs) : "0:00"}</TableCell>
-                    <TableCell>{row.eloperCount}</TableCell>
-                    <TableCell align="right">{row.penaltyMs ? formatDuration(row.penaltyMs) : "0:00"}</TableCell>
-                  </TableRow>
+          <Dialog open={columnsOpen} onClose={() => setColumnsOpen(false)} fullWidth maxWidth="xs">
+            <DialogTitle>Student Habit Columns</DialogTitle>
+            <DialogContent>
+              <Stack spacing={0.5} sx={{ pt: 1 }}>
+                {availableReportColumns.map((column) => (
+                  <FormControlLabel
+                    key={column}
+                    control={
+                      <Checkbox
+                        checked={isReportColumnVisible(column)}
+                        disabled={column === "student"}
+                        onChange={() => toggleReportColumn(column)}
+                      />
+                    }
+                    label={reportColumnLabels[column]}
+                  />
                 ))}
-              </TableBody>
-            </Table>
+              </Stack>
+            </DialogContent>
+            <DialogActions sx={{ p: 2, pt: 0 }}>
+              <Button variant="contained" onClick={() => setColumnsOpen(false)}>
+                Save
+              </Button>
+            </DialogActions>
+          </Dialog>
+          {studentStats.length ? (
+            <Box sx={{ width: "100%", overflowX: "auto" }}>
+              <Table
+                size="small"
+                sx={{
+                  minWidth: studentHabitTableMinWidth,
+                  "& th, & td": { textAlign: "center", verticalAlign: "middle" },
+                  "& .MuiTableSortLabel-root": { justifyContent: "center" },
+                }}
+              >
+                <TableHead>
+                  <TableRow>
+                    <TableCell>
+                      {sortableHeader("Student", "username_asc", "username_desc")}
+                    </TableCell>
+                    {isReportColumnVisible("teacher") ? <TableCell>Teacher</TableCell> : null}
+                    {isReportColumnVisible("requests") ? (
+                      <TableCell>
+                        {sortableHeader("Requests", "requests_asc", "requests_desc")}
+                      </TableCell>
+                    ) : null}
+                    {isReportColumnVisible("avgWait") ? (
+                      <TableCell>
+                        {sortableHeader("Avg Wait", "avg_wait_asc", "avg_wait_desc")}
+                      </TableCell>
+                    ) : null}
+                    {isReportColumnVisible("avgOut") ? (
+                      <TableCell>
+                        {sortableHeader("Avg Out Non-Elopers", "avg_out_asc", "avg_out_desc")}
+                      </TableCell>
+                    ) : null}
+                    {isReportColumnVisible("elopers") ? (
+                      <TableCell>
+                        {sortableHeader("Elopers", "elopers_asc", "elopers_desc")}
+                      </TableCell>
+                    ) : null}
+                    {isReportColumnVisible("penalty") ? (
+                      <TableCell>
+                        {sortableHeader("Penalty", "penalty_asc", "penalty_desc")}
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {studentStats.map((row) => (
+                    <TableRow key={row.student.id}>
+                      <TableCell>
+                        <Typography fontWeight={900} textAlign="center">{row.displayName}</Typography>
+                        {row.displayName !== row.student.username ? (
+                          <Typography variant="caption" color="text.secondary" textAlign="center" display="block">
+                            {row.student.username}
+                          </Typography>
+                        ) : null}
+                      </TableCell>
+                      {isReportColumnVisible("teacher") ? <TableCell>{row.teacherNames}</TableCell> : null}
+                      {isReportColumnVisible("requests") ? <TableCell>{row.requests}</TableCell> : null}
+                      {isReportColumnVisible("avgWait") ? (
+                        <TableCell>{row.averageWaitMs ? formatDuration(row.averageWaitMs) : "0:00"}</TableCell>
+                      ) : null}
+                      {isReportColumnVisible("avgOut") ? (
+                        <TableCell>{row.averageMs ? formatDuration(row.averageMs) : "0:00"}</TableCell>
+                      ) : null}
+                      {isReportColumnVisible("elopers") ? <TableCell>{row.eloperCount}</TableCell> : null}
+                      {isReportColumnVisible("penalty") ? (
+                        <TableCell>{row.penaltyMs ? formatDuration(row.penaltyMs) : "0:00"}</TableCell>
+                      ) : null}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
           ) : (
             <Typography color="text.secondary">No pass history yet.</Typography>
           )}
         </SectionPaper>
-      </Box>
+      </Stack>
     </Stack>
   );
 }
 
 function Metric({ label, value, danger = false }: { label: string; value: React.ReactNode; danger?: boolean }) {
   return (
-    <SectionPaper sx={{ bgcolor: danger ? "#fef2f2" : "#ffffff" }}>
-      <Typography variant="caption" color="text.secondary">
+    <SectionPaper sx={{ bgcolor: danger ? "#fef2f2" : "#ffffff", p: { xs: 1, sm: 2 }, minWidth: 0 }}>
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{
+          display: "block",
+          minHeight: { xs: 30, sm: "auto" },
+          fontSize: { xs: "0.66rem", sm: "0.75rem" },
+          lineHeight: 1.12,
+          overflowWrap: "anywhere",
+        }}
+      >
         {label}
       </Typography>
-      <Typography variant="h5" color={danger ? "error" : "text.primary"}>
+      <Typography
+        variant="h5"
+        color={danger ? "error" : "text.primary"}
+        sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" }, lineHeight: 1.15 }}
+      >
         {value}
       </Typography>
+    </SectionPaper>
+  );
+}
+
+type ScheduleEditorMode = "new" | "edit" | "duplicate";
+type ScheduleEditorTarget = {
+  mode: ScheduleEditorMode;
+  schedule?: ScheduleTemplate;
+};
+
+type ScheduleEditorPeriod = {
+  localId: string;
+  id: string;
+  label: string;
+  originalLabel: string;
+  start: string;
+  originalStart: string;
+  durationInput: string;
+  originalDurationMinutes: number;
+};
+
+type OutdatedSchedulePair = {
+  privateSchedule: ScheduleTemplate;
+  adminSchedule: ScheduleTemplate;
+};
+
+type ScheduleComparisonStatus =
+  | "blank"
+  | "match"
+  | "timeMismatch"
+  | "missing"
+  | "extra"
+  | "outOfOrder";
+
+type ScheduleComparisonRow = {
+  key: string;
+  adminPeriod?: SchedulePeriod;
+  teacherPeriod?: SchedulePeriod;
+  adminStatus: ScheduleComparisonStatus;
+  teacherStatus: ScheduleComparisonStatus;
+  sortMinute: number;
+  sortIndex: number;
+  rowRank: number;
+};
+
+function normalizeSchedulePeriodName(label: string) {
+  return String(label || "").trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function schedulePeriodNamesMatch(left: SchedulePeriod, right: SchedulePeriod) {
+  const leftName = normalizeSchedulePeriodName(left.label);
+  return Boolean(leftName && leftName === normalizeSchedulePeriodName(right.label));
+}
+
+function sameSchedulePeriodTimes(left: SchedulePeriod, right: SchedulePeriod) {
+  return left.start === right.start && left.end === right.end;
+}
+
+function sameSchedulePeriod(left: SchedulePeriod, right: SchedulePeriod) {
+  return schedulePeriodNamesMatch(left, right) && sameSchedulePeriodTimes(left, right);
+}
+
+function schedulePeriodSortMinute(period?: SchedulePeriod) {
+  return hhmmToMinutes(period?.start || "") ?? Number.MAX_SAFE_INTEGER;
+}
+
+function buildScheduleComparisonRows(
+  adminPeriods: SchedulePeriod[],
+  teacherPeriods: SchedulePeriod[],
+): ScheduleComparisonRow[] {
+  const matchedTeacherIndexes = new Set<number>();
+  const matchesByAdminIndex = new Map<
+    number,
+    { adminPeriod: SchedulePeriod; teacherPeriod: SchedulePeriod; teacherIndex: number }
+  >();
+
+  adminPeriods.forEach((adminPeriod, adminIndex) => {
+    const teacherIndex = teacherPeriods.findIndex(
+      (teacherPeriod, candidateIndex) =>
+        !matchedTeacherIndexes.has(candidateIndex) &&
+        schedulePeriodNamesMatch(adminPeriod, teacherPeriod),
+    );
+    if (teacherIndex >= 0) {
+      matchedTeacherIndexes.add(teacherIndex);
+      matchesByAdminIndex.set(adminIndex, {
+        adminPeriod,
+        teacherPeriod: teacherPeriods[teacherIndex],
+        teacherIndex,
+      });
+    }
+  });
+
+  const matchedAdminRows = adminPeriods
+    .map((adminPeriod, adminIndex) => {
+      const match = matchesByAdminIndex.get(adminIndex);
+      return match ? { adminIndex, teacherIndex: match.teacherIndex, adminPeriod } : null;
+    })
+    .filter((item): item is { adminIndex: number; teacherIndex: number; adminPeriod: SchedulePeriod } =>
+      Boolean(item),
+    );
+  const outOfOrderTeacherIndexes = new Set<number>();
+
+  for (let leftIndex = 0; leftIndex < matchedAdminRows.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < matchedAdminRows.length; rightIndex += 1) {
+      const left = matchedAdminRows[leftIndex];
+      const right = matchedAdminRows[rightIndex];
+      if (left.teacherIndex > right.teacherIndex) {
+        outOfOrderTeacherIndexes.add(left.teacherIndex);
+        outOfOrderTeacherIndexes.add(right.teacherIndex);
+      }
+    }
+  }
+
+  const rows: ScheduleComparisonRow[] = adminPeriods.map((adminPeriod, adminIndex) => {
+    const match = matchesByAdminIndex.get(adminIndex);
+    const timesMatch = Boolean(match && sameSchedulePeriodTimes(adminPeriod, match.teacherPeriod));
+    const teacherOutOfOrder = Boolean(match && outOfOrderTeacherIndexes.has(match.teacherIndex));
+    return {
+      key: `admin-${adminPeriod.id}-${adminIndex}-${match?.teacherPeriod.id || "missing"}`,
+      adminPeriod,
+      teacherPeriod: match?.teacherPeriod,
+      adminStatus: match ? (timesMatch ? "match" : "timeMismatch") : "missing",
+      teacherStatus: match
+        ? teacherOutOfOrder
+          ? "outOfOrder"
+          : timesMatch
+            ? "match"
+            : "timeMismatch"
+        : "blank",
+      sortMinute: Math.min(
+        schedulePeriodSortMinute(adminPeriod),
+        match ? schedulePeriodSortMinute(match.teacherPeriod) : Number.MAX_SAFE_INTEGER,
+      ),
+      sortIndex: match?.teacherIndex ?? adminIndex,
+      rowRank: 1,
+    };
+  });
+
+  teacherPeriods.forEach((teacherPeriod, teacherIndex) => {
+    if (matchedTeacherIndexes.has(teacherIndex)) return;
+    rows.push({
+      key: `teacher-extra-${teacherPeriod.id}-${teacherIndex}`,
+      teacherPeriod,
+      adminStatus: "blank",
+      teacherStatus: "extra",
+      sortMinute: schedulePeriodSortMinute(teacherPeriod),
+      sortIndex: teacherIndex,
+      rowRank: 0,
+    });
+  });
+
+  return rows.sort(
+    (left, right) =>
+      left.sortMinute - right.sortMinute ||
+      left.sortIndex - right.sortIndex ||
+      left.rowRank - right.rowRank,
+  );
+}
+
+function scheduleCompliesWithAdmin(
+  privateSchedule: ScheduleTemplate,
+  adminSchedule: ScheduleTemplate,
+) {
+  return buildScheduleComparisonRows(adminSchedule.periods, privateSchedule.periods).every((row) => {
+    if (!row.adminPeriod) return true;
+    return Boolean(
+      row.teacherPeriod &&
+        row.adminStatus === "match" &&
+        row.teacherStatus === "match" &&
+      sameSchedulePeriod(row.adminPeriod, row.teacherPeriod),
+    );
+  });
+}
+
+function applyAdminScheduleSelection(draft: PawPassState, sharedScheduleId: string) {
+  const sharedSchedule = draft.schedules.find(
+    (schedule) => schedule.active && !schedule.ownerUserId && schedule.id === sharedScheduleId,
+  );
+  if (!sharedSchedule) return;
+
+  draft.selectedScheduleId = sharedSchedule.id;
+  draft.periodOverrideId = "";
+  draft.selectedScheduleIdByUserId = draft.selectedScheduleIdByUserId || {};
+  getTeachers(draft).forEach((teacher) => {
+    const personalSchedule = getPersonalScheduleForSharedSchedule(
+      draft,
+      teacher.id,
+      sharedSchedule.id,
+    );
+    draft.selectedScheduleIdByUserId[teacher.id] = personalSchedule?.id || sharedSchedule.id;
+  });
+}
+
+const scheduleCopyName = (name: string) => `${name} Copy`;
+
+const makeLocalScheduleId = () =>
+  `schedule-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+function schedulePeriodToEditorPeriod(period: SchedulePeriod, index: number): ScheduleEditorPeriod {
+  const duration = periodDurationMinutes(period);
+  return {
+    localId: `${period.id}-${index}`,
+    id: period.id,
+    label: period.label,
+    originalLabel: period.label,
+    start: period.start,
+    originalStart: period.start,
+    durationInput: String(duration),
+    originalDurationMinutes: duration,
+  };
+}
+
+function makeBlankEditorPeriod(index: number, start = "08:00", durationMinutes = 45): ScheduleEditorPeriod {
+  const duration = Math.max(1, Math.round(durationMinutes || 45));
+  return {
+    localId: `new-period-${Date.now()}-${index}`,
+    id: "",
+    label: `Period ${index + 1}`,
+    originalLabel: `Period ${index + 1}`,
+    start,
+    originalStart: start,
+    durationInput: String(duration),
+    originalDurationMinutes: duration,
+  };
+}
+
+function editorPeriodLabel(period: ScheduleEditorPeriod, index: number) {
+  return period.label.trim() || period.originalLabel || `Period ${index + 1}`;
+}
+
+function editorPeriodStart(period: ScheduleEditorPeriod) {
+  return period.start || period.originalStart || "08:00";
+}
+
+function editorPeriodDuration(period: ScheduleEditorPeriod) {
+  const parsed = Number(period.durationInput);
+  return Number.isFinite(parsed) && parsed > 0
+    ? Math.round(parsed)
+    : Math.max(1, period.originalDurationMinutes || 45);
+}
+
+function editorPeriodsToSchedulePeriods(periods: ScheduleEditorPeriod[]) {
+  const usedIds = new Set<string>();
+  return periods.map((period, index) => {
+    const label = editorPeriodLabel(period, index);
+    const start = editorPeriodStart(period);
+    let id = period.id || makePeriodId(label, index, usedIds);
+    if (period.id) {
+      if (usedIds.has(id)) {
+        id = makePeriodId(label, index, usedIds);
+      } else {
+        usedIds.add(id);
+      }
+    }
+    return {
+      id,
+      label,
+      start,
+      end: addMinutesToHHMM(start, editorPeriodDuration(period)),
+    };
+  });
+}
+
+function getOutdatedSchedulePairs(state: PawPassState, user: StaffUser | null): OutdatedSchedulePair[] {
+  if (!user || user.role === "admin" || user.role === "security" || isDestinationStaff(user)) {
+    return [];
+  }
+
+  const ownerKey = getScheduleSelectionKey(state, user);
+  if (!ownerKey) return [];
+
+  return state.schedules
+    .filter((schedule) => schedule.active && schedule.ownerUserId === ownerKey && schedule.sourceScheduleId)
+    .map((privateSchedule) => {
+      const adminSchedule = state.schedules.find(
+        (schedule) =>
+          schedule.id === privateSchedule.sourceScheduleId &&
+          schedule.active &&
+          !schedule.ownerUserId,
+      );
+      return adminSchedule ? { privateSchedule, adminSchedule } : null;
+    })
+    .filter((item): item is OutdatedSchedulePair =>
+      Boolean(item && !scheduleCompliesWithAdmin(item.privateSchedule, item.adminSchedule)),
+    );
+}
+
+function scheduleComparisonCellSx(status: ScheduleComparisonStatus) {
+  const colors: Record<ScheduleComparisonStatus, string> = {
+    blank: "transparent",
+    match: "#166534",
+    timeMismatch: "#b91c1c",
+    missing: "#7f1d1d",
+    extra: "#111827",
+    outOfOrder: "#c2410c",
+  };
+  return {
+    color: colors[status],
+    fontWeight: status === "blank" ? 400 : 900,
+  };
+}
+
+function ScheduleComparisonCell({
+  period,
+  status,
+}: {
+  period?: SchedulePeriod;
+  status: ScheduleComparisonStatus;
+}) {
+  if (!period) {
+    return <Box sx={{ minHeight: 36 }} />;
+  }
+  const cellSx = scheduleComparisonCellSx(status);
+  return (
+    <Stack spacing={0.25} sx={{ minHeight: 36 }}>
+      <Typography variant="body2" sx={cellSx}>
+        {period.label}
+      </Typography>
+      <Typography variant="caption" sx={cellSx}>
+        {period.start}-{period.end}
+      </Typography>
+    </Stack>
+  );
+}
+
+function ScheduleComparisonPreview({
+  adminPeriods,
+  teacherPeriods,
+}: {
+  adminPeriods: SchedulePeriod[];
+  teacherPeriods: SchedulePeriod[];
+}) {
+  const rows = buildScheduleComparisonRows(adminPeriods, teacherPeriods);
+  return (
+    <Box
+      sx={{
+        border: "1px solid rgba(15, 23, 42, 0.12)",
+        borderRadius: 1,
+        overflow: "hidden",
+      }}
+    >
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          bgcolor: "rgba(15, 23, 42, 0.05)",
+        }}
+      >
+        <Typography variant="subtitle2" fontWeight={900} sx={{ p: 1 }}>
+          Latest admin schedule
+        </Typography>
+        <Typography variant="subtitle2" fontWeight={900} sx={{ p: 1 }}>
+          Your current copy
+        </Typography>
+      </Box>
+      {rows.map((row) => (
+        <Box
+          key={row.key}
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            borderTop: "1px solid rgba(15, 23, 42, 0.08)",
+          }}
+        >
+          <Box sx={{ p: 1, borderRight: "1px solid rgba(15, 23, 42, 0.08)" }}>
+            <ScheduleComparisonCell period={row.adminPeriod} status={row.adminStatus} />
+          </Box>
+          <Box sx={{ p: 1 }}>
+            <ScheduleComparisonCell period={row.teacherPeriod} status={row.teacherStatus} />
+          </Box>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+function SortableSchedulePeriodRow({
+  period,
+  index,
+  periodsLength,
+  onUpdate,
+  onRemove,
+}: {
+  period: ScheduleEditorPeriod;
+  index: number;
+  periodsLength: number;
+  onUpdate: (localId: string, patch: Partial<ScheduleEditorPeriod>) => void;
+  onRemove: (localId: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: period.localId });
+
+  return (
+    <Box
+      ref={setNodeRef}
+      sx={{
+        display: "grid",
+        gridTemplateColumns: { xs: "auto 1fr", md: "auto 1.2fr 0.8fr 0.8fr 0.8fr auto" },
+        gap: 1,
+        alignItems: "center",
+        p: 1,
+        border: "1px solid rgba(15, 23, 42, 0.12)",
+        borderRadius: 1,
+        bgcolor: isDragging ? "rgba(176, 196, 222, 0.35)" : "#ffffff",
+        boxShadow: isDragging ? "0 12px 28px rgba(15, 23, 42, 0.16)" : "none",
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.86 : 1,
+      }}
+    >
+      <Tooltip title="Hold and drag to reorder">
+        <IconButton
+          size="small"
+          {...attributes}
+          {...listeners}
+          sx={{
+            cursor: isDragging ? "grabbing" : "grab",
+            touchAction: "none",
+            gridRow: { xs: "1 / span 5", md: "auto" },
+            alignSelf: "center",
+          }}
+          aria-label={`Reorder period ${index + 1}`}
+        >
+          <DragIndicatorIcon />
+        </IconButton>
+      </Tooltip>
+      <TextField
+        size="small"
+        label="Name"
+        value={period.label}
+        onChange={(event) => onUpdate(period.localId, { label: event.target.value })}
+      />
+      <TextField
+        size="small"
+        type="time"
+        label="Start"
+        value={period.start}
+        onChange={(event) => onUpdate(period.localId, { start: event.target.value })}
+        InputLabelProps={{ shrink: true }}
+      />
+      <TextField
+        size="small"
+        type="number"
+        label="Duration"
+        value={period.durationInput}
+        onChange={(event) => onUpdate(period.localId, { durationInput: event.target.value })}
+      />
+      <TextField
+        size="small"
+        label="End Preview"
+        value={addMinutesToHHMM(editorPeriodStart(period), editorPeriodDuration(period))}
+        InputProps={{ readOnly: true }}
+      />
+      <Tooltip title={periodsLength === 1 ? "At least one period is required" : "Remove period"}>
+        <span>
+          <IconButton
+            color="error"
+            disabled={periodsLength === 1}
+            onClick={() => onRemove(period.localId)}
+            aria-label={`Remove period ${index + 1}`}
+          >
+            <DeleteIcon />
+          </IconButton>
+        </span>
+      </Tooltip>
+    </Box>
+  );
+}
+
+function ScheduleEditorDialog({
+  open,
+  state,
+  user,
+  target,
+  onClose,
+  onMutate,
+}: {
+  open: boolean;
+  state: PawPassState;
+  user: StaffUser;
+  target: ScheduleEditorTarget | null;
+  onClose: () => void;
+  onMutate: (mutator: (draft: PawPassState) => void) => void;
+}) {
+  const [name, setName] = useState("");
+  const [periods, setPeriods] = useState<ScheduleEditorPeriod[]>([]);
+  const schedule = target?.schedule;
+  const ownerKey = getScheduleSelectionKey(state, user);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { delay: 150, tolerance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 180, tolerance: 8 } }),
+  );
+  const sourceAdminSchedule = schedule?.sourceScheduleId
+    ? state.schedules.find((item) => item.id === schedule.sourceScheduleId && !item.ownerUserId)
+    : undefined;
+  const previewSchedulePeriods = useMemo(
+    () => editorPeriodsToSchedulePeriods(periods),
+    [periods],
+  );
+  const previewSchedule = schedule
+    ? { ...schedule, periods: previewSchedulePeriods }
+    : undefined;
+  const adminChanged =
+    Boolean(sourceAdminSchedule && previewSchedule) &&
+    (Number(sourceAdminSchedule?.updatedAt || 0) > Number(schedule?.sourceAdminUpdatedAt || 0) ||
+      !scheduleCompliesWithAdmin(
+        previewSchedule as ScheduleTemplate,
+        sourceAdminSchedule as ScheduleTemplate,
+      ));
+
+  useEffect(() => {
+    if (!open) return;
+    const baseSchedule = schedule;
+    const basePeriods = baseSchedule?.periods.length
+      ? baseSchedule.periods.map(schedulePeriodToEditorPeriod)
+      : [makeBlankEditorPeriod(0)];
+    setPeriods(basePeriods);
+    if (target?.mode === "duplicate" && baseSchedule) {
+      setName(scheduleCopyName(baseSchedule.name));
+    } else if (target?.mode === "edit" && baseSchedule) {
+      setName(
+        baseSchedule.ownerUserId || user.role === "admin"
+          ? baseSchedule.name
+          : `${baseSchedule.name} - Mine`,
+      );
+    } else {
+      setName("");
+    }
+  }, [open, target?.mode, schedule, user.role]);
+
+  const title =
+    target?.mode === "edit"
+      ? schedule && !schedule.ownerUserId && user.role !== "admin"
+        ? "Customize Shared Schedule"
+        : "Edit Schedule"
+      : target?.mode === "duplicate"
+        ? "Duplicate Schedule"
+        : "Add New Schedule";
+
+  const insertPeriodAfter = (index: number) => {
+    setPeriods((current) => {
+      const previous = current[index];
+      if (!previous) {
+        return [
+          ...current.slice(0, index + 1),
+          makeBlankEditorPeriod(index + 1),
+          ...current.slice(index + 1),
+        ];
+      }
+      const previousDuration = editorPeriodDuration(previous);
+      const shortenedDuration = Math.max(1, Math.floor(previousDuration / 2));
+      const insertedDuration = Math.max(1, previousDuration - shortenedDuration);
+      const insertedStart = addMinutesToHHMM(editorPeriodStart(previous), shortenedDuration);
+      return [
+        ...current.slice(0, index),
+        { ...previous, durationInput: String(shortenedDuration) },
+        makeBlankEditorPeriod(index + 1, insertedStart, insertedDuration),
+        ...current.slice(index + 1),
+      ];
+    });
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    setPeriods((current) => {
+      const oldIndex = current.findIndex((period) => period.localId === active.id);
+      const newIndex = current.findIndex((period) => period.localId === over.id);
+      if (oldIndex < 0 || newIndex < 0) return current;
+      return arrayMove(current, oldIndex, newIndex);
+    });
+  };
+
+  const updatePeriod = (
+    localId: string,
+    patch: Partial<ScheduleEditorPeriod>,
+  ) => {
+    setPeriods((current) =>
+      current.map((period) =>
+        period.localId === localId ? { ...period, ...patch } : period,
+      ),
+    );
+  };
+
+  const removePeriod = (localId: string) => {
+    setPeriods((current) => current.filter((period) => period.localId !== localId));
+  };
+
+  const saveSchedule = () => {
+    const cleanedName = name.trim() || schedule?.name || "New Schedule";
+    if (!periods.length) return;
+    const nextPeriods = editorPeriodsToSchedulePeriods(periods);
+
+    onMutate((draft) => {
+      const now = Date.now();
+      const selectionKey = getScheduleSelectionKey(draft, user);
+      draft.selectedScheduleIdByUserId = draft.selectedScheduleIdByUserId || {};
+      const globalScheduleId = getGlobalSelectedScheduleId(draft);
+      const source = schedule
+        ? draft.schedules.find((item) => item.id === schedule.id)
+        : undefined;
+      const sourceIsShared = Boolean(source && !source.ownerUserId);
+      const shouldCreatePrivateCopy =
+        Boolean(source) &&
+        (target?.mode === "duplicate" ||
+          (target?.mode === "edit" && sourceIsShared && user.role !== "admin"));
+      const shouldCreateNew = target?.mode === "new" || shouldCreatePrivateCopy || !source;
+
+      if (shouldCreateNew) {
+        const createdSchedule: ScheduleTemplate = {
+          id: makeLocalScheduleId(),
+          name: cleanedName,
+          active: true,
+          periods: nextPeriods,
+          ownerUserId: user.role === "admin" ? undefined : ownerKey,
+          createdByUserId: user.id,
+          createdAt: now,
+          updatedAt: now,
+          sourceScheduleId:
+            source && !source.ownerUserId && user.role !== "admin" ? source.id : source?.sourceScheduleId,
+          sourceAdminUpdatedAt:
+            source && !source.ownerUserId && user.role !== "admin"
+              ? source.updatedAt || now
+              : source?.sourceAdminUpdatedAt,
+        };
+        draft.schedules.push(createdSchedule);
+        if (!createdSchedule.ownerUserId) {
+          applyAdminScheduleSelection(draft, createdSchedule.id);
+        } else if (
+          selectionKey &&
+          (!createdSchedule.sourceScheduleId || createdSchedule.sourceScheduleId === globalScheduleId)
+        ) {
+          draft.selectedScheduleIdByUserId[selectionKey] = createdSchedule.id;
+          draft.periodOverrideId = "";
+        }
+        addAudit(
+          draft,
+          user.id,
+          target?.mode === "duplicate" ? "schedule_duplicated" : "schedule_created",
+          {
+            scheduleId: createdSchedule.id,
+            sourceScheduleId: source?.id,
+            ownerUserId: createdSchedule.ownerUserId || "shared",
+          },
+        );
+        return;
+      }
+
+      source.name = cleanedName;
+      source.periods = nextPeriods;
+      source.updatedAt = now;
+      if (source.sourceScheduleId) {
+        const adminSource = draft.schedules.find((item) => item.id === source.sourceScheduleId);
+        source.sourceAdminUpdatedAt = adminSource?.updatedAt || source.sourceAdminUpdatedAt;
+        source.adminUpdateDismissedAt = undefined;
+      }
+      if (!source.ownerUserId && user.role === "admin") {
+        applyAdminScheduleSelection(draft, source.id);
+      } else if (
+        selectionKey &&
+        source.ownerUserId === selectionKey &&
+        (!source.sourceScheduleId || source.sourceScheduleId === globalScheduleId)
+      ) {
+        draft.selectedScheduleIdByUserId[selectionKey] = source.id;
+        draft.periodOverrideId = "";
+      }
+      addAudit(draft, user.id, "schedule_updated", {
+        scheduleId: source.id,
+        ownerUserId: source.ownerUserId || "shared",
+      });
+    });
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
+      <DialogTitle>{title}</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2} sx={{ pt: 1 }}>
+          {adminChanged && sourceAdminSchedule && schedule ? (
+            <Alert severity="warning" icon={<WarningAmberIcon />}>
+              <Stack spacing={1.25}>
+                <Typography fontWeight={900}>
+                  The shared admin schedule changed after this private copy was made.
+                </Typography>
+                <ScheduleComparisonPreview
+                  adminPeriods={sourceAdminSchedule.periods}
+                  teacherPeriods={previewSchedulePeriods}
+                />
+              </Stack>
+            </Alert>
+          ) : null}
+
+          <TextField
+            label="Schedule name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            fullWidth
+          />
+
+          <Box>
+            <Typography variant="h6">Periods</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Set a start time and duration. The end time updates as a preview.
+            </Typography>
+          </Box>
+
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext
+              items={periods.map((period) => period.localId)}
+              strategy={verticalListSortingStrategy}
+            >
+              <Stack spacing={0.5}>
+                {periods.map((period, index) => (
+                  <React.Fragment key={period.localId}>
+                    <SortableSchedulePeriodRow
+                      period={period}
+                      index={index}
+                      periodsLength={periods.length}
+                      onUpdate={updatePeriod}
+                      onRemove={removePeriod}
+                    />
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr auto 1fr",
+                        alignItems: "center",
+                        gap: 1,
+                        px: 1,
+                      }}
+                    >
+                      <Divider />
+                      <Tooltip title="Add period here">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => insertPeriodAfter(index)}
+                          aria-label={`Add period after ${period.label || `period ${index + 1}`}`}
+                        >
+                          <AddIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Divider />
+                    </Box>
+                  </React.Fragment>
+                ))}
+              </Stack>
+            </SortableContext>
+          </DndContext>
+        </Stack>
+      </DialogContent>
+      <DialogActions sx={{ p: 2, pt: 0 }}>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button
+          variant="contained"
+          disabled={!periods.length}
+          onClick={saveSchedule}
+        >
+          Save Schedule
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+function ScheduleSettingsSection({
+  state,
+  user,
+  onMutate,
+}: {
+  state: PawPassState;
+  user: StaffUser;
+  onMutate: (mutator: (draft: PawPassState) => void) => void;
+}) {
+  const effectiveTeacherId = getEffectiveTeacherId(user, state);
+  const visibleSchedules = getVisibleSchedules(state, user);
+  const activeSchedule = getSchedule(state, user);
+  const canManageSchedules =
+    user.role === "admin" || user.role === "teacher" || user.role === "substitute";
+  const outdatedPairs = getOutdatedSchedulePairs(state, user);
+  const activeOutdatedPair =
+    outdatedPairs.find((pair) => pair.privateSchedule.id === activeSchedule.id) ||
+    outdatedPairs[0];
+  const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [editorTarget, setEditorTarget] = useState<ScheduleEditorTarget | null>(null);
+
+  const selectSchedule = (scheduleId: string) => {
+    onMutate((draft) => {
+      const selectionKey = getScheduleSelectionKey(draft, user);
+      const selectedSchedule = draft.schedules.find(
+        (schedule) => schedule.active && schedule.id === scheduleId,
+      );
+      draft.selectedScheduleIdByUserId = draft.selectedScheduleIdByUserId || {};
+      if (user.role === "admin" && selectedSchedule && !selectedSchedule.ownerUserId) {
+        applyAdminScheduleSelection(draft, selectedSchedule.id);
+      } else if (selectionKey) {
+        const personalSchedule =
+          selectedSchedule && !selectedSchedule.ownerUserId
+            ? getPersonalScheduleForSharedSchedule(draft, selectionKey, selectedSchedule.id)
+            : undefined;
+        draft.selectedScheduleIdByUserId[selectionKey] = personalSchedule?.id || scheduleId;
+      }
+      draft.periodOverrideId = "";
+      addAudit(draft, user.id, "schedule_selected", { scheduleId }, { effectiveTeacherId });
+    });
+  };
+
+  const openAdminUpdateEditor = (pair: OutdatedSchedulePair) => {
+    setTemplatesOpen(false);
+    setEditorTarget({ mode: "edit", schedule: pair.privateSchedule });
+  };
+
+  const updateButton = (pair: OutdatedSchedulePair, compact = false) => (
+    <Button
+      size={compact ? "small" : "medium"}
+      variant="contained"
+      startIcon={<WarningAmberIcon />}
+      onClick={() => openAdminUpdateEditor(pair)}
+      sx={{
+        bgcolor: "#ca8a04",
+        color: "#111827",
+        fontWeight: 900,
+        "&:hover": { bgcolor: "#a16207" },
+      }}
+    >
+      Update Admin Schedule Now
+    </Button>
+  );
+
+  return (
+    <SectionPaper>
+      <Stack spacing={1.5}>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} alignItems={{ sm: "center" }}>
+          <Box flex={1}>
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Typography variant="h6">Schedule</Typography>
+              {canManageSchedules ? (
+                <Button
+                  size="small"
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => setEditorTarget({ mode: "new" })}
+                >
+                  Add New Schedule
+                </Button>
+              ) : null}
+            </Stack>
+            <Typography variant="body2" color="text.secondary">
+              Select the day schedule used by the period carousel and request roster.
+            </Typography>
+          </Box>
+          <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 240 } }}>
+            <InputLabel id="settings-schedule-label">Schedule</InputLabel>
+            <Select
+              labelId="settings-schedule-label"
+              label="Schedule"
+              value={activeSchedule.id}
+              onChange={(event) => selectSchedule(String(event.target.value))}
+            >
+              {visibleSchedules.map((item) => (
+                <MenuItem key={item.id} value={item.id}>
+                  {item.name}
+                  {item.ownerUserId ? " (personal)" : ""}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+        {activeOutdatedPair ? (
+          <Alert
+            severity="warning"
+            icon={<WarningAmberIcon />}
+            action={updateButton(activeOutdatedPair, true)}
+          >
+            Admin updated {activeOutdatedPair.adminSchedule.name}. Your private copy still uses the
+            older period setup until you review it side by side.
+          </Alert>
+        ) : null}
+        <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+          <Button size="small" variant="text" onClick={() => setTemplatesOpen(true)}>
+            See All
+          </Button>
+        </Box>
+      </Stack>
+      <Dialog open={templatesOpen} onClose={() => setTemplatesOpen(false)} fullWidth maxWidth="md">
+        <DialogTitle>All Schedules</DialogTitle>
+        <DialogContent>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Name</TableCell>
+                <TableCell>Periods</TableCell>
+                <TableCell align="right">Actions</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {visibleSchedules.map((item) => {
+                const outdatedPair = outdatedPairs.find((pair) => pair.privateSchedule.id === item.id);
+                const editLabel = item.ownerUserId || user.role === "admin" ? "Edit" : "Customize";
+                const teacherViewingSharedAdminSchedule =
+                  !item.ownerUserId && (user.role === "teacher" || user.role === "substitute");
+                return (
+                  <TableRow
+                    key={item.id}
+                    sx={{
+                      bgcolor: teacherViewingSharedAdminSchedule
+                        ? "rgba(176, 196, 222, 0.45)"
+                        : "inherit",
+                    }}
+                  >
+                    <TableCell>
+                      <Typography fontWeight={900}>{item.name}</Typography>
+                      {item.sourceScheduleId ? (
+                        <Typography variant="caption" color="text.secondary">
+                          Based on an admin schedule
+                        </Typography>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>
+                      {item.periods
+                        .map((period) => `${period.label} ${period.start}-${period.end}`)
+                        .join("; ")}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Stack direction="row" spacing={0.75} justifyContent="flex-end" flexWrap="wrap">
+                        {outdatedPair ? updateButton(outdatedPair, true) : null}
+                        {canManageSchedules ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<EditIcon />}
+                            onClick={() => setEditorTarget({ mode: "edit", schedule: item })}
+                          >
+                            {editLabel}
+                          </Button>
+                        ) : null}
+                        {canManageSchedules ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<RefreshIcon />}
+                            onClick={() => setEditorTarget({ mode: "duplicate", schedule: item })}
+                          >
+                            Duplicate
+                          </Button>
+                        ) : null}
+                      </Stack>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions sx={{ p: 2, pt: 0 }}>
+          <Button variant="contained" onClick={() => setTemplatesOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <ScheduleEditorDialog
+        open={Boolean(editorTarget)}
+        state={state}
+        user={user}
+        target={editorTarget}
+        onClose={() => setEditorTarget(null)}
+        onMutate={onMutate}
+      />
     </SectionPaper>
   );
 }
@@ -3441,14 +5015,6 @@ function SettingsView({
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
   const staffDestination = destinationForStaffRole(user.role);
-  const canUseSettings = user.role === "admin" || Boolean(staffDestination);
-  if (!canUseSettings) {
-    return (
-      <Alert severity="warning">
-        Settings are admin-only for school thresholds. Destination accounts can manage their own request blocks.
-      </Alert>
-    );
-  }
 
   const setNumberSetting = (key: keyof typeof settingsDefaults, seconds: number) => {
     onMutate((draft) => {
@@ -3471,15 +5037,27 @@ function SettingsView({
         <Box>
           <Typography variant="h5">Settings</Typography>
           <Typography variant="body2" color="text.secondary">
-            {destinationLabels[staffDestination]} can pause new requests or auto-block when the active list reaches a limit.
+            {destinationLabels[staffDestination]} can pause new requests or auto-pause when the active list reaches a limit.
           </Typography>
         </Box>
+        <ScheduleSettingsSection state={state} user={user} onMutate={onMutate} />
         <DestinationBlockControls
           state={state}
           user={user}
           destinations={[staffDestination]}
           onMutate={onMutate}
         />
+      </Stack>
+    );
+  }
+
+  if (user.role !== "admin") {
+    return (
+      <Stack spacing={2}>
+        <Box>
+          <Typography variant="h5">Settings</Typography>
+        </Box>
+        <ScheduleSettingsSection state={state} user={user} onMutate={onMutate} />
       </Stack>
     );
   }
@@ -3493,71 +5071,68 @@ function SettingsView({
         </Typography>
       </Box>
 
-      <SectionPaper>
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
-          <TextField
-            type="number"
-            label="Permit response window (seconds)"
-            value={Math.round(state.settings.permitWindowMs / 1000)}
-            onChange={(event) => setNumberSetting("permitWindowMs", Number(event.target.value))}
-          />
-          <TextField
-            type="number"
-            label="Eloper threshold (seconds)"
-            value={Math.round(state.settings.eloperAfterMs / 1000)}
-            onChange={(event) => setNumberSetting("eloperAfterMs", Number(event.target.value))}
-          />
-          <TextField
-            type="number"
-            label="Pass-over retry (seconds)"
-            value={Math.round(state.settings.retrySkippedAfterMs / 1000)}
-            onChange={(event) => setNumberSetting("retrySkippedAfterMs", Number(event.target.value))}
-          />
-          <TextField
-            type="number"
-            label="Habit delay (seconds)"
-            value={Math.round(state.settings.habitDelayMs / 1000)}
-            onChange={(event) => setNumberSetting("habitDelayMs", Number(event.target.value))}
-          />
-          <TextField
-            type="number"
-            label="Auto-freeze start of period (minutes)"
-            value={Math.round(state.settings.autoFreezeStartPeriodMs / 60_000)}
-            onChange={(event) => setMinuteSetting("autoFreezeStartPeriodMs", Number(event.target.value))}
-          />
-          <TextField
-            type="number"
-            label="Auto-freeze end of period (minutes)"
-            value={Math.round(state.settings.autoFreezeEndPeriodMs / 60_000)}
-            onChange={(event) => setMinuteSetting("autoFreezeEndPeriodMs", Number(event.target.value))}
-          />
-        </Box>
-        <FormControlLabel
-          sx={{ mt: 1 }}
-          control={
-            <Switch
-              checked={state.settings.quietModeDefault}
-              onChange={(event) =>
-                onMutate((draft) => {
-                  draft.settings.quietModeDefault = event.target.checked;
-                  addAudit(draft, user.id, "settings_updated", {
-                    key: "quietModeDefault",
-                    value: event.target.checked,
-                  });
-                })
-              }
-            />
-          }
-          label="Quiet mode on by default"
-        />
-      </SectionPaper>
+      <ScheduleSettingsSection state={state} user={user} onMutate={onMutate} />
 
-      <Box>
-        <Typography variant="h5">Destination Blocks</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Office, Nurse, Counselor, and Library can pause requests or auto-block after the active list reaches a limit.
-        </Typography>
-      </Box>
+      <SectionPaper>
+        <Stack spacing={2}>
+          <Typography variant="h6">Configuration</Typography>
+          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+            <TextField
+              type="number"
+              label="Permit response window (seconds)"
+              value={Math.round(state.settings.permitWindowMs / 1000)}
+              onChange={(event) => setNumberSetting("permitWindowMs", Number(event.target.value))}
+            />
+            <TextField
+              type="number"
+              label="Eloper threshold (seconds)"
+              value={Math.round(state.settings.eloperAfterMs / 1000)}
+              onChange={(event) => setNumberSetting("eloperAfterMs", Number(event.target.value))}
+            />
+            <TextField
+              type="number"
+              label="Pass-over retry (seconds)"
+              value={Math.round(state.settings.retrySkippedAfterMs / 1000)}
+              onChange={(event) => setNumberSetting("retrySkippedAfterMs", Number(event.target.value))}
+            />
+            <TextField
+              type="number"
+              label="Habit delay (seconds)"
+              value={Math.round(state.settings.habitDelayMs / 1000)}
+              onChange={(event) => setNumberSetting("habitDelayMs", Number(event.target.value))}
+            />
+            <TextField
+              type="number"
+              label="Auto-freeze start of period (minutes)"
+              value={Math.round(state.settings.autoFreezeStartPeriodMs / 60_000)}
+              onChange={(event) => setMinuteSetting("autoFreezeStartPeriodMs", Number(event.target.value))}
+            />
+            <TextField
+              type="number"
+              label="Auto-freeze end of period (minutes)"
+              value={Math.round(state.settings.autoFreezeEndPeriodMs / 60_000)}
+              onChange={(event) => setMinuteSetting("autoFreezeEndPeriodMs", Number(event.target.value))}
+            />
+          </Box>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={state.settings.quietModeDefault}
+                onChange={(event) =>
+                  onMutate((draft) => {
+                    draft.settings.quietModeDefault = event.target.checked;
+                    addAudit(draft, user.id, "settings_updated", {
+                      key: "quietModeDefault",
+                      value: event.target.checked,
+                    });
+                  })
+                }
+              />
+            }
+            label="Quiet mode on by default"
+          />
+        </Stack>
+      </SectionPaper>
 
       <DestinationBlockControls
         state={state}
@@ -3565,32 +5140,6 @@ function SettingsView({
         destinations={specialDestinationKeys}
         onMutate={onMutate}
       />
-
-      <SectionPaper>
-        <Typography variant="h6" sx={{ mb: 1 }}>
-          Schedule Templates
-        </Typography>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Periods</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {state.schedules.map((schedule) => (
-              <TableRow key={schedule.id}>
-                <TableCell>{schedule.name}</TableCell>
-                <TableCell>
-                  {schedule.periods
-                    .map((period) => `${period.label} ${period.start}-${period.end}`)
-                    .join("; ")}
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </SectionPaper>
     </Stack>
   );
 }
@@ -3640,6 +5189,8 @@ function PawPassApp() {
   const [localNicknames, setLocalNicknames] = useState<LocalNicknameMap>(() => loadLocalNicknames());
   const [now, setNow] = useState(Date.now());
   const [view, setView] = useState<ViewKey>("home");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scheduleNoticeOpen, setScheduleNoticeOpen] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(() =>
     typeof window === "undefined" ? "" : window.sessionStorage.getItem(currentUserStorageKey) || "",
   );
@@ -3665,6 +5216,15 @@ function PawPassApp() {
         (eloper) => eloper.active && getVisibleTeacherIds(currentUser, state).includes(eloper.teacherId),
       ).length
     : 0;
+  const scheduleUpdatePairs = currentUser
+    ? getOutdatedSchedulePairs(state, currentUser)
+    : [];
+  const scheduleUpdateNoticeKey = scheduleUpdatePairs
+    .map(
+      ({ privateSchedule, adminSchedule }) =>
+        `${privateSchedule.id}:${adminSchedule.updatedAt || 0}`,
+    )
+    .join("|");
 
   const mutate = (mutator: (draft: PawPassState) => void) => {
     try {
@@ -3717,6 +5277,14 @@ function PawPassApp() {
     savePawPassState(state);
   }, [state]);
 
+  useEffect(() => {
+    if (scheduleUpdateNoticeKey) {
+      setScheduleNoticeOpen(true);
+    } else {
+      setScheduleNoticeOpen(false);
+    }
+  }, [currentUserId, scheduleUpdateNoticeKey]);
+
   if (!currentUser) {
     return (
       <LoginScreen
@@ -3747,9 +5315,55 @@ function PawPassApp() {
     saveLocalNicknames({});
   };
 
+  const closeScheduleNotice = (openSettings = false) => {
+    setScheduleNoticeOpen(false);
+    if (openSettings) setView("settings");
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <Box sx={{ minHeight: "100vh", bgcolor: "background.default" }}>
+        <Dialog
+          open={scheduleNoticeOpen && scheduleUpdatePairs.length > 0}
+          onClose={() => closeScheduleNotice(false)}
+          fullWidth
+          maxWidth="sm"
+        >
+          <DialogTitle>Admin Schedule Updated</DialogTitle>
+          <DialogContent>
+            <Stack spacing={1.5} sx={{ pt: 1 }}>
+              <Alert severity="warning" icon={<WarningAmberIcon />}>
+                An admin schedule used by one of your private schedules has changed. Your copy stays
+                active until you update it.
+              </Alert>
+              {scheduleUpdatePairs.map(({ privateSchedule, adminSchedule }) => (
+                <Box
+                  key={`${privateSchedule.id}-${adminSchedule.id}`}
+                  sx={{
+                    border: "1px solid rgba(15, 23, 42, 0.12)",
+                    borderRadius: 1,
+                    p: 1.25,
+                  }}
+                >
+                  <Typography fontWeight={900}>{privateSchedule.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Latest admin template: {adminSchedule.name}
+                  </Typography>
+                </Box>
+              ))}
+              <Typography variant="body2" color="text.secondary">
+                Open Settings under Schedule to compare your copy side by side with the admin
+                version, then use the ochre warning button to edit your copy.
+              </Typography>
+            </Stack>
+          </DialogContent>
+          <DialogActions sx={{ p: 2, pt: 0 }}>
+            <Button onClick={() => closeScheduleNotice(false)}>Close</Button>
+            <Button variant="contained" onClick={() => closeScheduleNotice(true)}>
+              Open Settings
+            </Button>
+          </DialogActions>
+        </Dialog>
         <Box
           sx={{
             display: "grid",
@@ -3757,20 +5371,40 @@ function PawPassApp() {
             minHeight: "100vh",
           }}
         >
-          <Sidebar
-            view={activeView}
-            setView={setView}
-            user={currentUser}
-            activeEloperCount={activeEloperCount}
-          />
+          <Box sx={{ display: { xs: "none", md: "block" } }}>
+            <Sidebar
+              view={activeView}
+              setView={setView}
+              user={currentUser}
+              activeEloperCount={activeEloperCount}
+              scheduleWarningCount={scheduleUpdatePairs.length}
+            />
+          </Box>
+          <Drawer
+            open={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+            ModalProps={{ keepMounted: true }}
+            PaperProps={{ sx: { width: 280 } }}
+          >
+            <Sidebar
+              view={activeView}
+              setView={setView}
+              user={currentUser}
+              activeEloperCount={activeEloperCount}
+              scheduleWarningCount={scheduleUpdatePairs.length}
+              onNavigate={() => setMobileMenuOpen(false)}
+            />
+          </Drawer>
           <Box minWidth={0}>
             <TopBar
               state={state}
               user={currentUser}
+              activeView={activeView}
               effectiveTeacherId={effectiveTeacherId}
               now={now}
               onMutate={mutate}
               onLogout={logout}
+              onOpenMenu={() => setMobileMenuOpen(true)}
             />
             <Box component="main" sx={{ p: { xs: 1.5, sm: 2, lg: 3 } }}>
               <Stack spacing={2}>
