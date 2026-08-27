@@ -57,6 +57,11 @@ export type AuditAction =
   | "eloper_accounted_for"
   | "destination_block_changed"
   | "destination_settings_updated"
+  | "schedule_created"
+  | "schedule_updated"
+  | "schedule_duplicated"
+  | "schedule_admin_update_dismissed"
+  | "schedule_admin_update_applied"
   | "settings_updated";
 
 export type StaffUser = {
@@ -112,6 +117,13 @@ export type ScheduleTemplate = {
   name: string;
   active: boolean;
   periods: SchedulePeriod[];
+  ownerUserId?: string;
+  createdByUserId?: string;
+  sourceScheduleId?: string;
+  sourceAdminUpdatedAt?: number;
+  adminUpdateDismissedAt?: number;
+  createdAt?: number;
+  updatedAt?: number;
 };
 
 export type TeacherGroup = {
@@ -216,6 +228,7 @@ export type PawPassState = {
   rosterEntries: RosterEntry[];
   schedules: ScheduleTemplate[];
   selectedScheduleId: string;
+  selectedScheduleIdByUserId: Record<string, string>;
   periodOverrideId: string;
   groups: TeacherGroup[];
   rooms: RoomState[];
@@ -514,6 +527,9 @@ export const createInitialState = (): PawPassState => {
       id: "full-day",
       name: "Full Day",
       active: true,
+      createdByUserId: "admin-santos",
+      createdAt: seedNow,
+      updatedAt: seedNow,
       periods: [
         { id: "p1", label: "Period 1", start: "08:00", end: "08:45" },
         { id: "p2", label: "Period 2", start: "08:50", end: "09:35" },
@@ -529,6 +545,9 @@ export const createInitialState = (): PawPassState => {
       id: "half-day",
       name: "Half Day",
       active: true,
+      createdByUserId: "admin-santos",
+      createdAt: seedNow,
+      updatedAt: seedNow,
       periods: [
         { id: "p1", label: "Period 1", start: "08:00", end: "08:30" },
         { id: "p2", label: "Period 2", start: "08:34", end: "09:04" },
@@ -544,6 +563,9 @@ export const createInitialState = (): PawPassState => {
       id: "assembly-day",
       name: "Assembly Day",
       active: true,
+      createdByUserId: "admin-santos",
+      createdAt: seedNow,
+      updatedAt: seedNow,
       periods: [
         { id: "p1", label: "Period 1", start: "08:00", end: "08:38" },
         { id: "p2", label: "Period 2", start: "08:42", end: "09:20" },
@@ -678,6 +700,7 @@ export const createInitialState = (): PawPassState => {
     rosterEntries,
     schedules,
     selectedScheduleId: "full-day",
+    selectedScheduleIdByUserId: {},
     periodOverrideId: "",
     groups: [
       {
@@ -720,13 +743,12 @@ export const loadPawPassState = (): PawPassState => {
   if (typeof window === "undefined") return createInitialState();
 
   try {
+    window.localStorage.removeItem(PERIOD_OVERRIDE_STORAGE_KEY);
     const raw = window.localStorage.getItem(LOCAL_STORAGE_KEY);
     if (!raw) {
       const initial = createInitialState();
       const cachedSchedule = window.localStorage.getItem(SCHEDULE_STORAGE_KEY);
-      const cachedOverride = window.localStorage.getItem(PERIOD_OVERRIDE_STORAGE_KEY);
       if (cachedSchedule) initial.selectedScheduleId = cachedSchedule;
-      if (cachedOverride) initial.periodOverrideId = cachedOverride;
       return initial;
     }
 
@@ -743,6 +765,13 @@ export const loadPawPassState = (): PawPassState => {
       });
       return output;
     };
+    const normalizeSchedule = (schedule: ScheduleTemplate): ScheduleTemplate => ({
+      ...schedule,
+      active: schedule.active ?? true,
+      createdByUserId: schedule.createdByUserId || schedule.ownerUserId || "admin-santos",
+      createdAt: schedule.createdAt || seedNow,
+      updatedAt: schedule.updatedAt || seedNow,
+    });
 
     return {
       ...initial,
@@ -753,7 +782,9 @@ export const loadPawPassState = (): PawPassState => {
       rosterEntries: mergeMissingById(initial.rosterEntries, parsed.rosterEntries).map(
         ({ nickname: _nickname, ...entry }: RosterEntry & { nickname?: string }) => entry,
       ),
-      schedules: mergeMissingById(initial.schedules, parsed.schedules),
+      schedules: mergeMissingById(initial.schedules, parsed.schedules).map(normalizeSchedule),
+      selectedScheduleIdByUserId: parsed.selectedScheduleIdByUserId || {},
+      periodOverrideId: "",
       groups: mergeMissingById(initial.groups, parsed.groups),
       rooms: mergeMissingById(initial.rooms.map((room) => ({ id: room.teacherId, ...room })), parsed.rooms?.map((room) => ({ id: room.teacherId, ...room }))).map(({ id, ...room }) => room),
       destinationStates: mergeMissingById(
@@ -777,13 +808,14 @@ export const savePawPassState = (state: PawPassState) => {
   if (typeof window === "undefined") return;
   const sanitizedState = {
     ...state,
+    periodOverrideId: "",
     rosterEntries: state.rosterEntries.map(
       ({ nickname: _nickname, ...entry }: RosterEntry & { nickname?: string }) => entry,
     ),
   };
   window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(sanitizedState));
   window.localStorage.setItem(SCHEDULE_STORAGE_KEY, state.selectedScheduleId);
-  window.localStorage.setItem(PERIOD_OVERRIDE_STORAGE_KEY, state.periodOverrideId);
+  window.localStorage.removeItem(PERIOD_OVERRIDE_STORAGE_KEY);
 };
 
 export const getTeachers = (state: PawPassState) =>
@@ -795,7 +827,10 @@ export const getEffectiveTeacherId = (user: StaffUser | null, state: PawPassStat
   if (user.role === "substitute") {
     return user.subbingForTeacherId || getTeachers(state)[0]?.id || "";
   }
-  if (user.role === "admin" || user.role === "security") {
+  if (user.role === "admin") {
+    return user.subbingForTeacherId || user.id;
+  }
+  if (user.role === "security") {
     return user.subbingForTeacherId || getTeachers(state)[0]?.id || "";
   }
   return "";
@@ -810,6 +845,101 @@ export const getVisibleTeacherIds = (user: StaffUser | null, state: PawPassState
   return [getEffectiveTeacherId(user, state)].filter(Boolean);
 };
 
+export const getScheduleSelectionKey = (state: PawPassState, user: StaffUser | null) => {
+  if (!user) return "";
+  if (user.role === "teacher") return user.id;
+  if (user.role === "substitute") return getEffectiveTeacherId(user, state);
+  return user.id;
+};
+
+export const getVisibleSchedules = (state: PawPassState, user: StaffUser | null) => {
+  const ownerKey = getScheduleSelectionKey(state, user);
+  const sharedSchedules = state.schedules.filter(
+    (schedule) => schedule.active && !schedule.ownerUserId,
+  );
+
+  if (!user || user.role === "admin" || user.role === "security" || isDestinationStaff(user)) {
+    return sharedSchedules;
+  }
+
+  return state.schedules.filter(
+    (schedule) =>
+      schedule.active && (!schedule.ownerUserId || schedule.ownerUserId === ownerKey),
+  );
+};
+
+export const getPersonalScheduleForSharedSchedule = (
+  state: PawPassState,
+  ownerKey: string,
+  sharedScheduleId: string,
+) =>
+  state.schedules
+    .filter(
+      (schedule) =>
+        schedule.active &&
+        schedule.ownerUserId === ownerKey &&
+        schedule.sourceScheduleId === sharedScheduleId,
+    )
+    .sort((left, right) => Number(right.updatedAt || 0) - Number(left.updatedAt || 0))[0];
+
+export const getGlobalSelectedScheduleId = (state: PawPassState) => {
+  const selectedSchedule = state.schedules.find(
+    (schedule) => schedule.active && schedule.id === state.selectedScheduleId,
+  );
+  if (selectedSchedule && !selectedSchedule.ownerUserId) return selectedSchedule.id;
+  if (selectedSchedule?.sourceScheduleId) {
+    const sourceSchedule = state.schedules.find(
+      (schedule) =>
+        schedule.active &&
+        !schedule.ownerUserId &&
+        schedule.id === selectedSchedule.sourceScheduleId,
+    );
+    if (sourceSchedule) return sourceSchedule.id;
+  }
+  return (
+    state.schedules.find((schedule) => schedule.active && !schedule.ownerUserId)?.id ||
+    selectedSchedule?.id ||
+    state.schedules[0]?.id ||
+    ""
+  );
+};
+
+export const getSelectedScheduleId = (state: PawPassState, user: StaffUser | null) => {
+  const selectionKey = getScheduleSelectionKey(state, user);
+  const globalScheduleId = getGlobalSelectedScheduleId(state);
+  if (!user || user.role === "admin" || user.role === "security" || isDestinationStaff(user)) {
+    return globalScheduleId;
+  }
+
+  const selectedSchedule = state.schedules.find(
+    (schedule) =>
+      schedule.active &&
+      selectionKey &&
+      schedule.id === state.selectedScheduleIdByUserId?.[selectionKey],
+  );
+  if (selectedSchedule) {
+    if (!selectedSchedule.ownerUserId) {
+      return (
+        (selectionKey &&
+          getPersonalScheduleForSharedSchedule(state, selectionKey, globalScheduleId)?.id) ||
+        globalScheduleId
+      );
+    }
+    if (
+      selectedSchedule.ownerUserId === selectionKey &&
+      (!selectedSchedule.sourceScheduleId || selectedSchedule.sourceScheduleId === globalScheduleId)
+    ) {
+      return selectedSchedule.id;
+    }
+  }
+
+  return (
+    (selectionKey &&
+      getPersonalScheduleForSharedSchedule(state, selectionKey, globalScheduleId)?.id) ||
+    globalScheduleId
+  );
+};
+
 export const getTeacherName = (state: PawPassState, teacherId: string) =>
   state.staffUsers.find((user) => user.id === teacherId)?.displayName || "Unknown teacher";
 
@@ -819,9 +949,16 @@ export const getStudent = (state: PawPassState, studentId: string) =>
 export const getStudentUsername = (state: PawPassState, studentId: string) =>
   getStudent(state, studentId)?.username || "unknown_student";
 
-export const getSchedule = (state: PawPassState) =>
-  state.schedules.find((schedule) => schedule.id === state.selectedScheduleId) ||
-  state.schedules[0];
+export const getSchedule = (state: PawPassState, user: StaffUser | null = null) => {
+  const visibleSchedules = getVisibleSchedules(state, user);
+  const selectedScheduleId = getSelectedScheduleId(state, user);
+  return (
+    visibleSchedules.find((schedule) => schedule.id === selectedScheduleId) ||
+    visibleSchedules[0] ||
+    state.schedules.find((schedule) => schedule.active) ||
+    state.schedules[0]
+  );
+};
 
 const timeToMinutes = (hhmm: string) => {
   const [hours, minutes] = hhmm.split(":").map(Number);
@@ -838,8 +975,12 @@ const dateToMsSinceMidnight = (date: Date) =>
   ((date.getHours() * 60 + date.getMinutes()) * 60 + date.getSeconds()) * 1000 +
   date.getMilliseconds();
 
-export const getCurrentPeriod = (state: PawPassState, at = new Date()): SchedulePeriod => {
-  const schedule = getSchedule(state);
+export const getCurrentPeriod = (
+  state: PawPassState,
+  at = new Date(),
+  user: StaffUser | null = null,
+): SchedulePeriod => {
+  const schedule = getSchedule(state, user);
   if (state.periodOverrideId) {
     return (
       schedule.periods.find((period) => period.id === state.periodOverrideId) ||
@@ -857,8 +998,12 @@ export const getCurrentPeriod = (state: PawPassState, at = new Date()): Schedule
   );
 };
 
-export const getAutoFreezeWindow = (state: PawPassState, at = new Date()) => {
-  const period = getCurrentPeriod(state, at);
+export const getAutoFreezeWindow = (
+  state: PawPassState,
+  at = new Date(),
+  user: StaffUser | null = null,
+) => {
+  const period = getCurrentPeriod(state, at, user);
   if (period.id === "off") return null;
 
   const startWindowMs = Math.max(0, state.settings.autoFreezeStartPeriodMs || 0);
@@ -1246,6 +1391,7 @@ export const createPassRequest = (
 
   const now = Date.now();
   const group = getTeacherGroup(state, effectiveTeacherId);
+  const schedule = getSchedule(state, actor);
   const averageDuration = averageReturnedDuration(state, studentId);
   const penaltyDelayMs = getStudentQueuePenaltyMs(state, studentId);
   const habitDelayMs = averageDuration > state.settings.longReturnMs ? state.settings.habitDelayMs : 0;
@@ -1259,7 +1405,7 @@ export const createPassRequest = (
     actorUserId: actor.id,
     groupId: group.id,
     periodId,
-    scheduleId: state.selectedScheduleId,
+    scheduleId: schedule.id,
     destination,
     status: delayed ? "delayed" : "waiting",
     requestedAt: now,
@@ -1292,6 +1438,8 @@ export const createPassRequest = (
       requestId: request.id,
     },
   );
+
+  return request;
 };
 
 export const createEloperRequest = (
@@ -1316,6 +1464,7 @@ export const createEloperRequest = (
 
   const now = Date.now();
   const group = getTeacherGroup(state, effectiveTeacherId);
+  const schedule = getSchedule(state, actor);
   const request: PassRequest = {
     id: makeId("req"),
     rosterId: roster.id,
@@ -1324,7 +1473,7 @@ export const createEloperRequest = (
     actorUserId: actor.id,
     groupId: group.id,
     periodId,
-    scheduleId: state.selectedScheduleId,
+    scheduleId: schedule.id,
     destination: "eloper",
     status: "out",
     requestedAt: now,
