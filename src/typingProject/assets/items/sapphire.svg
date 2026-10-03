@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Sapphire gem</title>
+  <desc id="desc">A deep blue faceted sapphire.</desc>
+  <defs>
+    <linearGradient id="sapphire-face" x1="14" x2="50" y1="13" y2="52">
+      <stop offset="0%" stop-color="#a9d7ff"/>
+      <stop offset="48%" stop-color="#2f7df0"/>
+      <stop offset="100%" stop-color="#17338f"/>
+    </linearGradient>
+    <linearGradient id="sapphire-core" x1="26" x2="39" y1="24" y2="52">
+      <stop offset="0%" stop-color="#5ab6ff"/>
+      <stop offset="100%" stop-color="#12236d"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="54" rx="18" ry="5" fill="#000" opacity=".18"/>
+  <path d="M32 8 54 28 32 56 10 28 32 8Z" fill="#0d2f87"/>
+  <path d="M32 14 48 28 32 49 16 28 32 14Z" fill="url(#sapphire-face)"/>
+  <path d="M16 28h16L24 16 16 28Z" fill="#8ad0ff" opacity=".7"/>
+  <path d="M48 28H32l8-12 8 12Z" fill="#1f61d6"/>
+  <path d="M16 28h16v21L16 28Z" fill="#1f5fd1"/>
+  <path d="M48 28H32v21l16-21Z" fill="#122c85"/>
+  <path d="M24 16h16l-8 12-8-12Z" fill="#5bbcff"/>
+  <path d="M32 28v21l-8-21h8Z" fill="url(#sapphire-core)" opacity=".7"/>
+  <path d="M24 20h12l-5 5H18l6-5Z" fill="#eaf7ff" opacity=".56"/>
+</svg>

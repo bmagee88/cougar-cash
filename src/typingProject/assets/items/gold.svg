@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Gold coin</title>
+  <desc id="desc">A shiny round gold coin with a bright rim and soft shadow.</desc>
+  <defs>
+    <radialGradient id="gold-face" cx="35%" cy="28%" r="70%">
+      <stop offset="0%" stop-color="#fff6a8"/>
+      <stop offset="48%" stop-color="#f5c542"/>
+      <stop offset="100%" stop-color="#b47a12"/>
+    </radialGradient>
+    <linearGradient id="gold-rim" x1="14" x2="50" y1="10" y2="54">
+      <stop offset="0%" stop-color="#fff2a0"/>
+      <stop offset="55%" stop-color="#d79b18"/>
+      <stop offset="100%" stop-color="#8c5a0a"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="54" rx="19" ry="5" fill="#000" opacity=".18"/>
+  <circle cx="32" cy="30" r="24" fill="url(#gold-rim)"/>
+  <circle cx="32" cy="30" r="18" fill="url(#gold-face)"/>
+  <path d="M22 26c2-7 9-11 17-9 5 1 9 5 10 9-5-5-13-7-20-4-3 1-5 2-7 4Z" fill="#fff8bd" opacity=".58"/>
+  <path d="M25 41c8 5 18 2 23-6-1 10-12 17-22 11-5-3-9-8-9-14 1 4 4 7 8 9Z" fill="#8c5a0a" opacity=".24"/>
+</svg>

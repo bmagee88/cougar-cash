@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Diamond gem</title>
+  <desc id="desc">A bright faceted diamond with cool blue shadows.</desc>
+  <defs>
+    <linearGradient id="diamond-top" x1="13" x2="51" y1="13" y2="50">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#c9f5ff"/>
+      <stop offset="100%" stop-color="#74b8d6"/>
+    </linearGradient>
+    <linearGradient id="diamond-shadow" x1="26" x2="40" y1="26" y2="56">
+      <stop offset="0%" stop-color="#e9fbff"/>
+      <stop offset="100%" stop-color="#65a2c3"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="54" rx="18" ry="5" fill="#000" opacity=".14"/>
+  <path d="M18 12h28l10 15-24 29L8 27l10-15Z" fill="#79b5ce"/>
+  <path d="M18 12 8 27h16l4-15H18Z" fill="#f8feff"/>
+  <path d="M46 12 56 27H40l-4-15h10Z" fill="#b6ecfa"/>
+  <path d="M24 27h16L32 56 24 27Z" fill="url(#diamond-shadow)"/>
+  <path d="M24 27 32 56 8 27h16Z" fill="#d9f7ff"/>
+  <path d="M40 27 32 56l24-29H40Z" fill="#8bc7df"/>
+  <path d="M24 27 28 12h8l4 15H24Z" fill="url(#diamond-top)"/>
+  <path d="M21 16h13l-7 7H13l8-7Z" fill="#fff" opacity=".75"/>
+  <path d="M42 16h5l4 6h-9l-2-6h2Z" fill="#fff" opacity=".45"/>
+</svg>
