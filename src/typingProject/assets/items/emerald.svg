@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Emerald gem</title>
+  <desc id="desc">A faceted green emerald with beveled corners.</desc>
+  <defs>
+    <linearGradient id="emerald-face" x1="16" x2="48" y1="12" y2="52">
+      <stop offset="0%" stop-color="#9cffc6"/>
+      <stop offset="50%" stop-color="#1dbf73"/>
+      <stop offset="100%" stop-color="#087342"/>
+    </linearGradient>
+    <linearGradient id="emerald-side" x1="44" x2="55" y1="17" y2="47">
+      <stop offset="0%" stop-color="#19a867"/>
+      <stop offset="100%" stop-color="#045332"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="54" rx="18" ry="5" fill="#000" opacity=".18"/>
+  <path d="M21 10h22l11 11v22L43 54H21L10 43V21L21 10Z" fill="#056b3e"/>
+  <path d="M24 16h16l8 8v16l-8 8H24l-8-8V24l8-8Z" fill="url(#emerald-face)"/>
+  <path d="M24 16 16 24h14l3-8h-9Z" fill="#b8ffd4" opacity=".72"/>
+  <path d="M40 16 48 24H34l-1-8h7Z" fill="#39df8b"/>
+  <path d="M48 24v16l-8 8-6-8 6-16h8Z" fill="url(#emerald-side)"/>
+  <path d="M16 40h18l6 8H24l-8-8Z" fill="#0b8b52"/>
+  <path d="M21 21h13l-5 5H17l4-5Z" fill="#e6fff0" opacity=".55"/>
+</svg>

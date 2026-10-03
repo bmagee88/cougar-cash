@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title desc">
+  <title id="title">Ruby gem</title>
+  <desc id="desc">A faceted red ruby with bright highlights.</desc>
+  <defs>
+    <linearGradient id="ruby-top" x1="16" x2="48" y1="12" y2="50">
+      <stop offset="0%" stop-color="#ff9aa9"/>
+      <stop offset="45%" stop-color="#e91e4d"/>
+      <stop offset="100%" stop-color="#7a071d"/>
+    </linearGradient>
+    <linearGradient id="ruby-dark" x1="19" x2="44" y1="24" y2="54">
+      <stop offset="0%" stop-color="#d71945"/>
+      <stop offset="100%" stop-color="#5e0618"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="32" cy="54" rx="18" ry="5" fill="#000" opacity=".18"/>
+  <path d="M18 14h28l9 13-23 25L9 27l9-13Z" fill="url(#ruby-top)"/>
+  <path d="M18 14 9 27h15l4-13H18Z" fill="#ff637c"/>
+  <path d="M46 14 55 27H40l-4-13h10Z" fill="#b20d31"/>
+  <path d="M24 27h16L32 52 24 27Z" fill="url(#ruby-dark)"/>
+  <path d="M24 27 32 52 9 27h15Z" fill="#c51038"/>
+  <path d="M40 27 32 52l23-25H40Z" fill="#8f0826"/>
+  <path d="M24 27 28 14h8l4 13H24Z" fill="#ff4567"/>
+  <path d="M20 18h11l-7 6H15l5-6Z" fill="#ffd0d7" opacity=".65"/>
+</svg>

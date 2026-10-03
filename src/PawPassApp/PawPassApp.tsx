@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { createNextState } from "@reduxjs/toolkit";
 import Papa from "papaparse";
 import {
   closestCenter,
@@ -52,6 +53,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableContainer,
   TableHead,
   TableRow,
   TableSortLabel,
@@ -91,6 +93,7 @@ import {
   DestinationKey,
   ImportPreviewRow,
   PassRequest,
+  PawPassIndexes,
   PawPassState,
   SchedulePeriod,
   ScheduleTemplate,
@@ -101,6 +104,7 @@ import {
   addAudit,
   addStudentForRosterPeriods,
   advanceQueues,
+  buildPawPassIndexes,
   buildImportPreview,
   callStudentBackToClass,
   canViewAll,
@@ -120,18 +124,14 @@ import {
   getEffectiveTeacherId,
   getGlobalSelectedScheduleId,
   getPersonalScheduleForSharedSchedule,
-  getRosterStudents,
   getRoomState,
   getSchedule,
   getScheduleSelectionKey,
-  getStudent,
-  getStudentQueuePenaltyMs,
   getStudentUsername,
   getTeacherGroup,
   getTeacherName,
   getTeachers,
   getVisibleSchedules,
-  getVisibleTeacherIds,
   isDestinationStaff,
   isDestinationBlocked,
   isValidStudentUsername,
@@ -262,10 +262,255 @@ const reportColumnLabels: Record<ReportColumnKey, string> = {
   penalty: "Penalty",
 };
 
-const deepClone = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
+const producePawPassState = (
+  state: PawPassState,
+  mutator: (draft: PawPassState) => void,
+) =>
+  createNextState(state, (draft) => {
+    mutator(draft as PawPassState);
+  });
 
 const getRoomSnapshot = (state: PawPassState, teacherId: string) =>
   state.rooms.find((room) => room.teacherId === teacherId) || { teacherId, frozen: false };
+
+const getTeacherUsersFromStaffUsers = (staffUsers: PawPassState["staffUsers"]) =>
+  staffUsers.filter((staff) => staff.role === "teacher" && staff.active);
+
+const getEffectiveTeacherIdFromStaffUsers = (
+  user: StaffUser | null,
+  staffUsers: PawPassState["staffUsers"],
+) => {
+  if (!user) return "";
+  if (user.role === "teacher") return user.id;
+  if (user.role === "substitute") {
+    return user.subbingForTeacherId || getTeacherUsersFromStaffUsers(staffUsers)[0]?.id || "";
+  }
+  if (user.role === "admin") {
+    return user.subbingForTeacherId || user.id;
+  }
+  if (user.role === "security") {
+    return user.subbingForTeacherId || getTeacherUsersFromStaffUsers(staffUsers)[0]?.id || "";
+  }
+  return "";
+};
+
+const getVisibleTeacherIdSetFromStaffUsers = (
+  user: StaffUser | null,
+  staffUsers: PawPassState["staffUsers"],
+) => {
+  if (!user) return new Set<string>();
+  if (canViewAll(user)) {
+    return new Set(getTeacherUsersFromStaffUsers(staffUsers).map((teacher) => teacher.id));
+  }
+  return new Set([getEffectiveTeacherIdFromStaffUsers(user, staffUsers)].filter(Boolean));
+};
+
+const getScheduleSelectionKeyFromStaffUsers = (
+  user: StaffUser | null,
+  staffUsers: PawPassState["staffUsers"],
+) => {
+  if (!user) return "";
+  if (user.role === "teacher") return user.id;
+  if (user.role === "substitute") return getEffectiveTeacherIdFromStaffUsers(user, staffUsers);
+  return user.id;
+};
+
+const getRosterStudentsFromSlices = (
+  rosters: PawPassState["rosters"],
+  rosterEntries: PawPassState["rosterEntries"],
+  students: PawPassState["students"],
+  teacherId: string,
+  periodId: string,
+) => {
+  const roster = rosters.find(
+    (item) => item.teacherId === teacherId && item.periodId === periodId && item.active,
+  );
+  if (!roster) return [];
+
+  const studentById = new Map(students.map((student) => [student.id, student]));
+  return rosterEntries
+    .filter((entry) => entry.rosterId === roster.id && entry.active)
+    .map((entry) => studentById.get(entry.studentId))
+    .filter((student): student is PawPassState["students"][number] => Boolean(student));
+};
+
+const getOutdatedSchedulePairsFromSlices = (
+  schedules: PawPassState["schedules"],
+  staffUsers: PawPassState["staffUsers"],
+  user: StaffUser | null,
+): OutdatedSchedulePair[] => {
+  if (!user || user.role === "admin" || user.role === "security" || isDestinationStaff(user)) {
+    return [];
+  }
+
+  const ownerKey = getScheduleSelectionKeyFromStaffUsers(user, staffUsers);
+  if (!ownerKey) return [];
+
+  return schedules
+    .filter((schedule) => schedule.active && schedule.ownerUserId === ownerKey && schedule.sourceScheduleId)
+    .map((privateSchedule) => {
+      const adminSchedule = schedules.find(
+        (schedule) =>
+          schedule.id === privateSchedule.sourceScheduleId &&
+          schedule.active &&
+          !schedule.ownerUserId,
+      );
+      return adminSchedule ? { privateSchedule, adminSchedule } : null;
+    })
+    .filter((item): item is OutdatedSchedulePair =>
+      Boolean(item && !scheduleCompliesWithAdmin(item.privateSchedule, item.adminSchedule)),
+    );
+};
+
+type ClockStore = {
+  now: number;
+  listeners: Set<() => void>;
+  intervalId?: number;
+  focusHandler?: () => void;
+  visibilityHandler?: () => void;
+};
+
+const clockStores = new Map<number, ClockStore>();
+
+const normalizeClockInterval = (intervalMs: number) =>
+  Math.max(250, Math.floor(intervalMs || 1000));
+
+const getClockStore = (intervalMs: number) => {
+  const interval = normalizeClockInterval(intervalMs);
+  let store = clockStores.get(interval);
+  if (!store) {
+    store = {
+      now: Date.now(),
+      listeners: new Set(),
+    };
+    clockStores.set(interval, store);
+  }
+  return store;
+};
+
+const notifyClockStore = (store: ClockStore) => {
+  store.now = Date.now();
+  Array.from(store.listeners).forEach((listener) => listener());
+};
+
+const startClockStore = (intervalMs: number, store: ClockStore) => {
+  if (store.intervalId !== undefined || typeof window === "undefined") return;
+
+  const tickIfVisible = () => {
+    if (document.visibilityState !== "hidden") notifyClockStore(store);
+  };
+  const tick = () => notifyClockStore(store);
+  const handleVisibilityChange = () => {
+    if (document.visibilityState !== "hidden") tick();
+  };
+
+  store.intervalId = window.setInterval(tickIfVisible, intervalMs);
+  store.focusHandler = tick;
+  store.visibilityHandler = handleVisibilityChange;
+  window.addEventListener("focus", tick);
+  document.addEventListener("visibilitychange", handleVisibilityChange);
+};
+
+const stopClockStore = (intervalMs: number, store: ClockStore) => {
+  if (store.listeners.size || typeof window === "undefined") return;
+
+  if (store.intervalId !== undefined) {
+    window.clearInterval(store.intervalId);
+    store.intervalId = undefined;
+  }
+  if (store.focusHandler) {
+    window.removeEventListener("focus", store.focusHandler);
+    store.focusHandler = undefined;
+  }
+  if (store.visibilityHandler) {
+    document.removeEventListener("visibilitychange", store.visibilityHandler);
+    store.visibilityHandler = undefined;
+  }
+  clockStores.delete(intervalMs);
+};
+
+const subscribeToClock = (intervalMs: number, listener: () => void) => {
+  if (typeof window === "undefined") return () => undefined;
+
+  const interval = normalizeClockInterval(intervalMs);
+  const store = getClockStore(interval);
+  store.listeners.add(listener);
+  startClockStore(interval, store);
+
+  return () => {
+    store.listeners.delete(listener);
+    stopClockStore(interval, store);
+  };
+};
+
+const getClockSnapshot = (intervalMs: number) =>
+  getClockStore(intervalMs).now;
+
+function useNow(intervalMs = 1000) {
+  const interval = normalizeClockInterval(intervalMs);
+  const subscribe = useMemo(
+    () => (listener: () => void) => subscribeToClock(interval, listener),
+    [interval],
+  );
+  const getSnapshot = useMemo(() => () => getClockSnapshot(interval), [interval]);
+
+  return useSyncExternalStore(subscribe, getSnapshot, () => Date.now());
+}
+
+function useDebouncedPawPassPersistence(state: PawPassState, delayMs = 750) {
+  const latestStateRef = useRef(state);
+  const saveTimeoutRef = useRef<number | undefined>(undefined);
+  const flushRef = useRef<() => void>(() => undefined);
+
+  latestStateRef.current = state;
+  flushRef.current = () => {
+    if (typeof window === "undefined") return;
+    if (saveTimeoutRef.current !== undefined) {
+      window.clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = undefined;
+    }
+    savePawPassState(latestStateRef.current);
+  };
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    if (saveTimeoutRef.current !== undefined) {
+      window.clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = window.setTimeout(() => {
+      saveTimeoutRef.current = undefined;
+      savePawPassState(latestStateRef.current);
+    }, delayMs);
+
+    return () => {
+      if (saveTimeoutRef.current !== undefined) {
+        window.clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = undefined;
+      }
+    };
+  }, [delayMs, state]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const flush = () => flushRef.current();
+    const flushIfHidden = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+
+    window.addEventListener("pagehide", flush);
+    window.addEventListener("beforeunload", flush);
+    document.addEventListener("visibilitychange", flushIfHidden);
+
+    return () => {
+      window.removeEventListener("pagehide", flush);
+      window.removeEventListener("beforeunload", flush);
+      document.removeEventListener("visibilitychange", flushIfHidden);
+      flush();
+    };
+  }, []);
+}
 
 const currentUserStorageKey = "paw-pass-current-user";
 const localNicknamesStorageKey = "paw-pass-local-nicknames";
@@ -421,6 +666,209 @@ function msToDateInput(value: number) {
 function msUntil(value: number | undefined, now: number) {
   if (!value) return 0;
   return Math.max(0, value - now);
+}
+
+type QueueWakeLane = "hall" | DestinationKey;
+
+const queueWakeLaneKeys: QueueWakeLane[] = ["hall", ...specialDestinationKeys];
+const specialDestinationKeySet = new Set<DestinationKey>(specialDestinationKeys);
+const activePassStatusLookup = new Set<PassRequest["status"]>(activePassStatuses);
+
+const queueWakeLane = (destination: DestinationKey): QueueWakeLane =>
+  specialDestinationKeySet.has(destination) ? destination : "hall";
+
+const queueWakeKey = (groupId: string, lane: QueueWakeLane) => `${groupId}::${lane}`;
+const destinationBlockingStatuses: PassRequest["status"][] = [
+  "offered",
+  "out",
+  "received",
+  "return_waiting",
+  "return_offered",
+  "returning",
+];
+const destinationBlockingStatusSet = new Set<PassRequest["status"]>(destinationBlockingStatuses);
+
+const incrementCount = (counts: Map<string, number>, key: string) => {
+  counts.set(key, (counts.get(key) || 0) + 1);
+};
+
+function requestIsReadyForTimedOffer(request: PassRequest, now: number) {
+  if (request.status !== "waiting" && request.status !== "delayed") return false;
+  if (request.delayUntil && request.delayUntil > now) return false;
+  if (request.snoozeUntil && request.snoozeUntil > now) return false;
+  return true;
+}
+
+function shouldRunTimedQueueAdvance(state: PawPassState, now: number) {
+  const activeEloperRequestIds = new Set<string>();
+  state.elopers.forEach((eloper) => {
+    if (eloper.active) activeEloperRequestIds.add(eloper.requestId);
+  });
+  const frozenTeacherIds = new Set<string>();
+  state.rooms.forEach((room) => {
+    if (room.frozen) frozenTeacherIds.add(room.teacherId);
+  });
+  const activeDestinationCounts = new Map<string, number>();
+  let returnAlreadyOfferedOrMoving = false;
+  let returnWaitingReady = false;
+
+  for (const request of state.requests) {
+    if (activeEloperRequestIds.has(request.id)) continue;
+
+    if (request.status === "return_offered" && request.returnOfferExpiresAt) {
+      if (request.returnOfferExpiresAt <= now) return true;
+    }
+    if (request.status === "offered" && request.offerExpiresAt) {
+      if (request.offerExpiresAt <= now) return true;
+    }
+    if (request.status === "delayed" && request.delayUntil) {
+      if (request.delayUntil <= now) return true;
+    }
+    if (
+      (request.status === "out" || request.status === "returning") &&
+      request.permittedAt &&
+      request.dueAt
+    ) {
+      if (request.dueAt <= now) return true;
+    }
+
+    if (request.status === "return_offered" || request.status === "returning") {
+      returnAlreadyOfferedOrMoving = true;
+    } else if (
+      request.status === "return_waiting" &&
+      (!request.snoozeUntil || request.snoozeUntil <= now)
+    ) {
+      returnWaitingReady = true;
+    }
+
+    if (
+      specialDestinationKeySet.has(request.destination) &&
+      destinationBlockingStatusSet.has(request.status)
+    ) {
+      incrementCount(activeDestinationCounts, request.destination);
+    }
+  }
+
+  if (!returnAlreadyOfferedOrMoving && returnWaitingReady) return true;
+  if (getAutoFreezeWindow(state, new Date(now))) return false;
+
+  const blockedDestinations = new Set<DestinationKey>();
+  specialDestinationKeys.forEach((destination) => {
+    const destinationState = getDestinationState(state, destination);
+    if (
+      destinationState.blocked ||
+      (destinationState.autoBlockAfterCount > 0 &&
+        (activeDestinationCounts.get(destination) || 0) >=
+          destinationState.autoBlockAfterCount)
+    ) {
+      blockedDestinations.add(destination);
+    }
+  });
+  const destinationIsBlocked = (destination: DestinationKey) => {
+    if (!specialDestinationKeySet.has(destination)) return false;
+    return blockedDestinations.has(destination);
+  };
+
+  const activeNormalOutCounts = new Map<string, number>();
+  const offeredNormalKeys = new Set<string>();
+  const offeredMedicalGroupIds = new Set<string>();
+  const readyNormalKeys = new Set<string>();
+  const readyMedicalGroupIds = new Set<string>();
+
+  state.requests.forEach((request) => {
+    if (activeEloperRequestIds.has(request.id)) return;
+
+    const lane = queueWakeLane(request.destination);
+    const laneKey = queueWakeKey(request.groupId, lane);
+
+    if (request.status === "out" && !request.isMedicalOverride) {
+      incrementCount(activeNormalOutCounts, laneKey);
+    }
+
+    if (request.status === "offered") {
+      if (request.isMedicalOverride) {
+        offeredMedicalGroupIds.add(request.groupId);
+      } else {
+        offeredNormalKeys.add(laneKey);
+      }
+    }
+
+    if (
+      requestIsReadyForTimedOffer(request, now) &&
+      !frozenTeacherIds.has(request.teacherId) &&
+      !destinationIsBlocked(request.destination)
+    ) {
+      if (request.isMedicalOverride) {
+        readyMedicalGroupIds.add(request.groupId);
+      } else {
+        readyNormalKeys.add(laneKey);
+      }
+    }
+  });
+
+  return state.groups.some((group) => {
+    const normalCanAdvance = queueWakeLaneKeys.some((lane) => {
+      const key = queueWakeKey(group.id, lane);
+      return (
+        readyNormalKeys.has(key) &&
+        !offeredNormalKeys.has(key) &&
+        (activeNormalOutCounts.get(key) || 0) < group.normalCapacity
+      );
+    });
+    return (
+      normalCanAdvance ||
+      (readyMedicalGroupIds.has(group.id) && !offeredMedicalGroupIds.has(group.id))
+    );
+  });
+}
+
+function getAutoFreezeReleaseAt(state: PawPassState, now: number) {
+  const autoFreezeWindow = getAutoFreezeWindow(state, new Date(now));
+  if (!autoFreezeWindow) return undefined;
+
+  const periodStartMinutes = hhmmToMinutes(autoFreezeWindow.period.start);
+  const periodEndMinutes = hhmmToMinutes(autoFreezeWindow.period.end);
+  if (periodStartMinutes === null || periodEndMinutes === null) return undefined;
+
+  const dayStart = new Date(now);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayStartMs = dayStart.getTime();
+  const releaseAt =
+    autoFreezeWindow.phase === "start"
+      ? dayStartMs + periodStartMinutes * 60_000 + state.settings.autoFreezeStartPeriodMs
+      : dayStartMs + periodEndMinutes * 60_000;
+
+  return releaseAt > now ? releaseAt : undefined;
+}
+
+function getNextQueueAdvanceAt(state: PawPassState, now: number) {
+  if (shouldRunTimedQueueAdvance(state, now)) return now;
+
+  const activeEloperRequestIds = new Set<string>();
+  state.elopers.forEach((eloper) => {
+    if (eloper.active) activeEloperRequestIds.add(eloper.requestId);
+  });
+
+  let nextAt = getAutoFreezeReleaseAt(state, now);
+  const consider = (value?: number) => {
+    if (value && value > now && (!nextAt || value < nextAt)) {
+      nextAt = value;
+    }
+  };
+
+  state.requests.forEach((request) => {
+    if (!activePassStatusLookup.has(request.status) || activeEloperRequestIds.has(request.id)) {
+      return;
+    }
+
+    consider(request.delayUntil);
+    consider(request.snoozeUntil);
+    consider(request.offerExpiresAt);
+    consider(request.returnOfferExpiresAt);
+    consider(request.dueAt);
+  });
+
+  return nextAt;
 }
 
 function hhmmToMinutes(value: string) {
@@ -829,14 +1277,13 @@ function Sidebar({
 function PeriodCarousel({
   state,
   user,
-  now,
   onSelectPeriod,
 }: {
   state: PawPassState;
   user: StaffUser;
-  now: number;
   onSelectPeriod: (periodId: string) => void;
 }) {
+  const now = useNow();
   const schedule = getSchedule(state, user);
   const currentPeriod = getCurrentPeriod(state, new Date(now), user);
   const selectedPeriodRef = useRef<HTMLDivElement | null>(null);
@@ -979,7 +1426,6 @@ function TopBar({
   user,
   activeView,
   effectiveTeacherId,
-  now,
   onMutate,
   onLogout,
   onOpenMenu,
@@ -988,7 +1434,6 @@ function TopBar({
   user: StaffUser;
   activeView: ViewKey;
   effectiveTeacherId: string;
-  now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
   onLogout: () => void;
   onOpenMenu: () => void;
@@ -1197,7 +1642,6 @@ function TopBar({
       <PeriodCarousel
         state={state}
         user={scheduleProfileUser}
-        now={now}
         onSelectPeriod={selectPeriod}
       />
     </AppBar>
@@ -1272,16 +1716,15 @@ function HomeView({
   user,
   effectiveTeacherId,
   localNicknames,
-  now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
   effectiveTeacherId: string;
   localNicknames: LocalNicknameMap;
-  now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
+  const now = useNow(5000);
   const [tab, setTab] = useState(0);
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [requestNotice, setRequestNotice] = useState<{
@@ -1294,44 +1737,119 @@ function HomeView({
   const autoFreezeWindow = getAutoFreezeWindow(state, new Date(now), user);
   const room = getRoomSnapshot(state, effectiveTeacherId);
   const group = getTeacherGroup(state, effectiveTeacherId);
-  const rosterStudents = getRosterStudents(state, effectiveTeacherId, currentPeriod.id);
+  const { rosterEntries, rosters, students } = state;
+  const rosterStudents = useMemo(
+    () => getRosterStudentsFromSlices(rosters, rosterEntries, students, effectiveTeacherId, currentPeriod.id),
+    [currentPeriod.id, effectiveTeacherId, rosterEntries, rosters, students],
+  );
   const quiet = state.quietModeByUserId[user.id] ?? state.settings.quietModeDefault;
-  const activeEloperRequestIds = new Set(
-    state.elopers.filter((eloper) => eloper.active).map((eloper) => eloper.requestId),
+  const activeEloperRequestIds = useMemo(
+    () => {
+      const requestIds = new Set<string>();
+      state.elopers.forEach((eloper) => {
+        if (eloper.active) requestIds.add(eloper.requestId);
+      });
+      return requestIds;
+    },
+    [state.elopers],
   );
+  const rosterStudentIds = useMemo(
+    () => new Set(rosterStudents.map((student) => student.id)),
+    [rosterStudents],
+  );
+  const rosterStudentStatusById = useMemo(() => {
+    const statusByStudentId = new Map<
+      string,
+      {
+        activeEloperId?: string;
+        cancellableRequestId?: string;
+        alreadyAway: boolean;
+      }
+    >();
 
-  const offered = state.requests
-    .filter(
-      (request) =>
-        request.teacherId === effectiveTeacherId &&
-        request.status === "offered" &&
-        !activeEloperRequestIds.has(request.id),
-    )
-    .sort((left, right) => left.requestedAt - right.requestedAt);
-  const returnOffered = state.requests
-    .filter(
-      (request) =>
-        request.teacherId === effectiveTeacherId &&
-        request.status === "return_offered" &&
-        !activeEloperRequestIds.has(request.id),
-    )
-    .sort((left, right) => Number(left.returnRequestedAt || left.requestedAt) - Number(right.returnRequestedAt || right.requestedAt));
-  const activeAway = state.requests
-    .filter(
-      (request) =>
-        request.teacherId === effectiveTeacherId &&
-        teacherAwayStatuses.includes(request.status) &&
-        !activeEloperRequestIds.has(request.id),
-    )
-    .sort((left, right) => Number(left.permittedAt || 0) - Number(right.permittedAt || 0));
-  const groupNormalOut = state.requests.find(
-    (request) =>
-      request.groupId === group.id &&
-      request.status === "out" &&
-      !request.isMedicalOverride &&
-      !activeEloperRequestIds.has(request.id) &&
-      !specialDestinationKeys.includes(request.destination),
-  );
+    state.elopers.forEach((eloper) => {
+      if (
+        eloper.active &&
+        eloper.teacherId === effectiveTeacherId &&
+        rosterStudentIds.has(eloper.studentId)
+      ) {
+        statusByStudentId.set(eloper.studentId, {
+          ...(statusByStudentId.get(eloper.studentId) || { alreadyAway: false }),
+          activeEloperId: eloper.id,
+        });
+      }
+    });
+
+    state.requests.forEach((request) => {
+      if (
+        request.teacherId !== effectiveTeacherId ||
+        !rosterStudentIds.has(request.studentId) ||
+        activeEloperRequestIds.has(request.id)
+      ) {
+        return;
+      }
+
+      const status = statusByStudentId.get(request.studentId) || { alreadyAway: false };
+      if (["waiting", "delayed", "offered"].includes(request.status)) {
+        status.cancellableRequestId = request.id;
+      } else if (
+        ["out", "received", "return_waiting", "return_offered", "returning"].includes(request.status)
+      ) {
+        status.alreadyAway = true;
+      }
+      statusByStudentId.set(request.studentId, status);
+    });
+
+    return statusByStudentId;
+  }, [activeEloperRequestIds, effectiveTeacherId, rosterStudentIds, state.elopers, state.requests]);
+
+  const { offered, returnOffered, activeAway, groupNormalOut } = useMemo(() => {
+    const nextOffered: PassRequest[] = [];
+    const nextReturnOffered: PassRequest[] = [];
+    const nextActiveAway: PassRequest[] = [];
+    let nextGroupNormalOut: PassRequest | undefined;
+
+    state.requests.forEach((request) => {
+      if (activeEloperRequestIds.has(request.id)) return;
+
+      if (
+        !nextGroupNormalOut &&
+        request.groupId === group.id &&
+        request.status === "out" &&
+        !request.isMedicalOverride &&
+        !specialDestinationKeySet.has(request.destination)
+      ) {
+        nextGroupNormalOut = request;
+      }
+
+      if (request.teacherId !== effectiveTeacherId) return;
+
+      if (request.status === "offered") {
+        nextOffered.push(request);
+      } else if (request.status === "return_offered") {
+        nextReturnOffered.push(request);
+      } else if (teacherAwayStatuses.includes(request.status)) {
+        nextActiveAway.push(request);
+      }
+    });
+
+    nextOffered.sort((left, right) => left.requestedAt - right.requestedAt);
+    nextReturnOffered.sort(
+      (left, right) =>
+        Number(left.returnRequestedAt || left.requestedAt) -
+        Number(right.returnRequestedAt || right.requestedAt),
+    );
+    nextActiveAway.sort(
+      (left, right) => Number(left.permittedAt || 0) - Number(right.permittedAt || 0),
+    );
+
+    return {
+      offered: nextOffered,
+      returnOffered: nextReturnOffered,
+      activeAway: nextActiveAway,
+      groupNormalOut: nextGroupNormalOut,
+    };
+  }, [activeEloperRequestIds, effectiveTeacherId, group.id, state.requests]);
   useEffect(() => {
     const ids = [...returnOffered, ...offered].map((request) => request.id).join("|");
     if (ids && ids !== lastDingRef.current && !quiet) {
@@ -1347,7 +1865,7 @@ function HomeView({
       draft.elopers.some((eloper) => eloper.requestId === item.id && eloper.active);
     const visibleQueue = draft.requests.filter(
       (item) =>
-        (item.groupId === request.groupId || specialDestinationKeys.includes(item.destination)) &&
+        (item.groupId === request.groupId || specialDestinationKeySet.has(item.destination)) &&
         activePassStatuses.includes(item.status) &&
         item.status !== "delayed" &&
         !isActiveEloper(item),
@@ -1471,7 +1989,6 @@ function HomeView({
               state={state}
               request={request}
               localNicknames={localNicknames}
-              now={now}
               onCallBack={() =>
                 onMutate((draft) => {
                   const actor = draft.staffUsers.find((item) => item.id === user.id);
@@ -1489,7 +2006,6 @@ function HomeView({
               state={state}
               request={request}
               localNicknames={localNicknames}
-              now={now}
               onPermit={() =>
                 onMutate((draft) => {
                   const actor = draft.staffUsers.find((item) => item.id === user.id);
@@ -1515,7 +2031,6 @@ function HomeView({
               state={state}
               request={request}
               localNicknames={localNicknames}
-              now={now}
               onReturn={() =>
                 onMutate((draft) => {
                   const actor = draft.staffUsers.find((item) => item.id === user.id);
@@ -1580,54 +2095,37 @@ function HomeView({
                 }}
               >
                 {rosterStudents.map((student) => {
-                  const activeEloper = state.elopers.find(
-                    (eloper) =>
-                      eloper.active &&
-                      eloper.studentId === student.id &&
-                      eloper.teacherId === effectiveTeacherId,
-                  );
-                  const cancellableRequest = state.requests.find(
-                    (request) =>
-                      request.studentId === student.id &&
-                      request.teacherId === effectiveTeacherId &&
-                      ["waiting", "delayed", "offered"].includes(request.status),
-                  );
-                  const alreadyAway = state.requests.some(
-                    (request) =>
-                      request.studentId === student.id &&
-                      request.teacherId === effectiveTeacherId &&
-                      ["out", "received", "return_waiting", "return_offered", "returning"].includes(request.status),
-                  );
-                  const displayName = getLocalStudentDisplayName(
-                    state,
-                    localNicknames,
-                    student.id,
-                    effectiveTeacherId,
-                    currentPeriod.id,
-                  );
+                  const status = rosterStudentStatusById.get(student.id);
+                  const activeEloperId = status?.activeEloperId;
+                  const cancellableRequestId = status?.cancellableRequestId;
+                  const alreadyAway = Boolean(status?.alreadyAway);
+                  const displayName =
+                    localNicknames[
+                      localNicknameKey(effectiveTeacherId, currentPeriod.id, student.username)
+                    ] || student.username;
                   return (
                     <Button
                       key={student.id}
                       variant="contained"
                       disabled={
-                        (room.frozen && !cancellableRequest && !activeEloper) ||
-                        (alreadyAway && !activeEloper)
+                        (room.frozen && !cancellableRequestId && !activeEloperId) ||
+                        (alreadyAway && !activeEloperId)
                       }
                       onClick={() => {
-                        if (activeEloper) {
+                        if (activeEloperId) {
                           onMutate((draft) => {
                             const actor = draft.staffUsers.find((item) => item.id === user.id);
                             if (!actor) return;
-                            accountForEloper(draft, actor, activeEloper.id);
+                            accountForEloper(draft, actor, activeEloperId);
                             advanceQueues(draft);
                           });
                           return;
                         }
-                        if (cancellableRequest) {
+                        if (cancellableRequestId) {
                           onMutate((draft) => {
                             const actor = draft.staffUsers.find((item) => item.id === user.id);
                             if (!actor) return;
-                            dismissRequest(draft, actor, cancellableRequest.id);
+                            dismissRequest(draft, actor, cancellableRequestId);
                             advanceQueues(draft);
                           });
                           return;
@@ -1638,17 +2136,17 @@ function HomeView({
                         minHeight: 86,
                         fontSize: { xs: 15, sm: 17 },
                         overflowWrap: "anywhere",
-                        bgcolor: activeEloper
+                        bgcolor: activeEloperId
                           ? "#b91c1c"
-                          : cancellableRequest
+                          : cancellableRequestId
                           ? "#64748b"
                           : student.medicalPriority
                             ? "#0f766e"
                             : "#1f2937",
                         "&:hover": {
-                          bgcolor: activeEloper
+                          bgcolor: activeEloperId
                             ? "#991b1b"
-                            : cancellableRequest
+                            : cancellableRequestId
                             ? "#475569"
                             : student.medicalPriority
                               ? "#115e59"
@@ -1663,7 +2161,7 @@ function HomeView({
                             {student.username}
                           </Typography>
                         ) : null}
-                        {activeEloper ? (
+                        {activeEloperId ? (
                           <Chip
                             size="small"
                             label="Eloper"
@@ -1674,7 +2172,7 @@ function HomeView({
                             }}
                           />
                         ) : null}
-                        {!activeEloper && cancellableRequest ? <Chip size="small" label="Requested" /> : null}
+                        {!activeEloperId && cancellableRequestId ? <Chip size="small" label="Requested" /> : null}
                         {student.medicalPriority ? <Chip size="small" color="success" label="Medical" /> : null}
                       </Stack>
                     </Button>
@@ -1747,17 +2245,16 @@ function OfferPanel({
   state,
   request,
   localNicknames,
-  now,
   onPermit,
   onDismiss,
 }: {
   state: PawPassState;
   request: PassRequest;
   localNicknames: LocalNicknameMap;
-  now: number;
   onPermit: () => void;
   onDismiss: () => void;
 }) {
+  const now = useNow();
   const remaining = msUntil(request.offerExpiresAt, now);
   return (
     <Paper
@@ -1824,15 +2321,14 @@ function ReturnCallPanel({
   state,
   request,
   localNicknames,
-  now,
   onCallBack,
 }: {
   state: PawPassState;
   request: PassRequest;
   localNicknames: LocalNicknameMap;
-  now: number;
   onCallBack: () => void;
 }) {
+  const now = useNow();
   const remaining = msUntil(request.returnOfferExpiresAt, now);
   return (
     <Paper
@@ -1895,15 +2391,14 @@ function ActiveAwayPanel({
   state,
   request,
   localNicknames,
-  now,
   onReturn,
 }: {
   state: PawPassState;
   request: PassRequest;
   localNicknames: LocalNicknameMap;
-  now: number;
   onReturn: () => void;
 }) {
+  const now = useNow();
   const elapsed = request.permittedAt ? now - request.permittedAt : 0;
   const remaining = msUntil(request.dueAt, now);
   const receivedBy = request.receivedByUserId
@@ -2002,21 +2497,106 @@ function ActiveAwayPanel({
   );
 }
 
+function ElapsedDuration({ since }: { since?: number }) {
+  const now = useNow();
+  return <>{formatDuration(now - Number(since || now))}</>;
+}
+
+function VirtualizedTable<T,>({
+  items,
+  columnCount,
+  renderHead,
+  renderRow,
+  getKey,
+  estimateRowHeight = 56,
+  maxBodyHeight = 520,
+  threshold = 80,
+  size = "small",
+  tableSx,
+}: {
+  items: T[];
+  columnCount: number;
+  renderHead: () => React.ReactNode;
+  renderRow: (item: T, index: number) => React.ReactNode;
+  getKey: (item: T, index: number) => React.Key;
+  estimateRowHeight?: number;
+  maxBodyHeight?: number;
+  threshold?: number;
+  size?: React.ComponentProps<typeof Table>["size"];
+  tableSx?: React.ComponentProps<typeof Table>["sx"];
+}) {
+  const [scrollTop, setScrollTop] = useState(0);
+  const shouldVirtualize = items.length > threshold;
+  const overscan = 8;
+  const startIndex = shouldVirtualize
+    ? Math.max(0, Math.floor(scrollTop / estimateRowHeight) - overscan)
+    : 0;
+  const visibleCount = shouldVirtualize
+    ? Math.ceil(maxBodyHeight / estimateRowHeight) + overscan * 2
+    : items.length;
+  const endIndex = Math.min(items.length, startIndex + visibleCount);
+  const visibleItems = shouldVirtualize ? items.slice(startIndex, endIndex) : items;
+  const topSpacerHeight = shouldVirtualize ? startIndex * estimateRowHeight : 0;
+  const bottomSpacerHeight = shouldVirtualize
+    ? Math.max(0, (items.length - endIndex) * estimateRowHeight)
+    : 0;
+
+  return (
+    <TableContainer
+      component={Box}
+      onScroll={(event) => {
+        if (shouldVirtualize) setScrollTop(event.currentTarget.scrollTop);
+      }}
+      sx={{
+        maxHeight: shouldVirtualize ? maxBodyHeight : undefined,
+        overflowY: shouldVirtualize ? "auto" : "visible",
+        overflowX: "auto",
+      }}
+    >
+      <Table size={size} stickyHeader={shouldVirtualize} sx={tableSx}>
+        {renderHead()}
+        <TableBody>
+          {topSpacerHeight ? (
+            <TableRow aria-hidden="true" sx={{ height: topSpacerHeight }}>
+              <TableCell colSpan={columnCount} sx={{ border: 0, height: topSpacerHeight, p: 0 }} />
+            </TableRow>
+          ) : null}
+          {visibleItems.map((item, index) => {
+            const absoluteIndex = startIndex + index;
+            return (
+              <React.Fragment key={getKey(item, absoluteIndex)}>
+                {renderRow(item, absoluteIndex)}
+              </React.Fragment>
+            );
+          })}
+          {bottomSpacerHeight ? (
+            <TableRow aria-hidden="true" sx={{ height: bottomSpacerHeight }}>
+              <TableCell colSpan={columnCount} sx={{ border: 0, height: bottomSpacerHeight, p: 0 }} />
+            </TableRow>
+          ) : null}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+}
+
 function GroupQueueList({
-  state,
-  groupId,
+  visibleQueue,
+  activeEloperRequestIds,
+  frozenTeacherIds,
+  studentUsernameById,
+  teacherNameById,
   localNicknames,
 }: {
-  state: PawPassState;
-  groupId: string;
+  visibleQueue: PassRequest[];
+  activeEloperRequestIds: Set<string>;
+  frozenTeacherIds: Set<string>;
+  studentUsernameById: Map<string, string>;
+  teacherNameById: Map<string, string>;
   localNicknames: LocalNicknameMap;
 }) {
-  const group = state.groups.find((item) => item.id === groupId);
   const isActiveEloper = (request: PassRequest) =>
-    state.elopers.some((eloper) => eloper.requestId === request.id && eloper.active);
-  const frozenTeacherIds = new Set(
-    state.rooms.filter((room) => room.frozen).map((room) => room.teacherId),
-  );
+    activeEloperRequestIds.has(request.id);
   const queueStatus = (request: PassRequest) => {
     if (frozenTeacherIds.has(request.teacherId)) return "Frozen";
     if (isActiveEloper(request)) return "eloping";
@@ -2024,15 +2604,6 @@ function GroupQueueList({
     if (request.status === "offered") return "requesting";
     return "pending";
   };
-  if (!group) return null;
-
-  const visibleQueue = state.requests.filter(
-    (request) =>
-      (request.groupId === group.id || specialDestinationKeys.includes(request.destination)) &&
-      activePassStatuses.includes(request.status) &&
-      request.status !== "delayed" &&
-      !isActiveEloper(request),
-  );
 
   return (
     <Stack spacing={1.25}>
@@ -2045,6 +2616,7 @@ function GroupQueueList({
           {visibleQueue.map((request, index) => {
             const status = queueStatus(request);
             const onDeck = Boolean(request.skippedThisCycle);
+            const studentUsername = studentUsernameById.get(request.studentId) || "Unknown student";
             return (
               <Box
                 key={request.id}
@@ -2081,13 +2653,8 @@ function GroupQueueList({
                   }}
                 />
                 <Typography fontWeight={900} sx={{ overflowWrap: "anywhere" }}>
-                  {getLocalStudentDisplayName(
-                    state,
-                    localNicknames,
-                    request.studentId,
-                    request.teacherId,
-                    request.periodId,
-                  )}
+                  {localNicknames[localNicknameKey(request.teacherId, request.periodId, studentUsername)] ||
+                    studentUsername}
                 </Typography>
                 <Typography
                   variant="body2"
@@ -2096,7 +2663,7 @@ function GroupQueueList({
                     overflowWrap: "anywhere",
                   }}
                 >
-                  {getTeacherName(state, request.teacherId)}
+                  {teacherNameById.get(request.teacherId) || "Unknown teacher"}
                 </Typography>
                 <Tooltip title={destinationLabels[request.destination]}>
                   <Box sx={{ width: 38, justifySelf: "center" }}>
@@ -2172,7 +2739,26 @@ function RosterView({
   const [addStudentOpen, setAddStudentOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState<LocalImportPreviewRow[]>([]);
-  const students = getRosterStudents(state, effectiveTeacherId, periodId);
+  const students = useMemo(
+    () =>
+      getRosterStudentsFromSlices(
+        state.rosters,
+        state.rosterEntries,
+        state.students,
+        effectiveTeacherId,
+        periodId,
+      ),
+    [effectiveTeacherId, periodId, state.rosterEntries, state.rosters, state.students],
+  );
+  const rosterIndexes: Pick<PawPassIndexes, "activeStudentUsernames" | "teacherNameById"> = useMemo(
+    () => ({
+      activeStudentUsernames: new Set(
+        state.students.filter((student) => student.active).map((student) => student.username),
+      ),
+      teacherNameById: new Map(state.staffUsers.map((staff) => [staff.id, staff.displayName])),
+    }),
+    [state.staffUsers, state.students],
+  );
 
   const toggleAddPeriod = (targetPeriodId: string) => {
     setAddPeriodIds((current) =>
@@ -2246,7 +2832,7 @@ function RosterView({
       <Box>
         <Typography variant="h5">Edit Rosters</Typography>
         <Typography variant="body2" color="text.secondary">
-          Roster edits are scoped to {getTeacherName(state, effectiveTeacherId)}. Removed students are soft deleted from the roster.
+          Roster edits are scoped to {rosterIndexes.teacherNameById.get(effectiveTeacherId) || "Unknown teacher"}. Removed students are soft deleted from the roster.
         </Typography>
       </Box>
 
@@ -2348,18 +2934,24 @@ function RosterView({
           </Stack>
 
           {preview.length ? (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Row</TableCell>
-                  <TableCell>Generated Username</TableCell>
-                  <TableCell>Nickname</TableCell>
-                  <TableCell>Medical</TableCell>
-                  <TableCell>Issues</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {preview.map((row) => (
+            <VirtualizedTable
+              items={preview}
+              columnCount={5}
+              estimateRowHeight={48}
+              maxBodyHeight={460}
+              getKey={(row) => row.id}
+              renderHead={() => (
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Row</TableCell>
+                    <TableCell>Generated Username</TableCell>
+                    <TableCell>Nickname</TableCell>
+                    <TableCell>Medical</TableCell>
+                    <TableCell>Issues</TableCell>
+                  </TableRow>
+                </TableHead>
+              )}
+              renderRow={(row) => (
                   <TableRow key={row.id}>
                     <TableCell>{row.rowNumber}</TableCell>
                     <TableCell>{row.username}</TableCell>
@@ -2373,9 +2965,8 @@ function RosterView({
                       )}
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+              )}
+            />
           ) : null}
         </Stack>
       </SectionPaper>
@@ -2407,31 +2998,36 @@ function RosterView({
             </Select>
           </FormControl>
           {students.length ? (
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Username</TableCell>
-                  <TableCell>Nickname</TableCell>
-                  <TableCell>Medical Priority</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {students.map((student) => (
+            <VirtualizedTable
+              items={students}
+              columnCount={4}
+              estimateRowHeight={58}
+              maxBodyHeight={540}
+              getKey={(student) => student.id}
+              renderHead={() => (
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Username</TableCell>
+                    <TableCell>Nickname</TableCell>
+                    <TableCell>Medical Priority</TableCell>
+                    <TableCell align="right">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+              )}
+              renderRow={(student) => (
                   <RosterStudentRow
                     key={student.id}
-                    state={state}
                     user={user}
                     teacherId={effectiveTeacherId}
                     periodId={periodId}
-                    studentId={student.id}
+                    student={student}
+                    activeStudentUsernames={rosterIndexes.activeStudentUsernames}
                     localNicknames={localNicknames}
                     onLocalNicknameChange={onLocalNicknameChange}
                     onMutate={onMutate}
                   />
-                ))}
-              </TableBody>
-            </Table>
+              )}
+            />
           ) : (
             <Typography color="text.secondary">No students in this period yet.</Typography>
           )}
@@ -2442,20 +3038,20 @@ function RosterView({
 }
 
 function RosterStudentRow({
-  state,
   user,
   teacherId,
   periodId,
-  studentId,
+  student,
+  activeStudentUsernames,
   localNicknames,
   onLocalNicknameChange,
   onMutate,
 }: {
-  state: PawPassState;
   user: StaffUser;
   teacherId: string;
   periodId: string;
-  studentId: string;
+  student: PawPassState["students"][number];
+  activeStudentUsernames: Set<string>;
   localNicknames: LocalNicknameMap;
   onLocalNicknameChange: (
     teacherId: string,
@@ -2466,23 +3062,18 @@ function RosterStudentRow({
   ) => void;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
-  const student = getStudent(state, studentId);
-  const savedNickname = student
-    ? localNicknames[localNicknameKey(teacherId, periodId, student.username)] || ""
-    : "";
+  const savedNickname = localNicknames[localNicknameKey(teacherId, periodId, student.username)] || "";
   const [editing, setEditing] = useState(false);
-  const [username, setUsername] = useState(student?.username || "");
+  const [username, setUsername] = useState(student.username);
   const [nickname, setNickname] = useState(savedNickname);
-  const [medical, setMedical] = useState(Boolean(student?.medicalPriority));
+  const [medical, setMedical] = useState(student.medicalPriority);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setUsername(student?.username || "");
+    setUsername(student.username);
     setNickname(savedNickname);
-    setMedical(Boolean(student?.medicalPriority));
-  }, [savedNickname, student?.medicalPriority, student?.username]);
-
-  if (!student) return null;
+    setMedical(student.medicalPriority);
+  }, [savedNickname, student.medicalPriority, student.username]);
 
   const cancel = () => {
     setUsername(student.username);
@@ -2501,9 +3092,8 @@ function RosterStudentRow({
         return;
       }
       if (
-        state.students.some(
-          (item) => item.id !== studentId && item.username === cleanedUsername && item.active,
-        )
+        cleanedUsername !== student.username &&
+        activeStudentUsernames.has(cleanedUsername)
       ) {
         setError("That username already belongs to another student.");
         return;
@@ -2512,7 +3102,7 @@ function RosterStudentRow({
       onMutate((draft) => {
         const actor = draft.staffUsers.find((item) => item.id === user.id);
         if (!actor) return;
-        updateStudent(draft, actor, teacherId, studentId, {
+        updateStudent(draft, actor, teacherId, student.id, {
           username: cleanedUsername,
           medicalPriority: medical,
         });
@@ -2608,7 +3198,7 @@ function RosterStudentRow({
                 onMutate((draft) => {
                   const actor = draft.staffUsers.find((item) => item.id === user.id);
                   if (!actor) return;
-                  softDeleteRosterStudent(draft, actor, teacherId, periodId, studentId);
+                  softDeleteRosterStudent(draft, actor, teacherId, periodId, student.id);
                 })
               }
             >
@@ -2625,132 +3215,171 @@ function ElopersView({
   state,
   user,
   localNicknames,
-  now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
   localNicknames: LocalNicknameMap;
-  now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
-  const visibleTeachers = new Set(getVisibleTeacherIds(user, state));
-  const visibleGroups = state.groups.filter((group) =>
-    group.teacherIds.some((teacherId) => visibleTeachers.has(teacherId)),
+  const { elopers, groups, requests, staffUsers, students } = state;
+  const visibleTeachers = useMemo(
+    () => getVisibleTeacherIdSetFromStaffUsers(user, staffUsers),
+    [staffUsers, user],
   );
-  const activeElopers = state.elopers.filter(
-    (eloper) => eloper.active && visibleTeachers.has(eloper.teacherId),
+  const visibleGroups = useMemo(
+    () =>
+      groups.filter((group) =>
+        group.teacherIds.some((teacherId) => visibleTeachers.has(teacherId)),
+      ),
+    [groups, visibleTeachers],
   );
+  const teacherNameById = useMemo(
+    () => new Map(staffUsers.map((staff) => [staff.id, staff.displayName])),
+    [staffUsers],
+  );
+  const studentById = useMemo(
+    () => new Map(students.map((student) => [student.id, student])),
+    [students],
+  );
+  const requestById = useMemo(
+    () => new Map(requests.map((request) => [request.id, request])),
+    [requests],
+  );
+  const { activeEloperCount, activeEloperCountByGroupId, activeElopersByTeacherId } =
+    useMemo(() => {
+      const countByGroupId = new Map<string, number>();
+      const elopersByTeacherId = new Map<string, PawPassState["elopers"]>();
+      let count = 0;
+
+      elopers.forEach((eloper) => {
+        if (!eloper.active || !visibleTeachers.has(eloper.teacherId)) return;
+        count += 1;
+        countByGroupId.set(eloper.groupId, (countByGroupId.get(eloper.groupId) || 0) + 1);
+        const teacherElopers = elopersByTeacherId.get(eloper.teacherId) || [];
+        teacherElopers.push(eloper);
+        elopersByTeacherId.set(eloper.teacherId, teacherElopers);
+      });
+
+      return {
+        activeEloperCount: count,
+        activeEloperCountByGroupId: countByGroupId,
+        activeElopersByTeacherId: elopersByTeacherId,
+      };
+    }, [elopers, visibleTeachers]);
 
   return (
     <Stack spacing={2}>
-      {activeElopers.length ? (
+      {activeEloperCount ? (
         visibleGroups.map((group) => {
-          const groupElopers = activeElopers.filter((eloper) => eloper.groupId === group.id);
-          if (!groupElopers.length) return null;
+          const groupEloperCount = activeEloperCountByGroupId.get(group.id) || 0;
+          if (!groupEloperCount) return null;
 
           return (
             <SectionPaper key={group.id}>
               <Stack spacing={2}>
                 <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                   <Typography variant="h6">{group.name}</Typography>
-                  <Chip color="error" label={`${groupElopers.length} active`} />
+                  <Chip color="error" label={`${groupEloperCount} active`} />
                 </Stack>
 
                 {group.teacherIds
                   .filter((teacherId) => visibleTeachers.has(teacherId))
                   .map((teacherId) => {
-                    const teacherElopers = groupElopers.filter(
-                      (eloper) => eloper.teacherId === teacherId,
-                    );
+                    const teacherElopers = activeElopersByTeacherId.get(teacherId) || [];
                     if (!teacherElopers.length) return null;
 
                     return (
                       <Box key={teacherId}>
                         <Typography fontWeight={900} sx={{ mb: 1 }}>
-                          {getTeacherName(state, teacherId)}
+                          {teacherNameById.get(teacherId) || "Unknown teacher"}
                         </Typography>
-                        <Table size="small">
-                          <TableHead>
-                            <TableRow>
-                              <TableCell>Student</TableCell>
-                              <TableCell>Wing</TableCell>
-                              <TableCell>Destination</TableCell>
-                              <TableCell>Timeline</TableCell>
-                              <TableCell>Out Live</TableCell>
-                              <TableCell>Medical</TableCell>
-                              <TableCell align="right">Action</TableCell>
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {teacherElopers.map((eloper) => {
-                              const student = getStudent(state, eloper.studentId);
-                              const request = state.requests.find((item) => item.id === eloper.requestId);
-                              return (
-                                <TableRow key={eloper.id}>
-                                  <TableCell>
-                                    <Typography fontWeight={900}>
-                                      {getLocalStudentDisplayName(
-                                        state,
-                                        localNicknames,
-                                        eloper.studentId,
-                                        eloper.teacherId,
-                                        request?.periodId,
-                                      )}
-                                    </Typography>
-                                  </TableCell>
-                                  <TableCell>{group.name}</TableCell>
-                                  <TableCell>
-                                    {destinationEmojis[eloper.destination]}{" "}
-                                    {destinationLabels[eloper.destination]}
-                                  </TableCell>
-                                  <TableCell>
-                                    <Typography variant="body2">
-                                      Requested {formatTime(eloper.requestedAt)}
-                                    </Typography>
-                                    <Typography variant="body2">
-                                      Out {formatTime(eloper.permittedAt)}
-                                    </Typography>
-                                    <Typography variant="body2" color="error">
-                                      Flagged {formatTime(eloper.flaggedAt)}
-                                    </Typography>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Chip
-                                      color="error"
-                                      label={formatDuration(now - eloper.permittedAt)}
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    {student?.medicalPriority ? (
-                                      <Chip size="small" color="success" label="Medical pass" />
-                                    ) : (
-                                      <Chip size="small" variant="outlined" label="No" />
-                                    )}
-                                  </TableCell>
-                                  <TableCell align="right">
-                                    <Button
-                                      variant="contained"
-                                      color="success"
-                                      onClick={() =>
-                                        onMutate((draft) => {
-                                          const actor = draft.staffUsers.find(
-                                            (item) => item.id === user.id,
-                                          );
-                                          if (!actor) return;
-                                          accountForEloper(draft, actor, eloper.id);
-                                          advanceQueues(draft);
-                                        })
-                                      }
-                                    >
-                                      Returned
-                                    </Button>
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
+                        <VirtualizedTable
+                          items={teacherElopers}
+                          columnCount={7}
+                          estimateRowHeight={74}
+                          maxBodyHeight={500}
+                          getKey={(eloper) => eloper.id}
+                          renderHead={() => (
+                            <TableHead>
+                              <TableRow>
+                                <TableCell>Student</TableCell>
+                                <TableCell>Wing</TableCell>
+                                <TableCell>Destination</TableCell>
+                                <TableCell>Timeline</TableCell>
+                                <TableCell>Out Live</TableCell>
+                                <TableCell>Medical</TableCell>
+                                <TableCell align="right">Action</TableCell>
+                              </TableRow>
+                            </TableHead>
+                          )}
+                          renderRow={(eloper) => {
+                            const student = studentById.get(eloper.studentId);
+                            const studentUsername = student?.username || "Unknown student";
+                            const request = requestById.get(eloper.requestId);
+                            const studentDisplayName = request?.periodId
+                              ? localNicknames[
+                                  localNicknameKey(eloper.teacherId, request.periodId, studentUsername)
+                                ] || studentUsername
+                              : studentUsername;
+                            return (
+                              <TableRow key={eloper.id}>
+                                <TableCell>
+                                  <Typography fontWeight={900}>
+                                    {studentDisplayName}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>{group.name}</TableCell>
+                                <TableCell>
+                                  {destinationEmojis[eloper.destination]}{" "}
+                                  {destinationLabels[eloper.destination]}
+                                </TableCell>
+                                <TableCell>
+                                  <Typography variant="body2">
+                                    Requested {formatTime(eloper.requestedAt)}
+                                  </Typography>
+                                  <Typography variant="body2">
+                                    Out {formatTime(eloper.permittedAt)}
+                                  </Typography>
+                                  <Typography variant="body2" color="error">
+                                    Flagged {formatTime(eloper.flaggedAt)}
+                                  </Typography>
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    color="error"
+                                    label={<ElapsedDuration since={eloper.permittedAt} />}
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  {student?.medicalPriority ? (
+                                    <Chip size="small" color="success" label="Medical pass" />
+                                  ) : (
+                                    <Chip size="small" variant="outlined" label="No" />
+                                  )}
+                                </TableCell>
+                                <TableCell align="right">
+                                  <Button
+                                    variant="contained"
+                                    color="success"
+                                    onClick={() =>
+                                      onMutate((draft) => {
+                                        const actor = draft.staffUsers.find(
+                                          (item) => item.id === user.id,
+                                        );
+                                        if (!actor) return;
+                                        accountForEloper(draft, actor, eloper.id);
+                                        advanceQueues(draft);
+                                      })
+                                    }
+                                  >
+                                    Returned
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            );
+                          }}
+                        />
                       </Box>
                     );
                   })}
@@ -2771,37 +3400,55 @@ function DestinationInboundView({
   state,
   user,
   localNicknames,
-  now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
   localNicknames: LocalNicknameMap;
-  now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
   const destination = destinationForStaffRole(user.role);
+  const inbound = useMemo(() => {
+    if (!destination) return [];
+    return state.requests
+        .filter(
+          (request) =>
+            request.destination === destination &&
+            destinationInboundStatuses.includes(request.status),
+        )
+        .sort(
+          (left, right) =>
+            statusOrder(left.status) - statusOrder(right.status) ||
+            Number(left.returnRequestedAt || left.permittedAt || left.requestedAt) -
+              Number(right.returnRequestedAt || right.permittedAt || right.requestedAt),
+        );
+  }, [destination, state.requests]);
+  const inboundCounts = useMemo(
+    () =>
+      inbound.reduce(
+        (counts, request) => {
+          if (request.status === "out") counts.enRoute += 1;
+          if (request.status === "received") counts.received += 1;
+          if (["return_waiting", "return_offered", "returning"].includes(request.status)) {
+            counts.returnQueue += 1;
+          }
+          return counts;
+        },
+        { enRoute: 0, received: 0, returnQueue: 0 },
+      ),
+    [inbound],
+  );
+  const activeEloperRequestIds = useMemo(
+    () =>
+      new Set(
+        state.elopers.filter((eloper) => eloper.active).map((eloper) => eloper.requestId),
+      ),
+    [state.elopers],
+  );
+
   if (!destination) {
     return <Alert severity="warning">This account is not assigned to an inbound destination.</Alert>;
   }
-
-  const inbound = state.requests
-    .filter(
-      (request) =>
-        request.destination === destination &&
-        destinationInboundStatuses.includes(request.status),
-    )
-    .sort(
-      (left, right) =>
-        statusOrder(left.status) - statusOrder(right.status) ||
-        Number(left.returnRequestedAt || left.permittedAt || left.requestedAt) -
-          Number(right.returnRequestedAt || right.permittedAt || right.requestedAt),
-    );
-  const enRoute = inbound.filter((request) => request.status === "out");
-  const received = inbound.filter((request) => request.status === "received");
-  const returnQueue = inbound.filter((request) =>
-    ["return_waiting", "return_offered", "returning"].includes(request.status),
-  );
 
   const mutateWithActor = (handler: (draft: PawPassState, actor: StaffUser) => void) => {
     onMutate((draft) => {
@@ -2822,116 +3469,121 @@ function DestinationInboundView({
       />
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 1.5 }}>
-        <Metric label="Inbound" value={enRoute.length} />
-        <Metric label="Received" value={received.length} />
-        <Metric label="Return Queue" value={returnQueue.length} danger={returnQueue.length > 0} />
+        <Metric label="Inbound" value={inboundCounts.enRoute} />
+        <Metric label="Received" value={inboundCounts.received} />
+        <Metric label="Return Queue" value={inboundCounts.returnQueue} danger={inboundCounts.returnQueue > 0} />
       </Box>
 
       <SectionPaper>
         {inbound.length ? (
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Student</TableCell>
-                <TableCell>Teacher</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Timeline</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {inbound.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell>
-                    <Typography fontWeight={900}>
-                      {getLocalStudentDisplayName(
-                        state,
-                        localNicknames,
-                        request.studentId,
-                        request.teacherId,
-                        request.periodId,
-                      )}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{getTeacherName(state, request.teacherId)}</TableCell>
-                  <TableCell>
-                    <Chip
-                      color={
-                        request.status === "out"
-                          ? "warning"
-                          : request.status === "received"
-                            ? "success"
-                            : "primary"
-                      }
-                      label={displayStatus(request.status)}
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">Permitted {formatTime(request.permittedAt)}</Typography>
-                    {request.receivedAt ? (
-                      <Typography variant="body2">Received {formatTime(request.receivedAt)}</Typography>
-                    ) : null}
-                    {request.returnRequestedAt ? (
-                      <Typography variant="body2">Dismissed {formatTime(request.returnRequestedAt)}</Typography>
-                    ) : null}
-                    {request.returnCalledAt ? (
-                      <Typography variant="body2">Called {formatTime(request.returnCalledAt)}</Typography>
-                    ) : null}
-                    <Typography variant="caption" color="text.secondary">
-                      Out {formatDuration(now - Number(request.permittedAt || request.requestedAt))}
-                    </Typography>
-                  </TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={0.75} justifyContent="flex-end" flexWrap="wrap">
-                      {request.status === "out" ? (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          color="success"
-                          onClick={() =>
-                            mutateWithActor((draft, actor) =>
-                              receiveDestinationStudent(draft, actor, request.id),
-                            )
-                          }
-                        >
-                          Receive
-                        </Button>
-                      ) : null}
-                      {request.status === "received" ? (
-                        <Button
-                          size="small"
-                          variant="contained"
-                          onClick={() =>
-                            mutateWithActor((draft, actor) =>
-                              dismissFromDestinationToClass(draft, actor, request.id),
-                            )
-                          }
-                        >
-                          Dismiss Back To Class
-                        </Button>
-                      ) : null}
-                      {request.status === "returning" ? (
-                        <Chip size="small" color="success" label="Send now" />
-                      ) : null}
+          <VirtualizedTable
+            items={inbound}
+            columnCount={5}
+            estimateRowHeight={76}
+            maxBodyHeight={560}
+            getKey={(request) => request.id}
+            renderHead={() => (
+              <TableHead>
+                <TableRow>
+                  <TableCell>Student</TableCell>
+                  <TableCell>Teacher</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Timeline</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+            )}
+            renderRow={(request) => (
+              <TableRow key={request.id}>
+                <TableCell>
+                  <Typography fontWeight={900}>
+                    {getLocalStudentDisplayName(
+                      state,
+                      localNicknames,
+                      request.studentId,
+                      request.teacherId,
+                      request.periodId,
+                    )}
+                  </Typography>
+                </TableCell>
+                <TableCell>{getTeacherName(state, request.teacherId)}</TableCell>
+                <TableCell>
+                  <Chip
+                    color={
+                      request.status === "out"
+                        ? "warning"
+                        : request.status === "received"
+                          ? "success"
+                          : "primary"
+                    }
+                    label={displayStatus(request.status)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2">Permitted {formatTime(request.permittedAt)}</Typography>
+                  {request.receivedAt ? (
+                    <Typography variant="body2">Received {formatTime(request.receivedAt)}</Typography>
+                  ) : null}
+                  {request.returnRequestedAt ? (
+                    <Typography variant="body2">Dismissed {formatTime(request.returnRequestedAt)}</Typography>
+                  ) : null}
+                  {request.returnCalledAt ? (
+                    <Typography variant="body2">Called {formatTime(request.returnCalledAt)}</Typography>
+                  ) : null}
+                  <Typography variant="caption" color="text.secondary">
+                    Out <ElapsedDuration since={Number(request.permittedAt || request.requestedAt)} />
+                  </Typography>
+                </TableCell>
+                <TableCell align="right">
+                  <Stack direction="row" spacing={0.75} justifyContent="flex-end" flexWrap="wrap">
+                    {request.status === "out" ? (
                       <Button
                         size="small"
-                        variant="outlined"
-                        color="error"
-                        disabled={state.elopers.some((eloper) => eloper.requestId === request.id && eloper.active)}
+                        variant="contained"
+                        color="success"
                         onClick={() =>
                           mutateWithActor((draft, actor) =>
-                            markRequestEloper(draft, actor, request.id),
+                            receiveDestinationStudent(draft, actor, request.id),
                           )
                         }
                       >
-                        Mark Eloper
+                        Receive
                       </Button>
-                    </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    ) : null}
+                    {request.status === "received" ? (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() =>
+                          mutateWithActor((draft, actor) =>
+                            dismissFromDestinationToClass(draft, actor, request.id),
+                          )
+                        }
+                      >
+                        Dismiss Back To Class
+                      </Button>
+                    ) : null}
+                    {request.status === "returning" ? (
+                      <Chip size="small" color="success" label="Send now" />
+                    ) : null}
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="error"
+                      disabled={activeEloperRequestIds.has(request.id)}
+                      onClick={() =>
+                        mutateWithActor((draft, actor) =>
+                          markRequestEloper(draft, actor, request.id),
+                        )
+                      }
+                    >
+                      Mark Eloper
+                    </Button>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            )}
+          />
         ) : (
           <Alert severity="success">No students are currently inbound to {destinationLabels[destination]}.</Alert>
         )}
@@ -3174,35 +3826,111 @@ function LiveMapView({
   state,
   user,
   localNicknames,
-  now,
   onMutate,
 }: {
   state: PawPassState;
   user: StaffUser;
   localNicknames: LocalNicknameMap;
-  now: number;
   onMutate: (mutator: (draft: PawPassState) => void) => void;
 }) {
-  const visibleTeachers = new Set(getVisibleTeacherIds(user, state));
+  const { elopers, groups, requests, rooms, staffUsers, students } = state;
+  const canSeeAll = canViewAll(user);
+  const activePassStatusSet = useMemo(() => new Set(activePassStatuses), []);
+  const visibleTeachers = useMemo(
+    () => getVisibleTeacherIdSetFromStaffUsers(user, staffUsers),
+    [staffUsers, user],
+  );
   const canMoveTeachers = user.role === "admin";
   const canFilterGroups = user.role === "admin";
-  const visibleGroups = canViewAll(user)
-    ? state.groups
-    : state.groups.filter((group) =>
-        group.teacherIds.some((teacherId) => visibleTeachers.has(teacherId)),
-      );
+  const visibleGroups = useMemo(
+    () =>
+      canSeeAll
+        ? groups
+        : groups.filter((group) =>
+            group.teacherIds.some((teacherId) => visibleTeachers.has(teacherId)),
+          ),
+    [canSeeAll, groups, visibleTeachers],
+  );
   const [selectedGroupId, setSelectedGroupId] = useState("all");
   const [draggedTeacherId, setDraggedTeacherId] = useState("");
-  const selectedGroupIsVisible = visibleGroups.some((group) => group.id === selectedGroupId);
+  const selectedGroupIsVisible = useMemo(
+    () => visibleGroups.some((group) => group.id === selectedGroupId),
+    [selectedGroupId, visibleGroups],
+  );
   const effectiveSelectedGroupId =
     canFilterGroups && selectedGroupIsVisible ? selectedGroupId : "all";
-  const filteredGroups =
-    effectiveSelectedGroupId === "all"
-      ? visibleGroups
-      : visibleGroups.filter((group) => group.id === effectiveSelectedGroupId);
-  const activeEloperRequestIds = new Set(
-    state.elopers.filter((eloper) => eloper.active).map((eloper) => eloper.requestId),
+  const filteredGroups = useMemo(
+    () =>
+      effectiveSelectedGroupId === "all"
+        ? visibleGroups
+        : visibleGroups.filter((group) => group.id === effectiveSelectedGroupId),
+    [effectiveSelectedGroupId, visibleGroups],
   );
+  const activeEloperRequestIds = useMemo(
+    () => new Set(elopers.filter((eloper) => eloper.active).map((eloper) => eloper.requestId)),
+    [elopers],
+  );
+  const activeElopersByGroupId = useMemo(() => {
+    const elopersByGroupId = new Map<string, PawPassState["elopers"]>();
+    elopers.forEach((eloper) => {
+      if (!eloper.active) return;
+      const groupElopers = elopersByGroupId.get(eloper.groupId) || [];
+      groupElopers.push(eloper);
+      elopersByGroupId.set(eloper.groupId, groupElopers);
+    });
+    return elopersByGroupId;
+  }, [elopers]);
+  const frozenTeacherIds = useMemo(
+    () => new Set(rooms.filter((room) => room.frozen).map((room) => room.teacherId)),
+    [rooms],
+  );
+  const roomByTeacherId = useMemo(
+    () => new Map(rooms.map((room) => [room.teacherId, room])),
+    [rooms],
+  );
+  const studentUsernameById = useMemo(
+    () => new Map(students.map((student) => [student.id, student.username])),
+    [students],
+  );
+  const teacherNameById = useMemo(
+    () => new Map(staffUsers.map((staff) => [staff.id, staff.displayName])),
+    [staffUsers],
+  );
+  const liveQueueByGroupId = useMemo(() => {
+    const queuesByGroupId = new Map<string, PassRequest[]>();
+    groups.forEach((group) => queuesByGroupId.set(group.id, []));
+    requests.forEach((request) => {
+      if (
+        !activePassStatusSet.has(request.status) ||
+        request.status === "delayed" ||
+        activeEloperRequestIds.has(request.id)
+      ) {
+        return;
+      }
+      if (specialDestinationKeySet.has(request.destination)) {
+        groups.forEach((group) => queuesByGroupId.get(group.id)?.push(request));
+        return;
+      }
+      queuesByGroupId.get(request.groupId)?.push(request);
+    });
+    return queuesByGroupId;
+  }, [activeEloperRequestIds, activePassStatusSet, groups, requests]);
+  const activeRequestsByTeacherId = useMemo(() => {
+    const requestsByTeacherId = new Map<string, PassRequest[]>();
+    requests.forEach((request) => {
+      if (
+        !activePassStatusSet.has(request.status) ||
+        request.status === "delayed" ||
+        activeEloperRequestIds.has(request.id)
+      ) {
+        return;
+      }
+      const teacherRequests = requestsByTeacherId.get(request.teacherId) || [];
+      teacherRequests.push(request);
+      requestsByTeacherId.set(request.teacherId, teacherRequests);
+    });
+    return requestsByTeacherId;
+  }, [activeEloperRequestIds, activePassStatusSet, requests]);
 
   const handleGroupDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     if (!canMoveTeachers) return;
@@ -3252,20 +3980,14 @@ function LiveMapView({
           display: "grid",
           gridTemplateColumns: {
             xs: "1fr",
-            md: canViewAll(user) ? "repeat(2, minmax(0, 1fr))" : "1fr",
+            md: canSeeAll ? "repeat(2, minmax(0, 1fr))" : "1fr",
           },
           gap: 2,
         }}
       >
         {filteredGroups.map((group) => {
-          const groupRequests = state.requests.filter(
-            (request) =>
-              request.groupId === group.id &&
-              activePassStatuses.includes(request.status) &&
-              request.status !== "delayed" &&
-              !activeEloperRequestIds.has(request.id),
-          );
-          const activeElopers = state.elopers.filter((eloper) => eloper.groupId === group.id && eloper.active);
+          const activeElopers = activeElopersByGroupId.get(group.id) || [];
+          const visibleQueue = liveQueueByGroupId.get(group.id) || [];
 
           return (
             <Box
@@ -3305,16 +4027,19 @@ function LiveMapView({
                   <Divider />
 
                   <GroupQueueList
-                    state={state}
-                    groupId={group.id}
+                    visibleQueue={visibleQueue}
+                    activeEloperRequestIds={activeEloperRequestIds}
+                    frozenTeacherIds={frozenTeacherIds}
+                    studentUsernameById={studentUsernameById}
+                    teacherNameById={teacherNameById}
                     localNicknames={localNicknames}
                   />
 
                   <Divider />
 
                   {group.teacherIds.map((teacherId) => {
-                    const room = getRoomSnapshot(state, teacherId);
-                    const teacherRequests = groupRequests.filter((request) => request.teacherId === teacherId);
+                    const room = roomByTeacherId.get(teacherId) || { teacherId, frozen: false };
+                    const teacherRequests = activeRequestsByTeacherId.get(teacherId) || [];
                     return (
                       <Box
                         key={teacherId}
@@ -3344,27 +4069,29 @@ function LiveMapView({
                         }}
                       >
                         <Box>
-                          <Typography fontWeight={900}>{getTeacherName(state, teacherId)}</Typography>
+                          <Typography fontWeight={900}>
+                            {teacherNameById.get(teacherId) || "Unknown teacher"}
+                          </Typography>
                           {teacherRequests.length ? (
                             <Stack spacing={0.25} sx={{ mt: 0.25 }}>
-                              {teacherRequests.map((request) => (
-                                <Typography
-                                  key={request.id}
-                                  variant="body2"
-                                  color="text.secondary"
-                                  sx={{ overflowWrap: "anywhere" }}
-                                >
-                                  {getLocalStudentDisplayName(
-                                    state,
-                                    localNicknames,
-                                    request.studentId,
-                                    request.teacherId,
-                                    request.periodId,
-                                  )}
-                                  : {room.frozen ? "Frozen" : displayStatus(request.status)} -{" "}
-                                  {destinationEmojis[request.destination]} {destinationLabels[request.destination]}
-                                </Typography>
-                              ))}
+                              {teacherRequests.map((request) => {
+                                const studentUsername =
+                                  studentUsernameById.get(request.studentId) || "Unknown student";
+                                return (
+                                  <Typography
+                                    key={request.id}
+                                    variant="body2"
+                                    color="text.secondary"
+                                    sx={{ overflowWrap: "anywhere" }}
+                                  >
+                                    {localNicknames[
+                                      localNicknameKey(request.teacherId, request.periodId, studentUsername)
+                                    ] || studentUsername}
+                                    : {room.frozen ? "Frozen" : displayStatus(request.status)} -{" "}
+                                    {destinationEmojis[request.destination]} {destinationLabels[request.destination]}
+                                  </Typography>
+                                );
+                              })}
                             </Stack>
                           ) : (
                             <Typography variant="body2" color="text.secondary">
@@ -3392,13 +4119,12 @@ function ReportsView({
   state,
   user,
   localNicknames,
-  now,
 }: {
   state: PawPassState;
   user: StaffUser;
   localNicknames: LocalNicknameMap;
-  now: number;
 }) {
+  const now = useNow(60_000);
   const todayInput = msToDateInput(now);
   const [teacherFilterIds, setTeacherFilterIds] = useState<string[]>([]);
   const [teacherSearch, setTeacherSearch] = useState("");
@@ -3415,19 +4141,29 @@ function ReportsView({
     column === "student" || ((column !== "teacher" || fullAccess) && visibleReportColumns.includes(column));
   const visibleReportColumnCount = availableReportColumns.filter(isReportColumnVisible).length;
   const studentHabitTableMinWidth = Math.max(360, visibleReportColumnCount * 128);
+  const reportIndexes = useMemo(() => buildPawPassIndexes(state), [state]);
   const teachers = useMemo(
     () => state.staffUsers.filter((staff) => staff.role === "teacher" && staff.active),
     [state.staffUsers],
   );
+  const teacherNameById = reportIndexes.teacherNameById;
   const teacherIdSet = useMemo(() => new Set(teachers.map((teacher) => teacher.id)), [teachers]);
   const validTeacherFilterIds = useMemo(
     () => (fullAccess ? teacherFilterIds.filter((teacherId) => teacherIdSet.has(teacherId)) : []),
     [fullAccess, teacherFilterIds, teacherIdSet],
   );
+  const validTeacherFilterIdSet = useMemo(
+    () => new Set(validTeacherFilterIds),
+    [validTeacherFilterIds],
+  );
   const allTeachersSelected = !validTeacherFilterIds.length;
   const selectedTeachers = useMemo(
-    () => teachers.filter((teacher) => validTeacherFilterIds.includes(teacher.id)),
-    [teachers, validTeacherFilterIds],
+    () => teachers.filter((teacher) => validTeacherFilterIdSet.has(teacher.id)),
+    [teachers, validTeacherFilterIdSet],
+  );
+  const effectiveReportTeacherId = useMemo(
+    () => getEffectiveTeacherIdFromStaffUsers(user, state.staffUsers),
+    [state.staffUsers, user],
   );
   const reportTeacherIds = useMemo(
     () =>
@@ -3435,29 +4171,40 @@ function ReportsView({
         ? allTeachersSelected
           ? teachers.map((teacher) => teacher.id)
           : validTeacherFilterIds
-        : [getEffectiveTeacherId(user, state)].filter(Boolean),
-    [allTeachersSelected, fullAccess, state, teachers, user, validTeacherFilterIds],
+        : [effectiveReportTeacherId].filter(Boolean),
+    [allTeachersSelected, effectiveReportTeacherId, fullAccess, teachers, validTeacherFilterIds],
   );
   const reportTeacherSet = useMemo(() => new Set(reportTeacherIds), [reportTeacherIds]);
-  const { rosterStudentIds, rosterTeacherIdsByStudent } = useMemo(() => {
+  const { rosterStudentIds, rosterTeacherIdsByStudent, rosterContextsByStudent } = useMemo(() => {
     const studentIds = new Set<string>();
     const teacherIdsByStudent = new Map<string, Set<string>>();
-    const rosterIdsByTeacher = state.rosters.filter(
-      (roster) => roster.active && reportTeacherSet.has(roster.teacherId),
+    const contextsByStudent = new Map<string, Array<{ teacherId: string; periodId: string }>>();
+    const rosterById = new Map(
+      state.rosters
+        .filter((roster) => roster.active && reportTeacherSet.has(roster.teacherId))
+        .map((roster) => [roster.id, roster]),
     );
 
-    rosterIdsByTeacher.forEach((roster) => {
-      state.rosterEntries
-        .filter((entry) => entry.active && entry.rosterId === roster.id)
-        .forEach((entry) => {
-          studentIds.add(entry.studentId);
-          const teacherIds = teacherIdsByStudent.get(entry.studentId) || new Set<string>();
-          teacherIds.add(roster.teacherId);
-          teacherIdsByStudent.set(entry.studentId, teacherIds);
-        });
+    state.rosterEntries.forEach((entry) => {
+      if (!entry.active) return;
+      const roster = rosterById.get(entry.rosterId);
+      if (!roster) return;
+
+      studentIds.add(entry.studentId);
+      const teacherIds = teacherIdsByStudent.get(entry.studentId) || new Set<string>();
+      teacherIds.add(roster.teacherId);
+      teacherIdsByStudent.set(entry.studentId, teacherIds);
+
+      const contexts = contextsByStudent.get(entry.studentId) || [];
+      contexts.push({ teacherId: roster.teacherId, periodId: roster.periodId });
+      contextsByStudent.set(entry.studentId, contexts);
     });
 
-    return { rosterStudentIds: studentIds, rosterTeacherIdsByStudent: teacherIdsByStudent };
+    return {
+      rosterStudentIds: studentIds,
+      rosterTeacherIdsByStudent: teacherIdsByStudent,
+      rosterContextsByStudent: contextsByStudent,
+    };
   }, [reportTeacherSet, state.rosterEntries, state.rosters]);
 
   const eligibleStudents = useMemo(
@@ -3474,9 +4221,13 @@ function ReportsView({
   );
   const startMs = useMemo(() => dateInputToStartMs(startDate), [startDate]);
   const endMs = useMemo(() => dateInputToEndMs(endDate), [endDate]);
+  const allRequests = useMemo(
+    () => Array.from(reportIndexes.allRequestById.values()),
+    [reportIndexes],
+  );
   const scopedRequests = useMemo(
     () =>
-      state.requests.filter(
+      allRequests.filter(
         (request) =>
           reportTeacherSet.has(request.teacherId) &&
           (fullAccess && allTeachersSelected
@@ -3494,7 +4245,7 @@ function ReportsView({
       reportTeacherSet,
       requestTypeFilter,
       startMs,
-      state.requests,
+      allRequests,
     ],
   );
   const scopedRequestIds = useMemo(
@@ -3525,12 +4276,16 @@ function ReportsView({
     () => scopedRequests.filter((request) => request.offeredAt),
     [scopedRequests],
   );
-  const averageWaitMs = calledRequests.length
-    ? calledRequests.reduce(
-        (total, request) => total + Number(request.offeredAt! - request.requestedAt),
-        0,
-      ) / calledRequests.length
-    : 0;
+  const averageWaitMs = useMemo(
+    () =>
+      calledRequests.length
+        ? calledRequests.reduce(
+            (total, request) => total + Number(request.offeredAt! - request.requestedAt),
+            0,
+          ) / calledRequests.length
+        : 0,
+    [calledRequests],
+  );
   const totalElopers = useMemo(
     () =>
       state.elopers.filter(
@@ -3558,28 +4313,45 @@ function ReportsView({
     () => returned.filter((request) => !eloperRequestIds.has(request.id)),
     [eloperRequestIds, returned],
   );
-  const averageNonEloperMs = nonEloperReturned.length
-    ? nonEloperReturned.reduce((total, request) => total + Number(request.returnedAt! - request.permittedAt!), 0) /
+  const averageNonEloperMs = useMemo(
+    () =>
       nonEloperReturned.length
-    : 0;
-  const eloperDurations = totalElopers
-    .map((eloper) => {
-      const request = scopedRequestById.get(eloper.requestId);
-      const start = request?.permittedAt || eloper.permittedAt;
-      const end = request?.returnedAt || eloper.accountedForAt || (eloper.active ? now : eloper.flaggedAt);
-      return Math.max(0, Number(end) - Number(start));
-    })
-    .filter((duration) => duration > 0);
-  const averageEloperMs = eloperDurations.length
-    ? eloperDurations.reduce((total, duration) => total + duration, 0) / eloperDurations.length
-    : 0;
+        ? nonEloperReturned.reduce((total, request) => total + Number(request.returnedAt! - request.permittedAt!), 0) /
+          nonEloperReturned.length
+        : 0,
+    [nonEloperReturned],
+  );
+  const eloperDurations = useMemo(
+    () =>
+      totalElopers
+        .map((eloper) => {
+          const request = scopedRequestById.get(eloper.requestId);
+          const start = request?.permittedAt || eloper.permittedAt;
+          const end = request?.returnedAt || eloper.accountedForAt || (eloper.active ? now : eloper.flaggedAt);
+          return Math.max(0, Number(end) - Number(start));
+        })
+        .filter((duration) => duration > 0),
+    [now, scopedRequestById, totalElopers],
+  );
+  const averageEloperMs = useMemo(
+    () =>
+      eloperDurations.length
+        ? eloperDurations.reduce((total, duration) => total + duration, 0) / eloperDurations.length
+        : 0,
+    [eloperDurations],
+  );
 
   const requestCounts = useMemo(
-    () =>
-      requestActionKeys.map((destination) => ({
+    () => {
+      const counts = new Map<DestinationKey, number>();
+      scopedRequests.forEach((request) => {
+        counts.set(request.destination, (counts.get(request.destination) || 0) + 1);
+      });
+      return requestActionKeys.map((destination) => ({
         destination,
-        count: scopedRequests.filter((request) => request.destination === destination).length,
-      })),
+        count: counts.get(destination) || 0,
+      }));
+    },
     [scopedRequests],
   );
   const eloperCountByStudentId = useMemo(() => {
@@ -3590,12 +4362,49 @@ function ReportsView({
     return counts;
   }, [totalElopers]);
   const penaltyByStudentId = useMemo(() => {
+    const eloperByRequestId = new Map(
+      state.elopers
+        .filter((eloper) => eligibleStudentIds.has(eloper.studentId))
+        .map((eloper) => [eloper.requestId, eloper]),
+    );
+    const eventsByStudent = new Map<string, Array<{ at: number; delta: 1 | -1 }>>();
     const penalties = new Map<string, number>();
-    eligibleStudents.forEach((student) => {
-      penalties.set(student.id, getStudentQueuePenaltyMs(state, student.id));
+
+    const addPenaltyEvent = (studentId: string, event: { at: number; delta: 1 | -1 }) => {
+      const events = eventsByStudent.get(studentId) || [];
+      events.push(event);
+      eventsByStudent.set(studentId, events);
+    };
+
+    allRequests.forEach((request) => {
+      if (!eligibleStudentIds.has(request.studentId) || !request.permittedAt) return;
+
+      const eloper = eloperByRequestId.get(request.id);
+      if (eloper) {
+        addPenaltyEvent(request.studentId, {
+          at: Number(request.returnedAt || eloper.accountedForAt || eloper.flaggedAt || request.permittedAt),
+          delta: 1,
+        });
+        return;
+      }
+
+      if (request.status === "returned" && request.returnedAt) {
+        addPenaltyEvent(request.studentId, {
+          at: Number(request.returnedAt),
+          delta: -1,
+        });
+      }
     });
+
+    eventsByStudent.forEach((events, studentId) => {
+      const score = events
+        .sort((left, right) => left.at - right.at)
+        .reduce((total, event) => Math.max(0, total + event.delta), 0);
+      penalties.set(studentId, score * state.settings.habitDelayMs);
+    });
+
     return penalties;
-  }, [eligibleStudents, state]);
+  }, [eligibleStudentIds, state.elopers, allRequests, state.settings.habitDelayMs]);
 
   const studentStats = useMemo(
     () =>
@@ -3615,10 +4424,18 @@ function ReportsView({
       const eloperCount = eloperCountByStudentId.get(student.id) || 0;
       const penaltyMs = penaltyByStudentId.get(student.id) || 0;
       const teacherNames = Array.from(rosterTeacherIdsByStudent.get(student.id) || [])
-        .map((teacherId) => getTeacherName(state, teacherId))
+        .map((teacherId) => teacherNameById.get(teacherId) || "Unknown teacher")
         .join(", ");
-      const firstTeacherId = Array.from(rosterTeacherIdsByStudent.get(student.id) || [])[0];
-      const displayName = getLocalStudentDisplayName(state, localNicknames, student.id, firstTeacherId);
+      const firstRosterContext = rosterContextsByStudent.get(student.id)?.[0];
+      const displayName = firstRosterContext
+        ? localNicknames[
+            localNicknameKey(
+              firstRosterContext.teacherId,
+              firstRosterContext.periodId,
+              student.username,
+            )
+          ] || student.username
+        : student.username;
       return {
         student,
         displayName,
@@ -3651,9 +4468,10 @@ function ReportsView({
       localNicknames,
       penaltyByStudentId,
       requestsByStudentId,
+      rosterContextsByStudent,
       rosterTeacherIdsByStudent,
       sortKey,
-      state,
+      teacherNameById,
     ],
   );
 
@@ -3925,15 +4743,18 @@ function ReportsView({
             </DialogActions>
           </Dialog>
           {studentStats.length ? (
-            <Box sx={{ width: "100%", overflowX: "auto" }}>
-              <Table
-                size="small"
-                sx={{
-                  minWidth: studentHabitTableMinWidth,
-                  "& th, & td": { textAlign: "center", verticalAlign: "middle" },
-                  "& .MuiTableSortLabel-root": { justifyContent: "center" },
-                }}
-              >
+            <VirtualizedTable
+              items={studentStats}
+              columnCount={visibleReportColumnCount}
+              estimateRowHeight={58}
+              maxBodyHeight={580}
+              getKey={(row) => row.student.id}
+              tableSx={{
+                minWidth: studentHabitTableMinWidth,
+                "& th, & td": { textAlign: "center", verticalAlign: "middle" },
+                "& .MuiTableSortLabel-root": { justifyContent: "center" },
+              }}
+              renderHead={() => (
                 <TableHead>
                   <TableRow>
                     <TableCell>
@@ -3967,34 +4788,32 @@ function ReportsView({
                     ) : null}
                   </TableRow>
                 </TableHead>
-                <TableBody>
-                  {studentStats.map((row) => (
-                    <TableRow key={row.student.id}>
-                      <TableCell>
-                        <Typography fontWeight={900} textAlign="center">{row.displayName}</Typography>
-                        {row.displayName !== row.student.username ? (
-                          <Typography variant="caption" color="text.secondary" textAlign="center" display="block">
-                            {row.student.username}
-                          </Typography>
-                        ) : null}
-                      </TableCell>
-                      {isReportColumnVisible("teacher") ? <TableCell>{row.teacherNames}</TableCell> : null}
-                      {isReportColumnVisible("requests") ? <TableCell>{row.requests}</TableCell> : null}
-                      {isReportColumnVisible("avgWait") ? (
-                        <TableCell>{row.averageWaitMs ? formatDuration(row.averageWaitMs) : "0:00"}</TableCell>
-                      ) : null}
-                      {isReportColumnVisible("avgOut") ? (
-                        <TableCell>{row.averageMs ? formatDuration(row.averageMs) : "0:00"}</TableCell>
-                      ) : null}
-                      {isReportColumnVisible("elopers") ? <TableCell>{row.eloperCount}</TableCell> : null}
-                      {isReportColumnVisible("penalty") ? (
-                        <TableCell>{row.penaltyMs ? formatDuration(row.penaltyMs) : "0:00"}</TableCell>
-                      ) : null}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
+              )}
+              renderRow={(row) => (
+                <TableRow key={row.student.id}>
+                  <TableCell>
+                    <Typography fontWeight={900} textAlign="center">{row.displayName}</Typography>
+                    {row.displayName !== row.student.username ? (
+                      <Typography variant="caption" color="text.secondary" textAlign="center" display="block">
+                        {row.student.username}
+                      </Typography>
+                    ) : null}
+                  </TableCell>
+                  {isReportColumnVisible("teacher") ? <TableCell>{row.teacherNames}</TableCell> : null}
+                  {isReportColumnVisible("requests") ? <TableCell>{row.requests}</TableCell> : null}
+                  {isReportColumnVisible("avgWait") ? (
+                    <TableCell>{row.averageWaitMs ? formatDuration(row.averageWaitMs) : "0:00"}</TableCell>
+                  ) : null}
+                  {isReportColumnVisible("avgOut") ? (
+                    <TableCell>{row.averageMs ? formatDuration(row.averageMs) : "0:00"}</TableCell>
+                  ) : null}
+                  {isReportColumnVisible("elopers") ? <TableCell>{row.eloperCount}</TableCell> : null}
+                  {isReportColumnVisible("penalty") ? (
+                    <TableCell>{row.penaltyMs ? formatDuration(row.penaltyMs) : "0:00"}</TableCell>
+                  ) : null}
+                </TableRow>
+              )}
+            />
           ) : (
             <Typography color="text.secondary">No pass history yet.</Typography>
           )}
@@ -4920,72 +5739,78 @@ function ScheduleSettingsSection({
       <Dialog open={templatesOpen} onClose={() => setTemplatesOpen(false)} fullWidth maxWidth="md">
         <DialogTitle>All Schedules</DialogTitle>
         <DialogContent>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Periods</TableCell>
-                <TableCell align="right">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {visibleSchedules.map((item) => {
-                const outdatedPair = outdatedPairs.find((pair) => pair.privateSchedule.id === item.id);
-                const editLabel = item.ownerUserId || user.role === "admin" ? "Edit" : "Customize";
-                const teacherViewingSharedAdminSchedule =
-                  !item.ownerUserId && (user.role === "teacher" || user.role === "substitute");
-                return (
-                  <TableRow
-                    key={item.id}
-                    sx={{
-                      bgcolor: teacherViewingSharedAdminSchedule
-                        ? "rgba(176, 196, 222, 0.45)"
-                        : "inherit",
-                    }}
-                  >
-                    <TableCell>
-                      <Typography fontWeight={900}>{item.name}</Typography>
-                      {item.sourceScheduleId ? (
-                        <Typography variant="caption" color="text.secondary">
-                          Based on an admin schedule
-                        </Typography>
+          <VirtualizedTable
+            items={visibleSchedules}
+            columnCount={3}
+            estimateRowHeight={74}
+            maxBodyHeight={520}
+            threshold={25}
+            getKey={(item) => item.id}
+            renderHead={() => (
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Periods</TableCell>
+                  <TableCell align="right">Actions</TableCell>
+                </TableRow>
+              </TableHead>
+            )}
+            renderRow={(item) => {
+              const outdatedPair = outdatedPairs.find((pair) => pair.privateSchedule.id === item.id);
+              const editLabel = item.ownerUserId || user.role === "admin" ? "Edit" : "Customize";
+              const teacherViewingSharedAdminSchedule =
+                !item.ownerUserId && (user.role === "teacher" || user.role === "substitute");
+              return (
+                <TableRow
+                  key={item.id}
+                  sx={{
+                    bgcolor: teacherViewingSharedAdminSchedule
+                      ? "rgba(176, 196, 222, 0.45)"
+                      : "inherit",
+                  }}
+                >
+                  <TableCell>
+                    <Typography fontWeight={900}>{item.name}</Typography>
+                    {item.sourceScheduleId ? (
+                      <Typography variant="caption" color="text.secondary">
+                        Based on an admin schedule
+                      </Typography>
+                    ) : null}
+                  </TableCell>
+                  <TableCell>
+                    {item.periods
+                      .map((period) => `${period.label} ${period.start}-${period.end}`)
+                      .join("; ")}
+                  </TableCell>
+                  <TableCell align="right">
+                    <Stack direction="row" spacing={0.75} justifyContent="flex-end" flexWrap="wrap">
+                      {outdatedPair ? updateButton(outdatedPair, true) : null}
+                      {canManageSchedules ? (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<EditIcon />}
+                          onClick={() => setEditorTarget({ mode: "edit", schedule: item })}
+                        >
+                          {editLabel}
+                        </Button>
                       ) : null}
-                    </TableCell>
-                    <TableCell>
-                      {item.periods
-                        .map((period) => `${period.label} ${period.start}-${period.end}`)
-                        .join("; ")}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Stack direction="row" spacing={0.75} justifyContent="flex-end" flexWrap="wrap">
-                        {outdatedPair ? updateButton(outdatedPair, true) : null}
-                        {canManageSchedules ? (
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<EditIcon />}
-                            onClick={() => setEditorTarget({ mode: "edit", schedule: item })}
-                          >
-                            {editLabel}
-                          </Button>
-                        ) : null}
-                        {canManageSchedules ? (
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<RefreshIcon />}
-                            onClick={() => setEditorTarget({ mode: "duplicate", schedule: item })}
-                          >
-                            Duplicate
-                          </Button>
-                        ) : null}
-                      </Stack>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                      {canManageSchedules ? (
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<RefreshIcon />}
+                          onClick={() => setEditorTarget({ mode: "duplicate", schedule: item })}
+                        >
+                          Duplicate
+                        </Button>
+                      ) : null}
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              );
+            }}
+          />
         </DialogContent>
         <DialogActions sx={{ p: 2, pt: 0 }}>
           <Button variant="contained" onClick={() => setTemplatesOpen(false)}>
@@ -5184,10 +6009,30 @@ function TermsView() {
   );
 }
 
+const lazyPawPassView = <P extends object>(Component: React.ComponentType<P>) =>
+  React.lazy(async () => ({ default: Component }));
+
+const LazyHomeView = lazyPawPassView(HomeView);
+const LazyDestinationInboundView = lazyPawPassView(DestinationInboundView);
+const LazyRosterView = lazyPawPassView(RosterView);
+const LazyElopersView = lazyPawPassView(ElopersView);
+const LazyLiveMapView = lazyPawPassView(LiveMapView);
+const LazyReportsView = lazyPawPassView(ReportsView);
+const LazySettingsView = lazyPawPassView(SettingsView);
+const LazyTermsView = lazyPawPassView(TermsView);
+
+function PawPassViewFallback() {
+  return (
+    <SectionPaper>
+      <Typography color="text.secondary">Loading...</Typography>
+    </SectionPaper>
+  );
+}
+
 function PawPassApp() {
   const [state, setState] = useState<PawPassState>(() => loadPawPassState());
+  const stateRef = useRef(state);
   const [localNicknames, setLocalNicknames] = useState<LocalNicknameMap>(() => loadLocalNicknames());
-  const [now, setNow] = useState(Date.now());
   const [view, setView] = useState<ViewKey>("home");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scheduleNoticeOpen, setScheduleNoticeOpen] = useState(false);
@@ -5195,6 +6040,10 @@ function PawPassApp() {
     typeof window === "undefined" ? "" : window.sessionStorage.getItem(currentUserStorageKey) || "",
   );
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
 
   const currentUser = useMemo(
     () => state.staffUsers.find((user) => user.id === currentUserId) || null,
@@ -5210,28 +6059,44 @@ function PawPassApp() {
     : view === "inbound"
       ? "home"
       : view;
-  const effectiveTeacherId = getEffectiveTeacherId(currentUser, state);
-  const activeEloperCount = currentUser
-    ? state.elopers.filter(
-        (eloper) => eloper.active && getVisibleTeacherIds(currentUser, state).includes(eloper.teacherId),
-      ).length
-    : 0;
-  const scheduleUpdatePairs = currentUser
-    ? getOutdatedSchedulePairs(state, currentUser)
-    : [];
-  const scheduleUpdateNoticeKey = scheduleUpdatePairs
-    .map(
-      ({ privateSchedule, adminSchedule }) =>
-        `${privateSchedule.id}:${adminSchedule.updatedAt || 0}`,
-    )
-    .join("|");
+  const effectiveTeacherId = useMemo(
+    () => getEffectiveTeacherIdFromStaffUsers(currentUser, state.staffUsers),
+    [currentUser, state.staffUsers],
+  );
+  const visibleTeacherIdSet = useMemo(
+    () => getVisibleTeacherIdSetFromStaffUsers(currentUser, state.staffUsers),
+    [currentUser, state.staffUsers],
+  );
+  const activeEloperCount = useMemo(
+    () =>
+      currentUser
+        ? state.elopers.reduce(
+            (count, eloper) =>
+              eloper.active && visibleTeacherIdSet.has(eloper.teacherId) ? count + 1 : count,
+            0,
+          )
+        : 0,
+    [currentUser, state.elopers, visibleTeacherIdSet],
+  );
+  const scheduleUpdatePairs = useMemo(
+    () => getOutdatedSchedulePairsFromSlices(state.schedules, state.staffUsers, currentUser),
+    [currentUser, state.schedules, state.staffUsers],
+  );
+  const scheduleUpdateNoticeKey = useMemo(
+    () =>
+      scheduleUpdatePairs
+        .map(
+          ({ privateSchedule, adminSchedule }) =>
+            `${privateSchedule.id}:${adminSchedule.updatedAt || 0}`,
+        )
+        .join("|"),
+    [scheduleUpdatePairs],
+  );
 
   const mutate = (mutator: (draft: PawPassState) => void) => {
     try {
       setState((previous) => {
-        const draft = deepClone(previous);
-        mutator(draft);
-        return draft;
+        return producePawPassState(previous, mutator);
       });
       setError("");
     } catch (mutationError) {
@@ -5263,19 +6128,69 @@ function PawPassApp() {
   };
 
   useEffect(() => {
-    const tick = window.setInterval(() => {
-      setNow(Date.now());
+    let timeoutId: number | undefined;
+    let disposed = false;
+
+    const clearScheduledAdvance = () => {
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+    };
+
+    const scheduleNextAdvance = () => {
+      clearScheduledAdvance();
+      if (disposed || document.visibilityState === "hidden") return;
+
+      const now = Date.now();
+      const nextAt = getNextQueueAdvanceAt(stateRef.current, now);
+      if (!nextAt) return;
+
+      const delayMs = Math.max(0, Math.min(nextAt - now, 2_147_483_647));
+      timeoutId = window.setTimeout(runQueueAdvance, delayMs);
+    };
+
+    const runQueueAdvance = () => {
+      clearScheduledAdvance();
+      if (disposed || document.visibilityState === "hidden") return;
+
+      const queueNow = Date.now();
       setState((previous) => {
-        const draft = deepClone(previous);
-        return advanceQueues(draft) ? draft : previous;
+        let nextState = previous;
+        if (shouldRunTimedQueueAdvance(previous, queueNow)) {
+          let changed = false;
+          const next = producePawPassState(previous, (draft) => {
+            changed = advanceQueues(draft, queueNow);
+          });
+          nextState = changed ? next : previous;
+        }
+        stateRef.current = nextState;
+        return nextState;
       });
-    }, 1000);
-    return () => window.clearInterval(tick);
+      window.setTimeout(scheduleNextAdvance, 0);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        clearScheduledAdvance();
+      } else {
+        runQueueAdvance();
+      }
+    };
+
+    runQueueAdvance();
+    window.addEventListener("focus", runQueueAdvance);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      disposed = true;
+      clearScheduledAdvance();
+      window.removeEventListener("focus", runQueueAdvance);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
-  useEffect(() => {
-    savePawPassState(state);
-  }, [state]);
+  useDebouncedPawPassPersistence(state);
 
   useEffect(() => {
     if (scheduleUpdateNoticeKey) {
@@ -5401,7 +6316,6 @@ function PawPassApp() {
               user={currentUser}
               activeView={activeView}
               effectiveTeacherId={effectiveTeacherId}
-              now={now}
               onMutate={mutate}
               onLogout={logout}
               onOpenMenu={() => setMobileMenuOpen(true)}
@@ -5409,63 +6323,62 @@ function PawPassApp() {
             <Box component="main" sx={{ p: { xs: 1.5, sm: 2, lg: 3 } }}>
               <Stack spacing={2}>
                 {error ? <Alert severity="error" onClose={() => setError("")}>{error}</Alert> : null}
-                {activeView === "home" ? (
-                  <HomeView
-                    state={state}
-                    user={currentUser}
-                    effectiveTeacherId={effectiveTeacherId}
-                    localNicknames={localNicknames}
-                    now={now}
-                    onMutate={mutate}
-                  />
-                ) : null}
-                {activeView === "inbound" ? (
-                  <DestinationInboundView
-                    state={state}
-                    user={currentUser}
-                    localNicknames={localNicknames}
-                    now={now}
-                    onMutate={mutate}
-                  />
-                ) : null}
-                {activeView === "rosters" ? (
-                  <RosterView
-                    state={state}
-                    user={currentUser}
-                    effectiveTeacherId={effectiveTeacherId}
-                    localNicknames={localNicknames}
-                    onLocalNicknameChange={updateLocalNickname}
-                    onMutate={mutate}
-                  />
-                ) : null}
-                {activeView === "elopers" ? (
-                  <ElopersView
-                    state={state}
-                    user={currentUser}
-                    localNicknames={localNicknames}
-                    now={now}
-                    onMutate={mutate}
-                  />
-                ) : null}
-                {activeView === "map" ? (
-                  <LiveMapView
-                    state={state}
-                    user={currentUser}
-                    localNicknames={localNicknames}
-                    now={now}
-                    onMutate={mutate}
-                  />
-                ) : null}
-                {activeView === "reports" ? (
-                  <ReportsView
-                    state={state}
-                    user={currentUser}
-                    localNicknames={localNicknames}
-                    now={now}
-                  />
-                ) : null}
-                {activeView === "settings" ? <SettingsView state={state} user={currentUser} onMutate={mutate} /> : null}
-                {activeView === "terms" ? <TermsView /> : null}
+                <React.Suspense fallback={<PawPassViewFallback />}>
+                  {activeView === "home" ? (
+                    <LazyHomeView
+                      state={state}
+                      user={currentUser}
+                      effectiveTeacherId={effectiveTeacherId}
+                      localNicknames={localNicknames}
+                      onMutate={mutate}
+                    />
+                  ) : null}
+                  {activeView === "inbound" ? (
+                    <LazyDestinationInboundView
+                      state={state}
+                      user={currentUser}
+                      localNicknames={localNicknames}
+                      onMutate={mutate}
+                    />
+                  ) : null}
+                  {activeView === "rosters" ? (
+                    <LazyRosterView
+                      state={state}
+                      user={currentUser}
+                      effectiveTeacherId={effectiveTeacherId}
+                      localNicknames={localNicknames}
+                      onLocalNicknameChange={updateLocalNickname}
+                      onMutate={mutate}
+                    />
+                  ) : null}
+                  {activeView === "elopers" ? (
+                    <LazyElopersView
+                      state={state}
+                      user={currentUser}
+                      localNicknames={localNicknames}
+                      onMutate={mutate}
+                    />
+                  ) : null}
+                  {activeView === "map" ? (
+                    <LazyLiveMapView
+                      state={state}
+                      user={currentUser}
+                      localNicknames={localNicknames}
+                      onMutate={mutate}
+                    />
+                  ) : null}
+                  {activeView === "reports" ? (
+                    <LazyReportsView
+                      state={state}
+                      user={currentUser}
+                      localNicknames={localNicknames}
+                    />
+                  ) : null}
+                  {activeView === "settings" ? (
+                    <LazySettingsView state={state} user={currentUser} onMutate={mutate} />
+                  ) : null}
+                  {activeView === "terms" ? <LazyTermsView /> : null}
+                </React.Suspense>
 
                 <Stack direction="row" spacing={1} alignItems="center" justifyContent="flex-end">
                   <Button size="small" variant="text" startIcon={<RefreshIcon />} onClick={resetDemo}>

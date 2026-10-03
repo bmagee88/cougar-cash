@@ -1665,4 +1665,5 @@ export const leagueTrophies = {
   silver: { emoji: "🥈", color: "#c0c0c0" },
   gold: { emoji: "🥇", color: "#ffd700" },
   platinum: { emoji: "🌟", color: "#e5e4e2" }, // or pick a custom
+  titanium: { emoji: "Ti", color: "#9aa8b2" },
 };

@@ -234,6 +234,7 @@ export type PawPassState = {
   rooms: RoomState[];
   destinationStates: DestinationState[];
   requests: PassRequest[];
+  requestHistory: PassRequest[];
   elopers: EloperRecord[];
   audits: AuditEntry[];
   settings: AppSettings;
@@ -252,6 +253,23 @@ export type ImportPreviewRow = {
   studentIdSuffix: string;
   medicalPriority: boolean;
   issues: string[];
+};
+
+export type PawPassIndexes = {
+  activeRequestById: Map<string, PassRequest>;
+  allRequestById: Map<string, PassRequest>;
+  activeRequestsByStudentId: Map<string, PassRequest[]>;
+  activeEloperByRequestId: Map<string, EloperRecord>;
+  activeEloperRequestIds: Set<string>;
+  eloperById: Map<string, EloperRecord>;
+  groupById: Map<string, TeacherGroup>;
+  groupByTeacherId: Map<string, TeacherGroup>;
+  roomByTeacherId: Map<string, RoomState>;
+  staffById: Map<string, StaffUser>;
+  studentById: Map<string, StudentRecord>;
+  teacherNameById: Map<string, string>;
+  usernameByStudentId: Map<string, string>;
+  activeStudentUsernames: Set<string>;
 };
 
 export const LOCAL_STORAGE_KEY = "paw-pass-state-v1";
@@ -305,6 +323,7 @@ export const activePassStatuses: PassStatus[] = [
   "return_offered",
   "returning",
 ];
+const terminalPassStatusSet = new Set<PassStatus>(["returned", "dismissed"]);
 
 export const teacherAwayStatuses: PassStatus[] = [
   "out",
@@ -335,6 +354,111 @@ const destinationQueueLane = (destination: DestinationKey): QueueLane =>
   specialDestinationKeys.includes(destination) ? destination : "hall";
 
 const requestQueueLane = (request: PassRequest) => destinationQueueLane(request.destination);
+const queueLaneKey = (groupId: string, lane: QueueLane) => `${groupId}::${lane}`;
+
+const destinationBlockingStatuses: PassStatus[] = [
+  "offered",
+  "out",
+  "received",
+  "return_waiting",
+  "return_offered",
+  "returning",
+];
+
+const incrementMapCount = <K,>(counts: Map<K, number>, key: K) => {
+  counts.set(key, (counts.get(key) || 0) + 1);
+};
+
+const getActiveEloperRequestIds = (state: PawPassState) =>
+  new Set(
+    state.elopers
+      .filter((eloper) => eloper.active)
+      .map((eloper) => eloper.requestId),
+  );
+
+const activePassStatusSet = new Set<PassStatus>(activePassStatuses);
+
+const getQueueRelevantRequests = (state: PawPassState) =>
+  state.requests.filter((request) => activePassStatusSet.has(request.status));
+
+export const getAllRequests = (state: PawPassState) => [
+  ...(state.requestHistory || []),
+  ...state.requests,
+];
+
+export const buildPawPassIndexes = (state: PawPassState): PawPassIndexes => {
+  const allRequests = getAllRequests(state);
+  const indexes: PawPassIndexes = {
+    activeRequestById: new Map(state.requests.map((request) => [request.id, request])),
+    allRequestById: new Map(allRequests.map((request) => [request.id, request])),
+    activeRequestsByStudentId: new Map(),
+    activeEloperByRequestId: new Map(),
+    activeEloperRequestIds: new Set(),
+    eloperById: new Map(state.elopers.map((eloper) => [eloper.id, eloper])),
+    groupById: new Map(state.groups.map((group) => [group.id, group])),
+    groupByTeacherId: new Map(),
+    roomByTeacherId: new Map(state.rooms.map((room) => [room.teacherId, room])),
+    staffById: new Map(state.staffUsers.map((staff) => [staff.id, staff])),
+    studentById: new Map(state.students.map((student) => [student.id, student])),
+    teacherNameById: new Map(state.staffUsers.map((staff) => [staff.id, staff.displayName])),
+    usernameByStudentId: new Map(state.students.map((student) => [student.id, student.username])),
+    activeStudentUsernames: new Set(
+      state.students.filter((student) => student.active).map((student) => student.username),
+    ),
+  };
+
+  state.requests.forEach((request) => {
+    const studentRequests = indexes.activeRequestsByStudentId.get(request.studentId) || [];
+    studentRequests.push(request);
+    indexes.activeRequestsByStudentId.set(request.studentId, studentRequests);
+  });
+
+  state.elopers.forEach((eloper) => {
+    if (!eloper.active) return;
+    indexes.activeEloperByRequestId.set(eloper.requestId, eloper);
+    indexes.activeEloperRequestIds.add(eloper.requestId);
+  });
+
+  state.groups.forEach((group) => {
+    group.teacherIds.forEach((teacherId) => {
+      indexes.groupByTeacherId.set(teacherId, group);
+    });
+  });
+
+  return indexes;
+};
+
+const normalizeRequestBuckets = (
+  activeRequests: PassRequest[] | undefined,
+  historyRequests: PassRequest[] | undefined,
+) => {
+  const active: PassRequest[] = [];
+  const history: PassRequest[] = [];
+  const seen = new Set<string>();
+
+  [...(activeRequests || []), ...(historyRequests || [])].forEach((request) => {
+    if (!request || seen.has(request.id)) return;
+    seen.add(request.id);
+    if (activePassStatusSet.has(request.status)) {
+      active.push(request);
+    } else {
+      history.push(request);
+    }
+  });
+
+  return { active, history };
+};
+
+const archiveRequest = (state: PawPassState, request: PassRequest) => {
+  if (!terminalPassStatusSet.has(request.status)) return;
+  const index = state.requests.findIndex((item) => item.id === request.id);
+  if (index < 0) return;
+  const [archivedRequest] = state.requests.splice(index, 1);
+  state.requestHistory = state.requestHistory || [];
+  if (!state.requestHistory.some((item) => item.id === archivedRequest.id)) {
+    state.requestHistory.push(archivedRequest);
+  }
+};
 
 export const settingsDefaults: AppSettings = {
   permitWindowMs: 90_000,
@@ -731,6 +855,7 @@ export const createInitialState = (): PawPassState => {
       autoBlockAfterCount: 0,
     })),
     requests: [],
+    requestHistory: [],
     elopers: [],
     audits: [],
     settings: settingsDefaults,
@@ -754,6 +879,7 @@ export const loadPawPassState = (): PawPassState => {
 
     const parsed = JSON.parse(raw) as PawPassState;
     const initial = createInitialState();
+    const requestBuckets = normalizeRequestBuckets(parsed.requests, parsed.requestHistory);
     const mergeMissingById = <T extends { id: string }>(
       seeded: T[],
       stored: T[] | undefined,
@@ -798,6 +924,8 @@ export const loadPawPassState = (): PawPassState => {
         })),
       ).map(({ id, ...destinationState }) => destinationState),
       settings: { ...settingsDefaults, ...(parsed.settings || {}) },
+      requests: requestBuckets.active,
+      requestHistory: requestBuckets.history,
     };
   } catch {
     return createInitialState();
@@ -1111,19 +1239,28 @@ const ensureDestinationState = (state: PawPassState, destination: DestinationKey
   return destinationState;
 };
 
-const isActiveEloperRequest = (state: PawPassState, requestId: string) =>
-  state.elopers.some((eloper) => eloper.requestId === requestId && eloper.active);
+const activeDestinationRequestCountWithElopers = (
+  state: PawPassState,
+  destination: DestinationKey,
+  activeEloperRequestIds: Set<string>,
+  requests = state.requests,
+) =>
+  requests.filter(
+    (request) =>
+      request.destination === destination &&
+      !activeEloperRequestIds.has(request.id) &&
+      destinationBlockingStatuses.includes(request.status),
+  ).length;
 
 export const activeDestinationRequestCount = (
   state: PawPassState,
   destination: DestinationKey,
 ) =>
-  state.requests.filter(
-    (request) =>
-      request.destination === destination &&
-      !isActiveEloperRequest(state, request.id) &&
-      ["offered", "out", "received", "return_waiting", "return_offered", "returning"].includes(request.status),
-  ).length;
+  activeDestinationRequestCountWithElopers(
+    state,
+    destination,
+    getActiveEloperRequestIds(state),
+  );
 
 export const isDestinationBlocked = (
   state: PawPassState,
@@ -1134,9 +1271,78 @@ export const isDestinationBlocked = (
   if (destinationState.blocked) return true;
   return (
     destinationState.autoBlockAfterCount > 0 &&
-    activeDestinationRequestCount(state, destination) >= destinationState.autoBlockAfterCount
+    activeDestinationRequestCountWithElopers(
+      state,
+      destination,
+      getActiveEloperRequestIds(state),
+    ) >= destinationState.autoBlockAfterCount
   );
 };
+
+type QueueAdvanceLookup = {
+  activeEloperRequestIds: Set<string>;
+  activeDestinationCounts: Map<DestinationKey, number>;
+  blockedDestinationKeys: Set<DestinationKey>;
+  frozenTeacherIds: Set<string>;
+  staffById: Map<string, StaffUser>;
+};
+
+const buildQueueAdvanceLookup = (
+  state: PawPassState,
+  requests = state.requests,
+): QueueAdvanceLookup => {
+  const activeEloperRequestIds = getActiveEloperRequestIds(state);
+  const activeDestinationCounts = new Map<DestinationKey, number>();
+
+  requests.forEach((request) => {
+    if (
+      specialDestinationKeys.includes(request.destination) &&
+      destinationBlockingStatuses.includes(request.status) &&
+      !activeEloperRequestIds.has(request.id)
+    ) {
+      incrementMapCount(activeDestinationCounts, request.destination);
+    }
+  });
+
+  const blockedDestinationKeys = new Set<DestinationKey>();
+  specialDestinationKeys.forEach((destination) => {
+    const destinationState = getDestinationState(state, destination);
+    if (
+      destinationState.blocked ||
+      (destinationState.autoBlockAfterCount > 0 &&
+        (activeDestinationCounts.get(destination) || 0) >= destinationState.autoBlockAfterCount)
+    ) {
+      blockedDestinationKeys.add(destination);
+    }
+  });
+
+  return {
+    activeEloperRequestIds,
+    activeDestinationCounts,
+    blockedDestinationKeys,
+    frozenTeacherIds: new Set(
+      state.rooms
+        .filter((room) => room.frozen)
+        .map((room) => room.teacherId),
+    ),
+    staffById: new Map(state.staffUsers.map((user) => [user.id, user])),
+  };
+};
+
+const requestIsActiveEloperInLookup = (
+  lookup: QueueAdvanceLookup,
+  requestId: string,
+) => lookup.activeEloperRequestIds.has(requestId);
+
+const requestDestinationIsBlockedInLookup = (
+  lookup: QueueAdvanceLookup,
+  destination: DestinationKey,
+) => lookup.blockedDestinationKeys.has(destination);
+
+const teacherIsFrozenInLookup = (
+  lookup: QueueAdvanceLookup,
+  teacherId: string,
+) => lookup.frozenTeacherIds.has(teacherId);
 
 export const addAudit = (
   state: PawPassState,
@@ -1161,43 +1367,6 @@ export const addAudit = (
   });
   state.audits = state.audits.slice(0, 500);
 };
-
-const activeNormalOutCount = (
-  state: PawPassState,
-  groupId: string,
-  lane: QueueLane,
-) =>
-  state.requests.filter(
-    (request) =>
-      request.groupId === groupId &&
-      request.status === "out" &&
-      !request.isMedicalOverride &&
-      !isActiveEloperRequest(state, request.id) &&
-      requestQueueLane(request) === lane,
-  ).length;
-
-const hasOfferedNormal = (
-  state: PawPassState,
-  groupId: string,
-  lane: QueueLane,
-) =>
-  state.requests.some(
-    (request) =>
-      request.groupId === groupId &&
-      request.status === "offered" &&
-      !request.isMedicalOverride &&
-      !isActiveEloperRequest(state, request.id) &&
-      requestQueueLane(request) === lane,
-  );
-
-const hasOfferedMedical = (state: PawPassState, groupId: string) =>
-  state.requests.some(
-    (request) =>
-      request.groupId === groupId &&
-      request.status === "offered" &&
-      request.isMedicalOverride &&
-      !isActiveEloperRequest(state, request.id),
-  );
 
 const requestIsReady = (request: PassRequest, now: number) => {
   if (request.status !== "waiting" && request.status !== "delayed") return false;
@@ -1234,6 +1403,7 @@ const moveNextEligibleToFrontOfCheck = (
   state: PawPassState,
   request: PassRequest,
   now: number,
+  lookup: QueueAdvanceLookup,
 ) => {
   const currentIndex = state.requests.findIndex((item) => item.id === request.id);
   if (currentIndex < 0) return undefined;
@@ -1246,10 +1416,10 @@ const moveNextEligibleToFrontOfCheck = (
       candidate.isMedicalOverride === request.isMedicalOverride &&
       requestQueueLane(candidate) === lane &&
       requestIsReady(candidate, now) &&
-      !isActiveEloperRequest(state, candidate.id) &&
+      !requestIsActiveEloperInLookup(lookup, candidate.id) &&
       !candidate.skippedThisCycle &&
-      !isDestinationBlocked(state, candidate.destination) &&
-      !getRoomState(state, candidate.teacherId).frozen,
+      !requestDestinationIsBlockedInLookup(lookup, candidate.destination) &&
+      !teacherIsFrozenInLookup(lookup, candidate.teacherId),
   );
   if (nextIndex < 0) return undefined;
 
@@ -1261,8 +1431,8 @@ const moveNextEligibleToFrontOfCheck = (
       candidate.isMedicalOverride !== request.isMedicalOverride ||
       requestQueueLane(candidate) !== lane ||
       ["out", "received", "returning"].includes(candidate.status) ||
-      isDestinationBlocked(state, candidate.destination) ||
-      getRoomState(state, candidate.teacherId).frozen,
+      requestDestinationIsBlockedInLookup(lookup, candidate.destination) ||
+      teacherIsFrozenInLookup(lookup, candidate.teacherId),
   );
   const passedRequests = between.filter((candidate) => !priorityBlockers.includes(candidate));
 
@@ -1310,7 +1480,7 @@ const averageReturnedDuration = (
   sampleSize = 5,
 ) => {
   const eloperRequestIds = new Set(state.elopers.map((eloper) => eloper.requestId));
-  const durations = state.requests
+  const durations = getAllRequests(state)
     .filter(
       (request) =>
         request.studentId === studentId &&
@@ -1326,17 +1496,16 @@ const averageReturnedDuration = (
 };
 
 export const getStudentQueuePenaltyScore = (state: PawPassState, studentId: string) => {
-  const eloperRequestIds = new Set(
+  const eloperByRequestId = new Map(
     state.elopers
       .filter((eloper) => eloper.studentId === studentId)
-      .map((eloper) => eloper.requestId),
+      .map((eloper) => [eloper.requestId, eloper]),
   );
-  const events = state.requests
+  const events = getAllRequests(state)
     .filter((request) => request.studentId === studentId && request.permittedAt)
     .map((request) => {
-      const wasEloper = eloperRequestIds.has(request.id);
-      if (wasEloper) {
-        const eloper = state.elopers.find((item) => item.requestId === request.id);
+      const eloper = eloperByRequestId.get(request.id);
+      if (eloper) {
         return {
           at: Number(request.returnedAt || eloper?.accountedForAt || eloper?.flaggedAt || request.permittedAt),
           delta: 1,
@@ -1524,37 +1693,6 @@ const offerRequest = (state: PawPassState, request: PassRequest, now: number) =>
   );
 };
 
-const findNextEligibleRequest = (
-  state: PawPassState,
-  group: TeacherGroup,
-  now: number,
-  medical: boolean,
-  lane?: QueueLane,
-) => {
-  const candidates = () =>
-    state.requests.filter(
-      (request) =>
-        request.groupId === group.id &&
-        request.isMedicalOverride === medical &&
-        (!lane || requestQueueLane(request) === lane) &&
-        requestIsReady(request, now) &&
-        !isActiveEloperRequest(state, request.id) &&
-        !isDestinationBlocked(state, request.destination),
-    );
-
-  const next = candidates().find(
-    (request) => !request.skippedThisCycle && !getRoomState(state, request.teacherId).frozen,
-  );
-  if (next) return next;
-
-  const skippedCandidates = candidates().filter((request) => request.skippedThisCycle);
-  if (!skippedCandidates.length) return undefined;
-  skippedCandidates.forEach((request) => {
-    request.skippedThisCycle = undefined;
-  });
-  return candidates().find((request) => !getRoomState(state, request.teacherId).frozen);
-};
-
 export const isSpecialDestination = (destination: DestinationKey) =>
   specialDestinationKeys.includes(destination);
 
@@ -1626,11 +1764,160 @@ const offerReturnRequest = (state: PawPassState, request: PassRequest, now: numb
   );
 };
 
+type ReturnQueueStatus = {
+  activeReturnPriority: boolean;
+  returnAlreadyOfferedOrMoving: boolean;
+  nextReturn?: PassRequest;
+};
+
+const getReturnQueueStatus = (
+  requests: PassRequest[],
+  lookup: QueueAdvanceLookup,
+  now: number,
+): ReturnQueueStatus => {
+  let activeReturnPriority = false;
+  let returnAlreadyOfferedOrMoving = false;
+  let nextReturn: PassRequest | undefined;
+
+  requests.forEach((request) => {
+    if (requestIsActiveEloperInLookup(lookup, request.id)) return;
+
+    if (returnPriorityStatuses.includes(request.status)) {
+      activeReturnPriority = true;
+    }
+    if (request.status === "return_offered" || request.status === "returning") {
+      returnAlreadyOfferedOrMoving = true;
+    }
+    if (
+      request.status === "return_waiting" &&
+      (!request.snoozeUntil || request.snoozeUntil <= now)
+    ) {
+      const requestTime = Number(request.returnRequestedAt || request.requestedAt);
+      const nextReturnTime = nextReturn
+        ? Number(nextReturn.returnRequestedAt || nextReturn.requestedAt)
+        : Number.POSITIVE_INFINITY;
+      if (requestTime < nextReturnTime) {
+        nextReturn = request;
+      }
+    }
+  });
+
+  return { activeReturnPriority, returnAlreadyOfferedOrMoving, nextReturn };
+};
+
+type QueueCandidateBuckets = {
+  activeNormalOutCounts: Map<string, number>;
+  offeredNormalKeys: Set<string>;
+  offeredMedicalGroupIds: Set<string>;
+  readyNormalByKey: Map<string, PassRequest[]>;
+  readyMedicalByGroupId: Map<string, PassRequest[]>;
+};
+
+const pushMapValue = <K, V>(map: Map<K, V[]>, key: K, value: V) => {
+  const values = map.get(key);
+  if (values) {
+    values.push(value);
+  } else {
+    map.set(key, [value]);
+  }
+};
+
+const buildQueueCandidateBuckets = (
+  requests: PassRequest[],
+  lookup: QueueAdvanceLookup,
+  now: number,
+): QueueCandidateBuckets => {
+  const buckets: QueueCandidateBuckets = {
+    activeNormalOutCounts: new Map(),
+    offeredNormalKeys: new Set(),
+    offeredMedicalGroupIds: new Set(),
+    readyNormalByKey: new Map(),
+    readyMedicalByGroupId: new Map(),
+  };
+
+  requests.forEach((request) => {
+    if (requestIsActiveEloperInLookup(lookup, request.id)) return;
+
+    const lane = requestQueueLane(request);
+    const normalKey = queueLaneKey(request.groupId, lane);
+
+    if (request.status === "out" && !request.isMedicalOverride) {
+      incrementMapCount(buckets.activeNormalOutCounts, normalKey);
+    }
+
+    if (request.status === "offered") {
+      if (request.isMedicalOverride) {
+        buckets.offeredMedicalGroupIds.add(request.groupId);
+      } else {
+        buckets.offeredNormalKeys.add(normalKey);
+      }
+    }
+
+    if (!requestIsReady(request, now)) return;
+
+    if (request.isMedicalOverride) {
+      pushMapValue(buckets.readyMedicalByGroupId, request.groupId, request);
+    } else {
+      pushMapValue(buckets.readyNormalByKey, normalKey, request);
+    }
+  });
+
+  return buckets;
+};
+
+const selectNextEligibleRequest = (
+  candidates: PassRequest[] | undefined,
+  lookup: QueueAdvanceLookup,
+) => {
+  if (!candidates?.length) return undefined;
+
+  const available = candidates.filter(
+    (request) => !requestDestinationIsBlockedInLookup(lookup, request.destination),
+  );
+  const next = available.find(
+    (request) =>
+      !request.skippedThisCycle &&
+      !teacherIsFrozenInLookup(lookup, request.teacherId),
+  );
+  if (next) return next;
+
+  const skippedCandidates = available.filter((request) => request.skippedThisCycle);
+  if (!skippedCandidates.length) return undefined;
+  skippedCandidates.forEach((request) => {
+    request.skippedThisCycle = undefined;
+  });
+  return available.find(
+    (request) => !teacherIsFrozenInLookup(lookup, request.teacherId),
+  );
+};
+
+const noteRequestBecameActiveAtDestination = (
+  state: PawPassState,
+  lookup: QueueAdvanceLookup,
+  request: PassRequest,
+) => {
+  if (!specialDestinationKeys.includes(request.destination)) return;
+
+  incrementMapCount(lookup.activeDestinationCounts, request.destination);
+  const destinationState = getDestinationState(state, request.destination);
+  if (
+    destinationState.blocked ||
+    (destinationState.autoBlockAfterCount > 0 &&
+      (lookup.activeDestinationCounts.get(request.destination) || 0) >=
+        destinationState.autoBlockAfterCount)
+  ) {
+    lookup.blockedDestinationKeys.add(request.destination);
+  }
+};
+
 export const advanceQueues = (state: PawPassState, now = Date.now()) => {
   let changed = false;
+  let queueRequests = getQueueRelevantRequests(state);
+  let lookup = buildQueueAdvanceLookup(state, queueRequests);
+  let requestOrderChanged = false;
 
-  state.requests.forEach((request) => {
-    if (isActiveEloperRequest(state, request.id)) return;
+  queueRequests.forEach((request) => {
+    if (requestIsActiveEloperInLookup(lookup, request.id)) return;
 
     if (
       request.status === "return_offered" &&
@@ -1663,7 +1950,14 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
       request.snoozeUntil = undefined;
       request.offeredAt = undefined;
       request.offerExpiresAt = undefined;
-      const promotedRequestId = moveNextEligibleToFrontOfCheck(state, request, now);
+      lookup = buildQueueAdvanceLookup(state, queueRequests);
+      const promotedRequestId = moveNextEligibleToFrontOfCheck(
+        state,
+        request,
+        now,
+        lookup,
+      );
+      requestOrderChanged = true;
       const completedPassCycle = promotedRequestId
         ? false
         : restoreSkippedPassCycleOrder(state, request);
@@ -1695,82 +1989,89 @@ export const advanceQueues = (state: PawPassState, now = Date.now()) => {
       request.delayUntil = undefined;
       request.queueReason = "Delay complete. Added to the end of the queue.";
       moveRequestToEnd(state, request.id);
+      requestOrderChanged = true;
       changed = true;
     }
   });
 
-  state.requests.forEach((request) => {
+  if (requestOrderChanged) {
+    queueRequests = getQueueRelevantRequests(state);
+  }
+
+  lookup = buildQueueAdvanceLookup(state, queueRequests);
+  let eloperChanged = false;
+  queueRequests.forEach((request) => {
     if (
       (request.status === "out" || request.status === "returning") &&
       request.dueAt &&
       request.permittedAt &&
       request.dueAt <= now &&
-      !state.elopers.some((eloper) => eloper.requestId === request.id && eloper.active)
+      !requestIsActiveEloperInLookup(lookup, request.id)
     ) {
-      const actor = state.staffUsers.find((user) => user.id === request.actorUserId);
+      const actor = lookup.staffById.get(request.actorUserId);
       if (actor) {
         createOrActivateEloper(state, actor, request, now, {
           destination: request.destination,
           groupId: request.groupId,
           manual: false,
         });
+        lookup.activeEloperRequestIds.add(request.id);
+        eloperChanged = true;
         changed = true;
       }
     }
   });
 
-  const activeReturnPriority = state.requests.some((request) =>
-    returnPriorityStatuses.includes(request.status) && !isActiveEloperRequest(state, request.id),
-  );
-  const returnAlreadyOfferedOrMoving = state.requests.some((request) =>
-    (request.status === "return_offered" || request.status === "returning") &&
-    !isActiveEloperRequest(state, request.id),
-  );
+  if (eloperChanged) {
+    lookup = buildQueueAdvanceLookup(state, queueRequests);
+  }
+  const {
+    activeReturnPriority,
+    returnAlreadyOfferedOrMoving,
+    nextReturn,
+  } = getReturnQueueStatus(queueRequests, lookup, now);
 
   let returnWasOffered = false;
-  if (!returnAlreadyOfferedOrMoving) {
-    const nextReturn = [...state.requests]
-      .filter(
-        (request) =>
-          request.status === "return_waiting" &&
-          !isActiveEloperRequest(state, request.id) &&
-          (!request.snoozeUntil || request.snoozeUntil <= now),
-      )
-      .sort(
-        (left, right) =>
-          Number(left.returnRequestedAt || left.requestedAt) -
-          Number(right.returnRequestedAt || right.requestedAt),
-      )
-      .find(Boolean);
-    if (nextReturn) {
-      offerReturnRequest(state, nextReturn, now);
-      returnWasOffered = true;
-      changed = true;
-    }
+  if (!returnAlreadyOfferedOrMoving && nextReturn) {
+    offerReturnRequest(state, nextReturn, now);
+    returnWasOffered = true;
+    changed = true;
   }
 
   if (activeReturnPriority || returnWasOffered) return changed;
 
   if (getAutoFreezeWindow(state, new Date(now))) return changed;
 
+  const buckets = buildQueueCandidateBuckets(queueRequests, lookup, now);
   state.groups.forEach((group) => {
     queueLaneKeys.forEach((lane) => {
+      const key = queueLaneKey(group.id, lane);
       if (
-        activeNormalOutCount(state, group.id, lane) < group.normalCapacity &&
-        !hasOfferedNormal(state, group.id, lane)
+        (buckets.activeNormalOutCounts.get(key) || 0) < group.normalCapacity &&
+        !buckets.offeredNormalKeys.has(key)
       ) {
-        const next = findNextEligibleRequest(state, group, now, false, lane);
+        const next = selectNextEligibleRequest(
+          buckets.readyNormalByKey.get(key),
+          lookup,
+        );
         if (next) {
           offerRequest(state, next, now);
+          buckets.offeredNormalKeys.add(key);
+          noteRequestBecameActiveAtDestination(state, lookup, next);
           changed = true;
         }
       }
     });
 
-    if (!hasOfferedMedical(state, group.id)) {
-      const nextMedical = findNextEligibleRequest(state, group, now, true);
+    if (!buckets.offeredMedicalGroupIds.has(group.id)) {
+      const nextMedical = selectNextEligibleRequest(
+        buckets.readyMedicalByGroupId.get(group.id),
+        lookup,
+      );
       if (nextMedical) {
         offerRequest(state, nextMedical, now);
+        buckets.offeredMedicalGroupIds.add(group.id);
+        noteRequestBecameActiveAtDestination(state, lookup, nextMedical);
         changed = true;
       }
     }
@@ -1835,6 +2136,7 @@ export const dismissRequest = (
       requestId: request.id,
     },
   );
+  archiveRequest(state, request);
 };
 
 export const receiveDestinationStudent = (
@@ -2007,6 +2309,7 @@ export const returnStudent = (
       requestId: request.id,
     },
   );
+  archiveRequest(state, request);
 };
 
 export const accountForEloper = (
@@ -2039,6 +2342,7 @@ export const accountForEloper = (
       requestId: eloper.requestId,
     },
   );
+  if (request) archiveRequest(state, request);
 };
 
 export const setRoomFrozen = (
