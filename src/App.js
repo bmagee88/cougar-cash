@@ -12,6 +12,7 @@ const About = lazy(() => import("./pages/About"));
 const SheetsTestPage = lazy(() => import("./pages/SheetsTestPage"));
 const TypingGamePage = lazy(() => import("./typingProject/pages/TypingGamePage"));
 const TypingMarathonMode = lazy(() => import("./typingProject/pages/TypingMarathonMode"));
+const TypingDdrPage = lazy(() => import("./typingProject/pages/TypingDdrPage"));
 const SnakeGamePage = lazy(() => import("./SnakeGamePage"));
 const ComplianceQuizPage = lazy(() => import("./ComplianceQuizProject/ComplianceQuizPage"));
 const CQuiz2Page = lazy(() => import("./CQuiz2/CQuiz2Page"));
@@ -74,6 +75,7 @@ function App() {
               path="/typing/marathon"
               element={<TypingMarathonMode />}
             ></Route>
+            <Route path="/typing/ddr" element={<TypingDdrPage />}></Route>
             <Route path="/snake" element={<SnakeGamePage />}></Route>
             <Route path="/c-quiz" element={<ComplianceQuizPage />}></Route>
             <Route path="/c-quiz-2" element={<CQuiz2Page />}></Route>
