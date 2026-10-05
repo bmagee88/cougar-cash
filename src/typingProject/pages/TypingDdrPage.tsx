@@ -39,6 +39,12 @@ type Note = {
   animationDelayMs: number;
 };
 
+type TimingEventOptions = {
+  accent?: boolean;
+  pulse?: boolean;
+  sound?: boolean;
+};
+
 type RhythmMode = "whole" | "half" | "quarter" | "backbeat" | "syncopated" | "burst";
 
 const HOME_KEYS: HomeKey[] = [
@@ -194,7 +200,7 @@ export default function TypingDdrPage() {
   const [mistakes, setMistakes] = useState(0);
   const [combo, setCombo] = useState(0);
   const [notes, setNotes] = useState<Note[]>([]);
-  const [stagePulseEvent, setStagePulseEvent] = useState<{ token: number; color: string } | null>(null);
+  const [stagePulseEvent, setStagePulseEvent] = useState<{ token: string; color: string } | null>(null);
   const [pulseLane, setPulseLane] = useState<{ laneIndex: number; token: number } | null>(null);
   const [mistakeToken, setMistakeToken] = useState(0);
   const [soundOn, setSoundOn] = useState(false);
@@ -206,9 +212,11 @@ export default function TypingDdrPage() {
   const nextBarStartRef = useRef(0);
   const nextNoteIdRef = useRef(1);
   const lastLaneRef = useRef<number | null>(null);
-  const beatCountRef = useRef(0);
-  const stagePulseTimeoutsRef = useRef<Record<number, number>>({});
+  const timingTimeoutsRef = useRef<Record<string, number>>({});
+  const soundOnRef = useRef(soundOn);
 
+  const { prime, playBeat } = useBeatSound(soundOn);
+  const playBeatRef = useRef(playBeat);
   const beatMs = useMemo(() => 60000 / tempo, [tempo]);
   const activeLaneIndexes = useMemo(
     () =>
@@ -222,7 +230,13 @@ export default function TypingDdrPage() {
     () => HOME_KEYS.map((_, laneIndex) => notes.filter((note) => note.laneIndex === laneIndex)),
     [notes]
   );
-  const { prime, playBeat } = useBeatSound(soundOn);
+  useEffect(() => {
+    soundOnRef.current = soundOn;
+  }, [soundOn]);
+
+  useEffect(() => {
+    playBeatRef.current = playBeat;
+  }, [playBeat]);
 
   useEffect(() => {
     runningRef.current = running;
@@ -236,12 +250,38 @@ export default function TypingDdrPage() {
     notesRef.current = notes;
   }, [notes]);
 
+  const clearTimingEvents = useCallback(() => {
+    const timeoutIds = Object.values(timingTimeoutsRef.current);
+    timingTimeoutsRef.current = {};
+    timeoutIds.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    setStagePulseEvent(null);
+  }, []);
+
+  const scheduleTimingEvent = useCallback((id: string, targetTime: number, color: string, options: TimingEventOptions = {}) => {
+    if (timingTimeoutsRef.current[id] !== undefined) return;
+
+    timingTimeoutsRef.current[id] = window.setTimeout(() => {
+      delete timingTimeoutsRef.current[id];
+
+      if (!runningRef.current || gameOverRef.current) return;
+
+      if (options.pulse !== false) {
+        setStagePulseEvent({ token: id, color });
+      }
+
+      if (options.sound && soundOnRef.current) {
+        playBeatRef.current(options.accent);
+      }
+    }, Math.max(0, targetTime - performance.now()));
+  }, []);
+
   const clearNotesAndReseed = useCallback(() => {
+    clearTimingEvents();
     const startAt = performance.now() + FALL_DURATION_MS + beatMs;
     nextBarStartRef.current = startAt;
     lastLaneRef.current = null;
     setNotes([]);
-  }, [beatMs]);
+  }, [beatMs, clearTimingEvents]);
 
   const resetGame = useCallback(() => {
     clearNotesAndReseed();
@@ -256,7 +296,9 @@ export default function TypingDdrPage() {
   }, [clearNotesAndReseed]);
 
   const startGame = useCallback(() => {
-    prime();
+    if (soundOnRef.current) {
+      prime();
+    }
     if (gameOverRef.current) {
       resetGame();
     }
@@ -334,19 +376,6 @@ export default function TypingDdrPage() {
   useEffect(() => {
     if (!running || gameOver) return;
 
-    beatCountRef.current = 0;
-    const beatIntervalId = window.setInterval(() => {
-      const accent = beatCountRef.current % 4 === 0;
-      playBeat(accent);
-      beatCountRef.current += 1;
-    }, beatMs);
-
-    return () => window.clearInterval(beatIntervalId);
-  }, [beatMs, gameOver, playBeat, running]);
-
-  useEffect(() => {
-    if (!running || gameOver) return;
-
     const scheduleIntervalId = window.setInterval(() => {
       const nowMs = performance.now();
       const horizon = nowMs + FALL_DURATION_MS + beatMs * 9;
@@ -358,20 +387,34 @@ export default function TypingDdrPage() {
       }
 
       while (nextBarStartRef.current < horizon) {
+        const barStart = nextBarStartRef.current;
+        [0, 1, 2, 3].forEach((beatIndex) => {
+          const targetTime = barStart + beatIndex * beatMs;
+          const hasNoteOnBeat = pattern.offsets.some((offset) => Math.abs(offset - beatIndex) < 0.001);
+
+          scheduleTimingEvent(`beat-${Math.round(targetTime)}`, targetTime, "#38d9a9", {
+            accent: beatIndex === 0,
+            pulse: !hasNoteOnBeat,
+            sound: true,
+          });
+        });
+
         pattern.offsets.forEach((offset) => {
           const laneIndex = getRandomLane(activeLaneIndexes, lastLaneRef.current);
           lastLaneRef.current = laneIndex;
-          const targetTime = nextBarStartRef.current + offset * beatMs;
+          const targetTime = barStart + offset * beatMs;
+          const noteId = nextNoteIdRef.current;
           newNotes.push({
-            id: nextNoteIdRef.current,
+            id: noteId,
             laneIndex,
             targetTime,
             createdAt: targetTime - FALL_DURATION_MS,
             animationDelayMs: targetTime - FALL_DURATION_MS - nowMs,
           });
+          scheduleTimingEvent(`note-${noteId}`, targetTime, HOME_KEYS[laneIndex].color);
           nextNoteIdRef.current += 1;
         });
-        nextBarStartRef.current += beatMs * 4;
+        nextBarStartRef.current = barStart + beatMs * 4;
       }
 
       setNotes((previous) => {
@@ -386,37 +429,15 @@ export default function TypingDdrPage() {
     }, 140);
 
     return () => window.clearInterval(scheduleIntervalId);
-  }, [activeLaneIndexes, beatMs, gameOver, rhythmMode, running]);
+  }, [activeLaneIndexes, beatMs, gameOver, rhythmMode, running, scheduleTimingEvent]);
 
   useEffect(() => {
-    const activeNoteIds = new Set(notes.map((note) => note.id));
+    if (!running || gameOver) {
+      clearTimingEvents();
+    }
+  }, [clearTimingEvents, gameOver, running]);
 
-    Object.entries(stagePulseTimeoutsRef.current).forEach(([noteId, timeoutId]) => {
-      const noteIsGone = !activeNoteIds.has(Number(noteId));
-      if (!running || gameOver || noteIsGone) {
-        window.clearTimeout(timeoutId);
-        delete stagePulseTimeoutsRef.current[Number(noteId)];
-      }
-    });
-
-    if (!running || gameOver) return;
-
-    const nowMs = performance.now();
-    notes.forEach((note) => {
-      if (stagePulseTimeoutsRef.current[note.id] !== undefined) return;
-
-      stagePulseTimeoutsRef.current[note.id] = window.setTimeout(() => {
-        setStagePulseEvent({ token: note.id, color: HOME_KEYS[note.laneIndex].color });
-        delete stagePulseTimeoutsRef.current[note.id];
-      }, Math.max(0, note.targetTime - nowMs));
-    });
-  }, [gameOver, notes, running]);
-
-  useEffect(() => {
-    return () => {
-      Object.values(stagePulseTimeoutsRef.current).forEach((timeoutId) => window.clearTimeout(timeoutId));
-    };
-  }, []);
+  useEffect(() => () => clearTimingEvents(), [clearTimingEvents]);
 
   useEffect(() => {
     if (running) {
@@ -528,7 +549,17 @@ export default function TypingDdrPage() {
               </IconButton>
             </Tooltip>
             <Tooltip title={soundOn ? "Mute beat" : "Unmute beat"}>
-              <IconButton color="inherit" onClick={() => setSoundOn((previous) => !previous)} aria-label="Toggle beat sound">
+              <IconButton
+                color="inherit"
+                onClick={() =>
+                  setSoundOn((previous) => {
+                    const next = !previous;
+                    if (next) prime();
+                    return next;
+                  })
+                }
+                aria-label="Toggle beat sound"
+              >
                 {soundOn ? <VolumeUpIcon /> : <VolumeOffIcon />}
               </IconButton>
             </Tooltip>
