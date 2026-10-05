@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const https = require("https");
 const http = require("http");
 const { URL } = require("url");
 const {
@@ -15,6 +16,13 @@ const PORT = Number(
     process.env.PORT ||
     4000
 );
+const TIME_SYNC_CACHE_MS = 10 * 60 * 1000;
+const TIME_SYNC_TIMEOUT_MS = 1800;
+const TIME_SYNC_URLS = [
+  "https://www.cloudflare.com/cdn-cgi/trace",
+  "https://www.google.com/generate_204",
+  "https://www.microsoft.com/favicon.ico",
+];
 const ONE_HOUR_MS = 60 * 60 * 1000;
 const MAX_POST_LENGTH = 32;
 const SOFT_POST_LENGTH = 16;
@@ -30,6 +38,7 @@ const DUPLICATE_POST_WINDOW_MS = 2 * 60 * 1000;
 
 const sessions = new Map();
 const typingBossSessions = new Map();
+let timeSyncCache = null;
 
 const TYPING_BOSS_PREFIX = "boss";
 const TYPING_BOSS_PLAYER_PREFIX = "hero";
@@ -455,6 +464,133 @@ function sendJson(res, status, payload) {
 
 function sendError(res, status, message) {
   sendJson(res, status, { error: message });
+}
+
+function readHttpDateOffset(targetUrl) {
+  return new Promise((resolve, reject) => {
+    const requestedAtMs = Date.now();
+    const provider = new URL(targetUrl).hostname;
+    const req = https.request(
+      targetUrl,
+      {
+        method: "GET",
+        timeout: TIME_SYNC_TIMEOUT_MS,
+        headers: {
+          "Cache-Control": "no-cache",
+          "User-Agent": "cougar-classroom-time-sync/1.0",
+        },
+      },
+      (response) => {
+        const receivedAtMs = Date.now();
+        const dateHeader = Array.isArray(response.headers.date)
+          ? response.headers.date[0]
+          : response.headers.date;
+        response.resume();
+
+        if (!dateHeader) {
+          reject(new Error(`${provider} did not return a Date header.`));
+          return;
+        }
+
+        const remoteMs = Date.parse(dateHeader);
+        if (!Number.isFinite(remoteMs)) {
+          reject(new Error(`${provider} returned an invalid Date header.`));
+          return;
+        }
+
+        const midpointMs = requestedAtMs + (receivedAtMs - requestedAtMs) / 2;
+        resolve({
+          offsetMs: remoteMs - midpointMs,
+          provider,
+          syncedAtMs: receivedAtMs,
+        });
+      }
+    );
+
+    req.on("timeout", () => {
+      req.destroy(new Error(`${provider} timed out.`));
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+
+function getFirstNetworkTimeOffset() {
+  return new Promise((resolve, reject) => {
+    const errors = [];
+    let pending = TIME_SYNC_URLS.length;
+    let resolved = false;
+
+    TIME_SYNC_URLS.forEach((targetUrl) => {
+      readHttpDateOffset(targetUrl)
+        .then((sample) => {
+          if (resolved) return;
+          resolved = true;
+          resolve(sample);
+        })
+        .catch((error) => {
+          errors.push(error);
+          pending -= 1;
+          if (pending === 0 && !resolved) {
+            reject(errors[0] || new Error("No network time sources responded."));
+          }
+        });
+    });
+  });
+}
+
+async function getTimeSnapshot() {
+  const nowMs = Date.now();
+
+  if (timeSyncCache && nowMs - timeSyncCache.syncedAtMs < TIME_SYNC_CACHE_MS) {
+    return {
+      source: "network",
+      nowMs: nowMs + timeSyncCache.offsetMs,
+      offsetMs: timeSyncCache.offsetMs,
+      provider: timeSyncCache.provider,
+      syncedAtMs: timeSyncCache.syncedAtMs,
+    };
+  }
+
+  try {
+    const sample = await getFirstNetworkTimeOffset();
+    timeSyncCache = sample;
+    return {
+      source: "network",
+      nowMs: Date.now() + sample.offsetMs,
+      offsetMs: sample.offsetMs,
+      provider: sample.provider,
+      syncedAtMs: sample.syncedAtMs,
+    };
+  } catch (error) {
+    if (timeSyncCache) {
+      return {
+        source: "network",
+        nowMs: Date.now() + timeSyncCache.offsetMs,
+        offsetMs: timeSyncCache.offsetMs,
+        provider: `${timeSyncCache.provider} cached`,
+        syncedAtMs: timeSyncCache.syncedAtMs,
+        error: "Fresh network sync failed; using the last synced offset.",
+      };
+    }
+
+    return {
+      source: "server",
+      nowMs: Date.now(),
+      offsetMs: 0,
+      provider: "local server",
+      syncedAtMs: Date.now(),
+      error: "Network time unavailable; using the local backend clock.",
+    };
+  }
+}
+
+async function handleTimeRequest(res) {
+  const snapshot = await getTimeSnapshot();
+  sendJson(res, 200, {
+    ...snapshot,
+    iso: new Date(snapshot.nowMs).toISOString(),
+  });
 }
 
 async function readJson(req) {
@@ -2715,6 +2851,11 @@ async function requestHandler(req, res) {
   const parts = url.pathname.split("/").filter(Boolean);
 
   try {
+    if (req.method === "GET" && url.pathname === "/api/time") {
+      await handleTimeRequest(res);
+      return;
+    }
+
     if (req.method === "GET" && url.pathname === "/api/health") {
       sendJson(res, 200, {
         ok: true,

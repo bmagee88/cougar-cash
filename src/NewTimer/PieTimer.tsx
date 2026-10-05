@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Typography,
@@ -24,6 +24,7 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CloseIcon from "@mui/icons-material/Close";
+import SyncIcon from "@mui/icons-material/Sync";
 
 /**
  * Daily Schedule with Pie Timer — Add Day Schedule modal (no library dropdown)
@@ -59,6 +60,18 @@ type DaySchedule = {
 type WeekSchedule = {
   name: string; // unique
   mapping: Partial<Record<number, string>>; // weekday -> day schedule name
+};
+
+type ClockSource = "network" | "server" | "system";
+
+type ClockStatus = {
+  source: ClockSource;
+  label: string;
+  offsetMs: number;
+  syncing: boolean;
+  provider?: string;
+  syncedAtMs?: number;
+  error?: string;
 };
 
 /* ------------------ LS keys + helpers ------------------ */
@@ -108,6 +121,143 @@ function within(now: number, start: number, end: number) {
 }
 function weekdayName(i: number) {
   return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i];
+}
+
+const CLOCK_SYNC_INTERVAL_MS = 10 * 60 * 1000;
+const CLOCK_SYNC_TIMEOUT_MS = 3000;
+
+function clockLabel(source: ClockSource, provider?: string) {
+  if (source === "network") return provider ? `Network time (${provider})` : "Network time";
+  if (source === "server") return "Backend clock";
+  return "System clock";
+}
+
+function formatClockOffset(offsetMs: number) {
+  const totalSeconds = Math.round(offsetMs / 1000);
+  if (totalSeconds === 0) return "Matches this device";
+
+  const sign = totalSeconds > 0 ? "+" : "-";
+  const absSeconds = Math.abs(totalSeconds);
+  const minutes = Math.floor(absSeconds / 60);
+  const seconds = absSeconds % 60;
+  const pieces = [
+    minutes > 0 ? `${minutes}m` : "",
+    seconds > 0 ? `${seconds}s` : "",
+  ].filter(Boolean);
+
+  return `${sign}${pieces.join(" ")} vs this device`;
+}
+
+function useSyncedClock() {
+  const offsetRef = useRef(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [clockStatus, setClockStatus] = useState<ClockStatus>(() => ({
+    source: "system",
+    label: clockLabel("system"),
+    offsetMs: 0,
+    syncing: false,
+  }));
+
+  const syncClock = useCallback(async () => {
+    const startedAtMs = Date.now();
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), CLOCK_SYNC_TIMEOUT_MS);
+
+    setClockStatus((current) => ({ ...current, syncing: true, error: undefined }));
+
+    try {
+      const response = await fetch("/api/time", {
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      const finishedAtMs = Date.now();
+
+      if (!response.ok) {
+        throw new Error(`Clock sync failed (${response.status})`);
+      }
+
+      const payload = (await response.json()) as {
+        nowMs?: number;
+        source?: ClockSource;
+        provider?: string;
+        error?: string;
+      };
+      const syncedNowMs = Number(payload.nowMs);
+
+      if (!Number.isFinite(syncedNowMs)) {
+        throw new Error("Clock sync returned an invalid time");
+      }
+
+      const midpointMs = startedAtMs + (finishedAtMs - startedAtMs) / 2;
+      const nextOffsetMs = syncedNowMs - midpointMs;
+      const nextSource: ClockSource =
+        payload.source === "network" || payload.source === "server" ? payload.source : "server";
+
+      offsetRef.current = nextOffsetMs;
+      setNowMs(Date.now() + nextOffsetMs);
+      setClockStatus({
+        source: nextSource,
+        label: clockLabel(nextSource, payload.provider),
+        offsetMs: nextOffsetMs,
+        syncing: false,
+        provider: payload.provider,
+        syncedAtMs: finishedAtMs,
+        error: payload.error,
+      });
+    } catch {
+      offsetRef.current = 0;
+      setNowMs(Date.now());
+      setClockStatus({
+        source: "system",
+        label: clockLabel("system"),
+        offsetMs: 0,
+        syncing: false,
+        error: "Network sync unavailable",
+      });
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }, []);
+
+  useEffect(() => {
+    let timeoutId: number | undefined;
+
+    const tick = () => {
+      const nextNowMs = Date.now() + offsetRef.current;
+      setNowMs(nextNowMs);
+      timeoutId = window.setTimeout(tick, 1000 - (nextNowMs % 1000) + 5);
+    };
+
+    tick();
+    return () => {
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, []);
+
+  useEffect(() => {
+    syncClock();
+    const intervalId = window.setInterval(syncClock, CLOCK_SYNC_INTERVAL_MS);
+    return () => window.clearInterval(intervalId);
+  }, [syncClock]);
+
+  useEffect(() => {
+    const syncWhenVisible = () => {
+      if (document.visibilityState === "visible") syncClock();
+    };
+
+    window.addEventListener("focus", syncClock);
+    document.addEventListener("visibilitychange", syncWhenVisible);
+    return () => {
+      window.removeEventListener("focus", syncClock);
+      document.removeEventListener("visibilitychange", syncWhenVisible);
+    };
+  }, [syncClock]);
+
+  return {
+    now: new Date(nowMs),
+    clockStatus,
+    syncClock,
+  };
 }
 
 /* ------------------ Defaults + Migration ------------------ */
@@ -1066,12 +1216,7 @@ function WeekPanel({
 /* ------------------ Main App ------------------ */
 
 export default function DailyScheduleApp() {
-  // Live clock (rerender every second)
-  const [, setTimeTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTimeTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
+  const { now, clockStatus, syncClock } = useSyncedClock();
 
   // Core state mirrored with localStorage
   const [lib, setLib] = useState<DayScheduleLibrary>({});
@@ -1087,7 +1232,6 @@ export default function DailyScheduleApp() {
   }, []);
 
   // Derived: today
-  const now = new Date();
   const todayWeekday = now.getDay();
   const activeWeek = weeks[activeWeekName];
   const todaysScheduleName = activeWeek?.mapping?.[todayWeekday] ?? "";
@@ -1215,6 +1359,35 @@ export default function DailyScheduleApp() {
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             {weekdayName(now.getDay())} · {activeWeek?.mapping?.[now.getDay()] || "(no schedule set)"}
           </Typography>
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.75 }}>
+            <Chip
+              size="small"
+              label={`Clock: ${clockStatus.label}`}
+              color={
+                clockStatus.source === "network"
+                  ? "success"
+                  : clockStatus.source === "server"
+                    ? "info"
+                    : "default"
+              }
+              variant={clockStatus.source === "system" ? "outlined" : "filled"}
+            />
+            <Typography variant="caption" color="text.secondary">
+              {formatClockOffset(clockStatus.offsetMs)}
+            </Typography>
+            <Tooltip title="Sync clock now">
+              <span>
+                <IconButton size="small" onClick={syncClock} disabled={clockStatus.syncing}>
+                  <SyncIcon fontSize="small" />
+                </IconButton>
+              </span>
+            </Tooltip>
+            {clockStatus.error && (
+              <Typography variant="caption" color="text.secondary">
+                {clockStatus.error}
+              </Typography>
+            )}
+          </Stack>
 
           <Box sx={{ mt: 2 }}>
             <PieTimer period={activePeriod ?? undefined} nowMinutes={minutesNow} />
