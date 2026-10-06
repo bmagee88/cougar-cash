@@ -572,7 +572,6 @@ export default function TypingDdrPage() {
     setStartingHearts(currentPreset.startingHearts);
     const nextHealComboTarget = getLevelAdjustedHealTarget(currentPreset, level, keysLockedRef.current);
     setHealComboTarget(nextHealComboTarget);
-    setCompactMode(false);
 
     const shouldRefillHearts = !keysLockedRef.current;
     const nextHearts = shouldRefillHearts
@@ -1319,37 +1318,37 @@ export default function TypingDdrPage() {
                   />
                 </Stack>
               </Box>
-
-              <Stack direction="row" spacing={0.75} alignItems="center">
-                <Typography sx={{ color: "#cbd5e1", fontSize: "0.82rem", fontWeight: 800 }}>Letters</Typography>
-                <Switch
-                  checked={showKeyLetters}
-                  onChange={(event) => setShowKeyLetters(event.target.checked)}
-                  size="small"
-                  inputProps={{ "aria-label": "Show key letters" }}
-                  sx={{
-                    "& .MuiSwitch-switchBase.Mui-checked": { color: "#38d9a9" },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#38d9a9" },
-                  }}
-                />
-              </Stack>
-
-              <Stack direction="row" spacing={0.75} alignItems="center">
-                <Typography sx={{ color: "#cbd5e1", fontSize: "0.82rem", fontWeight: 800 }}>Compact</Typography>
-                <Switch
-                  checked={compactMode}
-                  disabled={keysLocked}
-                  onChange={(event) => setCompactMode(event.target.checked)}
-                  size="small"
-                  inputProps={{ "aria-label": "Compact mode" }}
-                  sx={{
-                    "& .MuiSwitch-switchBase.Mui-checked": { color: "#38d9a9" },
-                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#38d9a9" },
-                  }}
-                />
-              </Stack>
             </>
           )}
+
+          <Stack direction="row" spacing={0.75} alignItems="center">
+            <Typography sx={{ color: "#cbd5e1", fontSize: "0.82rem", fontWeight: 800 }}>Letters</Typography>
+            <Switch
+              checked={showKeyLetters}
+              onChange={(event) => setShowKeyLetters(event.target.checked)}
+              size="small"
+              inputProps={{ "aria-label": "Show key letters" }}
+              sx={{
+                "& .MuiSwitch-switchBase.Mui-checked": { color: "#38d9a9" },
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#38d9a9" },
+              }}
+            />
+          </Stack>
+
+          <Stack direction="row" spacing={0.75} alignItems="center">
+            <Typography sx={{ color: "#cbd5e1", fontSize: "0.82rem", fontWeight: 800 }}>Compact</Typography>
+            <Switch
+              checked={compactMode}
+              disabled={keysLocked}
+              onChange={(event) => setCompactMode(event.target.checked)}
+              size="small"
+              inputProps={{ "aria-label": "Compact mode" }}
+              sx={{
+                "& .MuiSwitch-switchBase.Mui-checked": { color: "#38d9a9" },
+                "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": { bgcolor: "#38d9a9" },
+              }}
+            />
+          </Stack>
 
           <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
             <Typography sx={{ color: "#cbd5e1", fontSize: "0.82rem", fontWeight: 800 }}>
