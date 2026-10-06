@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Box,
   Typography,
   Stack,
@@ -11,20 +14,26 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Drawer,
   TextField,
   InputLabel,
   FormControl,
+  FormControlLabel,
   Chip,
   Divider,
   Tooltip,
   Paper,
   Alert,
+  Switch,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CloseIcon from "@mui/icons-material/Close";
-import SyncIcon from "@mui/icons-material/Sync";
+import MenuIcon from "@mui/icons-material/Menu";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import DownloadIcon from "@mui/icons-material/Download";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
 
 /**
  * Daily Schedule with Pie Timer — Add Day Schedule modal (no library dropdown)
@@ -80,6 +89,8 @@ const LS_KEYS = {
   DAY_SCHEDULES: "scheduler:libraryDaySchedules",
   WEEK_SCHEDULES: "scheduler:weekSchedules",
   ACTIVE_WEEK_SCHEDULE: "scheduler:activeWeekSchedule",
+  DAILY_PERIOD_NAME_OVERRIDES: "scheduler:dailyPeriodNameOverrides",
+  DARK_MODE: "scheduler:darkMode",
   // legacy (auto-migrated if present)
   LEGACY_DAY_SCHEDULES: "scheduler:daySchedules",
   LEGACY_ACTIVE_DAY_SELECTIONS: "scheduler:activeDaySelections",
@@ -87,6 +98,7 @@ const LS_KEYS = {
 
 type DayScheduleLibrary = Record<string, DaySchedule>;
 type WeekSchedulesStore = Record<string, WeekSchedule>;
+type DailyPeriodNameOverrides = Record<string, Record<string, string[]>>;
 
 function loadJSON<T>(key: string, fallback: T): T {
   try {
@@ -123,29 +135,63 @@ function weekdayName(i: number) {
   return ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][i];
 }
 
+function dateKey(d: Date) {
+  const year = d.getFullYear();
+  const month = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+type TimeLeftParts = {
+  minutes: number;
+  seconds: number;
+  totalSeconds: number;
+};
+
+function getTimeLeftParts(minutes: number): TimeLeftParts {
+  const totalSeconds = Math.max(0, Math.ceil(minutes * 60));
+  return {
+    minutes: Math.floor(totalSeconds / 60),
+    seconds: totalSeconds % 60,
+    totalSeconds,
+  };
+}
+
+function hexTextColor(hex: string | undefined) {
+  const raw = hex?.replace("#", "");
+  if (!raw || raw.length !== 6) return "#111827";
+
+  const r = parseInt(raw.slice(0, 2), 16);
+  const g = parseInt(raw.slice(2, 4), 16);
+  const b = parseInt(raw.slice(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance > 0.62 ? "#111827" : "#ffffff";
+}
+
+function applyPeriodNameOverrides(schedule: DaySchedule | undefined, names: string[]) {
+  if (!schedule) return undefined;
+
+  return {
+    ...schedule,
+    periods: schedule.periods.map((period, index) => {
+      const override = names[index]?.trim();
+      return override ? { ...period, name: override } : period;
+    }),
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 const CLOCK_SYNC_INTERVAL_MS = 10 * 60 * 1000;
 const CLOCK_SYNC_TIMEOUT_MS = 3000;
+const EMPTY_PERIOD_NAMES: string[] = [];
 
 function clockLabel(source: ClockSource, provider?: string) {
   if (source === "network") return provider ? `Network time (${provider})` : "Network time";
   if (source === "server") return "Backend clock";
   return "System clock";
-}
-
-function formatClockOffset(offsetMs: number) {
-  const totalSeconds = Math.round(offsetMs / 1000);
-  if (totalSeconds === 0) return "Matches this device";
-
-  const sign = totalSeconds > 0 ? "+" : "-";
-  const absSeconds = Math.abs(totalSeconds);
-  const minutes = Math.floor(absSeconds / 60);
-  const seconds = absSeconds % 60;
-  const pieces = [
-    minutes > 0 ? `${minutes}m` : "",
-    seconds > 0 ? `${seconds}s` : "",
-  ].filter(Boolean);
-
-  return `${sign}${pieces.join(" ")} vs this device`;
 }
 
 function useSyncedClock() {
@@ -355,19 +401,18 @@ function seedIfEmpty() {
 
 /* ------------------ Pie Timer (SVG) ------------------ */
 
-function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: number }) {
-  const size = 260;
+function PieTimer({ period, nowMinutes, size = 420 }: { period?: Period | null; nowMinutes: number; size?: number }) {
   const r = size / 2 - 8;
   const cx = size / 2;
   const cy = size / 2;
 
   if (!period) {
     return (
-      <Paper elevation={2} sx={{ p: 2, width: size }}>
+      <Box sx={{ width: "min(72vw, 420px)", aspectRatio: "1 / 1", display: "grid", placeItems: "center" }}>
         <Typography variant="subtitle1" align="center">
           No active period right now
         </Typography>
-      </Paper>
+      </Box>
     );
   }
 
@@ -380,14 +425,14 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
     const rad = (Math.PI * (angleDeg - 90)) / 180;
     return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
   };
-  const arcPath = (startDeg: number, endDeg: number) => {
+  const wedgePath = (startDeg: number, endDeg: number) => {
     const a0 = startDeg % 360;
     const a1 = endDeg % 360;
     const sweep = (a1 - a0 + 360) % 360;
     const largeArc = sweep > 180 ? 1 : 0;
     const p0 = polar(a0);
     const p1 = polar(a1);
-    return `M ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 1 ${p1.x} ${p1.y}`;
+    return `M ${cx} ${cy} L ${p0.x} ${p0.y} A ${r} ${r} 0 ${largeArc} 1 ${p1.x} ${p1.y} Z`;
   };
 
   const segArcs = period.segments.map((seg, i) => {
@@ -395,42 +440,25 @@ function PieTimer({ period, nowMinutes }: { period?: Period | null; nowMinutes: 
     const e = clamp(toMinutes(seg.end), pStart, pEnd) - pStart;
     const a0 = toAngle(s);
     const a1 = toAngle(e);
-    return <path key={i} d={arcPath(a0, a1)} stroke={seg.color} strokeWidth={18} fill="none" />;
+    const coversWholePeriod = e - s >= pDur;
+
+    if (coversWholePeriod) {
+      return <circle key={i} cx={cx} cy={cy} r={r} fill={seg.color} stroke="#fff" strokeWidth={2} />;
+    }
+
+    return <path key={i} d={wedgePath(a0, a1)} fill={seg.color} stroke="#fff" strokeWidth={2} />;
   });
 
   const progressAngle = toAngle(clamp(nowMinutes, pStart, pEnd) - pStart);
   const pEndPt = polar(progressAngle);
-  const currentSeg = period.segments.find((s) => within(nowMinutes, toMinutes(s.start), toMinutes(s.end)));
-
   return (
-    <Box>
-      <svg width={size} height={size}>
+    <Box sx={{ width: "min(72vw, 420px)", maxWidth: "100%" }}>
+      <svg width="100%" height="auto" viewBox={`0 0 ${size} ${size}`}>
         <circle cx={cx} cy={cy} r={r} fill="#f5f5f5" stroke="#ccc" strokeWidth={1} />
         {segArcs}
         <line x1={cx} y1={cy} x2={pEndPt.x} y2={pEndPt.y} stroke="#000" strokeWidth={2} />
         <circle cx={cx} cy={cy} r={3} fill="#000" />
       </svg>
-
-      <Stack spacing={1} sx={{ mt: 1 }}>
-        <Typography variant="subtitle2" align="center">
-          {period.name}: {period.start} – {period.end}
-        </Typography>
-        <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
-          {period.segments.map((s, i) => (
-            <Chip
-              key={i}
-              label={`${s.title} (${s.start}–${s.end})`}
-              size="small"
-              sx={{
-                borderColor: currentSeg === s ? "#000" : undefined,
-                borderWidth: currentSeg === s ? 2 : 1,
-                borderStyle: "solid",
-                background: s.color,
-              }}
-            />
-          ))}
-        </Stack>
-      </Stack>
     </Box>
   );
 }
@@ -1213,15 +1241,133 @@ function WeekPanel({
   );
 }
 
+function DailyPeriodNameOverridesPanel({
+  scheduleName,
+  periods,
+  values,
+  onSetName,
+  onSetAll,
+  onClear,
+}: {
+  scheduleName: string;
+  periods: Period[];
+  values: string[];
+  onSetName: (index: number, value: string) => void;
+  onSetAll: (values: string[]) => void;
+  onClear: () => void;
+}) {
+  const [bulkValue, setBulkValue] = useState("");
+
+  useEffect(() => {
+    setBulkValue(values.join("\n"));
+  }, [scheduleName, values]);
+
+  if (!scheduleName || periods.length === 0) {
+    return <Alert severity="info">No schedule set for today.</Alert>;
+  }
+
+  return (
+    <Stack spacing={1.25}>
+      <Typography variant="subtitle1">Today's Period Names</Typography>
+      <Typography variant="caption" color="text.secondary">
+        {scheduleName}
+      </Typography>
+      {periods.map((period, index) => (
+        <TextField
+          key={`${period.start}-${period.end}-${index}`}
+          label={`Period ${index + 1}`}
+          placeholder={period.name}
+          value={values[index] ?? ""}
+          onChange={(event) => onSetName(index, event.target.value)}
+          size="small"
+          fullWidth
+        />
+      ))}
+      <TextField
+        label="Bulk Labels"
+        value={bulkValue}
+        onChange={(event) => setBulkValue(event.target.value)}
+        multiline
+        minRows={3}
+        size="small"
+        fullWidth
+      />
+      <Stack direction="row" spacing={1}>
+        <Button
+          variant="outlined"
+          onClick={() => onSetAll(bulkValue.split(/\r?\n/).map((line) => line.trim()))}
+        >
+          Apply
+        </Button>
+        <Button onClick={onClear}>Clear</Button>
+      </Stack>
+    </Stack>
+  );
+}
+
 /* ------------------ Main App ------------------ */
 
+function TimeLeftDisplay({
+  value,
+  align = "inherit",
+  mainSize = { xs: 48, md: 64 },
+  secondsSize = { xs: 24, md: 30 },
+}: {
+  value: TimeLeftParts | null;
+  align?: "left" | "center" | "right" | "inherit";
+  mainSize?: { xs: number; md: number };
+  secondsSize?: { xs: number; md: number };
+}) {
+  if (!value) {
+    return (
+      <Typography component="div" sx={{ fontSize: mainSize, fontWeight: 800, lineHeight: 1, textAlign: align }}>
+        --
+      </Typography>
+    );
+  }
+
+  const onlySeconds = value.totalSeconds < 60;
+
+  if (onlySeconds) {
+    return (
+      <Box sx={{ textAlign: align, lineHeight: 1 }}>
+        <Typography component="span" sx={{ fontSize: mainSize, fontWeight: 800, lineHeight: 1 }}>
+          {value.seconds}
+        </Typography>
+        <Typography component="span" sx={{ ml: 0.75, fontSize: secondsSize, fontWeight: 700, lineHeight: 1 }}>
+          seconds
+        </Typography>
+      </Box>
+    );
+  }
+
+  return (
+    <Box sx={{ textAlign: align, lineHeight: 1 }}>
+      <Typography component="span" sx={{ fontSize: mainSize, fontWeight: 800, lineHeight: 1 }}>
+        {value.minutes}
+      </Typography>
+      <Typography component="span" sx={{ ml: 0.75, fontSize: secondsSize, fontWeight: 700, lineHeight: 1 }}>
+        {value.minutes === 1 ? "min" : "mins"}
+      </Typography>
+    </Box>
+  );
+}
+
 export default function DailyScheduleApp() {
-  const { now, clockStatus, syncClock } = useSyncedClock();
+  const { now } = useSyncedClock();
 
   // Core state mirrored with localStorage
   const [lib, setLib] = useState<DayScheduleLibrary>({});
   const [weeks, setWeeks] = useState<WeekSchedulesStore>({});
   const [activeWeekName, setActiveWeekName] = useState<string>("DefaultWeek");
+  const [dailyOverrides, setDailyOverrides] = useState<DailyPeriodNameOverrides>({});
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [importMessage, setImportMessage] = useState("");
+  const [darkMode, setDarkMode] = useState(() => loadJSON(LS_KEYS.DARK_MODE, true));
+
+  useEffect(() => {
+    saveJSON(LS_KEYS.DARK_MODE, darkMode);
+  }, [darkMode]);
 
   // seed + load
   useEffect(() => {
@@ -1229,22 +1375,45 @@ export default function DailyScheduleApp() {
     setLib(loadJSON(LS_KEYS.DAY_SCHEDULES, {}));
     setWeeks(loadJSON(LS_KEYS.WEEK_SCHEDULES, {}));
     setActiveWeekName(localStorage.getItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE) ?? "DefaultWeek");
+    setDailyOverrides(loadJSON(LS_KEYS.DAILY_PERIOD_NAME_OVERRIDES, {}));
   }, []);
 
   // Derived: today
+  const todayKey = dateKey(now);
   const todayWeekday = now.getDay();
   const activeWeek = weeks[activeWeekName];
   const todaysScheduleName = activeWeek?.mapping?.[todayWeekday] ?? "";
   const todaysSchedule = todaysScheduleName ? lib[todaysScheduleName] : undefined;
+  const todaysPeriodNameOverrides = dailyOverrides[todayKey]?.[todaysScheduleName] ?? EMPTY_PERIOD_NAMES;
+  const todaysDisplaySchedule = useMemo(
+    () => applyPeriodNameOverrides(todaysSchedule, todaysPeriodNameOverrides),
+    [todaysSchedule, todaysPeriodNameOverrides]
+  );
 
   // Active period for pie timer (today's schedule only)
   const minutesNow = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
   const activePeriod = useMemo(() => {
-    const p = todaysSchedule?.periods ?? [];
-    const nowMin = Math.floor(minutesNow);
-    return p.find((pp) => within(nowMin, toMinutes(pp.start), toMinutes(pp.end))) ?? null;
-  }, [todaysSchedule, minutesNow]);
-  const nowFmt = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const p = todaysDisplaySchedule?.periods ?? [];
+    return p.find((pp) => within(minutesNow, toMinutes(pp.start), toMinutes(pp.end))) ?? null;
+  }, [todaysDisplaySchedule, minutesNow]);
+  const currentSegment = useMemo(
+    () =>
+      activePeriod?.segments.find((segment) =>
+        within(minutesNow, toMinutes(segment.start), toMinutes(segment.end))
+      ) ?? null,
+    [activePeriod, minutesNow]
+  );
+  const periodTimeLeft = activePeriod ? getTimeLeftParts(toMinutes(activePeriod.end) - minutesNow) : null;
+  const segmentTimeLeft = currentSegment ? getTimeLeftParts(toMinutes(currentSegment.end) - minutesNow) : null;
+  const nowFmt = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const dateFmt = now.toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
+  const segmentCardColor = currentSegment?.color ?? "#e5e7eb";
+  const segmentCardTextColor = hexTextColor(currentSegment?.color);
+  const pageBg = darkMode ? "#020617" : "#f8fafc";
+  const pageText = darkMode ? "#f8fafc" : "text.primary";
+  const secondaryText = darkMode ? "#cbd5e1" : "text.secondary";
+  const surfaceBg = darkMode ? "#111827" : "#ffffff";
+  const surfaceBorder = darkMode ? "rgba(148, 163, 184, 0.28)" : "divider";
 
   /* ---------- Persistence helpers ---------- */
 
@@ -1258,6 +1427,99 @@ export default function DailyScheduleApp() {
     if (nextActive !== undefined) {
       setActiveWeekName(nextActive);
       localStorage.setItem(LS_KEYS.ACTIVE_WEEK_SCHEDULE, nextActive);
+    }
+  };
+  const saveDailyOverrides = (updated: DailyPeriodNameOverrides) => {
+    setDailyOverrides(updated);
+    saveJSON(LS_KEYS.DAILY_PERIOD_NAME_OVERRIDES, updated);
+  };
+
+  const setTodayPeriodNames = (names: string[]) => {
+    if (!todaysScheduleName) return;
+
+    const trimmed = names.map((name) => name.trim());
+    const next: DailyPeriodNameOverrides = {
+      ...dailyOverrides,
+      [todayKey]: {
+        ...(dailyOverrides[todayKey] ?? {}),
+        [todaysScheduleName]: trimmed,
+      },
+    };
+
+    saveDailyOverrides(next);
+  };
+
+  const setTodayPeriodName = (index: number, value: string) => {
+    const next = [...todaysPeriodNameOverrides];
+    next[index] = value;
+    setTodayPeriodNames(next);
+  };
+
+  const clearTodayPeriodNames = () => {
+    if (!todaysScheduleName) return;
+
+    const dayOverrides = { ...(dailyOverrides[todayKey] ?? {}) };
+    delete dayOverrides[todaysScheduleName];
+    const next = { ...dailyOverrides };
+
+    if (Object.keys(dayOverrides).length > 0) {
+      next[todayKey] = dayOverrides;
+    } else {
+      delete next[todayKey];
+    }
+
+    saveDailyOverrides(next);
+  };
+
+  const exportSchedules = () => {
+    const payload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      activeWeekName,
+      daySchedules: lib,
+      weekSchedules: weeks,
+      dailyPeriodNameOverrides: dailyOverrides,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `pie-timer-schedules-${todayKey}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const loadSchedulesFile = async (file: File | null) => {
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text()) as unknown;
+      if (!isRecord(parsed)) throw new Error("Invalid schedule file.");
+
+      const importedLib = parsed.daySchedules ?? parsed.lib;
+      const importedWeeks = parsed.weekSchedules ?? parsed.weeks;
+
+      if (!isRecord(importedLib) || !isRecord(importedWeeks)) {
+        throw new Error("Invalid schedule file.");
+      }
+
+      const nextLib = importedLib as DayScheduleLibrary;
+      const nextWeeks = importedWeeks as WeekSchedulesStore;
+      const activeFromFile = typeof parsed.activeWeekName === "string" ? parsed.activeWeekName : "";
+      const nextActive = nextWeeks[activeFromFile] ? activeFromFile : Object.keys(nextWeeks)[0] ?? "";
+
+      saveLib(nextLib);
+      saveWeeks(nextWeeks, nextActive);
+
+      if (isRecord(parsed.dailyPeriodNameOverrides)) {
+        saveDailyOverrides(parsed.dailyPeriodNameOverrides as DailyPeriodNameOverrides);
+      }
+
+      setImportMessage("Schedules loaded.");
+    } catch {
+      setImportMessage("Could not load that schedule file.");
     }
   };
 
@@ -1345,95 +1607,216 @@ export default function DailyScheduleApp() {
   };
 
   return (
-    <Box sx={{ p: 2, maxWidth: 1200, mx: "auto" }}>
-      <Typography variant="h5" gutterBottom>
-        Daily Schedule & Pie Timer
-      </Typography>
+    <Box
+      sx={{
+        minHeight: "100vh",
+        bgcolor: pageBg,
+        color: pageText,
+        px: { xs: 2, md: 3 },
+        transition: "background-color 180ms ease, color 180ms ease",
+      }}
+    >
+      <Box sx={{ position: "fixed", top: 16, right: 16, zIndex: 1200 }}>
+        <Tooltip title="Schedule menu">
+          <IconButton
+            aria-label="open schedule menu"
+            onClick={() => setMenuOpen(true)}
+            sx={{
+              bgcolor: surfaceBg,
+              color: pageText,
+              boxShadow: 2,
+              border: "1px solid",
+              borderColor: surfaceBorder,
+              "&:hover": { bgcolor: surfaceBg },
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+        </Tooltip>
+      </Box>
 
-      {/* Main content */}
-      <Stack direction={{ xs: "column", md: "row" }} spacing={3} sx={{ mt: 2 }}>
-        {/* Left: Now + today's schedule, pie, periods */}
-        <Box sx={{ flex: 1 }}>
-          <Typography variant="overline">Now</Typography>
-          <Typography variant="h3">{nowFmt}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {weekdayName(now.getDay())} · {activeWeek?.mapping?.[now.getDay()] || "(no schedule set)"}
-          </Typography>
-          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" sx={{ mt: 0.75 }}>
-            <Chip
-              size="small"
-              label={`Clock: ${clockStatus.label}`}
-              color={
-                clockStatus.source === "network"
-                  ? "success"
-                  : clockStatus.source === "server"
-                    ? "info"
-                    : "default"
-              }
-              variant={clockStatus.source === "system" ? "outlined" : "filled"}
-            />
-            <Typography variant="caption" color="text.secondary">
-              {formatClockOffset(clockStatus.offsetMs)}
+      <Box
+        component="main"
+        sx={{
+          minHeight: "100vh",
+          maxWidth: 1360,
+          mx: "auto",
+          py: { xs: 8, md: 4 },
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          gap: 3,
+        }}
+      >
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "minmax(170px, 0.65fr) minmax(320px, 1.3fr) minmax(220px, 0.8fr)" },
+            alignItems: "center",
+            gap: { xs: 4, md: 5 },
+            width: "100%",
+          }}
+        >
+          <Stack spacing={1} alignItems={{ xs: "center", md: "flex-end" }} textAlign={{ xs: "center", md: "right" }}>
+            <Typography component="div" sx={{ fontSize: { xs: 30, md: 40 }, fontWeight: 700, lineHeight: 1.05 }}>
+              {activePeriod?.name ?? "No active period"}
             </Typography>
-            <Tooltip title="Sync clock now">
-              <span>
-                <IconButton size="small" onClick={syncClock} disabled={clockStatus.syncing}>
-                  <SyncIcon fontSize="small" />
-                </IconButton>
-              </span>
-            </Tooltip>
-            {clockStatus.error && (
-              <Typography variant="caption" color="text.secondary">
-                {clockStatus.error}
-              </Typography>
-            )}
+            <TimeLeftDisplay value={periodTimeLeft} />
+            <Typography variant="overline" sx={{ color: secondaryText }}>
+              left
+            </Typography>
           </Stack>
 
-          <Box sx={{ mt: 2 }}>
-            <PieTimer period={activePeriod ?? undefined} nowMinutes={minutesNow} />
-          </Box>
+          <Stack spacing={2} alignItems="center" textAlign="center">
+            <Box>
+              <Typography component="div" sx={{ color: secondaryText, fontSize: { xs: 22, md: 30 }, fontWeight: 800, lineHeight: 1.05 }}>
+                {weekdayName(now.getDay())}
+              </Typography>
+              <Typography component="div" sx={{ mt: 0.75, color: secondaryText, fontSize: { xs: 15, md: 18 }, fontWeight: 600 }}>
+                {dateFmt}
+              </Typography>
+              <Typography component="div" sx={{ fontSize: { xs: 48, sm: 64, md: 80 }, fontWeight: 800, lineHeight: 1 }}>
+                {nowFmt}
+              </Typography>
+            </Box>
 
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="overline">Today’s Periods</Typography>
-            <Stack spacing={1} sx={{ mt: 1 }}>
-              {todaysSchedule?.periods?.length ? (
-                todaysSchedule.periods.map((p, i) => (
-                  <Paper key={i} variant="outlined" sx={{ p: 1.5 }}>
+            <PieTimer period={activePeriod ?? undefined} nowMinutes={minutesNow} />
+          </Stack>
+
+          <Stack spacing={1.25} alignItems={{ xs: "center", md: "flex-start" }} textAlign={{ xs: "center", md: "left" }}>
+            <Typography component="div" sx={{ fontSize: { xs: 26, md: 34 }, fontWeight: 700, lineHeight: 1.1 }}>
+              {currentSegment?.title ?? "No active segment"}
+            </Typography>
+            <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 2, md: 2.5 },
+                minWidth: { xs: 220, md: 260 },
+                borderRadius: 2,
+                bgcolor: segmentCardColor,
+                color: segmentCardTextColor,
+                border: currentSegment ? "none" : "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <TimeLeftDisplay
+                value={segmentTimeLeft}
+                align="center"
+                mainSize={{ xs: 42, md: 54 }}
+                secondsSize={{ xs: 22, md: 28 }}
+              />
+            </Paper>
+          </Stack>
+        </Box>
+      </Box>
+
+      <Box sx={{ maxWidth: 960, mx: "auto", pb: 4 }}>
+        <Accordion
+          disableGutters
+          sx={{
+            bgcolor: surfaceBg,
+            color: pageText,
+            border: "1px solid",
+            borderColor: surfaceBorder,
+            "&:before": { display: "none" },
+          }}
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ color: pageText }} />}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0, sm: 1 }} alignItems={{ sm: "center" }}>
+              <Typography variant="subtitle1">Today's Schedule</Typography>
+            </Stack>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Stack spacing={1.5}>
+              {todaysDisplaySchedule?.periods?.length ? (
+                todaysDisplaySchedule.periods.map((period, index) => (
+                  <Box key={`${period.start}-${period.end}-${index}`} sx={{ pb: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
                     <Typography variant="subtitle1">
-                      {p.name} — {p.start} to {p.end}
+                      {period.name} · {period.start} to {period.end}
                     </Typography>
-                    <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 0.5 }}>
-                      {p.segments.map((s, j) => (
-                        <Chip key={j} size="small" label={`${s.title}: ${s.start}–${s.end}`} sx={{ background: s.color }} />
+                    <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mt: 0.75 }}>
+                      {period.segments.map((segment, segmentIndex) => (
+                        <Chip
+                          key={`${segment.start}-${segment.end}-${segmentIndex}`}
+                          size="small"
+                          label={`${segment.title}: ${segment.start}-${segment.end}`}
+                          sx={{ background: segment.color }}
+                        />
                       ))}
                     </Stack>
-                  </Paper>
+                  </Box>
                 ))
               ) : (
-                <Typography color="text.secondary">No periods defined for today’s schedule.</Typography>
+                <Typography color="text.secondary">No periods defined for today's schedule.</Typography>
               )}
             </Stack>
-          </Box>
-        </Box>
+          </AccordionDetails>
+        </Accordion>
+      </Box>
 
-        {/* Right: Week panel */}
-        <Box sx={{ width: { md: 480 }, flexShrink: 0 }}>
-          <WeekPanel
-            weekStore={weeks}
-            lib={lib}
-            activeWeekName={activeWeekName}
-            onChangeActiveWeek={updateActiveWeekName}
-            onAssign={assignWeekScheduleToDay}
-            onOpenAddSchedule={openAddSchedule}
-            onOpenLibrary={openLibrary}
-            onRenameWeek={renameActiveWeek}
-            onDeleteWeek={deleteActiveWeek}
-            onAddWeek={createWeekSchedule}
-          />
-        </Box>
-      </Stack>
+      <Drawer anchor="right" open={menuOpen} onClose={() => setMenuOpen(false)}>
+        <Box sx={{ width: { xs: "100vw", sm: 460, md: 540 }, p: 2, minHeight: "100%", bgcolor: surfaceBg, color: pageText }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+            <Typography variant="h6">Schedule Menu</Typography>
+            <IconButton aria-label="close schedule menu" onClick={() => setMenuOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
 
-      {/* Modals */}
+          <Stack spacing={2.5}>
+            <FormControlLabel
+              control={<Switch checked={darkMode} onChange={(event) => setDarkMode(event.target.checked)} />}
+              label="Dark mode"
+            />
+
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportSchedules}>
+                Export
+              </Button>
+              <Button variant="outlined" component="label" startIcon={<UploadFileIcon />}>
+                Load
+                <input
+                  hidden
+                  type="file"
+                  accept="application/json,.json"
+                  onChange={(event) => {
+                    loadSchedulesFile(event.target.files?.[0] ?? null);
+                    event.target.value = "";
+                  }}
+                />
+              </Button>
+            </Stack>
+            {importMessage && <Alert severity={importMessage.startsWith("Could") ? "error" : "success"}>{importMessage}</Alert>}
+
+            <Divider />
+
+            <DailyPeriodNameOverridesPanel
+              scheduleName={todaysScheduleName}
+              periods={todaysSchedule?.periods ?? []}
+              values={todaysPeriodNameOverrides}
+              onSetName={setTodayPeriodName}
+              onSetAll={setTodayPeriodNames}
+              onClear={clearTodayPeriodNames}
+            />
+
+            <Divider />
+
+            <WeekPanel
+              weekStore={weeks}
+              lib={lib}
+              activeWeekName={activeWeekName}
+              onChangeActiveWeek={updateActiveWeekName}
+              onAssign={assignWeekScheduleToDay}
+              onOpenAddSchedule={openAddSchedule}
+              onOpenLibrary={openLibrary}
+              onRenameWeek={renameActiveWeek}
+              onDeleteWeek={deleteActiveWeek}
+              onAddWeek={createWeekSchedule}
+            />
+          </Stack>
+        </Box>
+      </Drawer>
+
       <AddScheduleModal open={addOpen} onClose={() => setAddOpen(false)} onCreate={createSchedule} />
 
       <LibraryEditor
