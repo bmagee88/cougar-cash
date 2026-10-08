@@ -1,0 +1,120 @@
+import { SoccerTypingConfig } from "./types";
+
+export const SOCCER_FIELD = {
+  width: 100,
+  height: 60,
+};
+
+const FIELD_DIAGONAL = Math.hypot(SOCCER_FIELD.width, SOCCER_FIELD.height);
+
+export const SOCCER_PHRASE_BANK = [
+  "go",
+  "aim",
+  "pass",
+  "dribble",
+  "quick pass",
+  "open space",
+  "find a lane",
+  "smart touch",
+  "switch the field",
+  "watch the line",
+  "teamwork wins",
+  "move into space",
+  "control the ball",
+  "look before you pass",
+  "send it wide",
+  "bend the shot",
+  "hold your shape",
+  "press and recover",
+  "keep the ball moving",
+  "choose the best target",
+  "make the simple pass",
+  "create a better angle",
+  "read the field quickly",
+  "strike through the center",
+  "first touch sets the play",
+  "support your teammate",
+  "build from the back",
+  "turn defense into attack",
+  "speed and accuracy matter",
+  "space opens when you pass",
+  "a calm finish beats power",
+  "strong choices create chances",
+  "accurate passes beat pressure",
+  "great teams move together",
+  "confidence grows with practice",
+  "communication makes soccer easier",
+  "patient passing creates clear shots",
+  "every smart touch changes the field",
+  "balanced teamwork can unlock the goal",
+  "fast thinking turns a pass into a chance",
+  "a careful defender can change the whole match",
+];
+
+export const DEFAULT_SOCCER_CONFIG: SoccerTypingConfig = {
+  field: SOCCER_FIELD,
+  teams: {
+    X: {
+      id: "X",
+      name: "Cougars",
+      marker: "X",
+      color: "#facc15",
+      accent: "#78350f",
+    },
+    O: {
+      id: "O",
+      name: "Comets",
+      marker: "O",
+      color: "#38bdf8",
+      accent: "#082f49",
+    },
+  },
+  players: [
+    { id: "x-sweeper", team: "X", name: "Sweeper", key: "Q", home: { x: 13, y: 30 } },
+    { id: "x-wing-left", team: "X", name: "Left Wing", key: "W", home: { x: 30, y: 14 } },
+    { id: "x-wing-right", team: "X", name: "Right Wing", key: "E", home: { x: 30, y: 46 } },
+    { id: "x-mid", team: "X", name: "Mid", key: "R", home: { x: 48, y: 22 } },
+    { id: "x-striker", team: "X", name: "Striker", key: "T", home: { x: 48, y: 38 } },
+    { id: "o-sweeper", team: "O", name: "Sweeper", key: "A", home: { x: 87, y: 30 } },
+    { id: "o-wing-left", team: "O", name: "Left Wing", key: "S", home: { x: 70, y: 14 } },
+    { id: "o-wing-right", team: "O", name: "Right Wing", key: "D", home: { x: 70, y: 46 } },
+    { id: "o-mid", team: "O", name: "Mid", key: "F", home: { x: 55, y: 22 } },
+    { id: "o-striker", team: "O", name: "Striker", key: "G", home: { x: 55, y: 38 } },
+  ],
+  goals: [
+    {
+      id: "left-goal",
+      key: "L",
+      label: "Left Goal",
+      point: { x: 2, y: 30 },
+      scoringTeam: "O",
+    },
+    {
+      id: "right-goal",
+      key: "P",
+      label: "Right Goal",
+      point: { x: 98, y: 30 },
+      scoringTeam: "X",
+    },
+  ],
+  kickoffPlayerByTeam: {
+    X: "x-striker",
+    O: "o-striker",
+  },
+  winningScore: 3,
+  phraseScaling: {
+    minChars: 3,
+    maxChars: 42,
+    normalizationDistance: FIELD_DIAGONAL,
+  },
+  defensePhraseScaling: {
+    minChars: 3,
+    maxChars: 30,
+    normalizationDistance: SOCCER_FIELD.height,
+  },
+  selection: {
+    offenseSelectionMs: 15000,
+    defenseSelectionMs: 15000,
+  },
+  phraseBank: SOCCER_PHRASE_BANK,
+};

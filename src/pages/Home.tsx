@@ -28,6 +28,15 @@ const tiles = [
     multiplayer: true,
   },
   {
+    path: "/typing/soccer",
+    title: "Soccer Typing",
+    subtitle: "Pass, shoot, and intercept with typing strategy.",
+    emoji: "ST",
+    gradient: "linear-gradient(135deg, #16a34a, #facc15, #38bdf8)",
+    category: "typing",
+    multiplayer: true,
+  },
+  {
     path: "/pie-timer",
     title: "Pie Timer App",
     subtitle: "Focus & activity timers",
@@ -91,6 +100,14 @@ const tiles = [
     subtitle: "Chess with pieces held, freed, or executed.",
     emoji: "CC",
     gradient: "linear-gradient(135deg, #f0ddba, #6e8d72, #b64d34)",
+    category: "game",
+  },
+  {
+    path: "/games/vocab/shadow-boxing",
+    title: "Vocabulary Shadow Boxing",
+    subtitle: "Directional vocabulary attacks, dodges, and counters.",
+    emoji: "SB",
+    gradient: "linear-gradient(135deg, #0f766e, #f97316, #f43f5e)",
     category: "game",
   },
   {

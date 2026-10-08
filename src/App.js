@@ -40,6 +40,8 @@ const PatternGameApp = lazy(() => import("./PatternGame/PatternGameApp"));
 const FishingCardGame = lazy(() => import("./FishingCardGame/FishingCardGame"));
 const CrossyRoad = lazy(() => import("./CrossyRoad/CrossyRoad"));
 const CaptiveChess = lazy(() => import("./CaptiveChess/CaptiveChess"));
+const ShadowBoxingGame = lazy(() => import("./shadow-boxing/ShadowBoxingGame"));
+const SoccerTypingGame = lazy(() => import("./SoccerTypingGame/SoccerTypingGame"));
 
 function RouteFallback() {
   return (
@@ -76,6 +78,7 @@ function App() {
               element={<TypingMarathonMode />}
             ></Route>
             <Route path="/typing/ddr" element={<TypingDdrPage />}></Route>
+            <Route path="/typing/soccer" element={<SoccerTypingGame />}></Route>
             <Route path="/snake" element={<SnakeGamePage />}></Route>
             <Route path="/c-quiz" element={<ComplianceQuizPage />}></Route>
             <Route path="/c-quiz-2" element={<CQuiz2Page />}></Route>
@@ -106,6 +109,10 @@ function App() {
             <Route path="/fishing-card-game" element={<FishingCardGame />} />
             <Route path="/crossy-road" element={<CrossyRoad />} />
             <Route path="/captive-chess" element={<CaptiveChess />} />
+            <Route
+              path="/games/vocab/shadow-boxing"
+              element={<ShadowBoxingGame />}
+            />
           </Routes>
         </Suspense>
       </Router>
