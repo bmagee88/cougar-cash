@@ -1,0 +1,1 @@
+{"version":3,"names":["require"],"sources":["setupTests.js"],"sourcesContent":["// jest-dom adds custom jest matchers for asserting on DOM nodes.\r\n// allows you to do things like:\r\n// expect(element).toHaveTextContent(/react/i)\r\n// learn more: https://github.com/testing-library/jest-dom\r\nimport '@testing-library/jest-dom';\r\n"],"mappings":";;AAIAA,OAAA","ignoreList":[]}

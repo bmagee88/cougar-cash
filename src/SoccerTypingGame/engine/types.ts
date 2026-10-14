@@ -1,10 +1,19 @@
 export type TeamId = "X" | "O";
 
 export type GamePhase =
+  | "OFFENSE_READY"
   | "OFFENSE_SELECT"
   | "OFFENSE_TYPING"
   | "DEFENSE_SELECT"
+  | "DEFENSE_READY"
   | "DEFENSE_TYPING"
+  | "SHOT_READY"
+  | "SHOT_TYPING"
+  | "SHOT_WORD_READY"
+  | "SHOT_CAMERA"
+  | "SHOT_COUNTDOWN"
+  | "SHOT_FLIGHT"
+  | "SHOT_RESULT"
   | "RESOLVE_PLAY"
   | "GOAL_RESET"
   | "MATCH_COMPLETE";
@@ -23,12 +32,24 @@ export interface FieldSize {
   height: number;
 }
 
+export interface SoccerPlayerColors {
+  shirt?: string;
+  shorts?: string;
+  socks?: string;
+  trim?: string;
+  skin?: string;
+  hair?: string;
+  boots?: string;
+  gloves?: string;
+}
+
 export interface TeamDefinition {
   id: TeamId;
   name: string;
   marker: "X" | "O";
   color: string;
   accent: string;
+  colors?: SoccerPlayerColors;
 }
 
 export interface PlayerDefinition {
@@ -37,6 +58,8 @@ export interface PlayerDefinition {
   name: string;
   key: string;
   home: Point;
+  role?: "outfield" | "goalkeeper";
+  colors?: SoccerPlayerColors;
 }
 
 export interface TemporaryPosition {
@@ -75,10 +98,12 @@ export interface SoccerTypingConfig {
   players: PlayerDefinition[];
   goals: GoalTarget[];
   kickoffPlayerByTeam: Record<TeamId, string>;
+  goalKickoffPlayerByTeam: Record<TeamId, string>;
   winningScore: number;
   phraseScaling: PhraseScalingConfig;
   defensePhraseScaling: PhraseScalingConfig;
   selection: SelectionConfig;
+  movement: { radius: number };
   phraseBank: string[];
 }
 
@@ -152,6 +177,35 @@ export interface MatchStats {
   defenseChallenges: TypingChallengeStats[];
 }
 
+export type ShotLocation = "tl" | "tr" | "c" | "bl" | "br";
+export type ShotRound = "attacker" | "defender";
+
+export interface ShotTarget {
+  location: ShotLocation;
+  phrase: string;
+  attackerMs?: number;
+  defenderMs?: number;
+}
+
+export interface ShotState {
+  offenseTeam: TeamId;
+  defenseTeam: TeamId;
+  shooterId: string;
+  goalkeeperId: string;
+  distance: number;
+  chances: number;
+  round: ShotRound;
+  targets: ShotTarget[];
+  activeLocation?: ShotLocation;
+  phaseStartedAtMs: number;
+  result?: {
+    scored: boolean;
+    location: ShotLocation;
+    rolls: ShotLocation[];
+    blocked: ShotLocation[];
+  };
+}
+
 export interface MatchState {
   phase: GamePhase;
   players: PlayerState[];
@@ -161,6 +215,7 @@ export interface MatchState {
   ball: Point;
   currentPlay?: LockedPlay;
   activeChallenge?: TypingChallenge;
+  shot?: ShotState;
   selectionDeadlineAtMs?: number;
   lastEvent: string;
   nextPlayId: number;

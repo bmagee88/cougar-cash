@@ -3,6 +3,14 @@ import { Link as RouterLink } from "react-router-dom";
 
 const tiles = [
   {
+    path: "/typing/fishing",
+    title: "Stillwater Fishing",
+    subtitle: "Cast a line, type to reel, and discover your next catch.",
+    emoji: "🎣",
+    gradient: "linear-gradient(135deg, #153b36, #75b7ac, #e4c58b)",
+    category: "typing",
+  },
+  {
     path: "/cougar-cash",
     title: "Cougar Cash",
     subtitle: "Classroom economy & rewards",
@@ -132,6 +140,14 @@ const tiles = [
     subtitle: "World Generation",
     emoji: "🗺️",
     gradient: "linear-gradient(135deg, #648b70ff, #0f2a1dff)",
+    category: "concept",
+  },
+  {
+    path: "/articles",
+    title: "Interactive Articles",
+    subtitle: "Scrollytelling STEM chapters with animated diagrams.",
+    emoji: "AR",
+    gradient: "linear-gradient(135deg, #0f766e, #2563eb, #f59e0b)",
     category: "concept",
   },
   {

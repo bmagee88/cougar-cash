@@ -1,4 +1,5 @@
-import { DEFAULT_SOCCER_CONFIG } from "./config";
+import { DEFAULT_SOCCER_CONFIG, SOCCER_SHOOT_KEY } from "./config";
+import { repositionOffBallPlayers } from "./formations";
 import {
   clamp,
   computeDefensiveTimeLimitMs,
@@ -7,6 +8,7 @@ import {
   lerpPoint,
 } from "./geometry";
 import { choosePhraseForDistance } from "./phrases";
+import { advanceShot, beginShot, handleShotKey } from "./shooting";
 import {
   applyTypingKey,
   createTypingChallenge,
@@ -45,15 +47,6 @@ function setBallCarrier(players: PlayerState[], playerId: string) {
   }));
 }
 
-function resetPlayersToHome(players: PlayerState[], carrierId: string) {
-  return players.map((player) => ({
-    ...player,
-    position: player.home,
-    temporary: undefined,
-    hasBall: player.id === carrierId,
-  }));
-}
-
 function makeStats() {
   return {
     passesCompleted: 0,
@@ -80,6 +73,13 @@ export function createInitialSoccerMatch(
   nowMs = 0,
   kickoffTeam: TeamId = "X"
 ): MatchState {
+  const playerKeys = config.players.map((player) => player.key.toUpperCase());
+  if (playerKeys.includes(SOCCER_SHOOT_KEY)) {
+    throw new Error("S is reserved for shooting and cannot label a player");
+  }
+  if (new Set(playerKeys).size !== playerKeys.length) {
+    throw new Error("Each player must have a unique key");
+  }
   const kickoffPlayerId = config.kickoffPlayerByTeam[kickoffTeam];
   const kickoffPlayer = config.players.find((player) => player.id === kickoffPlayerId);
 
@@ -162,6 +162,7 @@ export function selectOffensiveTarget(
     (candidate) => candidate.key.toUpperCase() === normalizedKey
   );
   if (!target) return state;
+  if (target.kind === "goal") return beginShot(state, target, nowMs, config);
 
   const activePlayer = getActivePlayer(state);
   const playDistance = distance(activePlayer.position, target.point);
@@ -190,10 +191,7 @@ export function selectOffensiveTarget(
     currentPlay: play,
     activeChallenge: createTypingChallenge(offensePhrase, nowMs),
     selectionDeadlineAtMs: undefined,
-    lastEvent:
-      target.kind === "goal"
-        ? `${activePlayer.key} lines up a shot to ${target.key}`
-        : `${activePlayer.key} aims a pass to ${target.key}`,
+    lastEvent: `${activePlayer.key} aims a pass to ${target.key}`,
     nextPlayId: state.nextPlayId + 1,
   };
 }
@@ -239,20 +237,18 @@ function completeOffenseChallenge(
     activeChallenge: undefined,
     stats: {
       ...state.stats,
-      shotsTaken:
-        play.target.kind === "goal" ? state.stats.shotsTaken + 1 : state.stats.shotsTaken,
       offenseChallenges: [...state.stats.offenseChallenges, offenseStats],
     },
   };
 
   if (eligibleInterceptions.length === 0) {
-    return resolvePlaySuccess(nextState, nowMs, config);
+    return resolvePlaySuccess(nextState, nowMs, config, rng);
   }
 
   return {
     ...nextState,
-    phase: "DEFENSE_SELECT",
-    selectionDeadlineAtMs: nowMs + config.selection.defenseSelectionMs,
+    phase: "DEFENSE_READY",
+    selectionDeadlineAtMs: undefined,
     lastEvent: "Defense can choose an interceptor",
   };
 }
@@ -264,11 +260,12 @@ export function handleTypingKey(
   config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG,
   rng: Rng = Math.random
 ): MatchState {
+  if (state.shot) return handleShotKey(state, key, nowMs, rng);
   if (!state.activeChallenge) return state;
 
   if (state.phase === "DEFENSE_TYPING" && state.currentPlay?.defenseDeadlineAtMs !== undefined) {
     if (nowMs > state.currentPlay.defenseDeadlineAtMs) {
-      return resolvePlaySuccess(state, nowMs, config);
+      return resolvePlaySuccess(state, nowMs, config, rng);
     }
   }
 
@@ -298,10 +295,10 @@ export function handleTypingKey(
     };
 
     if ((challenge.completedAtMs ?? nowMs) <= deadline) {
-      return resolveInterception(withStats, nowMs, config);
+      return resolveInterception(withStats, nowMs, config, rng);
     }
 
-    return resolvePlaySuccess(withStats, nowMs, config);
+    return resolvePlaySuccess(withStats, nowMs, config, rng);
   }
 
   return withChallenge;
@@ -316,7 +313,7 @@ export function selectDefender(
 ): MatchState {
   if (state.phase !== "DEFENSE_SELECT" || !state.currentPlay) return state;
   if (state.selectionDeadlineAtMs !== undefined && nowMs >= state.selectionDeadlineAtMs) {
-    return resolvePlaySuccess(state, nowMs, config);
+    return resolvePlaySuccess(state, nowMs, config, rng);
   }
 
   const normalizedKey = normalizeKey(key);
@@ -380,83 +377,32 @@ function syncBallToCarrier(state: MatchState) {
 export function resolvePlaySuccess(
   state: MatchState,
   nowMs: number,
-  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG
+  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG,
+  rng: Rng = Math.random
 ): MatchState {
-  if (!state.currentPlay) return state;
+  if (!state.currentPlay || state.currentPlay.target.kind !== "player") return state;
 
   const play = state.currentPlay;
-  const agedPlayers = ageTemporaryPositions(state.players);
-
-  if (play.target.kind === "player") {
-    const playersWithCarrier = setBallCarrier(agedPlayers, play.target.id);
-    const receiver = playersWithCarrier.find((player) => player.id === play.target.id);
-
-    return {
-      ...state,
-      phase: "OFFENSE_SELECT",
-      players: playersWithCarrier,
-      activePlayerId: play.target.id,
-      possessionTeam: play.offenseTeam,
-      ball: receiver?.position ?? play.target.point,
-      currentPlay: undefined,
-      activeChallenge: undefined,
-      selectionDeadlineAtMs: nowMs + config.selection.offenseSelectionMs,
-      lastEvent: `${play.target.key} receives the pass`,
-      stats: {
-        ...state.stats,
-        passesCompleted: state.stats.passesCompleted + 1,
-      },
-    };
-  }
-
-  const scoringTeam = play.target.scoringTeam ?? play.offenseTeam;
-  const nextScores = {
-    ...state.scores,
-    [scoringTeam]: state.scores[scoringTeam] + 1,
-  };
-  const nextGoalStats = {
-    ...state.stats.goals,
-    [scoringTeam]: state.stats.goals[scoringTeam] + 1,
-  };
-
-  if (nextScores[scoringTeam] >= config.winningScore) {
-    return {
-      ...state,
-      phase: "MATCH_COMPLETE",
-      scores: nextScores,
-      ball: play.target.point,
-      currentPlay: undefined,
-      activeChallenge: undefined,
-      selectionDeadlineAtMs: undefined,
-      winner: scoringTeam,
-      lastEvent: `${config.teams[scoringTeam].name} wins the match`,
-      stats: {
-        ...state.stats,
-        goals: nextGoalStats,
-      },
-    };
-  }
-
-  const concedingTeam = otherTeam(scoringTeam);
-  const kickoffPlayerId = config.kickoffPlayerByTeam[concedingTeam];
-  const resetPlayers = resetPlayersToHome(agedPlayers, kickoffPlayerId);
-  const kickoffPlayer = resetPlayers.find((player) => player.id === kickoffPlayerId);
+  const agedPlayers = ageTemporaryPositions(state.players, play.target.id);
+  const playersWithCarrier = play.selectedInterception
+    ? repositionOffBallPlayers(setBallCarrier(agedPlayers, play.target.id), config, rng)
+    : setBallCarrier(agedPlayers, play.target.id);
+  const receiver = playersWithCarrier.find((player) => player.id === play.target.id);
 
   return {
     ...state,
-    phase: "OFFENSE_SELECT",
-    players: resetPlayers,
-    scores: nextScores,
-    possessionTeam: concedingTeam,
-    activePlayerId: kickoffPlayerId,
-    ball: kickoffPlayer?.position ?? play.target.point,
+    phase: "OFFENSE_READY",
+    players: playersWithCarrier,
+    activePlayerId: play.target.id,
+    possessionTeam: play.offenseTeam,
+    ball: receiver?.position ?? play.target.point,
     currentPlay: undefined,
     activeChallenge: undefined,
-    selectionDeadlineAtMs: nowMs + config.selection.offenseSelectionMs,
-    lastEvent: `Goal for ${config.teams[scoringTeam].name}`,
+    selectionDeadlineAtMs: undefined,
+    lastEvent: `${play.target.key} receives the pass`,
     stats: {
       ...state.stats,
-      goals: nextGoalStats,
+      passesCompleted: state.stats.passesCompleted + 1,
     },
   };
 }
@@ -464,7 +410,8 @@ export function resolvePlaySuccess(
 export function resolveInterception(
   state: MatchState,
   nowMs: number,
-  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG
+  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG,
+  rng: Rng = Math.random
 ): MatchState {
   const play = state.currentPlay;
   const selected = play?.selectedInterception;
@@ -492,14 +439,14 @@ export function resolveInterception(
 
   return {
     ...state,
-    phase: "OFFENSE_SELECT",
-    players,
+    phase: "OFFENSE_READY",
+    players: repositionOffBallPlayers(players, config, rng),
     possessionTeam: selected.defenderTeam,
     activePlayerId: selected.defenderId,
     ball: selected.interceptionPoint,
     currentPlay: undefined,
     activeChallenge: undefined,
-    selectionDeadlineAtMs: nowMs + config.selection.offenseSelectionMs,
+    selectionDeadlineAtMs: undefined,
     lastEvent: `${selected.defenderKey} wins the ball`,
     stats: {
       ...state.stats,
@@ -514,7 +461,8 @@ export function resolveInterception(
 export function handleDefenseTypingTimeout(
   state: MatchState,
   nowMs: number,
-  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG
+  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG,
+  rng: Rng = Math.random
 ) {
   if (state.phase !== "DEFENSE_TYPING" || !state.currentPlay?.defenseDeadlineAtMs) return state;
   if (nowMs < state.currentPlay.defenseDeadlineAtMs) return state;
@@ -531,7 +479,7 @@ export function handleDefenseTypingTimeout(
       }
     : state;
 
-  return resolvePlaySuccess(withStats, nowMs, config);
+  return resolvePlaySuccess(withStats, nowMs, config, rng);
 }
 
 export function handleDefenseSelectionTimeout(
@@ -568,14 +516,14 @@ export function handleOffenseSelectionTimeout(
 
   return {
     ...state,
-    phase: "OFFENSE_SELECT",
+    phase: "OFFENSE_READY",
     players,
     possessionTeam: newCarrier.team,
     activePlayerId: newCarrier.id,
     ball: carrierAfterAging.position,
     currentPlay: undefined,
     activeChallenge: undefined,
-    selectionDeadlineAtMs: nowMs + config.selection.offenseSelectionMs,
+    selectionDeadlineAtMs: undefined,
     lastEvent: `${newCarrier.key} takes over after hesitation`,
     stats: {
       ...state.stats,
@@ -590,8 +538,10 @@ export function handleOffenseSelectionTimeout(
 export function checkHiddenDeadlines(
   state: MatchState,
   nowMs: number,
-  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG
+  config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG,
+  rng: Rng = Math.random
 ) {
+  if (state.shot) return advanceShot(state, nowMs, config, rng);
   if (state.phase === "OFFENSE_SELECT") {
     return handleOffenseSelectionTimeout(state, nowMs, config);
   }
@@ -599,7 +549,17 @@ export function checkHiddenDeadlines(
     return handleDefenseSelectionTimeout(state, nowMs, config);
   }
   if (state.phase === "DEFENSE_TYPING") {
-    return handleDefenseTypingTimeout(state, nowMs, config);
+    return handleDefenseTypingTimeout(state, nowMs, config, rng);
+  }
+  return state;
+}
+
+export function proceedToNextPlay(state: MatchState, nowMs: number, config: SoccerTypingConfig = DEFAULT_SOCCER_CONFIG): MatchState {
+  if (state.phase === "OFFENSE_READY") {
+    return { ...state, phase: "OFFENSE_SELECT", selectionDeadlineAtMs: nowMs + config.selection.offenseSelectionMs };
+  }
+  if (state.phase === "DEFENSE_READY") {
+    return { ...state, phase: "DEFENSE_SELECT", selectionDeadlineAtMs: nowMs + config.selection.defenseSelectionMs };
   }
   return state;
 }
@@ -651,6 +611,7 @@ export function shiftActiveClocks(state: MatchState, pauseMs: number): MatchStat
     ...state,
     activeChallenge: shiftedChallenge,
     currentPlay: shiftedPlay,
+    shot: state.shot ? { ...state.shot, phaseStartedAtMs: state.shot.phaseStartedAtMs + pauseMs } : undefined,
     selectionDeadlineAtMs:
       state.selectionDeadlineAtMs === undefined ? undefined : state.selectionDeadlineAtMs + pauseMs,
   };
