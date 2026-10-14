@@ -132,6 +132,7 @@ const SLOW_TEMPO_HIT_WINDOW_MS = 540;
 const FAST_TEMPO_HIT_WINDOW_MS = 190;
 const HIT_LINE_PERCENT = 74;
 const BALANCED_START_TEMPO = 80;
+const BALANCED_CLIMB_DURATION_MS = 88000;
 const PROGRESSIVE_START_TEMPO = 65;
 const PROGRESSIVE_TEMPO_STEP = 5;
 const LEVEL_DURATION_MS = 15000;
@@ -401,47 +402,13 @@ function getProgressiveHealComboTarget(tempo: number, rhythmMode: RhythmMode, st
   return Math.max(1, Math.floor(notesInWindow / Math.max(1, startingHearts)));
 }
 
-function getBalancedClimbMs(gameMode: GameMode) {
-  let nowMs = 0;
-  let tempo = BALANCED_START_TEMPO;
-  let nextBarStart = 0;
-  let hitCount = 0;
-  const targetTimes: number[] = [];
-  const needsBalancedPlusWarmup = gameMode === "balancedPlus";
-
-  while (tempo < TEMPO_MAX && nowMs < 10 * 60 * 1000) {
-    const beatMs = 60000 / tempo;
-    if (nextBarStart === 0 || nextBarStart < nowMs + beatMs) {
-      nextBarStart = nowMs + FALL_DURATION_MS + beatMs;
-    }
-
-    const horizon = nowMs + FALL_DURATION_MS + beatMs * SCHEDULE_LOOKAHEAD_BEATS;
-    while (nextBarStart < horizon) {
-      const barStart = nextBarStart;
-      RHYTHM_PATTERNS.quarter.offsets.forEach((offset) => {
-        targetTimes.push(barStart + offset * beatMs);
-      });
-      nextBarStart = barStart + beatMs * 4;
-    }
-
-    targetTimes.sort((a, b) => a - b);
-    while (targetTimes.length > 0 && targetTimes[0] <= nowMs && tempo < TEMPO_MAX) {
-      targetTimes.shift();
-      hitCount += 1;
-      if (!needsBalancedPlusWarmup || hitCount >= BALANCED_PLUS_MIN_SAMPLE) {
-        tempo += BALANCED_HIT_TEMPO_REWARD;
-      }
-    }
-
-    nowMs += SCHEDULE_TICK_MS;
-  }
-
-  return Math.ceil(nowMs / 1000) * 1000;
+function getBalancedClimbMs() {
+  return BALANCED_CLIMB_DURATION_MS;
 }
 
-function getBalancedTimeLimitMs(timeMode: BalancedTimeMode, gameMode: GameMode = "balancedPlus") {
+function getBalancedTimeLimitMs(timeMode: BalancedTimeMode, _gameMode: GameMode = "balancedPlus") {
   if (timeMode === "unlimited") return null;
-  const climbMs = getBalancedClimbMs(gameMode);
+  const climbMs = getBalancedClimbMs();
   return timeMode === "double" ? climbMs * 2 : climbMs;
 }
 
@@ -670,7 +637,7 @@ export default function TypingDdrPage() {
   const [keyEditActive, setKeyEditActive] = useState(false);
   const [maxTempo, setMaxTempo] = useState(BALANCED_PLUS_PRESET.tempo);
   const [averageTempo, setAverageTempo] = useState(BALANCED_PLUS_PRESET.tempo);
-  const [balancedTimeMode, setBalancedTimeMode] = useState<BalancedTimeMode>("unlimited");
+  const [balancedTimeMode, setBalancedTimeMode] = useState<BalancedTimeMode>("climb");
   const [balancedElapsedMs, setBalancedElapsedMs] = useState(0);
   const [roundResult, setRoundResult] = useState<RoundResult>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -2110,7 +2077,6 @@ export default function TypingDdrPage() {
             <Typography sx={{ color: "#cbd5e1", fontSize: "0.82rem", fontWeight: 800 }}>(c)ompact</Typography>
             <Switch
               checked={compactMode}
-              disabled={keysLocked}
               onChange={(event) => setCompactMode(event.target.checked)}
               size="small"
               inputProps={{ "aria-label": "Compact mode" }}

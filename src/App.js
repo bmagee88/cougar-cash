@@ -42,6 +42,17 @@ const CrossyRoad = lazy(() => import("./CrossyRoad/CrossyRoad"));
 const CaptiveChess = lazy(() => import("./CaptiveChess/CaptiveChess"));
 const ShadowBoxingGame = lazy(() => import("./shadow-boxing/ShadowBoxingGame"));
 const SoccerTypingGame = lazy(() => import("./SoccerTypingGame/SoccerTypingGame"));
+const FishingTypingGame = lazy(() => import("./FishingTypingGame/FishingGame"));
+const ArticlesDirectory = lazy(() => import("./articles/ArticlesDirectory"));
+const SimpleMachinesArticle = lazy(() =>
+  import("./articles/simple-machines/SimpleMachinesArticle")
+);
+const InputProcessOutputArticle = lazy(() =>
+  import("./articles/input-process-output/InputProcessOutputArticle")
+);
+const CompleteSystemsArticle = lazy(() =>
+  import("./articles/complete-systems/CompleteSystemsArticle")
+);
 
 function RouteFallback() {
   return (
@@ -79,6 +90,7 @@ function App() {
             ></Route>
             <Route path="/typing/ddr" element={<TypingDdrPage />}></Route>
             <Route path="/typing/soccer" element={<SoccerTypingGame />}></Route>
+            <Route path="/typing/fishing" element={<FishingTypingGame />}></Route>
             <Route path="/snake" element={<SnakeGamePage />}></Route>
             <Route path="/c-quiz" element={<ComplianceQuizPage />}></Route>
             <Route path="/c-quiz-2" element={<CQuiz2Page />}></Route>
@@ -112,6 +124,20 @@ function App() {
             <Route
               path="/games/vocab/shadow-boxing"
               element={<ShadowBoxingGame />}
+            />
+            <Route path="/articles" element={<ArticlesDirectory />} />
+            <Route path="/articles/" element={<ArticlesDirectory />} />
+            <Route
+              path="/articles/thinking-in-complete-systems"
+              element={<CompleteSystemsArticle />}
+            />
+            <Route
+              path="/articles/input-process-output"
+              element={<InputProcessOutputArticle />}
+            />
+            <Route
+              path="/articles/simple-machines"
+              element={<SimpleMachinesArticle />}
             />
           </Routes>
         </Suspense>

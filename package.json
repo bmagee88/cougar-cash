@@ -22,6 +22,7 @@
     "dayjs": "^1.11.18",
     "google-auth-library": "^9.15.1",
     "googleapis": "^146.0.0",
+    "motion": "^14.1.0",
     "papaparse": "^5.5.3",
     "pg": "^8.16.3",
     "react": "^19.0.0",
@@ -35,6 +36,8 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "test:fishing": "react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame",
+    "simulate:fishing": "node scripts/simulate-fishing.cjs",
     "postinstall": "node scripts/patch-chess-source-map.js",
     "prestart": "node scripts/patch-chess-source-map.js",
     "start": "tsc & react-scripts start",

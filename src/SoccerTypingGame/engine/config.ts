@@ -5,6 +5,8 @@ export const SOCCER_FIELD = {
   height: 60,
 };
 
+export const SOCCER_SHOOT_KEY = "S";
+
 const FIELD_DIAGONAL = Math.hypot(SOCCER_FIELD.width, SOCCER_FIELD.height);
 
 export const SOCCER_PHRASE_BANK = [
@@ -60,6 +62,7 @@ export const DEFAULT_SOCCER_CONFIG: SoccerTypingConfig = {
       marker: "X",
       color: "#facc15",
       accent: "#78350f",
+      colors: { shorts: "#f8fafc", trim: "#17202a" },
     },
     O: {
       id: "O",
@@ -67,31 +70,35 @@ export const DEFAULT_SOCCER_CONFIG: SoccerTypingConfig = {
       marker: "O",
       color: "#38bdf8",
       accent: "#082f49",
+      colors: { socks: "#f8fafc", trim: "#f8fafc" },
     },
   },
   players: [
-    { id: "x-sweeper", team: "X", name: "Sweeper", key: "Q", home: { x: 13, y: 30 } },
-    { id: "x-wing-left", team: "X", name: "Left Wing", key: "W", home: { x: 30, y: 14 } },
-    { id: "x-wing-right", team: "X", name: "Right Wing", key: "E", home: { x: 30, y: 46 } },
-    { id: "x-mid", team: "X", name: "Mid", key: "R", home: { x: 48, y: 22 } },
-    { id: "x-striker", team: "X", name: "Striker", key: "T", home: { x: 48, y: 38 } },
-    { id: "o-sweeper", team: "O", name: "Sweeper", key: "A", home: { x: 87, y: 30 } },
-    { id: "o-wing-left", team: "O", name: "Left Wing", key: "S", home: { x: 70, y: 14 } },
-    { id: "o-wing-right", team: "O", name: "Right Wing", key: "D", home: { x: 70, y: 46 } },
-    { id: "o-mid", team: "O", name: "Mid", key: "F", home: { x: 55, y: 22 } },
-    { id: "o-striker", team: "O", name: "Striker", key: "G", home: { x: 55, y: 38 } },
+    // Mirrored small-sided formations: a sweeper, a midfielder, two wide players, and a striker.
+    { id: "x-goalkeeper", team: "X", name: "Goalkeeper", key: "Z", role: "goalkeeper", home: { x: 6, y: 30 }, colors: { shirt: "#fb7185", shorts: "#881337", socks: "#fb7185", trim: "#ffe4e6", gloves: "#ffffff", skin: "#b8754c", hair: "#251c18" } },
+    { id: "x-sweeper", team: "X", name: "Sweeper", key: "Q", home: { x: 16, y: 26 }, colors: { skin: "#b8754c", hair: "#251c18" } },
+    { id: "x-wing-left", team: "X", name: "Left Wing", key: "W", home: { x: 52, y: 12 }, colors: { skin: "#edbc94", hair: "#60452b" } },
+    { id: "x-wing-right", team: "X", name: "Right Wing", key: "E", home: { x: 58, y: 48 }, colors: { skin: "#754932", hair: "#201b19" } },
+    { id: "x-mid", team: "X", name: "Mid", key: "R", home: { x: 38, y: 32 }, colors: { skin: "#d99c72", hair: "#35251c" } },
+    { id: "x-striker", team: "X", name: "Striker", key: "T", home: { x: 78, y: 22 }, colors: { skin: "#9c6242", hair: "#231c19" } },
+    { id: "o-goalkeeper", team: "O", name: "Goalkeeper", key: "H", role: "goalkeeper", home: { x: 94, y: 30 }, colors: { shirt: "#bef264", shorts: "#365314", socks: "#d9f99d", trim: "#f7fee7", gloves: "#ffffff", skin: "#edbc94", hair: "#6b492c" } },
+    { id: "o-sweeper", team: "O", name: "Sweeper", key: "A", home: { x: 84, y: 34 }, colors: { skin: "#edbc94", hair: "#6b492c" } },
+    { id: "o-wing-left", team: "O", name: "Left Wing", key: "B", home: { x: 48, y: 48 }, colors: { skin: "#9c6242", hair: "#231c19" } },
+    { id: "o-wing-right", team: "O", name: "Right Wing", key: "D", home: { x: 42, y: 12 }, colors: { skin: "#d99c72", hair: "#35251c" } },
+    { id: "o-mid", team: "O", name: "Mid", key: "F", home: { x: 62, y: 28 }, colors: { skin: "#754932", hair: "#201b19" } },
+    { id: "o-striker", team: "O", name: "Striker", key: "G", home: { x: 22, y: 38 }, colors: { skin: "#b8754c", hair: "#251c18" } },
   ],
   goals: [
     {
       id: "left-goal",
-      key: "L",
+      key: SOCCER_SHOOT_KEY,
       label: "Left Goal",
       point: { x: 2, y: 30 },
       scoringTeam: "O",
     },
     {
       id: "right-goal",
-      key: "P",
+      key: SOCCER_SHOOT_KEY,
       label: "Right Goal",
       point: { x: 98, y: 30 },
       scoringTeam: "X",
@@ -100,6 +107,10 @@ export const DEFAULT_SOCCER_CONFIG: SoccerTypingConfig = {
   kickoffPlayerByTeam: {
     X: "x-striker",
     O: "o-striker",
+  },
+  goalKickoffPlayerByTeam: {
+    X: "x-sweeper",
+    O: "o-sweeper",
   },
   winningScore: 3,
   phraseScaling: {
@@ -116,5 +127,6 @@ export const DEFAULT_SOCCER_CONFIG: SoccerTypingConfig = {
     offenseSelectionMs: 15000,
     defenseSelectionMs: 15000,
   },
+  movement: { radius: 9 },
   phraseBank: SOCCER_PHRASE_BANK,
 };
