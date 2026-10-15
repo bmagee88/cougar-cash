@@ -1,0 +1,47 @@
+# Lake butterflies and moths: size and life-stage references
+
+Reviewed October 15, 2026. Adult sizes below are wingspans, not body lengths. Published ranges vary by region, sex and brood; the game uses the explicitly cited reference range for each species. The illustrations are newly generated artwork, not copies of source photographs.
+
+| Species | Scientific name | Wingspan | Activity in the game | Size reference | Life-stage reference |
+|---|---|---|---|---|---|
+| Monarch | *Danaus plexippus* | 86–124 mm | Day | [Reference](https://www.butterfliesandmoths.org/species/danaus-plexippus) | [Reference](https://www.canada.ca/en/environment-climate-change/services/species-risk-public-registry/cosewic-assessments-status-reports/monarch-2016.html) |
+| Eastern tiger swallowtail | *Papilio glaucus* | 62–114 mm | Day | [Reference](https://www.butterfliesandmoths.org/species/Papilio-glaucus?page=1) | [Reference](https://www.floridamuseum.ufl.edu/wildflowers/butterfly/tiger-swallowtail-eastern/) |
+| Pearl crescent | *Phyciodes tharos* | 32–38 mm | Day | [Reference](https://texasinsects.tamu.edu/pearl-crescent/) | [Reference](https://texasinsects.tamu.edu/pearl-crescent/) |
+| Cabbage white | *Pieris rapae* | 32–48 mm | Day | [Reference](https://alabama.butterflyatlas.usf.edu/species/details/118/cabbage-white) | [Reference](https://alabama.butterflyatlas.usf.edu/species/details/118/cabbage-white) |
+| Clouded sulphur | *Colias philodice* | 38–70 mm | Day | [Reference](https://www.butterfliesandmoths.org/species/colias-philodice) | [Reference](https://animaldiversity.org/accounts/Colias_philodice/) |
+| Spicebush swallowtail | *Papilio troilus* | 90–115 mm | Day | [Reference](https://www.floridamuseum.ufl.edu/wildflowers/butterfly/spicebush-swallowtail/) | [Reference](https://www.floridamuseum.ufl.edu/wildflowers/butterfly/spicebush-swallowtail/) |
+| American copper | *Lycaena phlaeas* | 22–35 mm | Day | [Reference](https://www.butterfliesandmoths.org/node/5251) | [Reference](https://animaldiversity.org/accounts/Lycaena_phlaeas/) |
+| Silver-spotted skipper | *Epargyreus clarus* | 45–67 mm | Day | [Reference](https://www.butterfliesandmoths.org/species/Epargyreus-clarus?page=1) | [Reference](https://ask.ifas.ufl.edu/publication/IN774) |
+| Luna moth | *Actias luna* | 75–105 mm | Night | [Reference](https://ask.ifas.ufl.edu/publication/IN737) | [Reference](https://hgic.clemson.edu/factsheet/luna-moth/) |
+| Hummingbird clearwing | *Hemaris thysbe* | 40–55 mm | Day | [Reference](https://www.butterfliesandmoths.org/species/Hemaris-thysbe) | [Reference](https://hort.extension.wisc.edu/articles/hummingbird-moth-hemaris-thysbe/) |
+| Giant swallowtail | *Papilio cresphontes* | 85–140 mm | Day | [Reference](https://www.floridamuseum.ufl.edu/wildflowers/butterfly/giant-swallowtail/) | [Reference](https://www.floridamuseum.ufl.edu/wildflowers/butterfly/giant-swallowtail/) |
+| Blinded sphinx | *Paonias excaecata* | 55–95 mm | Night | [Reference](https://www.butterfliesandmoths.org/species/Paonias-excaecata) | [Reference](https://www.fs.usda.gov/foresthealth/technology/pdfs/FHTET_03_11.pdf) |
+| Hickory tussock moth | *Lophocampa caryae* | 37–55 mm | Night | [Reference](https://www.butterfliesandmoths.org/species/Lophocampa-caryae) | [Reference](https://extension.psu.edu/hickory-tussock-moth-caterpillar) |
+| Saddleback caterpillar moth | *Acharia stimulea* | 26–43 mm | Night | [Reference](https://ask.ifas.ufl.edu/publication/IN923) | [Reference](https://content.ces.ncsu.edu/saddleback-caterpillar) |
+
+## Rendering and discovery
+
+Each arrival samples an individual wingspan within its species range. Every species uses the same 0.45 scene pixels per millimeter at the reference depth; perspective scales it continuously as it moves nearer or farther. The sprite's transparent margins are compensated separately. The smallest American copper therefore remains much smaller than a giant swallowtail at the same distance. Mouse and touch catches require painted pixels of the currently displayed wing frame; transparent margins never enlarge the target. Field-guide images are enlarged independently for identification.
+
+Flight begins outside the left or right edge, changes heading and depth every 120–360 ms, and normally departs through a side. The simulation bounds run from -50% to 150% of both scene dimensions, so an individual can leave the visible scene and return without being replaced. Each individual samples its own close-approach radius, fast-motion alarm radius, and pointer speed tolerance. Mouse movement is checked along its swept path; stationary cursors also startle a butterfly that gets too close. Touch contacts do not trigger approach alarms.
+
+Visitors can approach visible foreground foliage and perch for 6–13 seconds. While their feet stay in place, they cycle the eight wing poses with independently chosen fast flutters, slower opening/closing, and random holds in open or folded positions. Startling a perched visitor immediately returns it to escape flight. A visitor that has already passed behind the foreground cannot perch in front of it.
+
+A successful click records the exact painted wing-frame index, rotation and reflection in the notebook image metadata. Eight lossless `pose-0.webp` through `pose-7.webp` files per species reproduce those frozen poses after recording and reload. Pose metadata is validated during save loading; older entries without it retain their adult illustration. Pixel picking uses the live, rotated canvas for both perched and flying visitors, and excludes foreground occlusion and transparent padding.
+
+Increasing depth makes the visitor smaller. Crossing the foreground depth moves it below the scene's foreground layers and permanently prevents that individual from returning in front. Distant visitors fade out and despawn at the maximum depth. Picking rejects foreground-occluded pixels and checks overlapping visitors in paint order. Hidden/offscreen scenes suspend the animation loop; reduced-motion mode omits visitors.
+
+The day/night schedule follows the game's lake clock: butterflies, skippers and the day-flying hummingbird clearwing appear 07:00–18:00. Night moths appear 18:00–06:00, with no visits during the 06:00–07:00 transition. Luna moths are strictly excluded from daylight. Night activity for luna moths is supported by Clemson's life-history account; hummingbird clearwings' daylight activity is described by BAMONA and Wisconsin Extension; Penn State documents hickory tussock moths at lights at night. These clock boundaries, encounter weights and fair-weather/season rules are gameplay choices, not measured population probabilities.
+
+A tap or click immediately persists the species ID in `butterflyDiscoveries`, independent of notebook recording, fish statistics, rewards, and releases. It also opens an optional species-illustrated notebook draft. The Butterflies guide tab includes moths and skippers. Each species has one card with three images: caterpillar, chrysalis/cocoon/pupa, and adult. Before discovery all three silhouettes remain black; discovery reveals the three images, name, wingspan, activity and reference link.
+
+## Life stages and terminology
+
+The requested three illustrated stages omit the egg stage; they are not labeled as the complete four-stage life cycle. Butterflies have chrysalises. Luna, clearwing, tussock and saddleback moths are shown with cocoons containing pupae. The blinded sphinx has a bare pupa in an earthen chamber, rather than an invented hanging chrysalis. Adult clearwing wings retain translucent membranes; the silver-spotted skipper's silver patch is shown on its underside resting view.
+
+Original source sheets and all runtime files are in `public/assets/fishing/butterflies/<species-id>/`. Each folder has `flight.gif`, `flight-sheet.webp`, `adult.webp`, `rest.webp`, `caterpillar.webp`, `pupa.webp`, `source-sheet.png` and `asset.json`. The GIFs use eight separately generated wing poses, a reserved transparent palette entry, infinite looping and disposal mode 2. A lossless strip extracted from each GIF lets the game paint and pick the same frame on a canvas, including rotation. `scripts/assemble-lake-insects.py` performs cropping, fitting and encoding without redrawing artwork; `scripts/extract-butterfly-flight.py` can rebuild just the runtime strips from existing GIFs. Pillow and NumPy are required for full assembly; the bundled workspace Python provides both.
+
+Each species also has a twelve-frame `caterpillar-crawl.gif`, its generated `caterpillar-crawl-sheet.png`, and `caterpillar-animation.json`. `scripts/assemble-caterpillar-crawls.py` crops and aligns the twelve distinct generated contraction/extension poses on one foot baseline, then encodes an endlessly looping transparent GIF. Revealed guide cards use the animated caterpillar; unknown silhouettes and system reduced-motion sources use the original still illustration. The new sheets were generated with built-in ImageGen using the original caterpillars as references. Exact prompts are in [caterpillar-animation-prompts.md](caterpillar-animation-prompts.md); [provenance](caterpillar-animation-provenance.json) lists each preserved source sheet.
+
+Built-in imagegen was used for all 14 source sheets. Exact prompts are saved in [butterfly-artwork-prompts.md](butterfly-artwork-prompts.md), and provenance in [butterfly-artwork-provenance.json](butterfly-artwork-provenance.json).
+

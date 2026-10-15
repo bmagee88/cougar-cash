@@ -16,21 +16,21 @@ test('clear, cloudy and rainy weather have distinct cloud cover and precipitatio
   expect(weatherVisuals('rain')).toMatchObject({ clear: 0, greyDeck: 0, darkDeck: 1, rain: 1 });
 });
 
-test('clouds and rain use early-night lighting, storms use late-night lighting, and the clock remains daytime', () => {
+test('overcast and storms retain diffuse daytime light and only the actual clock turns to night', () => {
   const world = worldAt(WORLD.epoch, { hour: 14 });
-  ['overcast', 'rain'].forEach(weather => {
-    const light = weatherLighting(world.hour, world.moonPhase, weather as Weather);
-    expect(light).toEqual(lightingAt(22, world.moonPhase));
-    expect(light.nightAmount).toBe(1); expect(light.brightness).toBeLessThan(.55);
-  });
-  expect(weatherLighting(world.hour, world.moonPhase, 'thunderstorm')).toEqual(lightingAt(world.hour, world.moonPhase));
-  expect(weatherLighting(world.hour, world.moonPhase, 'thunderstorm', weatherVisuals('thunderstorm', 85000))).toEqual(lightingAt(2, world.moonPhase));
-  const arriving = weatherLighting(world.hour, world.moonPhase, 'thunderstorm', weatherVisuals('thunderstorm', 60000));
-  expect(arriving.nightAmount).toBe(.5);
-  expect(arriving.brightness).toBeGreaterThan(lightingAt(2, world.moonPhase).brightness);
-  expect(arriving.brightness).toBeLessThan(lightingAt(world.hour, world.moonPhase).brightness);
-  ['sunny', 'wind', 'fog'].forEach(weather => expect(weatherLighting(world.hour, world.moonPhase, weather as Weather)).toEqual(lightingAt(world.hour, world.moonPhase)));
-  expect(world).toMatchObject({ hour: 14, period: 'afternoon' });
+  for(const weather of WEATHERS){
+    const look=weatherVisuals(weather,90000),light=weatherLighting(14,world.moonPhase,weather,look);
+    expect(light.nightAmount).toBe(0);expect(light.brightness).toBeGreaterThan(.8);
+    expect(look.saturation).toBe(1);expect(light.saturation).toBeGreaterThanOrEqual(lightingAt(14,world.moonPhase).saturation);
+    const night=weatherLighting(2,world.moonPhase,weather,look);
+    expect(night.nightAmount).toBe(1);expect(night.brightness).toBeLessThan(.15);
+  }
+  const cloudy=weatherVisuals('overcast'),rain=weatherVisuals('rain'),storm=weatherVisuals('thunderstorm',90000);
+  expect(cloudy.brightness).toBeGreaterThan(rain.brightness);expect(rain.brightness).toBeGreaterThan(storm.brightness);
+  expect(cloudy.brightness).toBeGreaterThan(.8);expect(storm.brightness).toBeGreaterThan(.5);
+  expect(cloudy.contrast).toBeLessThan(1);expect(cloudy.veil).toBeGreaterThan(0);
+  expect(weatherLighting(14,world.moonPhase,'thunderstorm')).toEqual(lightingAt(14,world.moonPhase));
+  expect(world.period).toBe('afternoon');
 });
 
 test('thunderheads build in sunshine before the deck arrives and rain starts smoothly', () => {

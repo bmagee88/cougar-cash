@@ -1,0 +1,100 @@
+[
+  {
+    "id": "monarch",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-79a15179-c521-4bc4-bf20-d228f0ed11b7.png",
+    "sourceSheet": "public/assets/fishing/butterflies/monarch/source-sheet.png"
+  },
+  {
+    "id": "eastern-tiger-swallowtail",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-de15cdc4-9aef-4711-a70c-f3d33528fba8.png",
+    "sourceSheet": "public/assets/fishing/butterflies/eastern-tiger-swallowtail/source-sheet.png"
+  },
+  {
+    "id": "pearl-crescent",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-29d41335-305f-44a1-9a74-0f8e066eaaa9.png",
+    "sourceSheet": "public/assets/fishing/butterflies/pearl-crescent/source-sheet.png"
+  },
+  {
+    "id": "cabbage-white",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-5c4faf71-a023-4b28-ae93-512e2e8b5105.png",
+    "sourceSheet": "public/assets/fishing/butterflies/cabbage-white/source-sheet.png"
+  },
+  {
+    "id": "clouded-sulphur",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-f497d0aa-cdd8-40ea-931e-7c1e80986cb5.png",
+    "sourceSheet": "public/assets/fishing/butterflies/clouded-sulphur/source-sheet.png"
+  },
+  {
+    "id": "spicebush-swallowtail",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-1b287df4-a663-4682-9a20-2de9b49e50aa.png",
+    "sourceSheet": "public/assets/fishing/butterflies/spicebush-swallowtail/source-sheet.png"
+  },
+  {
+    "id": "american-copper",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-85ff544a-15d7-46be-b246-cf3a95f4bbdd.png",
+    "sourceSheet": "public/assets/fishing/butterflies/american-copper/source-sheet.png"
+  },
+  {
+    "id": "silver-spotted-skipper",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-9560f02f-3ae1-4b48-a8e3-e114ded66ff0.png",
+    "sourceSheet": "public/assets/fishing/butterflies/silver-spotted-skipper/source-sheet.png"
+  },
+  {
+    "id": "luna-moth",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-f5268824-12bc-45ae-a3a2-5a2018acd22f.png",
+    "sourceSheet": "public/assets/fishing/butterflies/luna-moth/source-sheet.png"
+  },
+  {
+    "id": "hummingbird-clearwing",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-f09c88d9-a402-496f-be3f-73f4da7b2304.png",
+    "sourceSheet": "public/assets/fishing/butterflies/hummingbird-clearwing/source-sheet.png"
+  },
+  {
+    "id": "giant-swallowtail",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-c5b052c0-776a-4daf-843e-993aed71db5a.png",
+    "sourceSheet": "public/assets/fishing/butterflies/giant-swallowtail/source-sheet.png"
+  },
+  {
+    "id": "blinded-sphinx",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-e222bcfa-5226-4253-9e7c-66d8c048dcd0.png",
+    "sourceSheet": "public/assets/fishing/butterflies/blinded-sphinx/source-sheet.png"
+  },
+  {
+    "id": "hickory-tussock-moth",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-cac0af8f-7145-4a8e-bc79-ccf54f3dcd81.png",
+    "sourceSheet": "public/assets/fishing/butterflies/hickory-tussock-moth/source-sheet.png"
+  },
+  {
+    "id": "saddleback-caterpillar-moth",
+    "tool": "built-in imagegen",
+    "date": "2026-10-15",
+    "generatedFile": "exec-c0d8248f-dccb-4dbd-bab3-ec89c83412c9.png",
+    "sourceSheet": "public/assets/fishing/butterflies/saddleback-caterpillar-moth/source-sheet.png"
+  }
+]

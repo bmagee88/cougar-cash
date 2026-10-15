@@ -17,6 +17,7 @@ import WaterGrassCover, { WaterCover } from './WaterGrassCover';
 import { pointOnReelPath, reelPath } from './reelPath';
 import { useLayerPresence } from './useLayerPresence';
 import { useLanternLighting } from './useLanternLighting';
+import ButterflyVisitors, { ObserveButterfly } from './ButterflyVisitors';
 
 export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }: { layer: SceneAsset; lanternLit?: boolean }) {
   const p = layer.position;
@@ -27,6 +28,21 @@ export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }
     ...(layer.aspectRatio ? { height: 'auto', aspectRatio: layer.aspectRatio } : {}),
     ...(layer.minWidth ? { minWidth: layer.minWidth } : {}),
     ...(layer.fadeTop ? { maskImage: `linear-gradient(to bottom, transparent, black ${layer.fadeTop}%, black)`, WebkitMaskImage: `linear-gradient(to bottom, transparent, black ${layer.fadeTop}%, black)` } : {}) } as CSSProperties;
+  if(['near-shore','dock','cove-bank','willow','waterfall'].includes(layer.id))Object.assign(style,{
+    left:`calc(var(--ground-left) + var(--ground-width) * ${p.x/100})`,
+    top:`calc(100% - var(--ground-height) + var(--ground-height) * ${p.y/100})`,
+    width:`calc(var(--ground-width) * ${p.width/100})`,
+    ...(layer.aspectRatio?{height:'auto'}:{height:`calc(var(--ground-height) * ${p.height/100})`}),
+  });
+  if(['sky','cove-landscape'].includes(layer.id))Object.assign(style,{
+    left:'calc(50% - max(51cqw, 90.65cqh))',top:'calc(50% - max(28.7cqw, 51cqh))',width:'max(102cqw, 181.3cqh)',height:'max(57.4cqw, 102cqh)',
+  });
+  if(['foreground-reeds','foreground-reeds-right'].includes(layer.id))Object.assign(style,{top:'auto',bottom:'-3%',height:'auto',aspectRatio:3,width:'var(--reeds-width,112%)',
+    ...(layer.id==='foreground-reeds'?{left:'var(--reeds-left,-6%)',clipPath:'var(--reeds-left-clip,none)'}:{left:'auto',right:'var(--reeds-right,-6%)',display:'var(--reeds-right-display,none)',clipPath:'var(--reeds-right-clip,none)'}),
+  });
+  if(layer.id==='right-grassy-bank')Object.assign(style,{left:'auto',right:'-9%',top:'auto',bottom:'-6%',width:'var(--right-bank-width,max(30%,160px))',height:'auto',aspectRatio:1.5});
+  if(layer.id==='willow-branches-left')Object.assign(style,{width:`var(--cove-willow-left-width,${p.width}%)`,minWidth:`var(--cove-willow-left-min,${layer.minWidth}px)`});
+  if(layer.id==='willow-branches-right')Object.assign(style,{left:`var(--cove-willow-right-left,${p.x}%)`,right:'var(--cove-willow-right-right,auto)',width:`var(--cove-willow-right-width,${p.width}%)`,minWidth:`var(--cove-willow-right-min,${layer.minWidth}px)`});
   if (layer.format === 'procedural') return layer.id === 'reflections' ? <div data-layer={layer.id} data-scene-depth={depth} style={style} className="f-scene-layer f-reflections" /> : null;
   if (layer.format === 'spritesheet' && layer.sprite) return <div data-scene-depth={depth} style={{ ...style, backgroundImage: `url(${layer.src})`, backgroundSize: `${layer.sprite.frames * 100}% 100%`, animation: `f-sprite ${layer.sprite.frames / layer.sprite.fps}s steps(${layer.sprite.frames}) infinite` }} className="f-scene-layer" />;
   const artwork = <img data-layer={layer.id} data-scene-depth={depth} src={layer.src} alt="" draggable={false} style={style} className={`f-scene-layer ${layer.animation ? `f-${layer.animation}` : ''} ${layer.weatherResponse ? 'f-weather-responsive' : ''}`} />;
@@ -45,16 +61,18 @@ export function characterState(game: GameState, preview?: CharacterState): Chara
 export const CharacterAnimator = memo(function CharacterAnimator({ state, tipRef, handRef, dockLayer, shoreLayer, caughtFish, landingOriginRef, reducedMotion = false, season = 'spring', lanternLit = false }: { state: CharacterState; tipRef?: React.RefObject<HTMLElement>; handRef?: React.RefObject<HTMLElement>; dockLayer?: SceneAsset; shoreLayer?: SceneAsset; caughtFish?: Encounter; landingOriginRef?: React.RefObject<HTMLDivElement>; reducedMotion?: boolean; season?: Season; lanternLit?: boolean }) {
   const rig = ANGLER_RIG;
   const dock = dockLayer?.position;
+  // The sloped grassy bank meets the hips lower in its source art than the dock planks.
+  const support = dockLayer?.id==='cove-bank' ? {x:.70,y:.78,characterWidth:.30} : rig.dockSeat;
   const characterStyle = {
     '--character-parallax': shoreLayer ? 0 : dockLayer?.parallax ?? DOCK_PARALLAX,
     ...(dock ? {
-      left: `calc(${dock.x}% + var(--dock-width, ${dock.width}%) * var(--dock-seat-x, ${rig.dockSeat.x}))`,
-      top: `calc(${dock.y}% + ${dock.height}% * var(--dock-seat-y, ${rig.dockSeat.y}))`,
-      width: `calc(var(--dock-width, ${dock.width}%) * ${rig.dockSeat.characterWidth})`,
+      left: `calc(var(--ground-left) + var(--ground-width) * ${dock.x/100+dock.width/100*support.x})`,
+      top: `calc(100% - var(--ground-height) + var(--ground-height) * ${dock.y/100} + var(--ground-width) * ${dock.width/100/1.5*support.y})`,
+      width: `calc(var(--ground-width) * ${dock.width/100*support.characterWidth})`,
       '--seat-x': `${rig.seat.x * 100}%`, '--seat-y': `${rig.seat.y * 100}%`,
     } : {}),
     ...(shoreLayer?.seat ? {
-      left: `${shoreLayer.seat.x * 100}%`, top: `${shoreLayer.seat.y * 100}%`, width: `${shoreLayer.seat.characterWidth * 100}%`,
+      left: `${shoreLayer.seat.x * 100}%`, top: `${shoreLayer.seat.y * 100}%`, width: `calc(${shoreLayer.seat.characterWidth * 100}% * var(--cove-character-scale,1))`,
       '--seat-x': `${rig.seat.x * 100}%`, '--seat-y': `${rig.seat.y * 100}%`,
     } : {}),
   } as CSSProperties;
@@ -180,8 +198,8 @@ export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = we
     <div className={`f-heat-haze ${heatMoving ? '' : 'f-effect-dormant'}`} data-layer="heat-haze" aria-hidden="true" style={{ opacity: visuals.heat }} />
   </>;
 });
-export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, checkPreview }: {
-  game: GameState; location: string; weather: Weather; reducedMotion: boolean; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; checkPreview?: FishCheck;
+export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly }: {
+  game: GameState; location: string; weather: Weather; reducedMotion: boolean; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly;
 }) {
   const tipRef = useRef<HTMLElement>(null); const handRef = useRef<HTMLElement>(null); const sceneRef = useRef<HTMLDivElement>(null);
   const landingOriginRef = useRef<HTMLDivElement>(null);
@@ -199,7 +217,7 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
   useLanternLighting(sceneRef, lanternLit, seasonalManifest);
   const moonlight = moonlightAt(world.hour, world.moonPhase, weatherLook.celestial);
   const moon = celestialPosition(world.hour, true);
-  const dockLayer = manifest.find(layer => layer.id === 'dock' && (!layer.spots || layer.spots.includes(location)));
+  const dockLayer = seasonalManifest.find(layer => (layer.id === 'dock' || layer.id==='cove-bank') && (!layer.spots || layer.spots.includes(location)));
   const shoreLayer = seasonalManifest.find(layer => layer.id === 'cove-seat');
   const groundArt = useMemo(() => shoreLayer ? { ...shoreLayer, parallax: 0 } : undefined, [shoreLayer]);
   const hasAngler = seasonalManifest.some(layer => layer.id === 'angler');
@@ -213,7 +231,7 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
     lastPhase.current = phase;
     return () => clearTimeout(timer);
   }, [phase, mappedAnimation]);
-  return <div ref={sceneRef} className={`f-scene f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} role="img" aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
+  return <div ref={sceneRef} className={`f-scene f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--weather-contrast': weatherLook.contrast, '--weather-veil': weatherLook.veil, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} role={onObserveButterfly?'group':'img'} aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
     <div className="f-scene-base" aria-hidden="true" /><CelestialSky world={world} background={sky?.src || ''} /><div className="f-sky-grain" />
     {seasonalManifest.filter(l => !l.spots || l.spots.includes(location)).map(layer => {
       if (layer.id === 'weather') return <WeatherSystem key={layer.id} weather={weather} visuals={weatherLook} location={location} reducedMotion={reducedMotion} />;
@@ -228,11 +246,13 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
       </div>;
       if (layer.id === 'water-interactions') return <FishingLine key={layer.id} checkPreview={checkPreview} game={game} tipRef={tipRef} handRef={handRef} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} {...battle} />;
       if (layer.id === 'lake-background') return <LakeBackdrop key={layer.id} layer={layer} season={world.season} />;
+      if (layer.id === 'foreground-reeds') return <React.Fragment key={layer.id}><SceneLayer layer={layer} lanternLit={lanternLit}/><SceneLayer layer={{...layer,id:'foreground-reeds-right'}} lanternLit={lanternLit}/></React.Fragment>;
       return <SceneLayer key={layer.id} layer={layer} lanternLit={lanternLit} />;
     })}
-    <div className="f-time-tint" />
+    <ButterflyVisitors sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={butterflyPreview} onObserve={onObserveButterfly}/>
+    <div className="f-time-tint" /><div className="f-overcast-light" aria-hidden="true"/>
     <div className="f-moonlight" data-testid="fishing-moonlight" data-moonlight-intensity={moonlight.toFixed(4)} aria-hidden="true" style={{ opacity: moonlight * .20, '--moonlight-x': `${moon.x}%`, '--moonlight-y': `${moon.y}%` } as CSSProperties} />
-    <svg className="f-birds" viewBox="0 0 100 25"><path d="m10 14q5-7 10 0 5-7 10 0m28-6q4-5 8 0 4-5 8 0" fill="none" stroke="#355e54" strokeWidth="1.5" /></svg>
+    <svg className="f-birds" viewBox="0 0 100 25"><path d="m10 14q5-7 10 0 5-7 10 0m28-6q4-5 8 0 4-5 8 0" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg>
   </div>;
 }
 

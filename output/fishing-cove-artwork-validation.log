@@ -1,0 +1,19 @@
+spring/sky-painted: 1672x941, alpha (255, 255), 153,960 bytes
+spring/clouds-painted: 1672x941, alpha (0, 255), 329,196 bytes
+spring/landscape-water-painted: 1672x941, alpha (0, 255), 535,200 bytes
+spring/shore-seat-painted: 1672x941, alpha (0, 255), 445,266 bytes
+spring/willow-left-painted: 1672x941, alpha (0, 255), 691,098 bytes
+spring/willow-right-painted: 1672x941, alpha (0, 255), 750,122 bytes
+summer/sky-painted: 1672x941, alpha (255, 255), 158,320 bytes
+summer/clouds-painted: 1672x941, alpha (0, 255), 329,196 bytes
+summer/landscape-water-painted: 1672x941, alpha (0, 255), 480,742 bytes
+summer/shore-seat-painted: 1672x941, alpha (0, 255), 450,924 bytes
+summer/willow-left-painted: 1672x941, alpha (0, 255), 656,134 bytes
+summer/willow-right-painted: 1672x941, alpha (0, 255), 696,822 bytes
+winter/sky-painted: 1672x941, alpha (255, 255), 149,706 bytes
+winter/clouds-painted: 1672x941, alpha (0, 255), 329,196 bytes
+winter/landscape-water-painted: 1672x941, alpha (0, 255), 446,022 bytes
+winter/shore-seat-painted: 1672x941, alpha (0, 255), 477,378 bytes
+winter/willow-left-painted: 1672x941, alpha (0, 255), 648,986 bytes
+winter/willow-right-painted: 1672x941, alpha (0, 255), 652,972 bytes
+Verified and optimized all 18 seasonal files; PNG masters preserved.

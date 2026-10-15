@@ -1,0 +1,11 @@
+{
+  "id": "giant-swallowtail",
+  "frames": 8,
+  "canvas": [
+    192,
+    224
+  ],
+  "openWingspanPixels": 160,
+  "gifBytes": 45940,
+  "transparent": true
+}

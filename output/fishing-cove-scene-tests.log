@@ -1,0 +1,8 @@
+PASS src/FishingTypingGame/__tests__/scene.test.tsx (11.581 s)
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        20.318 s
+Ran all test suites matching /scene.test|mobile-and-butterflies/i.

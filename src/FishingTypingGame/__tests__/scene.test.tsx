@@ -75,7 +75,7 @@ test('autumn cove seats the existing angler in the shoreline frame and keeps can
   expect(branches).toHaveLength(2);
   expect(branches[0].getAttribute('src')).not.toBe(branches[1].getAttribute('src'));
   expect(sceneForLocation('autumn', 'dock').some(layer => layer.id === 'cove-seat')).toBe(false);
-  expect(sceneForLocation('winter', 'cove').some(layer => layer.id === 'cove-seat')).toBe(false);
+  expect(sceneForLocation('winter', 'cove').some(layer => layer.id === 'cove-seat')).toBe(true);
   rerender(<FishingScene game={{ phase: 'idle' }} location="cove" weather="sunny" world={world} reducedMotion manifest={COVE_AUTUMN_SCENE.filter(layer => !['angler', 'water-interactions'].includes(layer.id))} />);
   expect(container.querySelector('.f-cove-ground-plane')).toBeInTheDocument();
   expect(container.querySelector('.f-character')).not.toBeInTheDocument();
@@ -93,5 +93,21 @@ test('season changes swap the outfit while preserving the seated rig and separat
     expect(view.container.querySelector('.f-character')).toHaveAttribute('style', seatedStyle);
     expect(view.container.querySelector('.f-rod')).toHaveAttribute('style', rodStyle);
     expect(view.container.querySelector('[data-asset="rod"]')).toHaveAttribute('src', FISHING_ART.rod);
+  }
+});
+
+test('every cove season swaps all painted layers while keeping the shoreline seat and equipment aligned',()=>{
+  const props={game:{phase:'idle' as const},location:'cove',weather:'sunny' as const,reducedMotion:true};
+  const view=render(<FishingScene {...props} world={worldAt(WORLD.epoch,{season:'autumn',hour:14})}/>);
+  const seatStyle=view.container.querySelector('.f-cove-ground-plane .f-character')!.getAttribute('style');
+  const rodStyle=view.container.querySelector('.f-rod')!.getAttribute('style');
+  for(const season of ['spring','summer','winter','autumn'] as const){
+    view.rerender(<FishingScene {...props} world={worldAt(WORLD.epoch,{season,hour:14})}/>);
+    for(const id of ['sky','cove-landscape','cove-seat','willow-branches-left','willow-branches-right'])expect(view.container.querySelector(`[data-layer="${id}"]`)).toHaveAttribute('src',expect.stringContaining(`/willow-cove/${season}/`));
+    expect(view.container.querySelector('.f-cove-ground-plane .f-character')).toHaveAttribute('style',seatStyle);
+    expect(view.container.querySelector('.f-rod')).toHaveAttribute('style',rodStyle);
+    expect(view.container.querySelector('[data-asset="fisherman"]')).toHaveAttribute('src',ANGLER_OUTFITS[season]);
+    expect(view.container.querySelectorAll('.f-willow')).toHaveLength(2);
+    expect(view.container.querySelector('[data-layer="lake-background"]')).not.toBeInTheDocument();
   }
 });

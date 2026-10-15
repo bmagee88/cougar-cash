@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import FishingGame from '../FishingGame';
 import * as encounters from '../engine/encounters';
 import { awardCatch, emptySave as defaultSave, SAVE_KEY } from '../engine/storage';
@@ -9,6 +9,7 @@ import { STORM_TIMING } from '../engine/weather';
 import { WORLD, worldAt } from '../engine/world';
 import { biteWaitRange } from '../engine/feeding';
 import { startNaturalWeather, WEATHER_DURATIONS } from '../engine/naturalWeather';
+import * as worldClock from '../useWorldClock';
 
 declare const test: (name: string, fn: () => void, timeout?: number) => void;
 declare const expect: any;
@@ -84,6 +85,56 @@ test('reeling in an empty interactive cast permits mode switching and does not c
   expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).stats.escaped).toBe(0);
   fireEvent.click(screen.getByRole('button',{name:/Cast again/}));
   expect(screen.getByRole('button',{name:/Cast your line/})).toHaveFocus();
+});
+
+test('software keyboard input reels and lands a fish, touch waits for focus, and a catch is recorded only by choice',()=>{
+  const saved=emptySave();saved.settings.fishingMode='interactive';localStorage.setItem(SAVE_KEY,JSON.stringify(saved));
+  (window.matchMedia as any).mockImplementation((query:string)=>({matches:query==='(pointer: coarse)',media:query,addListener:jest.fn(),removeListener:jest.fn(),addEventListener:jest.fn(),removeEventListener:jest.fn()}));
+  mount();jest.spyOn(Math,'random').mockReturnValue(.99);
+  fireEvent.click(screen.getByRole('button',{name:/Cast your line/}));act(()=>jest.advanceTimersByTime(900));
+  const input=screen.getByRole('textbox',{name:/^Retrieve this haiku:/}),poem=input.getAttribute('aria-label')!.replace('Retrieve this haiku: ','');
+  fireEvent.input(input,{target:{value:poem.slice(0,3)},inputType:'insertText',data:poem.slice(0,3)});
+  expect(input).toHaveValue(poem.slice(0,3));expect(Number(screen.getByRole('progressbar',{name:'Line reeled in'}).getAttribute('aria-valuenow'))).toBeGreaterThan(0);
+  jest.spyOn(Math,'random').mockReturnValue(0);act(()=>jest.advanceTimersByTime(15000));
+  const battle=screen.getByRole('textbox',{name:'Type this phrase: calm lake'});
+  expect(battle).not.toHaveFocus();act(()=>jest.advanceTimersByTime(12000));expect(battle).toBeInTheDocument();
+  fireEvent.focus(battle);fireEvent.input(battle,{target:{value:'calm lake'},inputType:'insertText',data:'calm lake'});act(()=>jest.advanceTimersByTime(900));
+  expect(screen.getByRole('button',{name:/Keep in livewell/})).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).notebook).toHaveLength(0);
+  const name=screen.getByLabelText('Subject');fireEvent.change(name,{target:{value:'My first fish'}});fireEvent.blur(name);
+  expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).notebook).toHaveLength(0);
+  fireEvent.click(screen.getByRole('button',{name:'Record entry'}));expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).notebook[0].name).toBe('My first fish');
+});
+
+test('observing a butterfly opens an illustrated draft, keeps it while consulting the guide, and records only by choice',()=>{
+  jest.spyOn(worldClock,'useWorldClock').mockReturnValue(worldAt(Date.now(),{season:'spring',hour:12}));
+  jest.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockReturnValue({x:0,y:0,left:0,top:0,right:400,bottom:640,width:400,height:640,toJSON:()=>({})} as DOMRect);
+  mount();act(()=>jest.advanceTimersByTime(8100));
+  fireEvent.click(screen.getByRole('button',{name:'Observe butterfly'}));
+  const entry=screen.getByRole('dialog',{name:'A butterfly observation'});
+  expect(within(entry).getByRole('img',{name:'The butterfly you observed'})).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).notebook).toHaveLength(0);
+  expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).butterflyDiscoveries).toEqual(['monarch']);
+  fireEvent.change(within(entry).getByLabelText('Entry title'),{target:{value:'A visitor in the reeds'}});
+  fireEvent.change(within(entry).getByLabelText('Subject'),{target:{value:'Orange butterfly'}});
+  fireEvent.change(within(entry).getByLabelText('Notes'),{target:{value:'Rested beside the dock'}});
+  fireEvent.click(within(entry).getByRole('button',{name:'Open field guide'}));
+  const butterflyGuide=screen.getByRole('dialog',{name:'Field guide'});
+  expect(within(butterflyGuide).getByRole('tab',{name:'Butterflies · 1/14'})).toHaveAttribute('aria-selected','true');
+  expect(within(butterflyGuide).getByRole('heading',{name:'Monarch'})).toBeInTheDocument();
+  expect(within(butterflyGuide).getByRole('img',{name:'Monarch: caterpillar'})).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Close field guide'}));act(()=>jest.advanceTimersByTime(300));
+  expect(within(entry).getByLabelText('Subject')).toHaveValue('Orange butterfly');
+  fireEvent.click(within(entry).getByRole('button',{name:'Record entry'}));
+  const saved=JSON.parse(localStorage.getItem(SAVE_KEY)!);
+  expect(saved.notebook).toHaveLength(1);
+  expect(saved.notebook[0]).toMatchObject({title:'A visitor in the reeds',name:'Orange butterfly',notes:'Rested beside the dock',image:{kind:'butterfly',speciesId:'monarch',wingspanMm:86}});
+  expect(saved.notebook[0].weightKg).toBeUndefined();expect(saved.livewell).toHaveLength(0);expect(saved.stats.caught).toBe(0);
+  fireEvent.click(screen.getByRole('button',{name:'Close A butterfly observation'}));act(()=>jest.advanceTimersByTime(300));
+  fireEvent.click(screen.getByRole('button',{name:'Journal'}));
+  fireEvent.click(screen.getByRole('tab',{name:'My notebook'}));
+  expect(screen.getByLabelText('Subject')).toHaveValue('Orange butterfly');
+  expect(screen.getByRole('img',{name:'The butterfly you observed'})).toBeInTheDocument();
 });
 
 test('scenic mode hides the HUD, blocks hidden casts and restores the same scenery and save', () => {

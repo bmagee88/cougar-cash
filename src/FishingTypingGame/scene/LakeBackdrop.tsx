@@ -10,8 +10,7 @@ export function MountainHaze({ style, embedded = false }: { style: CSSProperties
 export default memo(function LakeBackdrop({ layer, season }: { layer: SceneAsset; season: Season }) {
   const id = `ridge-${useId().replace(/:/g, '')}`;
   const mask = `mask-${id}`; const feather = `feather-${id}`;
-  const p = layer.position;
-  const style = { left: `${p.x}%`, top: `${p.y}%`, width: `${p.width}%`, height: `${p.height}%`,
+  const style = { left: 'calc(50% - max(51cqw, 102cqh))', top: 'calc(50% - max(25.5cqw, 51cqh))', width: 'max(102cqw, 204cqh)', height: 'max(51cqw, 102cqh)',
     opacity: layer.opacity, '--layer-scale': layer.scale, '--parallax': layer.parallax } as CSSProperties;
   return <>
     <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>

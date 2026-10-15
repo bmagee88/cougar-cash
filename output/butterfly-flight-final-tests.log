@@ -1,0 +1,12 @@
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (73.215 s)
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyGuide.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+
+Test Suites: 4 passed, 4 total
+Tests:       35 passed, 35 total
+Snapshots:   0 total
+Time:        81.926 s
+Ran all test suites within paths "src/FishingTypingGame/__tests__/butterflyFlight.test.tsx", "src/FishingTypingGame/__tests__/butterflyGuide.test.tsx", "src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx", "src/FishingTypingGame/__tests__/FishingGame.test.tsx".

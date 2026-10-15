@@ -1,0 +1,15 @@
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx (13.406 s)
+  √ perched butterflies keep their footing while alternating wing poses, then depart or flee (20 ms)
+  √ perch wing timing includes both quick flutters and slower opening and closing (3 ms)
+  √ flights enter from either side at speed, can return from outside the view, and retire beyond the doubled scene (15 ms)
+  √ erratic turns change direction and distance, with a permanent foreground depth boundary (17 ms)
+  √ individual tolerances allow slow approaches but react to close cursors and nearby fast swipes (7 ms)
+  √ pixel picking maps the scaled canvas and rejects transparent pixels and its surrounding rectangle (20 ms)
+  √ mouse clicks fail closed while artwork loads; catching an individual does not remove the other one (354 ms)
+  √ loaded wing frames reject transparent clicks, accept painted clicks, and pause when hidden (463 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        32.686 s
+Ran all test suites within paths "src/FishingTypingGame/__tests__/butterflyFlight.test.tsx".

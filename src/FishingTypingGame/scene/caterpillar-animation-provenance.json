@@ -1,0 +1,114 @@
+[
+  {
+    "id": "monarch",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/monarch/caterpillar.webp",
+    "generatedFile": "exec-27344918-310d-4ed6-98d9-07071a208bb4.png",
+    "sourceSheet": "public/assets/fishing/butterflies/monarch/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "eastern-tiger-swallowtail",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/eastern-tiger-swallowtail/caterpillar.webp",
+    "generatedFile": "exec-ecb679db-ffda-4924-bfe2-40d541016706.png",
+    "sourceSheet": "public/assets/fishing/butterflies/eastern-tiger-swallowtail/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "pearl-crescent",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/pearl-crescent/caterpillar.webp",
+    "generatedFile": "exec-c89049ae-1b80-4a42-839f-03893157e3d5.png",
+    "sourceSheet": "public/assets/fishing/butterflies/pearl-crescent/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "cabbage-white",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/cabbage-white/caterpillar.webp",
+    "generatedFile": "exec-9f37ef7c-6ba5-424c-8eb6-f21fb8bd806a.png",
+    "sourceSheet": "public/assets/fishing/butterflies/cabbage-white/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "clouded-sulphur",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/clouded-sulphur/caterpillar.webp",
+    "generatedFile": "exec-9d11a35b-4abd-479e-b5a6-e1e82fe032ad.png",
+    "sourceSheet": "public/assets/fishing/butterflies/clouded-sulphur/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "spicebush-swallowtail",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/spicebush-swallowtail/caterpillar.webp",
+    "generatedFile": "exec-7b3fbc3a-8921-4067-bcf2-92b2750c53a2.png",
+    "sourceSheet": "public/assets/fishing/butterflies/spicebush-swallowtail/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "american-copper",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/american-copper/caterpillar.webp",
+    "generatedFile": "exec-c5572d85-6749-4b60-8740-4bbc79478109.png",
+    "sourceSheet": "public/assets/fishing/butterflies/american-copper/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "silver-spotted-skipper",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/silver-spotted-skipper/caterpillar.webp",
+    "generatedFile": "exec-4bb95504-f4c8-4808-bd73-f20426ac1f91.png",
+    "sourceSheet": "public/assets/fishing/butterflies/silver-spotted-skipper/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "luna-moth",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/luna-moth/caterpillar.webp",
+    "generatedFile": "exec-9996670d-8f51-4f4c-8493-f865c01ae3c2.png",
+    "sourceSheet": "public/assets/fishing/butterflies/luna-moth/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "hummingbird-clearwing",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/hummingbird-clearwing/caterpillar.webp",
+    "generatedFile": "exec-77883004-a2cb-42ed-ba58-b1fd5b62af15.png",
+    "sourceSheet": "public/assets/fishing/butterflies/hummingbird-clearwing/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "giant-swallowtail",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/giant-swallowtail/caterpillar.webp",
+    "generatedFile": "exec-4829b704-5e16-4a2c-9a06-dcc7f1d16c13.png",
+    "sourceSheet": "public/assets/fishing/butterflies/giant-swallowtail/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "blinded-sphinx",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/blinded-sphinx/caterpillar.webp",
+    "generatedFile": "exec-0608b47d-d68d-4ee4-9a29-7cb5cf42b49d.png",
+    "sourceSheet": "public/assets/fishing/butterflies/blinded-sphinx/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "hickory-tussock-moth",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/hickory-tussock-moth/caterpillar.webp",
+    "generatedFile": "exec-d6d21884-0fa0-4d16-a331-d5b7f6b6e4ae.png",
+    "sourceSheet": "public/assets/fishing/butterflies/hickory-tussock-moth/caterpillar-crawl-sheet.png",
+    "frames": 12
+  },
+  {
+    "id": "saddleback-caterpillar-moth",
+    "tool": "built-in image_gen",
+    "reference": "public/assets/fishing/butterflies/saddleback-caterpillar-moth/caterpillar.webp",
+    "generatedFile": "exec-0f87ac9a-c20a-4f14-ac13-095308c21a94.png",
+    "sourceSheet": "public/assets/fishing/butterflies/saddleback-caterpillar-moth/caterpillar-crawl-sheet.png",
+    "frames": 12
+  }
+]

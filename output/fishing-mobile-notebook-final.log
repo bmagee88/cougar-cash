@@ -1,0 +1,20 @@
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (44.036 s)
+  √ species weight bands never overlap and every generated quality matches its weight (4597 ms)
+  √ length stretches the fish horizontally while greater mass increases both dimensions (5 ms)
+  √ ruler marks use real units and remain calibrated to a large fish after scaling (629 ms)
+  √ legacy held fish are reclassified by weight once without losing measurements, coins or catch totals (22 ms)
+  √ new and legacy preferences default to hidden details and imperial while explicit choices survive (7 ms)
+  √ catch notes start blank, persist independently of actual stats and remain after release (17 ms)
+  √ weighing reveals the scale reading without recording it and manual imperial fields save canonical values (3459 ms)
+  √ unit changes and untouched rounded inputs do not change recorded measurements (436 ms)
+  √ hidden livewell details avoid names and qualities and page turns preserve handwritten entries (2229 ms)
+  √ deleting a recorded page never recreates it from a held fish or on reload (5 ms)
+  √ new notebook pages are drafts until Record entry, and a ripped page can be undone (1316 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        55.929 s
+Ran all test suites matching /notebook.test/i.

@@ -9,7 +9,7 @@ import PhishingOutlinedIcon from '@mui/icons-material/PhishingOutlined';
 import { Link } from 'react-router-dom';
 import { BALANCE, LOCATIONS, SPECIES } from './engine/config';
 import { releaseFish, releaseFishes, travel } from './engine/storage';
-import { CharacterState, EncounterOverrides, FishingMode, SaveData, WeatherChoice, WEATHERS, WorldOverrides } from './engine/types';
+import { ButterflyPose, CharacterState, EncounterOverrides, FishingMode, NotebookEntry, SaveData, WeatherChoice, WEATHERS, WorldOverrides } from './engine/types';
 import { gameClock, MOON_LABELS, PERIOD_LABELS, SEASON_LABELS, worldAt } from './engine/world';
 import FishingScene from './scene/FishingScene';
 import { ASSET_BASE, sceneForLocation } from './scene/manifest';
@@ -34,9 +34,11 @@ import ScreenAwakeSetting from './components/ScreenAwakeSetting';
 import FishInspection from './components/FishInspection';
 import FishArtwork from './components/FishArtwork';
 import { NotebookEditor, RecordedMeasurements, SaveNote } from './components/CatchNotebook';
-import { addNotebookEntry, notebookEntries, saveNotebookEntry } from './engine/notebook';
+import { blankEntry, catchImage, deleteNotebookEntry, notebookEntries, saveNotebookEntry } from './engine/notebook';
 import { formatLength, formatWeight } from './engine/specimens';
 import FishStudySettings from './components/FishStudySettings';
+import { butterflyById, discoverButterfly } from './engine/butterflies';
+import { guideDiscoveries } from './components/FieldGuide';
 import './fishing.css';
 
 const DebugPanel = process.env.NODE_ENV === 'development' ? lazy(() => import('./components/DebugPanel')) : null;
@@ -66,13 +68,15 @@ export default function FishingGame() {
   const { game, save, updateSave, castLine, key, again, reelIn, armChallenge, biteNow, overrides, storageError, checks, clearChecks } = useFishingGame(conditionsAt, inspectorOpen || showChecks);
   const screenAwake = useScreenWakeLock(save.settings.keepScreenAwake !== false);
   const hideFishDetails=save.settings.hideFishDetails!==false,units=save.settings.measurements??'imperial';
-  const saveNote:SaveNote=useCallback((id,patch)=>updateSave(s=>saveNotebookEntry(s,id,patch)),[updateSave]);
+  const saveNote:SaveNote=useCallback((id,patch,context)=>updateSave(s=>saveNotebookEntry(s,id,patch,context)),[updateSave]);
   const conditions = conditionsAt(save);
   useNaturalWeather(save,updateSave,worldOverrides);
   const naturalMode=save.settings.weatherMode === 'natural';
   const naturalState=naturalMode ? save.settings.naturalWeather : undefined;
   const weatherChoice: WeatherChoice=naturalMode ? 'natural' : save.settings.weather;
-  const [panel, setPanel] = useState<'livewell' | 'collection' | 'settings' | 'travel' | 'conditions' | 'tackle' | null>(null);
+  const [panel, setPanel] = useState<'livewell' | 'collection' | 'settings' | 'travel' | 'conditions' | 'tackle' | 'observation' | null>(null);
+  const [butterflyDraft,setButterflyDraft]=useState<NotebookEntry>();
+  const observationSequence=useRef(0);
   const [releaseNotice, setReleaseNotice] = useState<string | null>(null);
   const [preview, setPreview] = useState<CharacterState | undefined>(); const [debugOverrides, setDebugOverrides] = useState<EncounterOverrides>({});
   const castButton = useRef<HTMLButtonElement>(null); const opener = useRef<HTMLElement | null>(null);
@@ -81,6 +85,7 @@ export default function FishingGame() {
   const reducedMotion = save.settings.reducedMotion || prefersReducedMotion;
   const [stormPreview, setStormPreview] = useState<StormStage | undefined>();
   const [lightningPreview, setLightningPreview] = useState(0);
+  const [butterflyPreview,setButterflyPreview]=useState(0);
   const endStorm = useCallback(() => updateSave(s => {
     if (s.settings.weather !== 'thunderstorm' || s.settings.weatherMode === 'natural') return s;
     const { stormStartedAt, ...settings } = s.settings;
@@ -110,7 +115,14 @@ export default function FishingGame() {
     window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey);
   }, [castLine, game.phase, panel, scenic]);
   const open = (value: typeof panel, target: HTMLElement) => { opener.current = target; setPanel(value); };
-  const close = () => { setPanel(null); window.setTimeout(() => (opener.current || castButton.current)?.focus({ preventScroll: true }), 0); };
+  const close = () => { setPanel(null); window.setTimeout(() => (opener.current?.isConnected?opener.current:castButton.current)?.focus({ preventScroll: true }), 0); };
+  const observeButterfly=(target:HTMLButtonElement,speciesId:string,wingspanMm:number,pose?:ButterflyPose)=>{
+    const species=butterflyById(speciesId);if(!species)return;
+    updateSave(current=>discoverButterfly(current,speciesId));
+    setReleaseNotice(`${species.name} added to your butterfly field guide.`);
+    setButterflyDraft(blankEntry(`butterfly-${Date.now()}-${++observationSequence.current}`,new Date().toISOString(),save.location,{kind:'butterfly',speciesId,wingspanMm,...(pose?{pose}:{})}));
+    open('observation',target);
+  };
   const changeWeather = (weather: WeatherChoice) => {
     setStormPreview(undefined); setLightningPreview(0);
     updateSave(s => {
@@ -122,7 +134,8 @@ export default function FishingGame() {
   const last = save.livewell[save.livewell.length - 1]; const lastSpecies = last && SPECIES.find(s => s.id === last.speciesId);
   const result = game.phase === 'result' ? game : null;
   const notes=notebookEntries(save),lastNote=last&&notes.find(e=>e.id===last.id);
-  const caughtNote=result?.outcome==='caught'?notes.find(e=>e.id===result.encounter.id):undefined;
+  const caughtNote=result?.outcome==='caught'?(notes.find(e=>e.id===result.encounter.id)??blankEntry(result.encounter.id,save.livewell.find(c=>c.id===result.encounter.id)?.caughtAt??new Date().toISOString(),save.location,catchImage({...result.encounter,speciesId:result.encounter.species.id}))):undefined;
+  const butterflyNote=butterflyDraft&&(notes.find(entry=>entry.id===butterflyDraft.id)??butterflyDraft);
   const releaseCatch = () => {
     if (!result || result.outcome !== 'caught') return;
     updateSave(s => releaseFish(s, result.encounter.id));
@@ -135,7 +148,7 @@ export default function FishingGame() {
     </header>
     {storageError && <Alert severity="warning">Your browser could not save this session. Keep this page open to retain your catches.</Alert>}
     <div className={`f-lake-frame f-lake-${game.phase}`}>
-      <FishingScene checkPreview={process.env.NODE_ENV==='development' && showChecks ? checks[0] : undefined} game={game} location={save.location} weather={save.settings.weather} weatherState={weatherState} world={world} reducedMotion={reducedMotion} preview={preview} lightningPreview={lightningPreview} />
+      <FishingScene checkPreview={process.env.NODE_ENV==='development' && showChecks ? checks[0] : undefined} game={game} location={save.location} weather={save.settings.weather} weatherState={weatherState} world={world} reducedMotion={reducedMotion} preview={preview} lightningPreview={lightningPreview} butterflyPreview={butterflyPreview} onObserveButterfly={busy?undefined:observeButterfly}/>
       <SceneControls scenic={scenic} fullscreen={fullscreen} busy={busy} onScenic={() => setScenic(value => !value)} onFullscreen={toggleFullscreen} />
       <div className="f-scene-hud" hidden={scenic}>
       <div className="f-scene-heading"><span className="f-eyebrow">THE FRESHWATER CHAPTER</span><h1>{location.name}</h1><Button size="small" disabled={busy} startIcon={<PlaceOutlinedIcon />} onClick={e => open('travel', e.currentTarget)}>{location.spot} <span>⌄</span></Button></div>
@@ -147,22 +160,23 @@ export default function FishingGame() {
       {game.phase === 'retrieved' && <section className="f-wait-panel" role="status"><h2>Your lure is back.</h2><p>No fish this cast. Try a different rhythm or pause in grass cover.</p><Button autoFocus variant="contained" onClick={again}>Cast again ↗</Button></section>}
       {game.phase === 'landing' && <section className="f-wait-panel" role="status"><h2>You’ve got it!</h2><p>Bringing your catch ashore…</p></section>}
       {result && <section className={`f-result f-result-${result.outcome} ${result.outcome === 'caught' ? `f-reveal-${result.encounter.species.rarity.toLowerCase()}` : ''}`} aria-labelledby="f-result-title">
-        {result.outcome === 'caught' ? <><div className="f-catch-preview"><FishInspection fish={result.encounter} units={units} label={hideFishDetails?'Your catch':result.encounter.species.name}/><div className="f-result-copy"><span className="f-eyebrow">{result.encounter.isAlbino ? '✧ AN ALBINO DISCOVERY' : 'A LITTLE PATIENCE PAID OFF'}</span><h2 id="f-result-title">{hideFishDetails?(caughtNote?.name||'A catch to remember'):result.encounter.species.name}</h2><FishBadges rarity={result.encounter.species.rarity} quality={result.encounter.quality} albino={result.encounter.isAlbino} hideQuality={hideFishDetails}/>{hideFishDetails?<RecordedMeasurements entry={caughtNote} units={units}/>:<p>{formatLength(result.encounter.lengthCm,units)} · {formatWeight(result.encounter.weightKg,units)}</p>}<span className="f-earned">+{BALANCE.catchCoins} coins</span><PerformanceRow {...result.performance}/><div className="f-catch-actions"><Button autoFocus variant="contained" onClick={again}>Keep in livewell ↗</Button><Button variant="outlined" onClick={releaseCatch}>Release now</Button></div><small>Typing text saved with this catch · release anytime</small></div></div>{caughtNote&&<NotebookEditor key={`${caughtNote.id}-${units}`} entry={caughtNote} units={units} onSave={saveNote}/>}</> : <div className="f-result-copy"><span className="f-eyebrow">THERE’S ALWAYS ANOTHER CAST</span><h2 id="f-result-title">The fish got away!</h2><p>A ripple, a flash, and it was gone. Try again.</p><PerformanceRow {...result.performance} /><Button autoFocus variant="contained" onClick={again}>Cast again ↗</Button></div>}
+        {result.outcome === 'caught' ? <><div className="f-catch-preview"><FishInspection fish={result.encounter} units={units} label={hideFishDetails?'Your catch':result.encounter.species.name}/><div className="f-result-copy"><span className="f-eyebrow">{result.encounter.isAlbino ? '✧ AN ALBINO DISCOVERY' : 'A LITTLE PATIENCE PAID OFF'}</span><h2 id="f-result-title">{hideFishDetails?(caughtNote?.name||'A catch to remember'):result.encounter.species.name}</h2><FishBadges rarity={result.encounter.species.rarity} quality={result.encounter.quality} albino={result.encounter.isAlbino} hideQuality={hideFishDetails}/>{hideFishDetails?<RecordedMeasurements entry={caughtNote} units={units}/>:<p>{formatLength(result.encounter.lengthCm,units)} · {formatWeight(result.encounter.weightKg,units)}</p>}<span className="f-earned">+{BALANCE.catchCoins} coins</span><PerformanceRow {...result.performance}/><div className="f-catch-actions"><Button autoFocus variant="contained" onClick={again}>Keep in livewell ↗</Button><Button variant="outlined" onClick={releaseCatch}>Release now</Button></div><small>Typing text saved with this catch · release anytime</small></div></div>{caughtNote&&<NotebookEditor key={`${caughtNote.id}-${units}`} entry={caughtNote} units={units} onSave={saveNote} discoveries={guideDiscoveries(save)}/>}</> : <div className="f-result-copy"><span className="f-eyebrow">THERE’S ALWAYS ANOTHER CAST</span><h2 id="f-result-title">The fish got away!</h2><p>A ripple, a flash, and it was gone. Try again.</p><PerformanceRow {...result.performance} /><Button autoFocus variant="contained" onClick={again}>Cast again ↗</Button></div>}
       </section>}
       <div className="f-scene-bottom"><span><i className="f-status-dot" />{game.phase === 'typing' ? 'LINE TIGHT · KEEP TYPING' : interactive ? 'INTERACTIVE · YOUR RHYTHM MOVES THE LURE' : 'STANDARD · TAKE YOUR TIME BETWEEN CASTS'}</span><span>{lureFor(save.tackle.lure).name.toUpperCase()} <b> / </b> {COLORS[save.tackle.color].name.toUpperCase()}</span></div>
       </div>
     </div>
     <footer className="f-session-bar" hidden={scenic || fullscreen}><div><span className="f-footer-label">YOUR LAKE JOURNAL</span><p>Every catch tells a story.</p></div><div className="f-session-stat"><strong>{save.stats.caught}</strong><span>fish landed</span></div><div className="f-session-stat"><strong>{save.stats.discovered.length}<small> / {SPECIES.length}</small></strong><span>species discovered</span></div><div className="f-session-stat"><strong>{save.stats.bestWpm.toFixed(0)}<small> WPM</small></strong><span>personal best</span></div><div className="f-last-catch">{lastSpecies && last ? <><FishArtwork fish={{...last,species:lastSpecies}} label={hideFishDetails?'Latest catch':lastSpecies.name}/><div><span>LATEST CATCH</span><strong>{hideFishDetails?(lastNote?.name||'Unidentified catch'):lastSpecies.name}</strong>{hideFishDetails?<RecordedMeasurements entry={lastNote} units={units}/>:<small>Quality {last.quality} · {formatLength(last.lengthCm,units)}</small>}</div></> : <><span className="f-footer-wave">≈</span><div><span>A FRESH PAGE</span><strong>{save.stats.caught ? 'Another catch awaits' : 'Your first catch awaits'}</strong></div></>}</div></footer>
-    <FishingDialog container={dialogContainer} title={panel === 'livewell' ? 'Your livewell' : panel === 'collection' ? 'Lake journal' : panel === 'travel' ? 'Find your quiet place' : panel === 'conditions' ? 'What’s biting?' : panel === 'tackle' ? 'Your tackle box' : 'Make yourself at home'} open={panel !== null} onClose={close}>
+    <FishingDialog container={dialogContainer} title={panel === 'livewell' ? 'Your livewell' : panel === 'collection' ? 'Lake journal' : panel === 'travel' ? 'Find your quiet place' : panel === 'conditions' ? 'What’s biting?' : panel === 'tackle' ? 'Your tackle box' : panel === 'observation' ? 'A butterfly observation' : 'Make yourself at home'} open={panel !== null} onClose={close}>
+      {panel==='observation'&&butterflyNote&&<NotebookEditor key={butterflyNote.id} entry={butterflyNote} units={units} onSave={saveNote} discoveries={guideDiscoveries(save)}/>}
       {panel === 'conditions' && <><ActivityGuide world={world} conditions={conditions} /><WeatherReport season={world.season} state={naturalState} /></>}
       {panel === 'tackle' && <TackleBox interactive={interactive} conditions={conditions} setup={save.tackle} onChange={tackle => updateSave(s => ({ ...s, tackle: normalizeTackle(tackle) }))} />}
       {panel === 'livewell' && <Livewell save={save} onSaveNote={saveNote} onRelease={id => updateSave(s => releaseFish(s, id))} onReleaseMany={ids => updateSave(s => releaseFishes(s, ids))} />}
-      {panel === 'collection' && <CollectionIndex save={save} onSaveNote={saveNote} onAddNote={()=>updateSave(addNotebookEntry)}/>}
+      {panel === 'collection' && <CollectionIndex save={save} onSaveNote={saveNote} onDeleteNote={id=>updateSave(s=>deleteNotebookEntry(s,id))}/>}
       {panel === 'travel' && <><p className="f-guide-intro">Two views of the same lake. Travel pays for the scenery; both spots share the same fish, odds, and challenges.</p><div className="f-travel-grid">{LOCATIONS.map(l => <article className="f-travel-card" key={l.id}><div className={`f-travel-art f-travel-${l.id}`} aria-hidden="true"><FishingScene game={{ phase: 'idle' }} location={l.id} weather={save.settings.weather} weatherState={weatherState} world={world} reducedMotion manifest={sceneForLocation(world.season, l.id).filter(layer => !['angler', 'water-interactions'].includes(layer.id))} /></div><h3>{l.spot}</h3><p>{l.description}</p><Button variant="outlined" disabled={save.location === l.id || save.balance < l.cost} onClick={() => { updateSave(s => travel(s, l.id)); close(); }}>{save.location === l.id ? 'You are here' : l.cost ? `Visit · ${l.cost} coins` : 'Visit · free'}</Button></article>)}</div><p className="f-footnote">You have {save.balance} lake coins. Each landed fish earns {BALANCE.catchCoins}.</p></>}
       {panel === 'settings' && <div className="f-settings"><FishStudySettings settings={save.settings} onChange={patch=>updateSave(s=>({...s,settings:{...s.settings,...patch}}))}/><TextField select label="Fishing mode" value={save.settings.fishingMode ?? 'interactive'} onChange={e => updateSave(s => ({ ...s, settings: { ...s.settings, fishingMode: e.target.value as FishingMode } }))}><MenuItem value="standard">Standard</MenuItem><MenuItem value="interactive">Interactive</MenuItem></TextField><TextField select label="Weather" value={weatherChoice} onChange={e => changeWeather(e.target.value as WeatherChoice)}><MenuItem value="natural">Natural weather</MenuItem>{WEATHERS.map(w => <MenuItem value={w} key={w}>{WEATHER_NAMES[w]}</MenuItem>)}</TextField><ScreenAwakeSetting enabled={save.settings.keepScreenAwake !== false} {...screenAwake} onChange={keepScreenAwake => updateSave(s => ({ ...s, settings: { ...s.settings, keepScreenAwake } }))} /><FormControlLabel control={<Checkbox checked={save.settings.reducedMotion} onChange={e => updateSave(s => ({ ...s, settings: { ...s.settings, reducedMotion: e.target.checked } }))} /> } label="Reduce animation" /><FormControlLabel control={<Checkbox checked={save.settings.sound} onChange={e => updateSave(s => ({ ...s, settings: { ...s.settings, sound: e.target.checked } }))} />} label="Play a gentle sound when a fish bites" /><h3>How to fish</h3><p>Cast with the button or Space. Bite waits are doubled, with another doubling in winter. Fast moving lures shorten spring waits by 25%. Conditions and tackle still affect the wait. Open Tackle for lure, color, rig and retrieve suggestions. Type the complete lowercase phrase within 10 seconds to land it. Correct a wrong key with Backspace; spaces count, and you never need to press Enter.</p><p>Interactive mode always uses a haiku for retrieving, with no timer. Your last five seconds of typing determine steady, stop-and-go or dead-stick movement. Each new correct letter can draw a nibble or bite; pause for 5–10 seconds on a nibble. After five seconds without typing, dead-stick movement rolls again, then every five seconds while still. Green letters mark grass cover and promote a candidate by one species rarity tier, capped at Ultra-Rare. Moving toward shore lowers bite odds but shortens the eventual 10-second battle. Backspacing does not reel line back out.</p><p>Wind casts 20% farther; thunderstorms 35%, blizzards 50% and hurricanes 65%. Battle text increases by the same proportions. Interactive retrieval reduces the remaining battle to a minimum of 15%.</p><p>Every fish has a species rarity and an individual quality, from C to SS. Albino catches have pale colors and a special badge. All are possible at either spot.</p><p>Every challenge rolls a bell-shaped WPM adjustment. The most likely adjustment is zero; the tails reach −50 and +10 WPM, with a minimum of 1 WPM.</p><p>Spring, summer, autumn and winter rotate daily at midnight in New York. A lake day lasts 48 minutes, with six eight-minute periods. The moon advances one phase each lake day. Open What’s biting? to explore how these conditions affect the fish.</p><p className="f-footnote">Your livewell, discoveries, statistics, coins, tackle, and settings save in this browser. Clearing browser data clears your journal. System reduced-motion preferences are always respected.</p></div>}
     </FishingDialog>
     <Snackbar open={releaseNotice !== null} autoHideDuration={4500} onClose={() => setReleaseNotice(null)}><Alert severity="success" onClose={() => setReleaseNotice(null)}>{releaseNotice}</Alert></Snackbar>
-    {DebugPanel && <Suspense fallback={null}><DebugPanel onInspect={setInspectorOpen} checks={checks} clearChecks={clearChecks} showChecks={showChecks} onShowChecks={setShowChecks} overrides={debugOverrides} onChange={v => { setDebugOverrides(v); overrides.current = v; }} biteNow={biteNow} canBite={game.phase === 'waiting' || game.phase === 'casting' || game.phase === 'retrieving'} onAnimation={setPreview} weather={save.settings.weather} weatherChoice={weatherChoice} naturalWeather={naturalState} season={world.season} onNextNatural={() => updateSave(s => { if (s.settings.weatherMode !== 'natural' || !s.settings.naturalWeather) return s; const next = nextNaturalWeather(s.settings.naturalWeather, Date.now(), seasonAtTime(worldOverrides)); return { ...s, settings: { ...s.settings, weather: next.weather, naturalWeather: next } }; })} onWeather={changeWeather} worldOverrides={worldOverrides} onWorldChange={setWorldOverrides} manifest={sceneForLocation(world.season, save.location)} stormPreview={stormPreview} onStormPreview={setStormPreview} onLightningPreview={() => setLightningPreview(n => n + 1)} /></Suspense>}
+    {DebugPanel && <Suspense fallback={null}><DebugPanel onInspect={setInspectorOpen} checks={checks} clearChecks={clearChecks} showChecks={showChecks} onShowChecks={setShowChecks} overrides={debugOverrides} onChange={v => { setDebugOverrides(v); overrides.current = v; }} biteNow={biteNow} canBite={game.phase === 'waiting' || game.phase === 'casting' || game.phase === 'retrieving'} onAnimation={setPreview} weather={save.settings.weather} weatherChoice={weatherChoice} naturalWeather={naturalState} season={world.season} onNextNatural={() => updateSave(s => { if (s.settings.weatherMode !== 'natural' || !s.settings.naturalWeather) return s; const next = nextNaturalWeather(s.settings.naturalWeather, Date.now(), seasonAtTime(worldOverrides)); return { ...s, settings: { ...s.settings, weather: next.weather, naturalWeather: next } }; })} onWeather={changeWeather} worldOverrides={worldOverrides} onWorldChange={setWorldOverrides} manifest={sceneForLocation(world.season, save.location)} stormPreview={stormPreview} onStormPreview={setStormPreview} onLightningPreview={() => setLightningPreview(n => n + 1)} onButterflyPreview={()=>setButterflyPreview(n=>n+1)} /></Suspense>}
   </main></ThemeProvider>;
 }
 

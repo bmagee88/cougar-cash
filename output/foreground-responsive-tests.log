@@ -1,0 +1,10 @@
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx (19.637 s)
+PASS src/FishingTypingGame/__tests__/scene.test.tsx (12.758 s)
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+
+Test Suites: 4 passed, 4 total
+Tests:       18 passed, 18 total
+Snapshots:   0 total
+Time:        53.172 s
+Ran all test suites within paths "src/FishingTypingGame/__tests__/scene.test.tsx", "src/FishingTypingGame/__tests__/butterflyFlight.test.tsx", "src/FishingTypingGame/__tests__/lantern.test.tsx", "src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx".

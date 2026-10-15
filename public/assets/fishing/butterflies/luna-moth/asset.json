@@ -1,0 +1,11 @@
+{
+  "id": "luna-moth",
+  "frames": 8,
+  "canvas": [
+    192,
+    224
+  ],
+  "openWingspanPixels": 160,
+  "gifBytes": 62213,
+  "transparent": true
+}
