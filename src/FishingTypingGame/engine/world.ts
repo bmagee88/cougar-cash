@@ -24,23 +24,24 @@ export function celestialPosition(hour: number, moon = false) {
   return { x: 10 + travel * 80, y: 35 - Math.sin(travel * Math.PI) * 26, visible: elapsed < 12 };
 }
 const LIGHT = [
-  { hour: 0, brightness: 0.43, saturation: 0.88, tint: [10, 22, 57, 0.35] },
-  { hour: 4, brightness: 0.43, saturation: 0.88, tint: [10, 22, 57, 0.35] },
+  { hour: 0, brightness: 0.18, saturation: 0.88, tint: [3, 7, 13, 0.35] },
+  { hour: 4, brightness: 0.18, saturation: 0.88, tint: [3, 7, 13, 0.35] },
   { hour: 6, brightness: 0.73, saturation: 0.91, tint: [202, 108, 116, 0.24] },
   { hour: 8, brightness: 1, saturation: 1.02, tint: [245, 219, 145, 0.08] },
   { hour: 12, brightness: 1.02, saturation: 1.03, tint: [220, 239, 230, 0] },
   { hour: 16, brightness: 0.98, saturation: 1.08, tint: [244, 193, 111, 0.08] },
   { hour: 18, brightness: 0.75, saturation: 0.96, tint: [187, 91, 91, 0.25] },
-  { hour: 20, brightness: 0.48, saturation: 0.90, tint: [20, 31, 70, 0.33] },
-  { hour: 24, brightness: 0.43, saturation: 0.88, tint: [10, 22, 57, 0.35] },
+  { hour: 20, brightness: 0.24, saturation: 0.90, tint: [4, 9, 18, 0.33] },
+  { hour: 24, brightness: 0.18, saturation: 0.88, tint: [3, 7, 13, 0.35] },
 ];
 export function lightingAt(hour: number, moonPhase: MoonPhase) {
   const hi = LIGHT.findIndex(p => p.hour > hour); const a = LIGHT[Math.max(0, hi - 1)]; const b = LIGHT[hi < 0 ? LIGHT.length - 1 : hi];
   const blend = Math.max(0, Math.min(1, (hour - a.hour) / Math.max(1, b.hour - a.hour)));
   const mix = (x: number, y: number) => x + (y - x) * blend;
   const night = hour < 6 ? Math.min(1, (6 - hour) / 2) : Math.max(0, Math.min(1, (hour - 18) / 2));
-  const brightness = mix(a.brightness, b.brightness) + MOON_LIGHT[MOON_PHASES.indexOf(moonPhase)] * night * 0.07;
-  // Fully developed night uses half the former brightness; twilight eases into it.
+  const brightness = mix(a.brightness, b.brightness) + MOON_LIGHT[MOON_PHASES.indexOf(moonPhase)] * night * 0.03;
+  // Keep distant scenery near silhouette. Directional moonlight and local
+  // lantern illumination are composed separately rather than lifting exposure.
   return { brightness: brightness * (1 - night * .5), saturation: mix(a.saturation, b.saturation), nightAmount: night, tint: `rgba(${a.tint.slice(0, 3).map((v, i) => Math.round(mix(v, b.tint[i]))).join(',')},${mix(a.tint[3], b.tint[3]).toFixed(3)})`, stars: night * (hour < 6 ? .5 + .5 * Math.min(1, hour / 2) : .5) };
 }
 

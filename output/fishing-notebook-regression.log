@@ -1,0 +1,30 @@
+
+> cougar-cash@0.1.0 test:fishing
+> react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame --cacheDirectory=output/fishing-jest-notebook
+
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (115.658 s)
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx (7.103 s)
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/engine.test.ts (15.985 s)
+PASS src/FishingTypingGame/__tests__/world.test.ts (8.972 s)
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (28.27 s)
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (6.552 s)
+
+Test Suites: 18 passed, 18 total
+Tests:       130 passed, 130 total
+Snapshots:   0 total
+Time:        217.728 s
+Ran all test suites matching /FishingTypingGame/i.

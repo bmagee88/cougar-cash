@@ -1,0 +1,15 @@
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx (15.648 s)
+  √ screen wake lock is opt-in and releases when disabled (42 ms)
+  √ hiding releases the lock and returning acquires a fresh sentinel (8 ms)
+  √ initially hidden pages wait until visible to request a lock (7 ms)
+  √ a request finishing after disabling or unmounting is released immediately (10 ms)
+  √ a hide-return cycle during a pending request discards the stale grant and reacquires (9 ms)
+  √ denial and system release show a retry state without a retry loop (5 ms)
+  √ unsupported browsers and insecure pages never request a lock (7 ms)
+  √ the saved preference migrates safely and the setting exposes useful status and retry controls (369 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        22.967 s
+Ran all test suites matching /wakeLock.test/i.

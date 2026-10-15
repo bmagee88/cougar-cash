@@ -1,0 +1,165 @@
+
+> cougar-cash@0.1.0 prebuild
+> node scripts/patch-chess-source-map.js
+
+
+> cougar-cash@0.1.0 build
+> react-scripts build
+
+Creating an optimized production build...
+Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\components\CatchNotebook.tsx
+  Line 19:126:  React Hook useEffect has a missing dependency: 'entry'. Either include it or remove the dependency array. If 'setDraft' needs the current value of 'entry', you can also switch to useReducer instead of useState and read 'entry' in the reducer  react-hooks/exhaustive-deps
+
+src\FishingTypingGame\scene\fish-art-bounds.ts
+  Line 2:1:  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+File sizes after gzip:
+
+  230.85 kB         build\static\js\6567.7d8cf2bb.chunk.js
+  114.87 kB (-2 B)  build\static\js\main.072da9ab.js
+  89.35 kB          build\static\js\2159.1cc22721.chunk.js
+  70.65 kB (+96 B)  build\static\js\2831.4aeccdf6.chunk.js
+  54.62 kB          build\static\js\8477.92c1468b.chunk.js
+  37.07 kB          build\static\js\3337.1ee6c948.chunk.js
+  27.25 kB          build\static\js\8798.648d4dff.chunk.js
+  22.49 kB          build\static\js\7291.b66cd12e.chunk.js
+  20.84 kB          build\static\js\4454.50d4b823.chunk.js
+  17.83 kB          build\static\js\4979.e8fff935.chunk.js
+  17.73 kB          build\static\js\5608.d283b4d4.chunk.js
+  17.27 kB          build\static\js\3892.fe891cca.chunk.js
+  16.9 kB           build\static\js\3692.375a3660.chunk.js
+  16.45 kB          build\static\js\7588.78ecfe49.chunk.js
+  15.76 kB          build\static\js\8943.87027b97.chunk.js
+  15.69 kB          build\static\js\5296.19fced94.chunk.js
+  15.28 kB          build\static\js\7334.6937a1b4.chunk.js
+  15.06 kB          build\static\js\1552.41c43545.chunk.js
+  14.65 kB (+26 B)  build\static\css\2831.acbe3c4c.chunk.css
+  14.36 kB          build\static\js\1642.560fa7ad.chunk.js
+  14.35 kB          build\static\js\7770.6468c9cc.chunk.js
+  14.23 kB          build\static\js\6689.1017715f.chunk.js
+  14.08 kB          build\static\js\7904.ab1faae3.chunk.js
+  13.63 kB          build\static\js\5849.72e56d77.chunk.js
+  12.18 kB          build\static\js\1103.a113ca4c.chunk.js
+  11.64 kB          build\static\js\1890.df84bd1a.chunk.js
+  10.74 kB          build\static\js\6611.bb358f35.chunk.js
+  10.59 kB          build\static\js\743.cef17196.chunk.js
+  10.56 kB          build\static\js\5970.892dfe06.chunk.js
+  9.82 kB           build\static\js\441.fc216cf1.chunk.js
+  9.67 kB           build\static\js\1786.599b4a4b.chunk.js
+  9.2 kB            build\static\js\6267.c5764ca8.chunk.js
+  9.17 kB           build\static\js\1991.17c813a8.chunk.js
+  9.05 kB           build\static\js\9998.bde5dd23.chunk.js
+  8.98 kB           build\static\js\2116.ffdbc3a1.chunk.js
+  8.97 kB           build\static\js\9527.23e47015.chunk.js
+  8.72 kB           build\static\js\6539.f16506b2.chunk.js
+  8.5 kB            build\static\js\8072.e38a190b.chunk.js
+  8.42 kB           build\static\js\2357.5f0c9af3.chunk.js
+  8.4 kB            build\static\js\5175.41ca6acf.chunk.js
+  8 kB              build\static\js\3785.c4333523.chunk.js
+  7.89 kB           build\static\js\7141.bcd3e96e.chunk.js
+  7.86 kB           build\static\js\1206.a1224598.chunk.js
+  7.67 kB           build\static\js\2057.b6bbbf7b.chunk.js
+  7.62 kB           build\static\js\3910.25a56c4f.chunk.js
+  7.17 kB           build\static\js\2753.0b21ee2a.chunk.js
+  7.17 kB           build\static\js\6318.649ebe67.chunk.js
+  7.1 kB            build\static\js\4057.c46816bb.chunk.js
+  7.03 kB           build\static\js\5766.34c3fce9.chunk.js
+  6.88 kB           build\static\js\8267.09b2b132.chunk.js
+  6.8 kB            build\static\js\1986.a5a31263.chunk.js
+  6.45 kB           build\static\js\3602.4e74b64e.chunk.js
+  6.12 kB           build\static\js\4185.0b1f0daf.chunk.js
+  5.99 kB           build\static\js\8627.1898ebf6.chunk.js
+  5.96 kB           build\static\js\8418.c0bb7ffa.chunk.js
+  5.84 kB           build\static\js\4505.cbfdf67a.chunk.js
+  5.82 kB           build\static\js\7985.ba0920c9.chunk.js
+  5.78 kB           build\static\js\3216.cecff11f.chunk.js
+  5.65 kB           build\static\js\2454.f113ca54.chunk.js
+  5.48 kB           build\static\js\2844.6cbec014.chunk.js
+  5.44 kB           build\static\js\4708.03184ba4.chunk.js
+  5.28 kB           build\static\js\3762.1a1b7e56.chunk.js
+  5.16 kB           build\static\js\4737.58478aed.chunk.js
+  4.85 kB           build\static\js\3519.6790358e.chunk.js
+  4.72 kB           build\static\js\183.fac77766.chunk.js
+  4.71 kB           build\static\js\3180.e09d9ed5.chunk.js
+  4.71 kB           build\static\js\5673.060766f7.chunk.js
+  4.61 kB           build\static\js\4529.8151e6eb.chunk.js
+  4.6 kB            build\static\js\52.6b29902d.chunk.js
+  4.54 kB           build\static\js\9954.45076f60.chunk.js
+  4.24 kB           build\static\js\2436.fce0dbaf.chunk.js
+  4.2 kB            build\static\js\5423.8e361ff0.chunk.js
+  4.17 kB           build\static\js\7742.b9da0602.chunk.js
+  4.08 kB           build\static\js\5327.f69fb758.chunk.js
+  3.99 kB           build\static\js\5523.73464727.chunk.js
+  3.92 kB           build\static\js\2460.37b481b3.chunk.js
+  3.76 kB           build\static\js\8588.f235c067.chunk.js
+  3.69 kB           build\static\js\7127.21decf4f.chunk.js
+  3.6 kB            build\static\js\8922.27e05e8a.chunk.js
+  3.52 kB           build\static\js\8172.f8582b42.chunk.js
+  3.5 kB            build\static\js\3749.84324a2f.chunk.js
+  3.46 kB           build\static\css\8798.7d40d375.chunk.css
+  3.46 kB           build\static\js\7739.ad0618a2.chunk.js
+  3.43 kB           build\static\js\356.8eae8610.chunk.js
+  3.37 kB           build\static\js\6109.61c2aee1.chunk.js
+  3.36 kB           build\static\js\6153.424dfaaf.chunk.js
+  3.17 kB           build\static\js\1020.85c83611.chunk.js
+  2.93 kB           build\static\js\794.a71651d0.chunk.js
+  2.89 kB           build\static\js\5549.462f081d.chunk.js
+  2.89 kB           build\static\js\2415.b5e0bec6.chunk.js
+  2.79 kB           build\static\js\4916.79f9dd9c.chunk.js
+  2.76 kB           build\static\js\4109.81f6cc49.chunk.js
+  2.64 kB           build\static\js\5811.3de72bd4.chunk.js
+  2.53 kB           build\static\js\9575.a86675a2.chunk.js
+  2.51 kB           build\static\js\2795.3ff52c5e.chunk.js
+  2.47 kB           build\static\js\2852.ab7c967d.chunk.js
+  2.45 kB           build\static\js\768.5faba2f1.chunk.js
+  2.35 kB           build\static\js\2738.3a7def2e.chunk.js
+  2.29 kB           build\static\js\6238.a065d3af.chunk.js
+  2.15 kB           build\static\js\4293.c620518b.chunk.js
+  2.1 kB            build\static\js\5322.e3e0339d.chunk.js
+  2.04 kB           build\static\js\8903.fdc89d29.chunk.js
+  1.95 kB           build\static\js\5795.5034c10e.chunk.js
+  1.71 kB           build\static\css\4529.834989c1.chunk.css
+  907 B             build\static\js\8561.7aba33a2.chunk.js
+  674 B             build\static\css\2116.4f6fbe60.chunk.css
+  395 B             build\static\css\main.5bd12778.css
+  360 B             build\static\js\9020.caa265d3.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+

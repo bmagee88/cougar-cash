@@ -1,0 +1,16 @@
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (20.207 s)
+  √ species weight bands never overlap and every generated quality matches its weight (2060 ms)
+  √ length stretches the fish horizontally while greater mass increases both dimensions (1 ms)
+  √ ruler marks use real units and remain calibrated to a large fish after scaling (206 ms)
+  √ legacy held fish are reclassified by weight once without losing measurements, coins or catch totals (10 ms)
+  √ new and legacy preferences default to hidden details and imperial while explicit choices survive (2 ms)
+  √ catch notes start blank, persist independently of actual stats and remain after release (6 ms)
+  √ weighing reveals the scale reading without recording it and manual imperial fields save canonical values (1259 ms)
+  √ unit changes and untouched rounded inputs do not change recorded measurements (200 ms)
+  √ hidden livewell details avoid names and qualities and page turns preserve handwritten entries (891 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        30.508 s
+Ran all test suites matching /notebook.test/i.

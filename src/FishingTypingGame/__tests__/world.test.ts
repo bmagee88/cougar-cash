@@ -4,7 +4,7 @@ import { encounterOdds, feedingMultiplier, moonMultiplier } from '../engine/feed
 import { cast, tick } from '../engine/game';
 import { awardCatch, emptySave, deserializeSave } from '../engine/storage';
 import { DAY_PERIODS, MOON_PHASES, SEASONS } from '../engine/types';
-import { celestialPosition, gameClock, lightingAt, moonlightAt, MOON_LIGHT, periodAt, WORLD, worldAt } from '../engine/world';
+import { celestialPosition, gameClock, lightingAt, moonlightAt, periodAt, WORLD, worldAt } from '../engine/world';
 
 declare const test: (name: string, fn: () => void) => void;
 declare const expect: any;
@@ -58,10 +58,11 @@ test('all season/time/moon combinations keep every species possible and odds nor
   ['bluegill','perch','crappie','bass','sturgeon'].forEach(id => MOON_PHASES.forEach(moonPhase => expect(moonMultiplier(id, { season: 'summer', period: 'late-night', moonPhase })).toBe(1)));
 });
 
-test('night brightness is halved for every moon phase while daylight and twilight remain continuous', () => {
-  MOON_PHASES.forEach((phase, i) => {
-    expect(lightingAt(2, phase).brightness).toBeCloseTo((.43 + MOON_LIGHT[i] * .07) / 2, 10);
-    expect(lightingAt(20, phase).brightness).toBeCloseTo((.48 + MOON_LIGHT[i] * .07) / 2, 10);
+test('night stays near silhouette for every moon phase while daylight and twilight remain continuous', () => {
+  MOON_PHASES.forEach(phase => {
+    expect(lightingAt(2, phase).brightness).toBeLessThan(.12);
+    expect(lightingAt(20, phase).brightness).toBeLessThan(.15);
+    expect(lightingAt(2, phase).brightness).toBeGreaterThan(0);
     expect(lightingAt(12, phase).brightness).toBe(1.02);
     [4,6,18,20,24].forEach(hour => {
       const before = lightingAt(Math.max(0, hour - .0001), phase).brightness;

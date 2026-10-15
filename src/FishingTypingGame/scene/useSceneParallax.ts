@@ -29,6 +29,7 @@ export function useSceneParallax(sceneRef: RefObject<HTMLDivElement>, reducedMot
       if (frame !== undefined) cancelAnimationFrame(frame);
       frame = undefined;
       previousTime = undefined;
+      scene.classList.toggle('f-scene-paused', document.hidden || !onScreen);
       if (!document.hidden && onScreen) frame = requestAnimationFrame(animate);
     };
     const observer = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(entries => {
@@ -42,6 +43,7 @@ export function useSceneParallax(sceneRef: RefObject<HTMLDivElement>, reducedMot
       if (frame !== undefined) cancelAnimationFrame(frame);
       observer?.disconnect();
       document.removeEventListener('visibilitychange', update);
+      scene.classList.remove('f-scene-paused');
       reset();
     };
   }, [sceneRef, reducedMotion]);

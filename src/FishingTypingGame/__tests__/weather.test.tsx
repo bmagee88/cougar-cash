@@ -139,7 +139,7 @@ test('clouds share the correct depth and rain stays absent until the storm reach
   expect(fog).toHaveStyle({ opacity: '0' });
   expect(fog.querySelector('.f-fog-wisp')).toBeInTheDocument();
   expect(fog.closest('.f-weather-thunderstorm')).toBeNull();
-  expect(new Set(Array.from(container.querySelectorAll('[data-cloud-type]')).map(e => e.getAttribute('data-cloud-type'))).size).toBe(6);
+  expect(new Set(Array.from(container.querySelectorAll('[data-cloud-type]')).map(e => e.getAttribute('data-cloud-type')))).toEqual(new Set(['cirrus', 'cumulus', 'stratus', 'cumulonimbus']));
   const angler = container.querySelector('.f-character');
   rerender(<FishingScene {...props} weatherState={weatherVisuals('thunderstorm', 90000)} />);
   expect(container.querySelector('.f-rainfall')).toHaveAttribute('data-rain-intensity', '1.000');
@@ -147,7 +147,7 @@ test('clouds share the correct depth and rain stays absent until the storm reach
   expect(container.querySelector('.f-character')).toBe(angler);
 });
 
-test('moonlight covers the scene, fades with cloud cover and never illuminates a daytime weather override', () => {
+test('moonlight lifts the background, fades with cloud cover and never illuminates a daytime weather override', () => {
   const props = { game: { phase: 'idle' as const }, location: 'dock', reducedMotion: true };
   const night = worldAt(WORLD.epoch, { hour: 2, season: 'autumn', moonPhase: 'full' });
   const view = render(<FishingScene {...props} weather="sunny" world={night} />);
@@ -157,7 +157,7 @@ test('moonlight covers the scene, fades with cloud cover and never illuminates a
   const clear = intensity();
   expect(clear).toBeGreaterThan(.8);
   expect(overlay.closest('.f-scene')).toBeInTheDocument();
-  expect(view.container.querySelector('.f-scene')).toHaveStyle({ '--time-brightness': '0.25' });
+  expect(Number((view.container.querySelector('.f-scene') as HTMLElement).style.getPropertyValue('--time-brightness'))).toBeLessThan(.12);
   view.rerender(<FishingScene {...props} weather="fog" world={night} />);
   expect(intensity()).toBeCloseTo(clear * .25, 3);
   view.rerender(<FishingScene {...props} weather="rain" world={night} />);
