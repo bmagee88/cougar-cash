@@ -3,19 +3,13 @@ import { lightingAt } from './world';
 
 /** Weather changes the light only; the lake clock and feeding conditions stay live. */
 export function weatherLighting(hour: number, moonPhase: MoonPhase, weather: Weather, visuals = weatherVisuals(weather)) {
-  if (weather === 'overcast' || weather === 'rain' || weather === 'snowfall') return lightingAt(22, moonPhase);
-  if (weather === 'hurricane' || weather === 'blizzard') return lightingAt(2,moonPhase);
-  const daylight = lightingAt(hour, moonPhase);
-  if (weather !== 'thunderstorm') return daylight;
-  const night = lightingAt(2, moonPhase); const amount = visuals.fog;
-  if (amount <= 0) return daylight;
-  if (amount >= 1) return night;
-  const mix = (a: number, b: number) => a + (b - a) * amount;
-  const tint = (value: string) => value.match(/[\d.]+/g)!.map(Number);
-  const a = tint(daylight.tint); const b = tint(night.tint);
-  return { brightness: mix(daylight.brightness, night.brightness), saturation: mix(daylight.saturation, night.saturation),
-    nightAmount: mix(daylight.nightAmount, night.nightAmount), stars: mix(daylight.stars, night.stars),
-    tint: `rgba(${a.slice(0, 3).map((v, i) => Math.round(mix(v, b[i]))).join(',')},${mix(a[3], b[3]).toFixed(3)})` };
+  const light=lightingAt(hour,moonPhase);
+  const cover=Math.max(visuals.greyDeck,visuals.darkDeck);
+  if(!cover)return light;
+  // Cloud thickness dims the real daylight in weatherVisuals; it never advances the clock to night.
+  const channels=light.tint.match(/[\d.]+/g)!.map(Number);
+  return {...light,
+    tint:`rgba(${channels.slice(0,3).join(',')},${(channels[3]*(1-cover*.95)).toFixed(3)})`};
 }
 
 export type StormStage = 'building' | 'arriving' | 'storm' | 'easing';
@@ -40,7 +34,7 @@ export type WeatherVisuals = {
   stage: StormStage | 'steady'; clear: number; tower: number; towerGrowth: number;
   greyDeck: number; darkDeck: number; rain: number; fog: number; snow: number; wind: number; heat: number; lightning: boolean;
   elapsedMs: number; progress: number; complete: boolean; nextLightningMs?: number; lightningIntervalMs?: number;
-  brightness: number; saturation: number; celestial: number; label: string;
+  brightness: number; saturation: number; contrast: number; veil: number; celestial: number; label: string;
 };
 const smooth = (start: number, end: number, elapsed: number) => {
   const t = Math.max(0, Math.min(1, (elapsed - start) / (end - start)));
@@ -69,8 +63,9 @@ export function weatherVisuals(weather: Weather, elapsedMs = 0, durationMs = STO
     heat: Number(weather === 'heatwave'),
     lightning: storm && elapsed < durationMs * .75,
     nextLightningMs, lightningIntervalMs: storm ? lightningIntervalAt(elapsed,durationMs) : undefined,
-    brightness: 1 - deck * (storm ? .12 : weather === 'rain' ? .10 : .02) - (storm ? rain * .05 : 0),
-    saturation: 1 - deck * (weather === 'overcast' ? .18 : .35),
+    brightness: 1 - deck * (severe ? .43 : storm ? .30 : weather === 'rain' ? .24 : .10) - (storm ? rain * .10 : 0),
+    saturation: 1, contrast: 1-deck*(storm||severe?.20:weather==='rain'?.13:.08),
+    veil: deck*(storm||severe?.20:weather==='rain'?.16:.12),
     celestial: weather === 'fog' ? .25 : 1 - deck * (weather === 'overcast' ? .82 : .97),
     label: storm ? stage === 'building' ? 'Thunderheads building' : stage === 'arriving' ? 'Storm clouds rolling in' : stage === 'easing' ? 'Steady rain and mist' : 'Thunderstorm' : ({ sunny: 'Clear skies', overcast: 'Clouds overhead', rain: 'Rain on the water', wind: 'A gentle breeze', fog: 'Mist on the lake', heatwave: 'Heat shimmering over the lake', 'cold-front': 'Cool air and gusting wind', hurricane: 'Hurricane remnants · heavy wind and rain', snowfall: 'Snow falling on the lake', blizzard: 'Blowing snow and strong wind' } as Record<Exclude<Weather,'thunderstorm'>, string>)[weather as Exclude<Weather,'thunderstorm'>],
   };

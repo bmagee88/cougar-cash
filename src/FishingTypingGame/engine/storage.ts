@@ -3,8 +3,9 @@ import { CatchRecord, CatchTypingMemory, DAY_PERIODS, Encounter, FishingConditio
 import { DEFAULT_TACKLE, normalizeTackle, RETRIEVES } from './tackle';
 import { readNaturalWeather } from './naturalWeather';
 import { HAIKU_BY_TEXT, HAIKU_SOURCE } from './haiku';
-import { blankEntry, notebookEntries, readNotebook } from './notebook';
+import { notebookEntries, readNotebook } from './notebook';
 import { qualityForWeight } from './specimens';
+import { readButterflyDiscoveries } from './butterflies';
 export const SAVE_KEY = 'cougar-fishing-v1';
 function readRetrieve(value: unknown): RetrieveMemory | undefined {
   const memory=value as Partial<RetrieveMemory> | undefined;
@@ -22,7 +23,7 @@ function readTypingMemory(value: unknown): CatchTypingMemory | undefined {
   return { phrase: memory.phrase, ...(validPoem ? { haiku: { id: poem.id, author: poem.author, translator: poem.translator, lines: [...poem.lines] } } : {}) };
 }
 export function emptySave(): SaveData {
-  return { version: 1, sizeQualityVersion:1, livewell: [], notebook: [], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
+  return { version: 1, sizeQualityVersion:1, livewell: [], notebook: [], butterflyDiscoveries:[], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
     tackle: { ...DEFAULT_TACKLE },
     settings: { weather: 'sunny', sound: false, reducedMotion: false, keepScreenAwake: true, fishingMode: 'interactive', hideFishDetails: true, measurements: 'imperial' },
     stats: { caught: 0, escaped: 0, discovered: [], byRarity: Object.fromEntries(RARITIES.map(r => [r, 0])) as SaveData['stats']['byRarity'],
@@ -67,7 +68,9 @@ export function deserializeSave(raw: string | null): SaveData {
         return {...record,quality};
       });
     }
-    loaded.notebook=notebookEntries(loaded);return loaded;
+    loaded.notebook=notebookEntries(loaded);
+    loaded.butterflyDiscoveries=readButterflyDiscoveries(data.butterflyDiscoveries);
+    return loaded;
   } catch { return fallback; }
 }
 export function readSave(): SaveData { try { return deserializeSave(localStorage.getItem(SAVE_KEY)); } catch { return emptySave(); } }
@@ -78,7 +81,7 @@ export function awardCatch(save: SaveData, encounter: Encounter, performance: Pe
   const typing: CatchTypingMemory = { phrase: encounter.phrase, ...(poem ? { haiku: { id: poem.id, author: poem.author, translator: HAIKU_SOURCE.translator, lines: [...poem.lines] } } : {}) };
   const catchRecord: CatchRecord = { id: encounter.id, speciesId: encounter.species.id, rarity: encounter.species.rarity, quality: encounter.quality, isAlbino: encounter.isAlbino, lengthCm: encounter.lengthCm, weightKg: encounter.weightKg, caughtAt, location: save.location, typing, ...(encounter.retrieve ? { retrieve: encounter.retrieve } : {}), ...(encounter.conditions ? { conditions: encounter.conditions } : {}), ...performance };
   const s = save.stats; const streak = s.currentStreak + 1; const previous = s.largest[encounter.species.id];
-  return { ...save, balance: save.balance + BALANCE.catchCoins, livewell: [...save.livewell, catchRecord], notebook:[...notebookEntries(save),blankEntry(encounter.id,caughtAt,save.location)], awardedIds: [...save.awardedIds, encounter.id],
+  return { ...save, balance: save.balance + BALANCE.catchCoins, livewell: [...save.livewell, catchRecord], awardedIds: [...save.awardedIds, encounter.id],
     stats: { ...s, caught: s.caught + 1, discovered: Array.from(new Set([...s.discovered, encounter.species.id])),
       byRarity: { ...s.byRarity, [encounter.species.rarity]: s.byRarity[encounter.species.rarity] + 1 }, byQuality: { ...s.byQuality, [encounter.quality]: s.byQuality[encounter.quality] + 1 },
       albinos: s.albinos + Number(encounter.isAlbino), albinoDiscovered: encounter.isAlbino ? Array.from(new Set([...s.albinoDiscovered, encounter.species.id])) : s.albinoDiscovered, largest: { ...s.largest, [encounter.species.id]: { lengthCm: Math.max(previous?.lengthCm || 0, encounter.lengthCm), weightKg: Math.max(previous?.weightKg || 0, encounter.weightKg) } },
@@ -90,7 +93,7 @@ export function awardEscape(save: SaveData, performance?: Performance): SaveData
 }
 export function releaseFishes(save: SaveData, ids: readonly string[]): SaveData {
   const released = new Set(ids); const livewell = save.livewell.filter(c => !released.has(c.id));
-  return livewell.length === save.livewell.length ? save : { ...save, notebook:notebookEntries(save), livewell };
+  return livewell.length === save.livewell.length ? save : { ...save, livewell };
 }
 export function releaseFish(save: SaveData, id: string): SaveData { return releaseFishes(save, [id]); }
 export function travel(save: SaveData, id: string): SaveData {

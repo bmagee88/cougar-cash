@@ -1,6 +1,6 @@
 {
-  "sourceBytes": 93268119,
-  "runtimeBytes": 14891994,
+  "sourceBytes": 124704214,
+  "runtimeBytes": 23273234,
   "images": [
     {
       "file": "characters/angler-autumn-painted.png",
@@ -591,6 +591,240 @@
       "file": "locations/willow-cove/autumn/willow-right-painted.png",
       "sourceBytes": 1736146,
       "runtimeBytes": 787698,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/spring/clouds-painted.png",
+      "sourceBytes": 926543,
+      "runtimeBytes": 329196,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/spring/landscape-water-painted.png",
+      "sourceBytes": 2473090,
+      "runtimeBytes": 535200,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/spring/shore-seat-painted.png",
+      "sourceBytes": 1763297,
+      "runtimeBytes": 445266,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/spring/sky-painted.png",
+      "sourceBytes": 1757890,
+      "runtimeBytes": 153960,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/spring/willow-left-painted.png",
+      "sourceBytes": 2058100,
+      "runtimeBytes": 691098,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/spring/willow-right-painted.png",
+      "sourceBytes": 1891335,
+      "runtimeBytes": 750122,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/summer/clouds-painted.png",
+      "sourceBytes": 926543,
+      "runtimeBytes": 329196,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/summer/landscape-water-painted.png",
+      "sourceBytes": 2343513,
+      "runtimeBytes": 480742,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/summer/shore-seat-painted.png",
+      "sourceBytes": 1745822,
+      "runtimeBytes": 450924,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/summer/sky-painted.png",
+      "sourceBytes": 1761142,
+      "runtimeBytes": 158320,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/summer/willow-left-painted.png",
+      "sourceBytes": 1972051,
+      "runtimeBytes": 656134,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/summer/willow-right-painted.png",
+      "sourceBytes": 1846709,
+      "runtimeBytes": 696822,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/winter/clouds-painted.png",
+      "sourceBytes": 926543,
+      "runtimeBytes": 329196,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/winter/landscape-water-painted.png",
+      "sourceBytes": 2415148,
+      "runtimeBytes": 446022,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/winter/shore-seat-painted.png",
+      "sourceBytes": 1824626,
+      "runtimeBytes": 477378,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/winter/sky-painted.png",
+      "sourceBytes": 1769330,
+      "runtimeBytes": 149706,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/winter/willow-left-painted.png",
+      "sourceBytes": 1512713,
+      "runtimeBytes": 648986,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/winter/willow-right-painted.png",
+      "sourceBytes": 1521700,
+      "runtimeBytes": 652972,
       "sourceSize": [
         1672,
         941

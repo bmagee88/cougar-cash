@@ -1,0 +1,13 @@
+37c23cdbae908eb463fa37aa47a65a2b
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.artwork = exports.ASSET_BASE = void 0;
+const ASSET_BASE = exports.ASSET_BASE = `${process.env.PUBLIC_URL || ''}/assets/fishing`;
+
+/** Optimized runtime copies preserve the PNG masters for future art edits. */
+const artwork = file => `${ASSET_BASE}/${file.endsWith('.png') ? `optimized/${file.slice(0, -4)}.webp` : file}`;
+exports.artwork = artwork;
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJBU1NFVF9CQVNFIiwiZXhwb3J0cyIsInByb2Nlc3MiLCJlbnYiLCJQVUJMSUNfVVJMIiwiYXJ0d29yayIsImZpbGUiLCJlbmRzV2l0aCIsInNsaWNlIl0sInNvdXJjZXMiOlsiYXJ0d29yay50cyJdLCJzb3VyY2VzQ29udGVudCI6WyJleHBvcnQgY29uc3QgQVNTRVRfQkFTRSA9IGAke3Byb2Nlc3MuZW52LlBVQkxJQ19VUkwgfHwgJyd9L2Fzc2V0cy9maXNoaW5nYDtcblxuLyoqIE9wdGltaXplZCBydW50aW1lIGNvcGllcyBwcmVzZXJ2ZSB0aGUgUE5HIG1hc3RlcnMgZm9yIGZ1dHVyZSBhcnQgZWRpdHMuICovXG5leHBvcnQgY29uc3QgYXJ0d29yayA9IChmaWxlOiBzdHJpbmcpID0+IGAke0FTU0VUX0JBU0V9LyR7ZmlsZS5lbmRzV2l0aCgnLnBuZycpID8gYG9wdGltaXplZC8ke2ZpbGUuc2xpY2UoMCwgLTQpfS53ZWJwYCA6IGZpbGV9YDtcbiJdLCJtYXBwaW5ncyI6Ijs7Ozs7O0FBQU8sTUFBTUEsVUFBVSxHQUFBQyxPQUFBLENBQUFELFVBQUEsR0FBRyxHQUFHRSxPQUFPLENBQUNDLEdBQUcsQ0FBQ0MsVUFBVSxJQUFJLEVBQUUsaUJBQWlCOztBQUUxRTtBQUNPLE1BQU1DLE9BQU8sR0FBSUMsSUFBWSxJQUFLLEdBQUdOLFVBQVUsSUFBSU0sSUFBSSxDQUFDQyxRQUFRLENBQUMsTUFBTSxDQUFDLEdBQUcsYUFBYUQsSUFBSSxDQUFDRSxLQUFLLENBQUMsQ0FBQyxFQUFFLENBQUMsQ0FBQyxDQUFDLE9BQU8sR0FBR0YsSUFBSSxFQUFFO0FBQUNMLE9BQUEsQ0FBQUksT0FBQSxHQUFBQSxPQUFBIiwiaWdub3JlTGlzdCI6W119

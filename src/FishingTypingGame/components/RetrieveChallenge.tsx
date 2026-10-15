@@ -4,6 +4,7 @@ import { HAIKU_BY_TEXT, HAIKU_SOURCE } from '../engine/haiku';
 import { RHYTHM_LABELS } from '../engine/interactive';
 import { RETRIEVES } from '../engine/tackle';
 import { Retrieve, RetrieveState } from '../engine/types';
+import PromptInput from './PromptInput';
 
 export default function RetrieveChallenge({ retrieve, presentation, onKey, onReelIn }: { retrieve: RetrieveState; presentation: Retrieve; onKey: (key:string)=>void; onReelIn:()=>void }) {
   const input=useRef<HTMLInputElement>(null);
@@ -19,11 +20,7 @@ export default function RetrieveChallenge({ retrieve, presentation, onKey, onRee
       const typed=i<r.typing.typed.length; const wrong=typed && r.typing.typed[i]!==char;
       return <span key={i} className={`${r.cover[i] ? 'f-char-grass' : ''} ${typed ? wrong ? 'f-char-wrong' : 'f-char-correct' : ''} ${i===r.typing.typed.length ? 'f-caret' : ''}`}>{char}</span>;
     })}</div>
-    <input ref={input} className="f-keyboard-input" aria-label={`Retrieve this haiku: ${r.typing.phrase}`} value={r.typing.typed} onChange={()=>{}} autoComplete="off" autoCorrect="off" autoCapitalize="off" spellCheck={false}
-      onPaste={e=>e.preventDefault()} onDrop={e=>e.preventDefault()} onKeyDown={e=>{
-        if(e.ctrlKey || e.metaKey || e.altKey || e.nativeEvent.isComposing) return;
-        if(e.key.length===1 || e.key==='Backspace'){e.preventDefault();onKey(e.key);}
-      }} />
+    <PromptInput ref={input} label={`Retrieve this haiku: ${r.typing.phrase}`} value={r.typing.typed} onKey={onKey}/>
     <div className="f-haiku-credit">Haiku · {poem.author} <span>translated by {HAIKU_SOURCE.translator}</span></div>
     <div className="f-challenge-help" role="status">{mistake ? 'Wrong key — press Backspace to correct it' : r.nibble ? 'Stop typing for 5–10 seconds. This nibble may become a bite.' : r.notice ?? (grass ? 'Pause here for 5 seconds to dead stick in grass cover.' : 'Type steadily, in bursts, or pause for 5 seconds.')}</div>
     <div className="f-retrieve-footer"><small>Green = grass · no timer</small><Button size="small" onClick={e=>{e.stopPropagation();onReelIn();}}>Reel in &amp; recast</Button></div>

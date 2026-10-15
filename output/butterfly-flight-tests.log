@@ -1,0 +1,35 @@
+
+> cougar-cash@0.1.0 test:fishing
+> react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame --cacheDirectory=output/fishing-jest-flight --testPathPattern=butterflyFlight|butterflyGuide|mobile-and-butterflies|FishingGame.test
+
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (38.733 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (13.638 s)
+PASS src/FishingTypingGame/__tests__/weather.test.tsx (7.003 s)
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx (9.898 s)
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/engine.test.ts (10.823 s)
+PASS src/FishingTypingGame/__tests__/world.test.ts (5.602 s)
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (9.84 s)
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyGuide.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+
+Test Suites: 21 passed, 21 total
+Tests:       152 passed, 152 total
+Snapshots:   0 total
+Time:        112.94 s
+Ran all test suites matching /FishingTypingGame|butterflyFlight|butterflyGuide|mobile-and-butterflies|FishingGame.test/i.

@@ -19,6 +19,10 @@ export const ANGLER_OUTFITS: Record<Season, string> = {
 };
 export const MOON_ART = artwork('weather/moon-painted.png');
 const coveBase = 'locations/willow-cove/autumn';
+export const COVE_SEASON_ART = Object.fromEntries((['spring','summer','autumn','winter'] as Season[]).map(season=>{
+  const base=`locations/willow-cove/${season}`;
+  return [season,{sky:artwork(`${base}/sky-painted.png`),landscape:artwork(`${base}/landscape-water-painted.png`),shore:artwork(`${base}/shore-seat-painted.png`),willowLeft:artwork(`${base}/willow-left-painted.png`),willowRight:artwork(`${base}/willow-right-painted.png`)}];
+})) as Record<Season,{sky:string;landscape:string;shore:string;willowLeft:string;willowRight:string}>;
 export const COVE_AUTUMN_ART = {
   sky: artwork(`${coveBase}/sky-painted.png`), clouds: artwork(`${coveBase}/clouds-painted.png`),
   landscape: artwork(`${coveBase}/landscape-water-painted.png`), shore: artwork(`${coveBase}/shore-seat-painted.png`),
@@ -52,9 +56,9 @@ const layer = (id: string, file: string, zIndex: number, x: number, y: number, w
 export const CEDAR_SCENE: SceneAsset[] = [
   layer('lake-background', 'locations/cedar/lake-background-painted.png', 0, -1, -1, 102, 102, { parallax: BACKGROUND_PARALLAX, weatherResponse: true }),
   { id: 'clouds', format: 'procedural', zIndex: 2, position: { x: 0, y: 0, width: 100, height: 100 }, opacity: 1, scale: 1, parallax: 0, weatherResponse: true },
-  layer('near-shore', 'locations/cedar/grass-bank-painted.png', 5, -6, 48, 49, 49, { parallax: DOCK_PARALLAX, weatherResponse: true, spots: ['dock'] }),
-  layer('dock', 'locations/cedar/dock-painted.png', 7, -4, 68, 42, 35, { parallax: DOCK_PARALLAX, spots: ['dock'] }),
-  layer('cove-bank', 'locations/cedar/grass-bank-painted.png', 7, -7, 51, 54, 52, { parallax: DOCK_PARALLAX, weatherResponse: true, spots: ['cove'] }),
+  layer('near-shore', 'locations/cedar/grass-bank-painted.png', 5, -6, 48, 49, 49, { aspectRatio:1.5, parallax: DOCK_PARALLAX, weatherResponse: true, spots: ['dock'] }),
+  layer('dock', 'locations/cedar/dock-painted.png', 7, -4, 60, 42, 56, { aspectRatio:1.5, parallax: DOCK_PARALLAX, spots: ['dock'] }),
+  layer('cove-bank', 'locations/cedar/grass-bank-painted.png', 7, -7, 20, 54, 52, { aspectRatio:1.5, parallax: DOCK_PARALLAX, weatherResponse: true, spots: ['cove'] }),
   layer('right-grassy-bank', 'locations/cedar/grass-bank-painted.png', 6, 80, 72, 30, 34, { parallax: 0.95 * FOREGROUND_PARALLAX_SCALE, flipX: true, weatherResponse: true }),
   layer('waterfall', 'locations/cedar/waterfall.svg', 5, 85, 37, 6, 19, { parallax: 0.2, spots: ['cove'], animation: 'shimmer' }),
   layer('willow', 'locations/cedar/willow.svg', 9, -6, 26, 25, 65, { parallax: 0.9 * FOREGROUND_PARALLAX_SCALE, spots: ['cove'], animation: 'sway', weatherResponse: true }),
@@ -63,17 +67,22 @@ export const CEDAR_SCENE: SceneAsset[] = [
   { id: 'water-interactions', format: 'procedural', zIndex: 8, position: { x: 0, y: 0, width: 100, height: 100 }, opacity: 1, scale: 1, parallax: BACKGROUND_PARALLAX, interactionResponse: true },
   { id: 'angler', format: 'procedural', zIndex: 8, position: { x: 0, y: 0, width: 100, height: 100 }, opacity: 1, scale: 1, parallax: DOCK_PARALLAX, interactionResponse: true },
 ];
-export const COVE_AUTUMN_SCENE: SceneAsset[] = [
-  layer('sky', 'locations/willow-cove/autumn/sky-painted.png', 0, -1, -1, 102, 102),
+function coveScene(season:Season):SceneAsset[] {
+  const base=`locations/willow-cove/${season}`;
+  return [
+  layer('sky', `${base}/sky-painted.png`, 0, -1, -1, 102, 102),
   ...CEDAR_SCENE.filter(l => l.id === 'clouds'),
-  layer('cove-landscape', 'locations/willow-cove/autumn/landscape-water-painted.png', 3, -1, -1, 102, 102, { parallax: BACKGROUND_PARALLAX, weatherResponse: true }),
-  layer('cove-seat', 'locations/willow-cove/autumn/shore-seat-painted.png', 7, 0, 0, 100, 100, { parallax: DOCK_PARALLAX, weatherResponse: true, seat: { x: .29, y: .70, characterWidth: .15 } }),
-  layer('willow-branches-left', 'locations/willow-cove/autumn/willow-left-painted.png', 9, -7, -12, 72, 50, { parallax: .9 * FOREGROUND_PARALLAX_SCALE, animation: 'willow', weatherResponse: true, aspectRatio: 1672 / 940, minWidth: 580 }),
-  layer('willow-branches-right', 'locations/willow-cove/autumn/willow-right-painted.png', 10, 35, -11, 50, 42, { parallax: 1.1 * FOREGROUND_PARALLAX_SCALE, animation: 'willow', weatherResponse: true, aspectRatio: 1672 / 941, minWidth: 320 }),
+  layer('cove-landscape', `${base}/landscape-water-painted.png`, 3, -1, -1, 102, 102, { parallax: BACKGROUND_PARALLAX, weatherResponse: true }),
+  layer('cove-seat', `${base}/shore-seat-painted.png`, 7, 0, 0, 100, 100, { parallax: DOCK_PARALLAX, weatherResponse: true, seat: { x: .29, y: .70, characterWidth: .15 } }),
+  layer('willow-branches-left', `${base}/willow-left-painted.png`, 9, -7, -12, 72, 50, { parallax: .9 * FOREGROUND_PARALLAX_SCALE, animation: 'willow', weatherResponse: true, aspectRatio: 1672 / 940, minWidth: 580 }),
+  layer('willow-branches-right', `${base}/willow-right-painted.png`, 10, 35, -11, 50, 42, { parallax: 1.1 * FOREGROUND_PARALLAX_SCALE, animation: 'willow', weatherResponse: true, aspectRatio: 1672 / 941, minWidth: 320 }),
   ...CEDAR_SCENE.filter(l => ['weather', 'water-interactions', 'angler'].includes(l.id)),
 ];
+}
+export const COVE_SCENES=Object.fromEntries((['spring','summer','autumn','winter'] as Season[]).map(season=>[season,coveScene(season)])) as Record<Season,SceneAsset[]>;
+export const COVE_AUTUMN_SCENE=COVE_SCENES.autumn;
 
 export function sceneForLocation(season: Season, location: string, manifest: SceneAsset[] = CEDAR_SCENE) {
-  const selected = manifest === CEDAR_SCENE && location === 'cove' && season === 'autumn' ? COVE_AUTUMN_SCENE : manifest;
+  const selected = manifest === CEDAR_SCENE && location === 'cove' ? COVE_SCENES[season] : manifest;
   return sceneForSeason(season, selected);
 }

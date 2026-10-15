@@ -11,8 +11,9 @@ import { WEATHER_NAMES } from '../engine/weather';
 import FishArtwork from './FishArtwork';
 import FishInspection from './FishInspection';
 import CatchNotebook, { NotebookEditor, RecordedMeasurements, SaveNote } from './CatchNotebook';
-import { notebookEntries } from '../engine/notebook';
+import { blankEntry, catchImage, notebookEntries } from '../engine/notebook';
 import { formatLength, formatWeight } from '../engine/specimens';
+import FieldGuide, { guideDiscoveries } from './FieldGuide';
 
 export function FishingDialog({ title, open, onClose, children, container }: { title: string; open: boolean; onClose: () => void; children: React.ReactNode; container?: () => HTMLElement | null }) {
   return <Dialog container={container} open={open} onClose={onClose} fullWidth maxWidth="md" className="f-dialog" aria-labelledby="f-dialog-title">
@@ -49,7 +50,7 @@ export function Livewell({ save, onRelease, onReleaseMany, onSaveNote }: { save:
   const record = save.livewell.find(c => c.id === selected);
   if (record) {
     const species = SPECIES.find(s => s.id === record.speciesId)!;
-    const note=entries.find(e=>e.id===record.id)!,label=hidden?(note.name||'Unidentified catch'):species.name;
+    const note=(entries.find(e=>e.id===record.id)??blankEntry(record.id,record.caughtAt,record.location,catchImage(record))),label=hidden?(note.name||'Unidentified catch'):species.name;
     return <div className="f-fish-detail"><Button onClick={() => setSelected(null)}>← Back to livewell</Button>
       <div className="f-fish-detail-grid"><div className="f-fish-identity">
         <FishInspection fish={{...record,species}} units={units} label={label}/>
@@ -57,7 +58,7 @@ export function Livewell({ save, onRelease, onReleaseMany, onSaveNote }: { save:
         {!hidden&&<><p>{species.description}</p><div className="f-measurements"><span>{formatLength(record.lengthCm,units)}</span><span>{formatWeight(record.weightKg,units)}</span></div></>}
         {hidden&&<RecordedMeasurements entry={note} units={units}/>}
         <PerformanceRow {...record} /><p className="f-muted">Caught at {LOCATIONS.find(l => l.id === record.location)?.spot || 'Cedar Lake'} · {new Date(record.caughtAt).toLocaleString()}</p>
-      </div><div className="f-fish-story"><NotebookEditor key={`${note.id}-${units}`} entry={note} units={units} onSave={onSaveNote}/><CatchMemory record={record} />
+      </div><div className="f-fish-story"><NotebookEditor key={`${note.id}-${units}`} entry={note} units={units} onSave={onSaveNote} discoveries={guideDiscoveries(save)}/><CatchMemory record={record} />
         {record.conditions && <section className="f-catch-setup" aria-label="Conditions and tackle for this catch"><span className="f-memory-label">THE CAST THAT LANDED THIS FISH</span><p>{SEASON_LABELS[record.conditions.season]} · {PERIOD_LABELS[record.conditions.period]} · {MOON_LABELS[record.conditions.moonPhase]}{record.conditions.weather && ` · ${WEATHER_NAMES[record.conditions.weather]}`}</p>{record.conditions.tackle && <p>{setupLabel(record.conditions.tackle)}</p>}</section>}
         <Button color="inherit" variant="outlined" onClick={() => { onRelease(record.id); setSelected(null); releaseNotice(1); }}>Release this fish</Button><p className="f-footnote">Your discovery, lifetime records and earned coins stay in your journal.</p>
       </div></div>
@@ -88,13 +89,9 @@ export function FishingStats({ save }: { save: SaveData }) {
     {!hidden&&<><h3 className="f-section-label">Personal bests by species</h3>{s.discovered.length ? s.discovered.map(id => <div className="f-stat-line" key={id}><span>{SPECIES.find(f => f.id === id)?.name}</span><b>{formatLength(s.largest[id]?.lengthCm||0,units)} · {formatWeight(s.largest[id]?.weightKg||0,units)}</b></div>) : <p className="f-muted">Land a fish to start your record book.</p>}</>}
   </>;
 }
-export function CollectionIndex({ save, onSaveNote, onAddNote }: { save: SaveData; onSaveNote:SaveNote; onAddNote:()=>void }) {
+export function CollectionIndex({ save, onSaveNote, onDeleteNote }: { save: SaveData; onSaveNote:SaveNote; onDeleteNote:(id:string)=>void }) {
   const [tab, setTab] = useState(0);
-  const hidden=save.settings.hideFishDetails!==false;
   return <><Tabs value={tab} onChange={(_, v) => setTab(v)} aria-label="Collection views" variant="scrollable" scrollButtons="auto"><Tab label={`Field guide · ${save.stats.discovered.length}/${SPECIES.length}`} /><Tab label="Lifetime statistics"/><Tab label="My notebook"/></Tabs>
-    {tab===2?<CatchNotebook entries={notebookEntries(save)} units={save.settings.measurements??'imperial'} onSave={onSaveNote} onAdd={onAddNote}/>:tab === 1 ? <FishingStats save={save} /> : <><p className="f-guide-intro">Eight species call these waters home. Every cast could be a new discovery.</p><div className="f-fish-grid">{SPECIES.map((s,index) => {
-      const found = save.stats.discovered.includes(s.id); const albino = save.stats.albinoDiscovered.includes(s.id);
-      return <article className={`f-fish-card ${found ? '' : 'f-undiscovered'}`} key={s.id}><img src={s.artwork} alt={found&&!hidden?s.name:found?'Discovered fish illustration':'Undiscovered fish silhouette'} /><h3>{found?(hidden?`Field sketch ${index+1}`:s.name):'Undiscovered'}</h3><span className="f-rarity-label" style={{ color: RARITY_COLORS[s.rarity] }}>{s.rarity}</span>{found && <>{!hidden&&<><i>{s.scientificName}</i><p>{s.description}</p></>}{albino && <span className="f-albino-badge">✧ Albino discovered</span>}</>}</article>;
-    })}</div><p className="f-footnote">Rarity tiers describe game encounter frequency, not conservation status. Individual quality is separate from species rarity. Species reference: <a href="https://www.michigan.gov/dnr/education/michigan-species/fish-species" target="_blank" rel="noreferrer">Michigan DNR fish guide ↗</a></p></>}
+    {tab===2?<CatchNotebook entries={notebookEntries(save)} units={save.settings.measurements??'imperial'} onSave={onSaveNote} onDelete={onDeleteNote} location={save.location} discoveries={guideDiscoveries(save)}/>:tab === 1 ? <FishingStats save={save} /> : <FieldGuide discoveries={guideDiscoveries(save)}/>}
   </>;
 }

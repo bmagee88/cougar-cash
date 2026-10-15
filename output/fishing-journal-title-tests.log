@@ -1,0 +1,16 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/fishing-jest-journal-title --testPathPattern=notebook.test|FishingGame.test
+
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (62.81 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       32 passed, 32 total
+Snapshots:   0 total
+Time:        71.495 s
+Ran all test suites matching /notebook.test|FishingGame.test/i.

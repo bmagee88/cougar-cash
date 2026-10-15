@@ -3,7 +3,7 @@ import { difficulty, generateEncounter, seededRandom, WPM_CURVE } from '../engin
 import { applyKey, cast, createTyping, tick, triggerBite, typeKey } from '../engine/game';
 import { PHRASE_INDEX, selectPhrase, targetCharacters } from '../engine/phrases';
 import { awardCatch, awardEscape, deserializeSave, emptySave, persistSave, readSave, releaseFish, SAVE_KEY, travel } from '../engine/storage';
-import { ANGLER_OUTFITS, CEDAR_SCENE, COVE_AUTUMN_SCENE, FISHING_ART, MOON_ART, SEASON_ART } from '../scene/manifest';
+import { ANGLER_OUTFITS, CEDAR_SCENE, COVE_SCENES, FISHING_ART, MOON_ART, SEASON_ART } from '../scene/manifest';
 import { characterState } from '../scene/FishingScene';
 import { GameState, QUALITIES, RARITIES } from '../engine/types';
 import { CLOUD_ART } from '../scene/CloudSystem';
@@ -94,6 +94,6 @@ test('all gameplay phases advance on deadlines without waiting for animations an
 });
 test('all manifests and species illustrations reference bundled local files', () => {
   const fs = require('fs'); const path = require('path');
-  const files = [...[...CEDAR_SCENE, ...COVE_AUTUMN_SCENE].filter(l => l.src).map(l => l.src!), ...Object.values(CLOUD_ART), ...Object.values(FISHING_ART), ...Object.values(ANGLER_OUTFITS), MOON_ART, ...Object.values(SEASON_ART).flatMap(Object.values), ...SPECIES.flatMap(s => [s.artwork, s.albinoArtwork])];
+  const files = [...[...CEDAR_SCENE, ...Object.values(COVE_SCENES).flat()].filter(l => l.src).map(l => l.src!), ...Object.values(CLOUD_ART), ...Object.values(FISHING_ART), ...Object.values(ANGLER_OUTFITS), MOON_ART, ...Object.values(SEASON_ART).flatMap(Object.values), ...SPECIES.flatMap(s => [s.artwork, s.albinoArtwork])];
   files.forEach(src => { expect(src).toMatch(/^\/assets\/fishing\//); expect(fs.existsSync(path.join(__dirname, '../../../public', src))).toBe(true); });
 });

@@ -1,0 +1,13 @@
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx (8.309 s)
+  √ flights enter from either side at speed, can return from outside the view, and retire beyond the doubled scene (11 ms)
+  √ erratic turns change direction and distance, with a permanent foreground depth boundary (6 ms)
+  √ individual tolerances allow slow approaches but react to close cursors and nearby fast swipes (9 ms)
+  √ pixel picking maps the scaled canvas and rejects transparent pixels and its surrounding rectangle (12 ms)
+  √ mouse clicks fail closed while artwork loads; catching an individual does not remove the other one (358 ms)
+  √ loaded wing frames reject transparent clicks, accept painted clicks, and pause when hidden (347 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        14.785 s
+Ran all test suites within paths "src/FishingTypingGame/__tests__/butterflyFlight.test.tsx".

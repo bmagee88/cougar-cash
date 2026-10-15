@@ -1,0 +1,29 @@
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (85.151 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (6.9 s)
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/engine.test.ts (12.759 s)
+PASS src/FishingTypingGame/__tests__/world.test.ts
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (20.533 s)
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+
+Test Suites: 19 passed, 19 total
+Tests:       138 passed, 138 total
+Snapshots:   0 total
+Time:        155.469 s
+Ran all test suites matching /FishingTypingGame/i.
