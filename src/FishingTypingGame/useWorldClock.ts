@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { worldAt } from './engine/world';
 import { WorldOverrides } from './engine/types';
 
@@ -10,5 +10,6 @@ export function useWorldClock(overrides: WorldOverrides = {}) {
     document.addEventListener('visibilitychange', update);
     return () => { window.clearInterval(timer); document.removeEventListener('visibilitychange', update); };
   }, []);
-  return worldAt(now, process.env.NODE_ENV === 'development' ? overrides : {});
+  const { season, hour, moonPhase } = overrides;
+  return useMemo(() => worldAt(now, process.env.NODE_ENV === 'development' ? { season, hour, moonPhase } : {}), [now, season, hour, moonPhase]);
 }

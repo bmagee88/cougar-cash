@@ -3,6 +3,8 @@ import { CatchRecord, CatchTypingMemory, DAY_PERIODS, Encounter, FishingConditio
 import { DEFAULT_TACKLE, normalizeTackle, RETRIEVES } from './tackle';
 import { readNaturalWeather } from './naturalWeather';
 import { HAIKU_BY_TEXT, HAIKU_SOURCE } from './haiku';
+import { blankEntry, notebookEntries, readNotebook } from './notebook';
+import { qualityForWeight } from './specimens';
 export const SAVE_KEY = 'cougar-fishing-v1';
 function readRetrieve(value: unknown): RetrieveMemory | undefined {
   const memory=value as Partial<RetrieveMemory> | undefined;
@@ -20,9 +22,9 @@ function readTypingMemory(value: unknown): CatchTypingMemory | undefined {
   return { phrase: memory.phrase, ...(validPoem ? { haiku: { id: poem.id, author: poem.author, translator: poem.translator, lines: [...poem.lines] } } : {}) };
 }
 export function emptySave(): SaveData {
-  return { version: 1, livewell: [], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
+  return { version: 1, sizeQualityVersion:1, livewell: [], notebook: [], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
     tackle: { ...DEFAULT_TACKLE },
-    settings: { weather: 'sunny', sound: false, reducedMotion: false, fishingMode: 'standard' },
+    settings: { weather: 'sunny', sound: false, reducedMotion: false, keepScreenAwake: true, fishingMode: 'interactive', hideFishDetails: true, measurements: 'imperial' },
     stats: { caught: 0, escaped: 0, discovered: [], byRarity: Object.fromEntries(RARITIES.map(r => [r, 0])) as SaveData['stats']['byRarity'],
       byQuality: Object.fromEntries(QUALITIES.map(q => [q, 0])) as SaveData['stats']['byQuality'], albinos: 0, albinoDiscovered: [], largest: {}, bestWpm: 0, totalWpm: 0, currentStreak: 0, longestStreak: 0 } };
 }
@@ -40,7 +42,7 @@ export function deserializeSave(raw: string | null): SaveData {
     stats.albinoDiscovered = Array.isArray(data.stats.albinoDiscovered) ? data.stats.albinoDiscovered.filter((id: string) => SPECIES.some(s => s.id === id)) : [];
     stats.largest = Object.fromEntries(Object.entries(data.stats.largest || {}).filter(([id, size]: [string, any]) => SPECIES.some(s => s.id === id) && number(size?.lengthCm) > 0 && number(size?.weightKg) > 0));
     const naturalWeather=data.settings?.weatherMode === 'natural' ? readNaturalWeather(data.settings.naturalWeather) : undefined;
-    return { ...fallback, stats, tackle: normalizeTackle(data.tackle), balance: number(data.balance, BALANCE.initialBalance), location: LOCATIONS.some(l => l.id === data.location) ? data.location : 'dock',
+    const loaded:SaveData = { ...fallback, stats, notebook:readNotebook(data.notebook), tackle: normalizeTackle(data.tackle), balance: number(data.balance, BALANCE.initialBalance), location: LOCATIONS.some(l => l.id === data.location) ? data.location : 'dock',
       awardedIds: data.awardedIds.filter((id: unknown) => typeof id === 'string'),
       livewell: data.livewell.filter((c: CatchRecord) => c && typeof c.id === 'string' && SPECIES.some(s => s.id === c.speciesId) && RARITIES.includes(c.rarity) && QUALITIES.includes(c.quality) && typeof c.isAlbino === 'boolean' && number(c.lengthCm) > 0 && number(c.weightKg) > 0 && Number.isFinite(c.wpm) && Number.isFinite(c.accuracy) && typeof c.caughtAt === 'string').slice(-BALANCE.livewellCapacity).map((c: CatchRecord) => {
         const { typing: savedTyping, conditions: savedConditions, retrieve: savedRetrieve, ...record } = c; const typing = readTypingMemory(savedTyping); const retrieve=readRetrieve(savedRetrieve);
@@ -53,9 +55,19 @@ export function deserializeSave(raw: string | null): SaveData {
           ...(savedConditions.tackle ? { tackle: normalizeTackle(savedConditions.tackle) } : {}) } : undefined;
         return { ...record, ...(typing ? { typing } : {}), ...(retrieve ? { retrieve } : {}), ...(conditions ? { conditions } : {}) };
       }),
-      settings: { sound: data.settings?.sound === true, reducedMotion: data.settings?.reducedMotion === true, fishingMode: data.settings?.fishingMode==='interactive' ? 'interactive' : 'standard', weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
+      settings: { sound: data.settings?.sound === true, reducedMotion: data.settings?.reducedMotion === true, keepScreenAwake: typeof data.settings?.keepScreenAwake === 'boolean' ? data.settings.keepScreenAwake : true, hideFishDetails:data.settings?.hideFishDetails!==false, measurements:data.settings?.measurements==='metric'?'metric':'imperial', fishingMode: data.settings?.fishingMode==='standard' ? 'standard' : 'interactive', weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
         ...(data.settings?.weatherMode === 'natural' ? { weatherMode: 'natural' as const, ...(naturalWeather ? { naturalWeather } : {}) } : {}),
         ...(data.settings?.weatherMode !== 'natural' && data.settings?.weather === 'thunderstorm' && number(data.settings?.stormStartedAt) > 0 ? { stormStartedAt: data.settings.stormStartedAt } : {}) } };
+    if(data.sizeQualityVersion!==1){
+      loaded.livewell=loaded.livewell.map(record=>{
+        const quality=qualityForWeight(SPECIES.find(s=>s.id===record.speciesId)!,record.weightKg);
+        if(quality===record.quality)return record;
+        const moved=Math.min(1,loaded.stats.byQuality[record.quality]);
+        loaded.stats.byQuality[record.quality]-=moved;loaded.stats.byQuality[quality]+=moved;
+        return {...record,quality};
+      });
+    }
+    loaded.notebook=notebookEntries(loaded);return loaded;
   } catch { return fallback; }
 }
 export function readSave(): SaveData { try { return deserializeSave(localStorage.getItem(SAVE_KEY)); } catch { return emptySave(); } }
@@ -66,7 +78,7 @@ export function awardCatch(save: SaveData, encounter: Encounter, performance: Pe
   const typing: CatchTypingMemory = { phrase: encounter.phrase, ...(poem ? { haiku: { id: poem.id, author: poem.author, translator: HAIKU_SOURCE.translator, lines: [...poem.lines] } } : {}) };
   const catchRecord: CatchRecord = { id: encounter.id, speciesId: encounter.species.id, rarity: encounter.species.rarity, quality: encounter.quality, isAlbino: encounter.isAlbino, lengthCm: encounter.lengthCm, weightKg: encounter.weightKg, caughtAt, location: save.location, typing, ...(encounter.retrieve ? { retrieve: encounter.retrieve } : {}), ...(encounter.conditions ? { conditions: encounter.conditions } : {}), ...performance };
   const s = save.stats; const streak = s.currentStreak + 1; const previous = s.largest[encounter.species.id];
-  return { ...save, balance: save.balance + BALANCE.catchCoins, livewell: [...save.livewell, catchRecord], awardedIds: [...save.awardedIds, encounter.id],
+  return { ...save, balance: save.balance + BALANCE.catchCoins, livewell: [...save.livewell, catchRecord], notebook:[...notebookEntries(save),blankEntry(encounter.id,caughtAt,save.location)], awardedIds: [...save.awardedIds, encounter.id],
     stats: { ...s, caught: s.caught + 1, discovered: Array.from(new Set([...s.discovered, encounter.species.id])),
       byRarity: { ...s.byRarity, [encounter.species.rarity]: s.byRarity[encounter.species.rarity] + 1 }, byQuality: { ...s.byQuality, [encounter.quality]: s.byQuality[encounter.quality] + 1 },
       albinos: s.albinos + Number(encounter.isAlbino), albinoDiscovered: encounter.isAlbino ? Array.from(new Set([...s.albinoDiscovered, encounter.species.id])) : s.albinoDiscovered, largest: { ...s.largest, [encounter.species.id]: { lengthCm: Math.max(previous?.lengthCm || 0, encounter.lengthCm), weightKg: Math.max(previous?.weightKg || 0, encounter.weightKg) } },
@@ -78,7 +90,7 @@ export function awardEscape(save: SaveData, performance?: Performance): SaveData
 }
 export function releaseFishes(save: SaveData, ids: readonly string[]): SaveData {
   const released = new Set(ids); const livewell = save.livewell.filter(c => !released.has(c.id));
-  return livewell.length === save.livewell.length ? save : { ...save, livewell };
+  return livewell.length === save.livewell.length ? save : { ...save, notebook:notebookEntries(save), livewell };
 }
 export function releaseFish(save: SaveData, id: string): SaveData { return releaseFishes(save, [id]); }
 export function travel(save: SaveData, id: string): SaveData {

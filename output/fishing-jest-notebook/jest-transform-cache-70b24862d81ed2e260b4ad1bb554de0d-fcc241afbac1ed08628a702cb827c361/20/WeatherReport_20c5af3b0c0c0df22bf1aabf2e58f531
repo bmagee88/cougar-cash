@@ -1,0 +1,324 @@
+ea21df7a0ad23c8b92483fc931ba7056
+"use strict";
+
+var _interopRequireDefault = require("C:/Users/Kathleen Dippyolito/Documents/Clemente Projects/cougar-cash/node_modules/@babel/runtime/helpers/interopRequireDefault.js").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = WeatherReport;
+var _react = _interopRequireDefault(require("react"));
+var _naturalWeather = require("../engine/naturalWeather");
+var _types = require("../engine/types");
+var _weather = require("../engine/weather");
+var _world = require("../engine/world");
+var _jsxDevRuntime = require("react/jsx-dev-runtime");
+var _jsxFileName = "C:\\Users\\Kathleen Dippyolito\\Documents\\Clemente Projects\\cougar-cash\\src\\FishingTypingGame\\components\\WeatherReport.tsx";
+function WeatherReport({
+  season,
+  state
+}) {
+  return /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("div", {
+    className: "f-natural-weather-info",
+    children: [state && /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)(_jsxDevRuntime.Fragment, {
+      children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("strong", {
+          children: ["Natural weather \xB7 ", _weather.WEATHER_NAMES[state.weather]]
+        }, void 0, true, {
+          fileName: _jsxFileName,
+          lineNumber: 9,
+          columnNumber: 20
+        }, this), " \xB7 ", Math.max(0, Math.ceil((state.endsAt - Date.now()) / 60000)), " min remaining \xB7 sampled ", state.durationMs / 60000, " min event"]
+      }, void 0, true, {
+        fileName: _jsxFileName,
+        lineNumber: 9,
+        columnNumber: 17
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: ["Recent events: ", state.history.map(w => _weather.WEATHER_NAMES[w]).join(' → ')]
+      }, void 0, true, {
+        fileName: _jsxFileName,
+        lineNumber: 9,
+        columnNumber: 207
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: ["Next event: ", (0, _naturalWeather.transitionOdds)(state.weather, season, state.history).filter(row => row.chance > 0).map(row => `${_weather.WEATHER_NAMES[row.weather]} ${(row.chance * 100).toFixed(1)}%`).join(' · ')]
+      }, void 0, true, {
+        fileName: _jsxFileName,
+        lineNumber: 9,
+        columnNumber: 281
+      }, this)]
+    }, void 0, true), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("details", {
+      children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("summary", {
+        children: "Weather duration ranges and transition tables"
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 10,
+        columnNumber: 14
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: "One real-world day becomes 48 minutes of play. Bell-shaped durations with rare longer events are calibrated to the averages below. Times are real minutes spent playing. The transition percentages are game estimates informed by weather lifecycles."
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 11,
+        columnNumber: 7
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("div", {
+        className: "f-activity-table-wrap",
+        children: /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("table", {
+          className: "f-activity-table",
+          children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("caption", {
+            children: "Weather durations"
+          }, void 0, false, {
+            fileName: _jsxFileName,
+            lineNumber: 12,
+            columnNumber: 82
+          }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("thead", {
+            children: /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("tr", {
+              children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                scope: "col",
+                children: "Weather"
+              }, void 0, false, {
+                fileName: _jsxFileName,
+                lineNumber: 12,
+                columnNumber: 129
+              }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                scope: "col",
+                children: "Average"
+              }, void 0, false, {
+                fileName: _jsxFileName,
+                lineNumber: 12,
+                columnNumber: 157
+              }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                scope: "col",
+                children: "Minimum"
+              }, void 0, false, {
+                fileName: _jsxFileName,
+                lineNumber: 12,
+                columnNumber: 185
+              }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                scope: "col",
+                children: "Maximum"
+              }, void 0, false, {
+                fileName: _jsxFileName,
+                lineNumber: 12,
+                columnNumber: 213
+              }, this)]
+            }, void 0, true, {
+              fileName: _jsxFileName,
+              lineNumber: 12,
+              columnNumber: 125
+            }, this)
+          }, void 0, false, {
+            fileName: _jsxFileName,
+            lineNumber: 12,
+            columnNumber: 118
+          }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("tbody", {
+            children: _types.WEATHERS.map(w => {
+              const d = _naturalWeather.WEATHER_DURATIONS[w];
+              return /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("tr", {
+                children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                  scope: "row",
+                  children: _weather.WEATHER_NAMES[w]
+                }, void 0, false, {
+                  fileName: _jsxFileName,
+                  lineNumber: 12,
+                  columnNumber: 329
+                }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("td", {
+                  children: [d.mean, " min"]
+                }, void 0, true, {
+                  fileName: _jsxFileName,
+                  lineNumber: 12,
+                  columnNumber: 368
+                }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("td", {
+                  children: [d.min, " min"]
+                }, void 0, true, {
+                  fileName: _jsxFileName,
+                  lineNumber: 12,
+                  columnNumber: 389
+                }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("td", {
+                  children: [d.max, " min"]
+                }, void 0, true, {
+                  fileName: _jsxFileName,
+                  lineNumber: 12,
+                  columnNumber: 409
+                }, this)]
+              }, w, true, {
+                fileName: _jsxFileName,
+                lineNumber: 12,
+                columnNumber: 317
+              }, this);
+            })
+          }, void 0, false, {
+            fileName: _jsxFileName,
+            lineNumber: 12,
+            columnNumber: 254
+          }, this)]
+        }, void 0, true, {
+          fileName: _jsxFileName,
+          lineNumber: 12,
+          columnNumber: 46
+        }, this)
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 12,
+        columnNumber: 7
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("div", {
+        className: "f-activity-table-wrap",
+        children: /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("table", {
+          className: "f-activity-table",
+          children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("caption", {
+            children: [_world.SEASON_LABELS[season], " \xB7 base next-event probabilities (%)"]
+          }, void 0, true, {
+            fileName: _jsxFileName,
+            lineNumber: 13,
+            columnNumber: 82
+          }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("thead", {
+            children: /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("tr", {
+              children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                scope: "col",
+                children: "From \u2193 / To \u2192"
+              }, void 0, false, {
+                fileName: _jsxFileName,
+                lineNumber: 13,
+                columnNumber: 171
+              }, this), _types.WEATHERS.map(w => /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                scope: "col",
+                children: _weather.WEATHER_NAMES[w]
+              }, w, false, {
+                fileName: _jsxFileName,
+                lineNumber: 13,
+                columnNumber: 222
+              }, this))]
+            }, void 0, true, {
+              fileName: _jsxFileName,
+              lineNumber: 13,
+              columnNumber: 167
+            }, this)
+          }, void 0, false, {
+            fileName: _jsxFileName,
+            lineNumber: 13,
+            columnNumber: 160
+          }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("tbody", {
+            children: _types.WEATHERS.map(current => /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("tr", {
+              "data-current": (state === null || state === void 0 ? void 0 : state.weather) === current,
+              children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("th", {
+                scope: "row",
+                children: _weather.WEATHER_NAMES[current]
+              }, void 0, false, {
+                fileName: _jsxFileName,
+                lineNumber: 13,
+                columnNumber: 372
+              }, this), (0, _naturalWeather.transitionOdds)(current, season).map(row => /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("td", {
+                "data-probability": row.chance ? 'active' : 'zero',
+                children: row.chance ? (row.chance * 100).toFixed(1) : '0'
+              }, row.weather, false, {
+                fileName: _jsxFileName,
+                lineNumber: 13,
+                columnNumber: 458
+              }, this))]
+            }, current, true, {
+              fileName: _jsxFileName,
+              lineNumber: 13,
+              columnNumber: 314
+            }, this))
+          }, void 0, false, {
+            fileName: _jsxFileName,
+            lineNumber: 13,
+            columnNumber: 284
+          }, this)]
+        }, void 0, true, {
+          fileName: _jsxFileName,
+          lineNumber: 13,
+          columnNumber: 46
+        }, this)
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 13,
+        columnNumber: 7
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: "Conditional rows replace the base row when the exact chain matches:"
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 14,
+        columnNumber: 7
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("ul", {
+        children: _naturalWeather.WEATHER_SPECIAL_ROWS.map(row => /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("li", {
+          children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("strong", {
+            children: [row.label, ":"]
+          }, void 0, true, {
+            fileName: _jsxFileName,
+            lineNumber: 14,
+            columnNumber: 136
+          }, this), " ", Object.entries(row.weights).map(([w, p]) => `${_weather.WEATHER_NAMES[w]} ${p}%`).join(' · ')]
+        }, row.label, true, {
+          fileName: _jsxFileName,
+          lineNumber: 14,
+          columnNumber: 116
+        }, this))
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 14,
+        columnNumber: 81
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: "Heat waves are blocked in winter, and their entry weight is one-fifth as large in spring and autumn as in summer. Hurricanes represent rare inland remnants in summer and autumn. Snowfall requires winter plus cold front \u2192 rain; blizzard requires winter plus wind \u2192 cold front \u2192 rain. Thunderstorms require heat wave \u2192 cold front and cannot clear directly into sunshine. Excluded probabilities are redistributed among allowed destinations."
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 15,
+        columnNumber: 7
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: "Natural events keep their timing and sequence across reloads and background tabs. A daily season change can end an incompatible event early. Manual weather selections are development/scene previews and bypass natural sequence restrictions."
+      }, void 0, false, {
+        fileName: _jsxFileName,
+        lineNumber: 16,
+        columnNumber: 7
+      }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("p", {
+        children: ["Sources: ", /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("a", {
+          href: "https://www.weather.gov/spotterguide/life",
+          target: "_blank",
+          rel: "noreferrer",
+          children: "NWS storm lifecycle"
+        }, void 0, false, {
+          fileName: _jsxFileName,
+          lineNumber: 17,
+          columnNumber: 19
+        }, this), " \xB7 ", /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("a", {
+          href: "https://forecast.weather.gov/glossary.php?word=heat+wave",
+          target: "_blank",
+          rel: "noreferrer",
+          children: "NWS heat waves"
+        }, void 0, false, {
+          fileName: _jsxFileName,
+          lineNumber: 17,
+          columnNumber: 130
+        }, this), " \xB7 ", /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("a", {
+          href: "https://www.weather.gov/safety/winter-snow",
+          target: "_blank",
+          rel: "noreferrer",
+          children: "NWS winter weather"
+        }, void 0, false, {
+          fileName: _jsxFileName,
+          lineNumber: 17,
+          columnNumber: 251
+        }, this), " \xB7 ", /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("a", {
+          href: "https://www.aoml.noaa.gov/our-research/hurricane-research-division/extra-tropical-transition/",
+          target: "_blank",
+          rel: "noreferrer",
+          children: "NOAA hurricane remnants"
+        }, void 0, false, {
+          fileName: _jsxFileName,
+          lineNumber: 17,
+          columnNumber: 362
+        }, this)]
+      }, void 0, true, {
+        fileName: _jsxFileName,
+        lineNumber: 17,
+        columnNumber: 7
+      }, this)]
+    }, void 0, true, {
+      fileName: _jsxFileName,
+      lineNumber: 10,
+      columnNumber: 5
+    }, this)]
+  }, void 0, true, {
+    fileName: _jsxFileName,
+    lineNumber: 8,
+    columnNumber: 10
+  }, this);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJfcmVhY3QiLCJfaW50ZXJvcFJlcXVpcmVEZWZhdWx0IiwicmVxdWlyZSIsIl9uYXR1cmFsV2VhdGhlciIsIl90eXBlcyIsIl93ZWF0aGVyIiwiX3dvcmxkIiwiX2pzeERldlJ1bnRpbWUiLCJfanN4RmlsZU5hbWUiLCJXZWF0aGVyUmVwb3J0Iiwic2Vhc29uIiwic3RhdGUiLCJqc3hERVYiLCJjbGFzc05hbWUiLCJjaGlsZHJlbiIsIkZyYWdtZW50IiwiV0VBVEhFUl9OQU1FUyIsIndlYXRoZXIiLCJmaWxlTmFtZSIsImxpbmVOdW1iZXIiLCJjb2x1bW5OdW1iZXIiLCJNYXRoIiwibWF4IiwiY2VpbCIsImVuZHNBdCIsIkRhdGUiLCJub3ciLCJkdXJhdGlvbk1zIiwiaGlzdG9yeSIsIm1hcCIsInciLCJqb2luIiwidHJhbnNpdGlvbk9kZHMiLCJmaWx0ZXIiLCJyb3ciLCJjaGFuY2UiLCJ0b0ZpeGVkIiwic2NvcGUiLCJXRUFUSEVSUyIsImQiLCJXRUFUSEVSX0RVUkFUSU9OUyIsIm1lYW4iLCJtaW4iLCJTRUFTT05fTEFCRUxTIiwiY3VycmVudCIsIldFQVRIRVJfU1BFQ0lBTF9ST1dTIiwibGFiZWwiLCJPYmplY3QiLCJlbnRyaWVzIiwid2VpZ2h0cyIsInAiLCJocmVmIiwidGFyZ2V0IiwicmVsIl0sInNvdXJjZXMiOlsiV2VhdGhlclJlcG9ydC50c3giXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IFJlYWN0IGZyb20gJ3JlYWN0JztcbmltcG9ydCB7IFdFQVRIRVJfRFVSQVRJT05TLCBXRUFUSEVSX1NQRUNJQUxfUk9XUywgdHJhbnNpdGlvbk9kZHMgfSBmcm9tICcuLi9lbmdpbmUvbmF0dXJhbFdlYXRoZXInO1xuaW1wb3J0IHsgTmF0dXJhbFdlYXRoZXJTdGF0ZSwgU2Vhc29uLCBXRUFUSEVSUyB9IGZyb20gJy4uL2VuZ2luZS90eXBlcyc7XG5pbXBvcnQgeyBXRUFUSEVSX05BTUVTIH0gZnJvbSAnLi4vZW5naW5lL3dlYXRoZXInO1xuaW1wb3J0IHsgU0VBU09OX0xBQkVMUyB9IGZyb20gJy4uL2VuZ2luZS93b3JsZCc7XG5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIFdlYXRoZXJSZXBvcnQoeyBzZWFzb24sIHN0YXRlIH06IHsgc2Vhc29uOiBTZWFzb247IHN0YXRlPzogTmF0dXJhbFdlYXRoZXJTdGF0ZSB9KSB7XG4gIHJldHVybiA8ZGl2IGNsYXNzTmFtZT1cImYtbmF0dXJhbC13ZWF0aGVyLWluZm9cIj5cbiAgICB7c3RhdGUgJiYgPD48cD48c3Ryb25nPk5hdHVyYWwgd2VhdGhlciDCtyB7V0VBVEhFUl9OQU1FU1tzdGF0ZS53ZWF0aGVyXX08L3N0cm9uZz4gwrcge01hdGgubWF4KDAsTWF0aC5jZWlsKChzdGF0ZS5lbmRzQXQtRGF0ZS5ub3coKSkvNjAwMDApKX0gbWluIHJlbWFpbmluZyDCtyBzYW1wbGVkIHtzdGF0ZS5kdXJhdGlvbk1zLzYwMDAwfSBtaW4gZXZlbnQ8L3A+PHA+UmVjZW50IGV2ZW50czoge3N0YXRlLmhpc3RvcnkubWFwKHc9PldFQVRIRVJfTkFNRVNbd10pLmpvaW4oJyDihpIgJyl9PC9wPjxwPk5leHQgZXZlbnQ6IHt0cmFuc2l0aW9uT2RkcyhzdGF0ZS53ZWF0aGVyLHNlYXNvbixzdGF0ZS5oaXN0b3J5KS5maWx0ZXIocm93PT5yb3cuY2hhbmNlPjApLm1hcChyb3c9PmAke1dFQVRIRVJfTkFNRVNbcm93LndlYXRoZXJdfSAkeyhyb3cuY2hhbmNlKjEwMCkudG9GaXhlZCgxKX0lYCkuam9pbignIMK3ICcpfTwvcD48Lz59XG4gICAgPGRldGFpbHM+PHN1bW1hcnk+V2VhdGhlciBkdXJhdGlvbiByYW5nZXMgYW5kIHRyYW5zaXRpb24gdGFibGVzPC9zdW1tYXJ5PlxuICAgICAgPHA+T25lIHJlYWwtd29ybGQgZGF5IGJlY29tZXMgNDggbWludXRlcyBvZiBwbGF5LiBCZWxsLXNoYXBlZCBkdXJhdGlvbnMgd2l0aCByYXJlIGxvbmdlciBldmVudHMgYXJlIGNhbGlicmF0ZWQgdG8gdGhlIGF2ZXJhZ2VzIGJlbG93LiBUaW1lcyBhcmUgcmVhbCBtaW51dGVzIHNwZW50IHBsYXlpbmcuIFRoZSB0cmFuc2l0aW9uIHBlcmNlbnRhZ2VzIGFyZSBnYW1lIGVzdGltYXRlcyBpbmZvcm1lZCBieSB3ZWF0aGVyIGxpZmVjeWNsZXMuPC9wPlxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJmLWFjdGl2aXR5LXRhYmxlLXdyYXBcIj48dGFibGUgY2xhc3NOYW1lPVwiZi1hY3Rpdml0eS10YWJsZVwiPjxjYXB0aW9uPldlYXRoZXIgZHVyYXRpb25zPC9jYXB0aW9uPjx0aGVhZD48dHI+PHRoIHNjb3BlPVwiY29sXCI+V2VhdGhlcjwvdGg+PHRoIHNjb3BlPVwiY29sXCI+QXZlcmFnZTwvdGg+PHRoIHNjb3BlPVwiY29sXCI+TWluaW11bTwvdGg+PHRoIHNjb3BlPVwiY29sXCI+TWF4aW11bTwvdGg+PC90cj48L3RoZWFkPjx0Ym9keT57V0VBVEhFUlMubWFwKHc9PnsgY29uc3QgZD1XRUFUSEVSX0RVUkFUSU9OU1t3XTsgcmV0dXJuIDx0ciBrZXk9e3d9Pjx0aCBzY29wZT1cInJvd1wiPntXRUFUSEVSX05BTUVTW3ddfTwvdGg+PHRkPntkLm1lYW59IG1pbjwvdGQ+PHRkPntkLm1pbn0gbWluPC90ZD48dGQ+e2QubWF4fSBtaW48L3RkPjwvdHI+OyB9KX08L3Rib2R5PjwvdGFibGU+PC9kaXY+XG4gICAgICA8ZGl2IGNsYXNzTmFtZT1cImYtYWN0aXZpdHktdGFibGUtd3JhcFwiPjx0YWJsZSBjbGFzc05hbWU9XCJmLWFjdGl2aXR5LXRhYmxlXCI+PGNhcHRpb24+e1NFQVNPTl9MQUJFTFNbc2Vhc29uXX0gwrcgYmFzZSBuZXh0LWV2ZW50IHByb2JhYmlsaXRpZXMgKCUpPC9jYXB0aW9uPjx0aGVhZD48dHI+PHRoIHNjb3BlPVwiY29sXCI+RnJvbSDihpMgLyBUbyDihpI8L3RoPntXRUFUSEVSUy5tYXAodz0+PHRoIHNjb3BlPVwiY29sXCIga2V5PXt3fT57V0VBVEhFUl9OQU1FU1t3XX08L3RoPil9PC90cj48L3RoZWFkPjx0Ym9keT57V0VBVEhFUlMubWFwKGN1cnJlbnQ9Pjx0ciBrZXk9e2N1cnJlbnR9IGRhdGEtY3VycmVudD17c3RhdGU/LndlYXRoZXI9PT1jdXJyZW50fT48dGggc2NvcGU9XCJyb3dcIj57V0VBVEhFUl9OQU1FU1tjdXJyZW50XX08L3RoPnt0cmFuc2l0aW9uT2RkcyhjdXJyZW50LHNlYXNvbikubWFwKHJvdz0+PHRkIGtleT17cm93LndlYXRoZXJ9IGRhdGEtcHJvYmFiaWxpdHk9e3Jvdy5jaGFuY2UgPyAnYWN0aXZlJyA6ICd6ZXJvJ30+e3Jvdy5jaGFuY2UgPyAocm93LmNoYW5jZSoxMDApLnRvRml4ZWQoMSkgOiAnMCd9PC90ZD4pfTwvdHI+KX08L3Rib2R5PjwvdGFibGU+PC9kaXY+XG4gICAgICA8cD5Db25kaXRpb25hbCByb3dzIHJlcGxhY2UgdGhlIGJhc2Ugcm93IHdoZW4gdGhlIGV4YWN0IGNoYWluIG1hdGNoZXM6PC9wPjx1bD57V0VBVEhFUl9TUEVDSUFMX1JPV1MubWFwKHJvdz0+PGxpIGtleT17cm93LmxhYmVsfT48c3Ryb25nPntyb3cubGFiZWx9Ojwvc3Ryb25nPiB7T2JqZWN0LmVudHJpZXMocm93LndlaWdodHMpLm1hcCgoW3cscF0pPT5gJHtXRUFUSEVSX05BTUVTW3cgYXMga2V5b2YgdHlwZW9mIFdFQVRIRVJfTkFNRVNdfSAke3B9JWApLmpvaW4oJyDCtyAnKX08L2xpPil9PC91bD5cbiAgICAgIDxwPkhlYXQgd2F2ZXMgYXJlIGJsb2NrZWQgaW4gd2ludGVyLCBhbmQgdGhlaXIgZW50cnkgd2VpZ2h0IGlzIG9uZS1maWZ0aCBhcyBsYXJnZSBpbiBzcHJpbmcgYW5kIGF1dHVtbiBhcyBpbiBzdW1tZXIuIEh1cnJpY2FuZXMgcmVwcmVzZW50IHJhcmUgaW5sYW5kIHJlbW5hbnRzIGluIHN1bW1lciBhbmQgYXV0dW1uLiBTbm93ZmFsbCByZXF1aXJlcyB3aW50ZXIgcGx1cyBjb2xkIGZyb250IOKGkiByYWluOyBibGl6emFyZCByZXF1aXJlcyB3aW50ZXIgcGx1cyB3aW5kIOKGkiBjb2xkIGZyb250IOKGkiByYWluLiBUaHVuZGVyc3Rvcm1zIHJlcXVpcmUgaGVhdCB3YXZlIOKGkiBjb2xkIGZyb250IGFuZCBjYW5ub3QgY2xlYXIgZGlyZWN0bHkgaW50byBzdW5zaGluZS4gRXhjbHVkZWQgcHJvYmFiaWxpdGllcyBhcmUgcmVkaXN0cmlidXRlZCBhbW9uZyBhbGxvd2VkIGRlc3RpbmF0aW9ucy48L3A+XG4gICAgICA8cD5OYXR1cmFsIGV2ZW50cyBrZWVwIHRoZWlyIHRpbWluZyBhbmQgc2VxdWVuY2UgYWNyb3NzIHJlbG9hZHMgYW5kIGJhY2tncm91bmQgdGFicy4gQSBkYWlseSBzZWFzb24gY2hhbmdlIGNhbiBlbmQgYW4gaW5jb21wYXRpYmxlIGV2ZW50IGVhcmx5LiBNYW51YWwgd2VhdGhlciBzZWxlY3Rpb25zIGFyZSBkZXZlbG9wbWVudC9zY2VuZSBwcmV2aWV3cyBhbmQgYnlwYXNzIG5hdHVyYWwgc2VxdWVuY2UgcmVzdHJpY3Rpb25zLjwvcD5cbiAgICAgIDxwPlNvdXJjZXM6IDxhIGhyZWY9XCJodHRwczovL3d3dy53ZWF0aGVyLmdvdi9zcG90dGVyZ3VpZGUvbGlmZVwiIHRhcmdldD1cIl9ibGFua1wiIHJlbD1cIm5vcmVmZXJyZXJcIj5OV1Mgc3Rvcm0gbGlmZWN5Y2xlPC9hPiDCtyA8YSBocmVmPVwiaHR0cHM6Ly9mb3JlY2FzdC53ZWF0aGVyLmdvdi9nbG9zc2FyeS5waHA/d29yZD1oZWF0K3dhdmVcIiB0YXJnZXQ9XCJfYmxhbmtcIiByZWw9XCJub3JlZmVycmVyXCI+TldTIGhlYXQgd2F2ZXM8L2E+IMK3IDxhIGhyZWY9XCJodHRwczovL3d3dy53ZWF0aGVyLmdvdi9zYWZldHkvd2ludGVyLXNub3dcIiB0YXJnZXQ9XCJfYmxhbmtcIiByZWw9XCJub3JlZmVycmVyXCI+TldTIHdpbnRlciB3ZWF0aGVyPC9hPiDCtyA8YSBocmVmPVwiaHR0cHM6Ly93d3cuYW9tbC5ub2FhLmdvdi9vdXItcmVzZWFyY2gvaHVycmljYW5lLXJlc2VhcmNoLWRpdmlzaW9uL2V4dHJhLXRyb3BpY2FsLXRyYW5zaXRpb24vXCIgdGFyZ2V0PVwiX2JsYW5rXCIgcmVsPVwibm9yZWZlcnJlclwiPk5PQUEgaHVycmljYW5lIHJlbW5hbnRzPC9hPjwvcD5cbiAgICA8L2RldGFpbHM+XG4gIDwvZGl2Pjtcbn1cbiJdLCJtYXBwaW5ncyI6Ijs7Ozs7OztBQUFBLElBQUFBLE1BQUEsR0FBQUMsc0JBQUEsQ0FBQUMsT0FBQTtBQUNBLElBQUFDLGVBQUEsR0FBQUQsT0FBQTtBQUNBLElBQUFFLE1BQUEsR0FBQUYsT0FBQTtBQUNBLElBQUFHLFFBQUEsR0FBQUgsT0FBQTtBQUNBLElBQUFJLE1BQUEsR0FBQUosT0FBQTtBQUFnRCxJQUFBSyxjQUFBLEdBQUFMLE9BQUE7QUFBQSxJQUFBTSxZQUFBO0FBRWpDLFNBQVNDLGFBQWFBLENBQUM7RUFBRUMsTUFBTTtFQUFFQztBQUF1RCxDQUFDLEVBQUU7RUFDeEcsb0JBQU8sSUFBQUosY0FBQSxDQUFBSyxNQUFBO0lBQUtDLFNBQVMsRUFBQyx3QkFBd0I7SUFBQUMsUUFBQSxHQUMzQ0gsS0FBSyxpQkFBSSxJQUFBSixjQUFBLENBQUFLLE1BQUEsRUFBQUwsY0FBQSxDQUFBUSxRQUFBO01BQUFELFFBQUEsZ0JBQUUsSUFBQVAsY0FBQSxDQUFBSyxNQUFBO1FBQUFFLFFBQUEsZ0JBQUcsSUFBQVAsY0FBQSxDQUFBSyxNQUFBO1VBQUFFLFFBQUEsR0FBUSx1QkFBa0IsRUFBQ0Usc0JBQWEsQ0FBQ0wsS0FBSyxDQUFDTSxPQUFPLENBQUM7UUFBQTtVQUFBQyxRQUFBLEVBQUFWLFlBQUE7VUFBQVcsVUFBQTtVQUFBQyxZQUFBO1FBQUEsT0FBUyxDQUFDLFVBQUcsRUFBQ0MsSUFBSSxDQUFDQyxHQUFHLENBQUMsQ0FBQyxFQUFDRCxJQUFJLENBQUNFLElBQUksQ0FBQyxDQUFDWixLQUFLLENBQUNhLE1BQU0sR0FBQ0MsSUFBSSxDQUFDQyxHQUFHLENBQUMsQ0FBQyxJQUFFLEtBQUssQ0FBQyxDQUFDLEVBQUMsOEJBQXlCLEVBQUNmLEtBQUssQ0FBQ2dCLFVBQVUs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

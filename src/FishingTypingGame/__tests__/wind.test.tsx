@@ -57,10 +57,12 @@ test('severe rain adds depth and many more lake impacts, but waits for thunderst
   expect(view.container.querySelector('[data-layer="rain-mist"]')).toHaveStyle({ opacity: '0' });
   view.rerender(<WeatherSystem weather="thunderstorm" visuals={weatherVisuals('thunderstorm', 90000)} reducedMotion />);
   expect(view.container.querySelector('.f-rainfall')).toHaveStyle({ opacity: '1' });
-  expect(view.container.querySelectorAll('.f-raindrop')).toHaveLength(480);
-  expect(view.container.querySelectorAll('.f-raindrop-distant')).toHaveLength(160);
-  expect(view.container.querySelectorAll('.f-rain-ring')).toHaveLength(64);
+  expect(view.getByTestId('storm-rain-canvas')).toHaveAttribute('data-near-drops', '320');
+  expect(view.getByTestId('storm-rain-canvas')).toHaveAttribute('data-distant-drops', '160');
+  expect(view.getByTestId('storm-rain-canvas')).toHaveAttribute('data-water-impacts', '64');
+  expect(view.container.querySelectorAll('.f-raindrop')).toHaveLength(0);
   view.rerender(<WeatherSystem weather="hurricane" reducedMotion />);
-  expect(view.container.querySelectorAll('.f-raindrop')).toHaveLength(760);
-  expect(view.container.querySelectorAll('.f-rain-ring')).toHaveLength(96);
+  expect(view.getByTestId('storm-rain-canvas')).toHaveAttribute('data-near-drops', '520');
+  expect(view.getByTestId('storm-rain-canvas')).toHaveAttribute('data-distant-drops', '240');
+  expect(view.getByTestId('storm-rain-canvas')).toHaveAttribute('data-water-impacts', '96');
 });

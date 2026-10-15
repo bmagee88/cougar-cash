@@ -1,4 +1,4 @@
-import React, { CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { CSSProperties, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CharacterState, Encounter, FishCheck, GameState, SceneAsset, Season, Weather, WorldConditions } from '../engine/types';
 import { ANGLER_OUTFITS, ANGLER_RIG, BACKGROUND_PARALLAX, CEDAR_SCENE, COVE_GROUND_FRAME, DOCK_PARALLAX, FISHING_ART, sceneForLocation } from './manifest';
 import { celestialPosition, moonlightAt, PERIOD_LABELS, SEASON_LABELS } from '../engine/world';
@@ -15,8 +15,10 @@ import { useWeatherMotion } from './useWeatherMotion';
 import FishCheckBeacon from './FishCheckBeacon';
 import WaterGrassCover, { WaterCover } from './WaterGrassCover';
 import { pointOnReelPath, reelPath } from './reelPath';
+import { useLayerPresence } from './useLayerPresence';
+import { useLanternLighting } from './useLanternLighting';
 
-export function SceneLayer({ layer }: { layer: SceneAsset }) {
+export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }: { layer: SceneAsset; lanternLit?: boolean }) {
   const p = layer.position;
   const depth = layer.zIndex < 5 ? 'background' : 'foreground';
   const style: CSSProperties = { left: `${p.x}%`, top: `${p.y}%`, width: `${p.width}%`, height: `${p.height}%`, zIndex: layer.zIndex,
@@ -28,8 +30,8 @@ export function SceneLayer({ layer }: { layer: SceneAsset }) {
   if (layer.format === 'procedural') return layer.id === 'reflections' ? <div data-layer={layer.id} data-scene-depth={depth} style={style} className="f-scene-layer f-reflections" /> : null;
   if (layer.format === 'spritesheet' && layer.sprite) return <div data-scene-depth={depth} style={{ ...style, backgroundImage: `url(${layer.src})`, backgroundSize: `${layer.sprite.frames * 100}% 100%`, animation: `f-sprite ${layer.sprite.frames / layer.sprite.fps}s steps(${layer.sprite.frames}) infinite` }} className="f-scene-layer" />;
   const artwork = <img data-layer={layer.id} data-scene-depth={depth} src={layer.src} alt="" draggable={false} style={style} className={`f-scene-layer ${layer.animation ? `f-${layer.animation}` : ''} ${layer.weatherResponse ? 'f-weather-responsive' : ''}`} />;
-  return layer.id === 'cove-landscape' ? <>{artwork}<MountainHaze style={{ ...style, maskImage: `url("${layer.src}")`, WebkitMaskImage: `url("${layer.src}")`, maskSize: '100% 100%', WebkitMaskSize: '100% 100%', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat' }} /></> : artwork;
-}
+  return layer.id === 'cove-landscape' ? <>{artwork}<MountainHaze style={{ ...style, maskImage: `url("${layer.src}")`, WebkitMaskImage: `url("${layer.src}")`, maskSize: '100% 100%', WebkitMaskSize: '100% 100%', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat' }} /></> : <>{artwork}{lanternLit && depth === 'foreground' && <img data-lantern-surface={layer.id} src={layer.src} alt="" aria-hidden="true" draggable={false} style={style} className={`f-scene-layer f-lantern-relit ${layer.animation ? `f-${layer.animation}` : ''} ${layer.weatherResponse ? 'f-weather-responsive' : ''}`} />}</>;
+});
 export function characterState(game: GameState, preview?: CharacterState): CharacterState {
   if (preview) return preview;
   if (game.phase === 'casting') return 'casting';
@@ -40,7 +42,7 @@ export function characterState(game: GameState, preview?: CharacterState): Chara
   if (game.phase === 'result') return game.outcome === 'caught' ? 'success' : 'escape';
   return 'idle';
 }
-export function CharacterAnimator({ state, tipRef, handRef, dockLayer, shoreLayer, caughtFish, landingOriginRef, reducedMotion = false, season = 'spring' }: { state: CharacterState; tipRef?: React.RefObject<HTMLElement>; handRef?: React.RefObject<HTMLElement>; dockLayer?: SceneAsset; shoreLayer?: SceneAsset; caughtFish?: Encounter; landingOriginRef?: React.RefObject<HTMLDivElement>; reducedMotion?: boolean; season?: Season }) {
+export const CharacterAnimator = memo(function CharacterAnimator({ state, tipRef, handRef, dockLayer, shoreLayer, caughtFish, landingOriginRef, reducedMotion = false, season = 'spring', lanternLit = false }: { state: CharacterState; tipRef?: React.RefObject<HTMLElement>; handRef?: React.RefObject<HTMLElement>; dockLayer?: SceneAsset; shoreLayer?: SceneAsset; caughtFish?: Encounter; landingOriginRef?: React.RefObject<HTMLDivElement>; reducedMotion?: boolean; season?: Season; lanternLit?: boolean }) {
   const rig = ANGLER_RIG;
   const dock = dockLayer?.position;
   const characterStyle = {
@@ -58,13 +60,16 @@ export function CharacterAnimator({ state, tipRef, handRef, dockLayer, shoreLaye
   } as CSSProperties;
   const rodStyle: CSSProperties = { left: `${(rig.hand.x - rig.rod.width * rig.rod.grip.x) * 100}%`, top: `${(rig.hand.y - rig.rod.height * rig.rod.grip.y) * 100}%`,
     width: `${rig.rod.width * 100}%`, height: `${rig.rod.height * 100}%`, transformOrigin: `${rig.rod.grip.x * 100}% ${rig.rod.grip.y * 100}%` };
-  return <div className={`f-character f-character-${state} ${dock || shoreLayer?.seat ? 'f-character-seated' : ''}`} data-character-state={state} style={characterStyle}>
+  return <>{lanternLit && <div className={`f-lantern-station ${dock || shoreLayer?.seat ? 'f-character-seated' : ''}`} style={characterStyle} aria-hidden="true">
+    <div className="f-lantern"><i className="f-lantern-halo" /><img data-asset="lantern" src={FISHING_ART.lantern} alt="" draggable={false} /></div>
+  </div>}<div className={`f-character f-character-${state} ${dock || shoreLayer?.seat ? 'f-character-seated' : ''}`} data-character-state={state} style={characterStyle}>
     <img className="f-angler-body" data-asset="fisherman" data-outfit-season={season} src={ANGLER_OUTFITS[season]} alt="" />
+    {lanternLit && <img className="f-angler-body f-lantern-relit" data-lantern-surface="angler" src={ANGLER_OUTFITS[season]} alt="" aria-hidden="true" />}
     {caughtFish && landingOriginRef && <FishLanding key={caughtFish.id} encounter={caughtFish} originRef={landingOriginRef} reducedMotion={reducedMotion} />}
     <i ref={handRef} className="f-angler-hand" style={{ left: `${rig.hand.x * 100}%`, top: `${rig.hand.y * 100}%` }} />
     <div className="f-rod" style={rodStyle}><img data-asset="rod" src={FISHING_ART.rod} alt="" /><i ref={tipRef} className="f-rod-tip" style={{ left: `${rig.rod.tip.x * 100}%`, top: `${rig.rod.tip.y * 100}%` }} /></div>
-  </div>;
-}
+  </div></>;
+});
 export function FishingLine({ game, tipRef, handRef, landingOriginRef, progress, struggling, splashBurst, reducedMotion, checkPreview }: { game: GameState; tipRef?: React.RefObject<HTMLElement>; handRef?: React.RefObject<HTMLElement>; landingOriginRef?: React.RefObject<HTMLDivElement>; progress: number; struggling: boolean; splashBurst: number; reducedMotion: boolean; checkPreview?: FishCheck }) {
   const active = ['casting', 'waiting', 'retrieving', 'typing', 'landing'].includes(game.phase);
   const escaped = game.phase === 'result' && game.outcome === 'escaped';
@@ -93,37 +98,46 @@ export function FishingLine({ game, tipRef, handRef, landingOriginRef, progress,
   }, [escaped]);
   useEffect(() => {
     if (!showingLine || !tipRef) return;
-    let frame: number; let last = -100;
+    let frame = 0; let last = -100; let bounds: DOMRect | undefined; let previousPath = '';
+    const measure = () => { bounds = svg.current?.getBoundingClientRect(); };
+    measure();
+    const size = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : undefined;
+    if (svg.current) size?.observe(svg.current);
+    window.addEventListener('resize', measure); window.addEventListener('scroll', measure, true);
     const position = (now: number) => {
       if (now - last > 40 && tipRef.current && svg.current && line.current) {
-        const scene = svg.current.getBoundingClientRect(); const tip = tipRef.current.getBoundingClientRect();
+          // Finish every geometry read before touching styles. In particular,
+          // reading the float after changing left/top used to force layout.
+          const scene = bounds || svg.current.getBoundingClientRect(); const tip = tipRef.current.getBoundingClientRect();
+          const hand = handRef?.current?.getBoundingClientRect();
+          const origin = floatGroup.current?.getBoundingClientRect();
+          const float = bobber.current?.getBoundingClientRect();
         if (scene.width && scene.height) {
           // Interpolate toward water in front of the measured angler, including
           // responsive dock placement and parallax. All float effects move together.
-          const hand = handRef?.current?.getBoundingClientRect();
           const nearX = hand ? Math.max(0.1, Math.min(0.56, (hand.left - scene.left) / scene.width + 0.065)) : 0.39;
           const nearY = hand ? Math.max(0.74, Math.min(0.91, (hand.top - scene.top) / scene.height + 0.12)) : 0.88;
           const path = reelPath(battle.current.distance, { x: nearX, y: nearY });
-          if (coverLayer.current) {
+          const pathKey = `${path.far.x},${path.far.y},${path.near.x.toFixed(5)},${path.near.y.toFixed(5)}`;
+          if (coverLayer.current && pathKey !== previousPath) {
             coverLayer.current.style.setProperty('--cover-far-x', `${path.far.x * 100}%`);
             coverLayer.current.style.setProperty('--cover-far-y', `${path.far.y * 100}%`);
             coverLayer.current.style.setProperty('--cover-near-x', `${path.near.x * 100}%`);
             coverLayer.current.style.setProperty('--cover-near-y', `${path.near.y * 100}%`);
+            previousPath = pathKey;
           }
           if (floatGroup.current && !escaped) {
             const floatPoint = pointOnReelPath(path, battle.current.progress);
             floatGroup.current.style.left = `${floatPoint.x * 100}%`;
             floatGroup.current.style.top = `${floatPoint.y * 100}%`;
             // Keep the splash on the lake while the bobber alone flies toward the rod.
-            const origin = floatGroup.current.getBoundingClientRect();
-            const flightX = tip.left - origin.left - origin.width / 2;
-            const flightY = tip.top + scene.height * 0.10 - origin.top;
+            const flightX = tip.left - (origin?.left ?? scene.left + floatPoint.x * scene.width) - (origin?.width ?? 0) / 2;
+            const flightY = tip.top + scene.height * 0.10 - (origin?.top ?? scene.top + floatPoint.y * scene.height);
             floatGroup.current.style.setProperty('--escape-x', `${flightX}px`);
             floatGroup.current.style.setProperty('--escape-y', `${flightY}px`);
             floatGroup.current.style.setProperty('--escape-peak', `${Math.min(flightY, -scene.height * 0.20) - scene.height * 0.12}px`);
           }
           const x = (tip.left - scene.left) / scene.width * 1200; const y = (tip.top - scene.top) / scene.height * 700;
-          const float = bobber.current?.getBoundingClientRect();
           const endX = float ? (float.left + float.width / 2 - scene.left) / scene.width * 1200 : 719;
           const endY = float ? (float.top + float.height * 0.2 - scene.top) / scene.height * 700 : 473;
           const sag = escaped ? 35 : battle.current.struggling ? reducedMotion ? 0 : Math.sin(now / 30) * 3 : 15;
@@ -133,7 +147,9 @@ export function FishingLine({ game, tipRef, handRef, landingOriginRef, progress,
       }
       frame = requestAnimationFrame(position);
     };
-    frame = requestAnimationFrame(position); return () => cancelAnimationFrame(frame);
+    const visible = () => { cancelAnimationFrame(frame); if (!document.hidden) { measure(); frame = requestAnimationFrame(position); } };
+    document.addEventListener('visibilitychange', visible); visible();
+    return () => { cancelAnimationFrame(frame); size?.disconnect(); window.removeEventListener('resize', measure); window.removeEventListener('scroll', measure, true); document.removeEventListener('visibilitychange', visible); };
   }, [showingLine, escaped, tipRef, handRef, reducedMotion]);
   return <div className={`f-water-action f-water-${game.phase} ${game.phase === 'retrieving' && game.retrieve.nibble ? 'f-water-nibble' : ''} ${escaped ? 'f-water-escaped' : ''} ${struggling ? 'f-water-danger' : ''}`} data-cast-distance={distance} data-reel-progress={progress.toFixed(4)} data-line-tension={struggling ? 'danger' : 'normal'} style={{ '--water-parallax': BACKGROUND_PARALLAX } as CSSProperties}>
     <svg ref={svg} className="f-fishing-line" viewBox="0 0 1200 700" preserveAspectRatio="none">
@@ -149,16 +165,21 @@ export function FishingLine({ game, tipRef, handRef, landingOriginRef, progress,
     </div>}
   </div>;
 }
-export function WeatherSystem({ weather, visuals = weatherVisuals(weather), location = 'dock', reducedMotion = false }: { weather: Weather; visuals?: WeatherVisuals; location?: string; reducedMotion?: boolean }) {
+export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = weatherVisuals(weather), location = 'dock', reducedMotion = false }: { weather: Weather; visuals?: WeatherVisuals; location?: string; reducedMotion?: boolean }) {
   const heavy = weather === 'thunderstorm' || weather === 'hurricane';
   const layers = useWeatherLayers(weather, visuals, reducedMotion);
+  const storm = ['thunderstorm','hurricane','blizzard'].includes(weather);
+  const fogMoving = useLayerPresence(weather === 'fog', reducedMotion ? 0 : 8000);
+  const stormMoving = useLayerPresence(storm && visuals.fog > 0, reducedMotion ? 0 : 8000);
+  const mistMoving = useLayerPresence(heavy && visuals.rain > 0, reducedMotion ? 0 : 6000);
+  const heatMoving = useLayerPresence(visuals.heat > 0, reducedMotion ? 0 : 8000);
   return <>{layers.map(layer => <WeatherParticles key={layer.weather} {...layer} location={location} reducedMotion={reducedMotion} />)}
-    <div className="f-weather f-weather-fog" data-layer="lake-fog" aria-hidden="true" style={{ opacity: weather === 'fog' ? 1 : 0 }}><div className="f-fog-bank" /></div>
-    <div className="f-weather f-weather-fog f-storm-fog" data-layer="storm-fog" aria-hidden="true" style={{ opacity: ['thunderstorm','hurricane','blizzard'].includes(weather) ? visuals.fog : 0 }}><div className="f-fog-bank" /><div className="f-fog-wisp" /></div>
-    <div className="f-rain-mist" data-layer="rain-mist" aria-hidden="true" style={{ opacity: heavy ? visuals.rain * (weather === 'hurricane' ? .28 : .18) : 0 }} />
-    <div className="f-heat-haze" data-layer="heat-haze" aria-hidden="true" style={{ opacity: visuals.heat }} />
+    <div className={`f-weather f-weather-fog ${fogMoving ? '' : 'f-effect-dormant'}`} data-layer="lake-fog" aria-hidden="true" style={{ opacity: weather === 'fog' ? 1 : 0 }}><div className="f-fog-bank" /></div>
+    <div className={`f-weather f-weather-fog f-storm-fog ${stormMoving ? '' : 'f-effect-dormant'}`} data-layer="storm-fog" aria-hidden="true" style={{ opacity: storm ? visuals.fog : 0 }}><div className="f-fog-bank" /><div className="f-fog-wisp" /></div>
+    <div className={`f-rain-mist ${mistMoving ? '' : 'f-effect-dormant'}`} data-layer="rain-mist" aria-hidden="true" style={{ opacity: heavy ? visuals.rain * (weather === 'hurricane' ? .28 : .18) : 0 }} />
+    <div className={`f-heat-haze ${heatMoving ? '' : 'f-effect-dormant'}`} data-layer="heat-haze" aria-hidden="true" style={{ opacity: visuals.heat }} />
   </>;
-}
+});
 export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, checkPreview }: {
   game: GameState; location: string; weather: Weather; reducedMotion: boolean; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; checkPreview?: FishCheck;
 }) {
@@ -170,14 +191,17 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
   const [animation, setAnimation] = useState<CharacterState>('idle');
   const lastPhase = useRef(game.phase);
   const phase = game.phase; const mappedAnimation = characterState(game);
-  const seasonalManifest = sceneForLocation(world.season, location, manifest);
-  const weatherLook = weatherState || weatherVisuals(weather);
+  const seasonalManifest = useMemo(() => sceneForLocation(world.season, location, manifest), [world.season, location, manifest]);
+  const weatherLook = useMemo(() => weatherState || weatherVisuals(weather), [weatherState, weather]);
   useWeatherMotion(sceneRef, weatherLook.wind, reducedMotion);
   const light = weatherLighting(world.hour, world.moonPhase, weather, weatherLook);
+  const lanternLit = useLayerPresence(light.nightAmount > 0, reducedMotion ? 0 : 8000);
+  useLanternLighting(sceneRef, lanternLit, seasonalManifest);
   const moonlight = moonlightAt(world.hour, world.moonPhase, weatherLook.celestial);
   const moon = celestialPosition(world.hour, true);
   const dockLayer = manifest.find(layer => layer.id === 'dock' && (!layer.spots || layer.spots.includes(location)));
   const shoreLayer = seasonalManifest.find(layer => layer.id === 'cove-seat');
+  const groundArt = useMemo(() => shoreLayer ? { ...shoreLayer, parallax: 0 } : undefined, [shoreLayer]);
   const hasAngler = seasonalManifest.some(layer => layer.id === 'angler');
   const sky = seasonalManifest.find(layer => ['sky', 'lake-background'].includes(layer.id));
   useEffect(() => {
@@ -189,25 +213,25 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
     lastPhase.current = phase;
     return () => clearTimeout(timer);
   }, [phase, mappedAnimation]);
-  return <div ref={sceneRef} className={`f-scene f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} role="img" aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
+  return <div ref={sceneRef} className={`f-scene f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} role="img" aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
     <div className="f-scene-base" aria-hidden="true" /><CelestialSky world={world} background={sky?.src || ''} /><div className="f-sky-grain" />
     {seasonalManifest.filter(l => !l.spots || l.spots.includes(location)).map(layer => {
       if (layer.id === 'weather') return <WeatherSystem key={layer.id} weather={weather} visuals={weatherLook} location={location} reducedMotion={reducedMotion} />;
       if (layer.id === 'clouds') return <CloudSystem key={layer.id} visuals={weatherLook} reducedMotion={reducedMotion} lightningPreview={lightningPreview} />;
-      if (layer.id === 'angler') return shoreLayer ? null : <CharacterAnimator key={layer.id} season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} dockLayer={dockLayer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />;
+      if (layer.id === 'angler') return shoreLayer ? null : <CharacterAnimator key={layer.id} lanternLit={lanternLit} season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} dockLayer={dockLayer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />;
       if (layer.id === 'cove-seat') return <div key={layer.id} className="f-cove-ground-plane" style={{
         '--cove-min-width': `${COVE_GROUND_FRAME.minWidth}px`, '--cove-cover-width': `${COVE_GROUND_FRAME.aspectRatio * 100}cqh`, '--cove-seat-screen-x': `${COVE_GROUND_FRAME.screenSeatX * 100}%`,
         '--cove-seat-x': layer.seat?.x ?? .29, '--ground-parallax': layer.parallax, aspectRatio: COVE_GROUND_FRAME.aspectRatio,
       } as CSSProperties}>
-        <SceneLayer layer={{ ...layer, parallax: 0 }} />
-        {hasAngler && <CharacterAnimator season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} shoreLayer={layer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />}
+        {groundArt && <SceneLayer layer={groundArt} lanternLit={lanternLit} />}
+        {hasAngler && <CharacterAnimator lanternLit={lanternLit} season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} shoreLayer={layer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />}
       </div>;
       if (layer.id === 'water-interactions') return <FishingLine key={layer.id} checkPreview={checkPreview} game={game} tipRef={tipRef} handRef={handRef} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} {...battle} />;
       if (layer.id === 'lake-background') return <LakeBackdrop key={layer.id} layer={layer} season={world.season} />;
-      return <SceneLayer key={layer.id} layer={layer} />;
+      return <SceneLayer key={layer.id} layer={layer} lanternLit={lanternLit} />;
     })}
     <div className="f-time-tint" />
-    <div className="f-moonlight" data-testid="fishing-moonlight" data-moonlight-intensity={moonlight.toFixed(4)} aria-hidden="true" style={{ opacity: moonlight * .24, '--moonlight-x': `${moon.x}%`, '--moonlight-y': `${moon.y}%` } as CSSProperties} />
+    <div className="f-moonlight" data-testid="fishing-moonlight" data-moonlight-intensity={moonlight.toFixed(4)} aria-hidden="true" style={{ opacity: moonlight * .20, '--moonlight-x': `${moon.x}%`, '--moonlight-y': `${moon.y}%` } as CSSProperties} />
     <svg className="f-birds" viewBox="0 0 100 25"><path d="m10 14q5-7 10 0 5-7 10 0m28-6q4-5 8 0 4-5 8 0" fill="none" stroke="#355e54" strokeWidth="1.5" /></svg>
   </div>;
 }

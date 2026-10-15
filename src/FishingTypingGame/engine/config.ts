@@ -1,4 +1,5 @@
 import { FishSpecies, Quality, Rarity } from './types';
+import { artwork } from './artwork';
 
 export const BALANCE = {
   challengeMs: 10000, waitMs: [10000, 20000] as [number, number], castMs: 850, landingMs: 850,
@@ -13,7 +14,7 @@ export const LOCATIONS = [
   { id: 'dock', name: 'Cedar Lake', spot: 'The old dock', cost: 0, description: 'A familiar place to find a little quiet.' },
   { id: 'cove', name: 'Cedar Lake', spot: 'Willow cove', cost: 25, description: 'Golden willows, sheltered water, and room to breathe.' },
 ];
-const asset = (id: string, albino = false) => `${process.env.PUBLIC_URL || ''}/assets/fishing/fish/${id}${albino ? '-albino' : ''}-painted.png`;
+const asset = (id: string, albino = false) => artwork(`fish/${id}${albino ? '-albino' : ''}-painted.png`);
 // Rarity is a game encounter classification, never conservation status.
 // A fictional Great Lakes connected freshwater biome; ranges are illustrative game sizes.
 const fish = (id: string, name: string, scientificName: string, rarity: Rarity, encounterWeight: number, lengthCm: [number, number], weightKg: [number, number], description: string): FishSpecies => ({

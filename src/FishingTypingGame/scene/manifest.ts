@@ -1,34 +1,36 @@
 import { SceneAsset, Season } from '../engine/types';
-export const ASSET_BASE = `${process.env.PUBLIC_URL || ''}/assets/fishing`;
+import { artwork } from '../engine/artwork';
+export { ASSET_BASE } from '../engine/artwork';
 export const BACKGROUND_PARALLAX = 0.02;
 export const FOREGROUND_PARALLAX_SCALE = 0.75;
 export const DOCK_PARALLAX = 0.72 * FOREGROUND_PARALLAX_SCALE;
 export const FISHING_ART = {
-  fisherman: `${ASSET_BASE}/characters/angler-painted.png`,
-  rod: `${ASSET_BASE}/rods/willow-rod-painted.png`,
-  bobber: `${ASSET_BASE}/lures/red-bobber-painted.png`,
-  grassCover: `${ASSET_BASE}/effects/grass-cover-painted.png`,
+  fisherman: artwork('characters/angler-painted.png'),
+  rod: artwork('rods/willow-rod-painted.png'),
+  bobber: artwork('lures/red-bobber-painted.png'),
+  grassCover: artwork('effects/grass-cover-painted.png'),
+  lantern: artwork('effects/lantern-painted.png'),
 };
 export const ANGLER_OUTFITS: Record<Season, string> = {
   spring: FISHING_ART.fisherman,
-  summer: `${ASSET_BASE}/characters/angler-summer-painted.png`,
-  autumn: `${ASSET_BASE}/characters/angler-autumn-painted.png`,
-  winter: `${ASSET_BASE}/characters/angler-winter-painted.png`,
+  summer: artwork('characters/angler-summer-painted.png'),
+  autumn: artwork('characters/angler-autumn-painted.png'),
+  winter: artwork('characters/angler-winter-painted.png'),
 };
-export const MOON_ART = `${ASSET_BASE}/weather/moon-painted.png`;
-const coveBase = `${ASSET_BASE}/locations/willow-cove/autumn`;
+export const MOON_ART = artwork('weather/moon-painted.png');
+const coveBase = 'locations/willow-cove/autumn';
 export const COVE_AUTUMN_ART = {
-  sky: `${coveBase}/sky-painted.png`, clouds: `${coveBase}/clouds-painted.png`,
-  landscape: `${coveBase}/landscape-water-painted.png`, shore: `${coveBase}/shore-seat-painted.png`,
-  willowLeft: `${coveBase}/willow-left-painted.png`, willowRight: `${coveBase}/willow-right-painted.png`,
+  sky: artwork(`${coveBase}/sky-painted.png`), clouds: artwork(`${coveBase}/clouds-painted.png`),
+  landscape: artwork(`${coveBase}/landscape-water-painted.png`), shore: artwork(`${coveBase}/shore-seat-painted.png`),
+  willowLeft: artwork(`${coveBase}/willow-left-painted.png`), willowRight: artwork(`${coveBase}/willow-right-painted.png`),
 };
 // The bank and seated model share this undistorted canvas, including on phones.
 export const COVE_GROUND_FRAME = { minWidth: 780, aspectRatio: 1672 / 941, screenSeatX: 0.24 };
 export const SEASON_ART = Object.fromEntries((['spring', 'summer', 'autumn', 'winter'] as Season[]).map(season => [season, {
-  background: `${ASSET_BASE}/locations/cedar/${season === 'autumn' ? '' : `${season}/`}lake-background-painted.png`,
-  bank: `${ASSET_BASE}/locations/cedar/${season === 'autumn' ? '' : `${season}/`}grass-bank-painted.png`,
-  reeds: `${ASSET_BASE}/locations/cedar/${season === 'autumn' ? '' : `${season}/`}reeds-painted.png`,
-  willow: `${ASSET_BASE}/locations/cedar/${season === 'autumn' ? '' : `${season}/`}willow.svg`,
+  background: artwork(`locations/cedar/${season === 'autumn' ? '' : `${season}/`}lake-background-painted.png`),
+  bank: artwork(`locations/cedar/${season === 'autumn' ? '' : `${season}/`}grass-bank-painted.png`),
+  reeds: artwork(`locations/cedar/${season === 'autumn' ? '' : `${season}/`}reeds-painted.png`),
+  willow: artwork(`locations/cedar/${season === 'autumn' ? '' : `${season}/`}willow.svg`),
 }])) as Record<Season, { background: string; bank: string; reeds: string; willow: string }>;
 export function sceneForSeason(season: Season, manifest: SceneAsset[] = CEDAR_SCENE): SceneAsset[] {
   const art = SEASON_ART[season];
@@ -44,7 +46,7 @@ export const ANGLER_RIG = {
   dockSeat: { x: 0.70, y: 0.40, characterWidth: 0.34 },
 };
 const layer = (id: string, file: string, zIndex: number, x: number, y: number, width: number, height: number, extra: Partial<SceneAsset> = {}): SceneAsset => ({
-  id, src: `${ASSET_BASE}/${file}`, format: file.endsWith('.png') ? 'png' : 'svg',
+  id, src: artwork(file), format: file.endsWith('.png') ? 'webp' : 'svg',
   zIndex, position: { x, y, width, height }, opacity: 1, scale: 1, parallax: 0, ...extra,
 });
 export const CEDAR_SCENE: SceneAsset[] = [

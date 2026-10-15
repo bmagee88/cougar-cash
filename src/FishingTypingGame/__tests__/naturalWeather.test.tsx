@@ -120,7 +120,7 @@ test('new weather affects bite forecasts, habitat presentation and distinct snow
   const props={game:{phase:'idle' as const},location:'dock',world:worldAt(epoch,{season:'winter'}),reducedMotion:true};
   const view=render(<FishingScene {...props} weather="blizzard" />);
   expect(view.getByTestId('weather-snow').children).toHaveLength(90); expect(view.container.querySelector('.f-storm-fog')).toHaveStyle({opacity:'1'});
-  view.rerender(<FishingScene {...props} weather="hurricane" />); expect(view.queryByTestId('weather-snow')).toBeNull(); expect(view.container.querySelectorAll('.f-raindrop')).toHaveLength(760);
+  view.rerender(<FishingScene {...props} weather="hurricane" />); expect(view.queryByTestId('weather-snow')).toBeNull(); expect(view.getByTestId('storm-rain-canvas')).toHaveAttribute('data-near-drops', '520');
 });
 test('the natural weather hook catches up on visibility, preserves state on rerender and removes its timer', () => {
   jest.useFakeTimers('modern'); jest.setSystemTime(epoch);

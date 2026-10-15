@@ -1,0 +1,26 @@
+
+> cougar-cash@0.1.0 test:fishing
+> react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame --cacheDirectory=output/fishing-jest-wake
+
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (60.367 s)
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/engine.test.ts (13.626 s)
+PASS src/FishingTypingGame/__tests__/world.test.ts
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (20.269 s)
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+
+Test Suites: 16 passed, 16 total
+Tests:       120 passed, 120 total
+Snapshots:   0 total
+Time:        131.995 s
+Ran all test suites matching /FishingTypingGame/i.

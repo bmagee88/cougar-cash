@@ -1,0 +1,721 @@
+{
+  "sourceBytes": 93268119,
+  "runtimeBytes": 14891994,
+  "images": [
+    {
+      "file": "characters/angler-autumn-painted.png",
+      "sourceBytes": 1901346,
+      "runtimeBytes": 83462,
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "runtimeSize": [
+        512,
+        768
+      ]
+    },
+    {
+      "file": "characters/angler-painted.png",
+      "sourceBytes": 1831371,
+      "runtimeBytes": 80570,
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "runtimeSize": [
+        512,
+        768
+      ]
+    },
+    {
+      "file": "characters/angler-summer-painted.png",
+      "sourceBytes": 1922802,
+      "runtimeBytes": 87614,
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "runtimeSize": [
+        512,
+        768
+      ]
+    },
+    {
+      "file": "characters/angler-winter-painted.png",
+      "sourceBytes": 1869773,
+      "runtimeBytes": 78898,
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "runtimeSize": [
+        512,
+        768
+      ]
+    },
+    {
+      "file": "effects/grass-cover-painted.png",
+      "sourceBytes": 1271803,
+      "runtimeBytes": 23976,
+      "sourceSize": [
+        1273,
+        1236
+      ],
+      "runtimeSize": [
+        192,
+        186
+      ]
+    },
+    {
+      "file": "effects/lantern-painted.png",
+      "sourceBytes": 2294030,
+      "runtimeBytes": 14904,
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "runtimeSize": [
+        128,
+        192
+      ]
+    },
+    {
+      "file": "fish/bass-albino-painted.png",
+      "sourceBytes": 1674106,
+      "runtimeBytes": 156118,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/bass-painted.png",
+      "sourceBytes": 1988211,
+      "runtimeBytes": 199248,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/bluegill-albino-painted.png",
+      "sourceBytes": 2033429,
+      "runtimeBytes": 180598,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/bluegill-painted.png",
+      "sourceBytes": 2218693,
+      "runtimeBytes": 215574,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/crappie-albino-painted.png",
+      "sourceBytes": 2040088,
+      "runtimeBytes": 184864,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/crappie-painted.png",
+      "sourceBytes": 2428489,
+      "runtimeBytes": 239798,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/muskie-albino-painted.png",
+      "sourceBytes": 1209486,
+      "runtimeBytes": 115618,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/muskie-painted.png",
+      "sourceBytes": 1394137,
+      "runtimeBytes": 138286,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/perch-albino-painted.png",
+      "sourceBytes": 1702931,
+      "runtimeBytes": 163504,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/perch-painted.png",
+      "sourceBytes": 1940384,
+      "runtimeBytes": 205032,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/pike-albino-painted.png",
+      "sourceBytes": 1125463,
+      "runtimeBytes": 109134,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/pike-painted.png",
+      "sourceBytes": 1291042,
+      "runtimeBytes": 137204,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/sturgeon-albino-painted.png",
+      "sourceBytes": 1006974,
+      "runtimeBytes": 95694,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/sturgeon-painted.png",
+      "sourceBytes": 1137236,
+      "runtimeBytes": 114972,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/walleye-albino-painted.png",
+      "sourceBytes": 1532165,
+      "runtimeBytes": 144582,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "fish/walleye-painted.png",
+      "sourceBytes": 1803569,
+      "runtimeBytes": 189550,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1024,
+        512
+      ]
+    },
+    {
+      "file": "locations/cedar/distant-shore.png",
+      "sourceBytes": 1178977,
+      "runtimeBytes": 280220,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/dock-painted.png",
+      "sourceBytes": 1820431,
+      "runtimeBytes": 315518,
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "runtimeSize": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "file": "locations/cedar/far-bank-painted.png",
+      "sourceBytes": 407057,
+      "runtimeBytes": 126534,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/grass-bank-painted.png",
+      "sourceBytes": 2218787,
+      "runtimeBytes": 432102,
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "runtimeSize": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "file": "locations/cedar/lake-background-painted.png",
+      "sourceBytes": 2221681,
+      "runtimeBytes": 418136,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/cedar/reeds-painted.png",
+      "sourceBytes": 1479838,
+      "runtimeBytes": 426432,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/spring/grass-bank-painted.png",
+      "sourceBytes": 2260793,
+      "runtimeBytes": 458932,
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "runtimeSize": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "file": "locations/cedar/spring/lake-background-painted.png",
+      "sourceBytes": 2293409,
+      "runtimeBytes": 428488,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/cedar/spring/reeds-painted.png",
+      "sourceBytes": 1540270,
+      "runtimeBytes": 445718,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/summer/grass-bank-painted.png",
+      "sourceBytes": 2250913,
+      "runtimeBytes": 478786,
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "runtimeSize": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "file": "locations/cedar/summer/lake-background-painted.png",
+      "sourceBytes": 2156378,
+      "runtimeBytes": 381008,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/cedar/summer/reeds-painted.png",
+      "sourceBytes": 1577125,
+      "runtimeBytes": 452676,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/water-open-painted.png",
+      "sourceBytes": 1840176,
+      "runtimeBytes": 279406,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/water-painted.png",
+      "sourceBytes": 1860468,
+      "runtimeBytes": 275044,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/water-reflections-painted.png",
+      "sourceBytes": 1741703,
+      "runtimeBytes": 231194,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/cedar/winter/grass-bank-painted.png",
+      "sourceBytes": 2272249,
+      "runtimeBytes": 476928,
+      "sourceSize": [
+        1536,
+        1024
+      ],
+      "runtimeSize": [
+        1536,
+        1024
+      ]
+    },
+    {
+      "file": "locations/cedar/winter/lake-background-painted.png",
+      "sourceBytes": 2464873,
+      "runtimeBytes": 466930,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/cedar/winter/reeds-painted.png",
+      "sourceBytes": 1607853,
+      "runtimeBytes": 439394,
+      "sourceSize": [
+        2172,
+        724
+      ],
+      "runtimeSize": [
+        2172,
+        724
+      ]
+    },
+    {
+      "file": "locations/willow-cove/autumn/clouds-painted.png",
+      "sourceBytes": 926543,
+      "runtimeBytes": 329196,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/autumn/landscape-water-painted.png",
+      "sourceBytes": 2333388,
+      "runtimeBytes": 621348,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/autumn/shore-seat-painted.png",
+      "sourceBytes": 1669198,
+      "runtimeBytes": 490478,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/autumn/sky-painted.png",
+      "sourceBytes": 1797625,
+      "runtimeBytes": 129154,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "locations/willow-cove/autumn/willow-left-painted.png",
+      "sourceBytes": 1869289,
+      "runtimeBytes": 757240,
+      "sourceSize": [
+        1672,
+        940
+      ],
+      "runtimeSize": [
+        1672,
+        940
+      ]
+    },
+    {
+      "file": "locations/willow-cove/autumn/willow-right-painted.png",
+      "sourceBytes": 1736146,
+      "runtimeBytes": 787698,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "lures/red-bobber-painted.png",
+      "sourceBytes": 1548800,
+      "runtimeBytes": 4050,
+      "sourceSize": [
+        1024,
+        1536
+      ],
+      "runtimeSize": [
+        85,
+        128
+      ]
+    },
+    {
+      "file": "rods/willow-rod-painted.png",
+      "sourceBytes": 319760,
+      "runtimeBytes": 35168,
+      "sourceSize": [
+        1448,
+        1086
+      ],
+      "runtimeSize": [
+        768,
+        576
+      ]
+    },
+    {
+      "file": "weather/clouds/cirrus-painted.png",
+      "sourceBytes": 1257337,
+      "runtimeBytes": 405094,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "weather/clouds/cumulonimbus-painted.png",
+      "sourceBytes": 1358378,
+      "runtimeBytes": 360248,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "weather/clouds/cumulus-painted.png",
+      "sourceBytes": 917712,
+      "runtimeBytes": 277818,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "weather/clouds/overcast-painted.png",
+      "sourceBytes": 1861318,
+      "runtimeBytes": 358476,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "weather/clouds/rain-painted.png",
+      "sourceBytes": 1799542,
+      "runtimeBytes": 304500,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "weather/clouds/stratus-painted.png",
+      "sourceBytes": 765601,
+      "runtimeBytes": 251988,
+      "sourceSize": [
+        1672,
+        941
+      ],
+      "runtimeSize": [
+        1672,
+        941
+      ]
+    },
+    {
+      "file": "weather/moon-painted.png",
+      "sourceBytes": 2296973,
+      "runtimeBytes": 6892,
+      "sourceSize": [
+        1254,
+        1254
+      ],
+      "runtimeSize": [
+        96,
+        96
+      ]
+    }
+  ]
+}

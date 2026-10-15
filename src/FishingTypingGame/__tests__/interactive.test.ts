@@ -142,5 +142,7 @@ test('empty retrieves do not award escapes and catch saves retain both texts and
   const fish=generateEncounter(seededRandom(3));fish.retrieve={phrase:HAIKU[0].text,reeled:.4,rhythm:'jerky',grass:true};
   const saved=awardCatch({...save,settings:{...save.settings,fishingMode:'interactive'}},fish,{wpm:40,accuracy:100,timeRemaining:1,correctCharacters:30});
   const reload=deserializeSave(JSON.stringify(saved));expect(reload.livewell[0].retrieve).toEqual(fish.retrieve);expect(reload.settings.fishingMode).toBe('interactive');
-  delete saved.settings.fishingMode;expect(deserializeSave(JSON.stringify(saved)).settings.fishingMode).toBe('standard');
+  saved.settings.fishingMode='standard';expect(deserializeSave(JSON.stringify(saved)).settings.fishingMode).toBe('standard');
+  delete saved.settings.fishingMode;expect(deserializeSave(JSON.stringify(saved)).settings.fishingMode).toBe('interactive');
+  expect(emptySave().settings.fishingMode).toBe('interactive');
 });

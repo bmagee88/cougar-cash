@@ -1,13 +1,13 @@
-import React, { CSSProperties, useId } from 'react';
+import React, { CSSProperties, memo, useId } from 'react';
 import { SceneAsset, Season } from '../engine/types';
 import contours from './skyline-contours';
 
-export function MountainHaze({ style }: { style: CSSProperties }) {
-  return <div data-layer="mountain-weather-haze" data-scene-depth="background" aria-hidden="true" className="f-scene-layer f-mountain-haze" style={{ ...style, opacity: 'var(--mountain-haze-opacity, 0)' }} />;
+export function MountainHaze({ style, embedded = false }: { style: CSSProperties; embedded?: boolean }) {
+  return <div data-layer="mountain-weather-haze" data-scene-depth={embedded ? undefined : 'background'} aria-hidden="true" className={`${embedded ? 'f-backdrop-content' : 'f-scene-layer'} f-mountain-haze`} style={{ ...style, opacity: 'var(--mountain-haze-opacity, 0)' }} />;
 }
 
 /** Two views of the same combined asset keep reflections intact while the ridge occludes the sky. */
-export default function LakeBackdrop({ layer, season }: { layer: SceneAsset; season: Season }) {
+export default memo(function LakeBackdrop({ layer, season }: { layer: SceneAsset; season: Season }) {
   const id = `ridge-${useId().replace(/:/g, '')}`;
   const mask = `mask-${id}`; const feather = `feather-${id}`;
   const p = layer.position;
@@ -26,7 +26,9 @@ export default function LakeBackdrop({ layer, season }: { layer: SceneAsset; sea
       </defs>
     </svg>
     <img data-layer="lake-background" data-scene-depth="background" src={layer.src} alt="" draggable={false} className="f-scene-layer" style={{ ...style, zIndex: 0 }} />
-    <img data-layer="mountain-landscape" data-scene-depth="background" src={layer.src} alt="" draggable={false} className="f-scene-layer" style={{ ...style, zIndex: 3, maskImage: `url("#${mask}")`, WebkitMaskImage: `url("#${mask}")` }} />
-    <MountainHaze style={{ ...style, zIndex: 3, maskImage: `url("#${mask}")`, WebkitMaskImage: `url("#${mask}")` }} />
+    <div data-layer="mountain-plane" data-scene-depth="background" className="f-scene-layer" style={{ ...style, zIndex: 3, maskImage: `url("#${mask}")`, WebkitMaskImage: `url("#${mask}")` }}>
+      <img data-layer="mountain-landscape" src={layer.src} alt="" draggable={false} className="f-backdrop-content" />
+      <MountainHaze embedded style={{}} />
+    </div>
   </>;
-}
+});

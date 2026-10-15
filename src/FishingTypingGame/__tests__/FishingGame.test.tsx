@@ -2,7 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import FishingGame from '../FishingGame';
 import * as encounters from '../engine/encounters';
-import { awardCatch, emptySave, SAVE_KEY } from '../engine/storage';
+import { awardCatch, emptySave as defaultSave, SAVE_KEY } from '../engine/storage';
 import { BALANCE, SPECIES } from '../engine/config';
 import { HAIKU, HAIKU_SOURCE } from '../engine/haiku';
 import { STORM_TIMING } from '../engine/weather';
@@ -16,12 +16,16 @@ declare const beforeEach: any;
 declare const afterEach: any;
 declare const jest: any;
 
+function emptySave(){const save=defaultSave();save.settings.hideFishDetails=false;save.settings.measurements='metric';return save;}
+
 // CRA's Jest 27 resolver predates router v7 package exports. The navigation
 // link is outside these gameplay tests; keep the real game and engine intact.
 jest.mock('react-router-dom', () => ({ Link: ({ children, to, ...props }: any) => require('react').createElement('a', { ...props, href: to }, children) }), { virtual: true });
 
 beforeEach(() => {
   jest.useFakeTimers('modern'); localStorage.clear();
+  // These waiting/battle regression cases explicitly exercise Standard mode.
+  const save=emptySave(); save.settings.fishingMode='standard'; localStorage.setItem(SAVE_KEY,JSON.stringify(save));
   Object.defineProperty(window, 'matchMedia', { writable: true, value: jest.fn().mockImplementation(query => ({ matches: false, media: query, onchange: null, addListener: jest.fn(), removeListener: jest.fn(), addEventListener: jest.fn(), removeEventListener: jest.fn(), dispatchEvent: jest.fn() })) });
   const fish = encounters.generateEncounter(encounters.seededRandom(5), { speciesId: 'sturgeon', quality: 'SS', isAlbino: true, targetWpm: 8 });
   jest.spyOn(encounters, 'generateEncounter').mockImplementation(() => ({ ...fish, phrase: 'calm lake' }));
@@ -34,6 +38,16 @@ function bite() {
   const minimum = Number(screen.getByText(/^Expected bite wait:/).textContent!.match(/(\d+)–/)![1]);
   act(() => { jest.advanceTimersByTime(BALANCE.castMs + minimum * 1000 + 50); });
 }
+
+test('a fresh game defaults to Interactive fishing and keeps the screen awake',()=>{
+  localStorage.clear();mount();
+  expect(screen.getByText('Type a haiku to retrieve. Vary your rhythm to tempt a fish.')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Settings'}));
+  expect(screen.getByRole('combobox',{name:/^Fishing mode/})).toHaveTextContent('Interactive');
+  expect(screen.getByRole('checkbox',{name:'Keep screen awake'})).toBeChecked();
+  expect(screen.getByRole('checkbox',{name:'Hide automatic fish details'})).toBeChecked();
+  expect(screen.getByRole('combobox',{name:'Measurements'})).toHaveTextContent('Imperial');
+});
 
 test('mode setting persists and an interactive haiku focuses, tracks rhythm and saves with a catch',()=>{
   const view=mount();fireEvent.click(screen.getByRole('button',{name:'Settings'}));
@@ -172,7 +186,7 @@ test('tackle selectors keep valid combinations, persist across reload and lock d
   expect(encounters.generateEncounter).toHaveBeenCalledWith(expect.any(Function), { castDistance: 1 }, expect.objectContaining({ weather: 'sunny', tackle: expect.objectContaining({ lure: 'worm', rig: 'bottom' }) }));
 });
 test('a storm settling during active typing preserves the challenge and its progress', () => {
-  const saved = emptySave(); saved.settings.weather = 'thunderstorm';
+  const saved = emptySave(); saved.settings.fishingMode='standard'; saved.settings.weather = 'thunderstorm';
   localStorage.setItem(SAVE_KEY, JSON.stringify(saved));
   const { container } = mount(); act(() => jest.advanceTimersByTime(75000)); bite();
   const input = screen.getByRole('textbox', { name: 'Type this phrase: calm lake' });
@@ -188,6 +202,7 @@ test('a storm settling during active typing preserves the challenge and its prog
 test('a natural event changes during typing without resetting the phrase, deadline, gear or lifetime save', () => {
   jest.setSystemTime(Date.parse('2026-10-11T10:00:00-04:00'));
   const save=startNaturalWeather(emptySave(),Date.now(),{},41);
+  save.settings.fishingMode='standard';
   const wait=biteWaitRange({...worldAt(Date.now()),weather:'sunny',tackle:save.tackle})[0];
   const durationMs=WEATHER_DURATIONS.sunny.min*60000;
   save.settings.naturalWeather={...save.settings.naturalWeather!,durationMs,startedAt:Date.now()-durationMs+BALANCE.castMs+wait+2000,endsAt:Date.now()+BALANCE.castMs+wait+2000};
@@ -205,6 +220,7 @@ test('a natural event changes during typing without resetting the phrase, deadli
 
 test('a storm expires into rain during typing without changing the text, progress or deadline', () => {
   const save = emptySave();
+  save.settings.fishingMode='standard';
   const wait = biteWaitRange({ ...worldAt(Date.now()), weather: 'thunderstorm', stormAgeMs: STORM_TIMING.durationMs, tackle: save.tackle })[0];
   save.settings = { ...save.settings, weather: 'thunderstorm', stormStartedAt: Date.now() - STORM_TIMING.durationMs + BALANCE.castMs + wait + 2250 };
   localStorage.setItem(SAVE_KEY, JSON.stringify(save));
@@ -228,7 +244,7 @@ test('a playable cast focuses typing, accepts corrections, reveals and persists 
   'calm lake'.split('').forEach(key => fireEvent.keyDown(input, { key }));
   const lapCatch = screen.getByTestId('fishing-lap-catch');
   expect(lapCatch.closest('.f-character')).toBeInTheDocument();
-  expect(lapCatch.querySelector('img')).toHaveAttribute('src', expect.stringContaining('sturgeon-albino-painted.png'));
+  expect(lapCatch.querySelector('img')).toHaveAttribute('src', expect.stringContaining('sturgeon-albino-painted.webp'));
   act(() => { jest.advanceTimersByTime(900); });
   expect(screen.getByTestId('fishing-lap-catch')).toBe(lapCatch);
   expect(screen.getByRole('heading', { name: 'Lake sturgeon' })).toBeInTheDocument();
@@ -261,7 +277,7 @@ test('an expired challenge launches the float from its final progress without le
 });
 
 test('reduced motion shows the escape result without an airborne float or splash', () => {
-  const save = emptySave(); save.settings.reducedMotion = true;
+  const save = emptySave(); save.settings.fishingMode='standard'; save.settings.reducedMotion = true;
   localStorage.setItem(SAVE_KEY, JSON.stringify(save));
   const { container } = mount(); bite(); act(() => { jest.advanceTimersByTime(10100); });
   expect(screen.getByRole('heading', { name: 'The fish got away!' })).toBeInTheDocument();

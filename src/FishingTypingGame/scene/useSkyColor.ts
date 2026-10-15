@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 type SkyPixels = { data: Uint8ClampedArray; width: number; height: number };
 const cache = new Map<string, SkyPixels>();
+export const SKY_SAMPLE_WIDTH = 96, SKY_CACHE_LIMIT = 4;
 
 /** Read the sky's color only; the source artwork is never altered. */
 export function useSkyColor(src: string, xPercent: number, yPercent: number) {
@@ -16,12 +17,15 @@ export function useSkyColor(src: string, xPercent: number, yPercent: number) {
       if (cancelled) return;
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = image.naturalWidth; canvas.height = image.naturalHeight;
+        canvas.width = SKY_SAMPLE_WIDTH;
+        canvas.height = Math.max(1, Math.round(image.naturalHeight / image.naturalWidth * SKY_SAMPLE_WIDTH));
         const context = canvas.getContext('2d', { willReadFrequently: true });
         if (!context) return;
-        context.drawImage(image, 0, 0);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
         const value = { data: context.getImageData(0, 0, canvas.width, canvas.height).data, width: canvas.width, height: canvas.height };
-        cache.set(src, value); setPixels(value);
+        cache.set(src, value);
+        while (cache.size > SKY_CACHE_LIMIT) cache.delete(cache.keys().next().value!);
+        setPixels(value);
       } catch { /* A custom cross-origin manifest can fall back to the sky palette. */ }
     };
     image.src = src;

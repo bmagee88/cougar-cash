@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Weather } from './engine/types';
 import { STORM_PREVIEW_MS, STORM_TIMING, StormStage, weatherVisuals } from './engine/weather';
 
@@ -27,5 +27,5 @@ export function useWeatherVisuals(weather: Weather, preview?: StormStage, starte
   }, [weather, preview, stormStart, durationMs]);
   const elapsed = clock.weather === weather && clock.start === stormStart ? clock.elapsed : Math.max(0, Date.now() - stormStart);
   const previewTime = preview === 'storm' ? durationMs / 2 : preview === 'easing' ? durationMs * .875 : preview ? STORM_PREVIEW_MS[preview] : elapsed;
-  return weatherVisuals(weather, previewTime, durationMs);
+  return useMemo(() => weatherVisuals(weather, previewTime, durationMs), [weather, previewTime, durationMs]);
 }

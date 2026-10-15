@@ -1,0 +1,13 @@
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (139.941 s)
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx (9.462 s)
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/world.test.ts (13.959 s)
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx (7.73 s)
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+
+Test Suites: 7 passed, 7 total
+Tests:       72 passed, 72 total
+Snapshots:   0 total
+Time:        196.51 s
+Ran all test suites matching /(world|weather|wakeLock|interactive|performance|FishingGame)\.test/i.

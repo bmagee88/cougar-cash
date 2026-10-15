@@ -75,6 +75,11 @@ export interface CatchRecord extends Performance {
   typing?: CatchTypingMemory;
   retrieve?: RetrieveMemory;
 }
+export type MeasurementSystem = 'imperial' | 'metric';
+export interface NotebookEntry {
+  id: string; caughtAt: string; location: string; name: string; notes: string;
+  weightKg?: number; lengthCm?: number;
+}
 export interface FishingStats {
   caught: number; escaped: number; discovered: string[];
   byRarity: Record<Rarity, number>; byQuality: Record<Quality, number>; albinos: number; albinoDiscovered: string[];
@@ -83,8 +88,8 @@ export interface FishingStats {
 }
 export interface SaveData {
   version: 1; livewell: CatchRecord[]; stats: FishingStats; balance: number;
-  location: string; awardedIds: string[]; tackle: TackleSetup;
-  settings: { sound: boolean; reducedMotion: boolean; weather: Weather; fishingMode?: FishingMode; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
+  location: string; awardedIds: string[]; tackle: TackleSetup; notebook?: NotebookEntry[]; sizeQualityVersion?: 1;
+  settings: { sound: boolean; reducedMotion: boolean; keepScreenAwake?: boolean; hideFishDetails?: boolean; measurements?: MeasurementSystem; weather: Weather; fishingMode?: FishingMode; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
 }
 export interface EncounterOverrides { speciesId?: string; rarity?: Rarity; quality?: Quality; isAlbino?: boolean; targetWpm?: number; wpmAdjustment?: number; lineRemaining?: number; castDistance?: number }
 export interface SceneAsset {
