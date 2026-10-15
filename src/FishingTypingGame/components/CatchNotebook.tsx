@@ -16,7 +16,12 @@ export function NotebookEditor({entry,units,onSave,heading='My field notes'}:{en
   const [draft,setDraft]=useState(()=>draftOf(entry,units));
   const [errors,setErrors]=useState<Record<string,string>>({});const [status,setStatus]=useState('');
   const dirty=useRef(new Set<keyof typeof draft>()),form=useRef<HTMLFormElement>(null);
-  useEffect(()=>{if(!form.current?.contains(document.activeElement)){setDraft(draftOf(entry,units));dirty.current.clear();}},[entry.name,entry.notes,entry.weightKg,entry.lengthCm,units]);
+useEffect(() => {
+  if (!form.current?.contains(document.activeElement)) {
+    setDraft(draftOf(entry, units));
+    dirty.current.clear();
+  }
+}, [entry, units]);
   const change=(field:keyof typeof draft,value:string)=>{dirty.current.add(field);setDraft(d=>({...d,[field]:value}));setStatus('');};
   const commit=(fields:(keyof typeof draft)[])=>{
     const patch:NotePatch={},nextErrors:Record<string,string>={};

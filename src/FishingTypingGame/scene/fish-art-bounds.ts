@@ -1,6 +1,6 @@
 // Painted sprite bounds at alpha > 128, in the original 1774 x 887 canvas.
-export default {
-  "bass-albino": [
+const fishArtBounds = {
+    "bass-albino": [
     23,
     88,
     1748,
@@ -97,3 +97,5 @@ export default {
     783
   ]
 };
+
+export default fishArtBounds;
