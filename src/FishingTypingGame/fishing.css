@@ -124,6 +124,18 @@
 .f-ground-leaf-leaving { animation: f-leaf-release var(--leaf-flight-time) ease-in both; }
 .f-wind-paused * { animation-play-state: paused; }
 .f-fog-bank { position: absolute; left: -15%; right: -15%; top: 36%; height: 29%; background: linear-gradient(transparent, #e7ead3a0, transparent); animation: f-fog 18s ease-in-out infinite alternate; }
+/* Distant scenery loses contrast through the air; surface mist stays shallow.
+   The frame shares the landscape's cover crop, including on portrait screens. */
+.f-lake-fog { position: absolute; inset: 0; z-index: 4; pointer-events: none; transition: opacity 8s ease; }
+.f-lake-fog-frame { position: absolute; }
+.f-lake-fog-distance { position: absolute; inset: 0; background: linear-gradient(to bottom, rgb(var(--lake-fog-color) / .10) 0%, rgb(var(--lake-fog-color) / .75) var(--fog-ridge), rgb(var(--lake-fog-color) / .68) var(--fog-trees), rgb(var(--lake-fog-color) / .60) var(--fog-shore), rgb(var(--lake-fog-color) / .22) var(--fog-water), transparent var(--fog-clear)); }
+.f-lake-fog-cove .f-lake-fog-distance { mask-image: linear-gradient(to right, #0008, #000 28%, #000 72%, #0008); }
+.f-lake-fog-surface { position: absolute; background: rgb(var(--lake-fog-color)); mask-image: var(--lake-fog-mask); mask-size: 100% 100%; mask-repeat: no-repeat; animation: f-lake-fog-drift 64s ease-in-out infinite alternate; }
+.f-lake-fog-far-bank { left: -15%; top: var(--fog-bank-y); width: 130%; height: 12%; opacity: .64; animation-delay: -19s; }
+.f-lake-fog-mid-bank { left: -30%; top: var(--fog-mid-y); width: 140%; height: 16%; opacity: .28; animation-duration: 83s; animation-delay: -51s; animation-direction: alternate-reverse; }
+.f-lake-fog-near-wisp { left: 8%; top: var(--fog-near-y); width: 105%; height: 12%; opacity: .15; animation-duration: 97s; animation-delay: -37s; }
+.f-lake-fog-moon-halo { position: absolute; inset: 0; background: radial-gradient(ellipse 32% 36% at var(--fog-moon-x) var(--fog-moon-y), rgb(229 224 202 / .7), rgb(159 181 187 / .2) 42%, transparent 78%); opacity: var(--fog-halo); }
+@keyframes f-lake-fog-drift { from { transform: translateX(-3%); } to { transform: translateX(4%); } }
 .f-storm-fog { filter: var(--background-filter); transition: opacity 8s ease, filter 8s ease; }
 .f-storm-fog .f-fog-bank { top: 8%; height: 64%; background: linear-gradient(transparent, rgba(188, 200, 212, .28) 18%, rgba(200, 209, 218, .72) 40%, rgba(191, 203, 214, .66) 62%, transparent); }
 .f-fog-wisp { position: absolute; left: -15%; right: -15%; top: 19%; height: 34%; background: radial-gradient(ellipse at 28% 65%, rgba(195, 206, 216, .32), transparent 65%), radial-gradient(ellipse at 76% 42%, rgba(201, 212, 221, .23), transparent 60%); animation: f-fog 26s ease-in-out infinite alternate-reverse; }
@@ -348,6 +360,10 @@ button.f-fish-card:hover { background: #2a5143; }
 @keyframes f-sprite { to { background-position: 100% 0; } }
 .f-reduced-motion *, .f-reduced-motion *::before, .f-reduced-motion *::after { animation: none !important; transition: none !important; }
 .f-scene-paused *, .f-scene-paused *::before, .f-scene-paused *::after { animation-play-state: paused !important; }
+/* Timed rendering samples ambient motion; fish, bobber and catch cues stay live. */
+.f-scene-stepped :is(.f-reflections,.f-drift,.f-sway,.f-shimmer,.f-birds,.f-character-idle,.f-willow,.f-lantern-halo,.f-stars i,.f-catalog-star,.f-aurora-curtain,.f-aurora-distant,.f-meteor,.f-cloud-cycle,.f-cloud-deck,.f-fog-bank,.f-fog-wisp,.f-lake-fog-surface,.f-rain-mist,.f-raindrop,.f-rain-ring,.f-snowflake,.f-wind-wisps g,.f-ground-leaf-particle),
+.f-scene-stepped .f-heat-haze::after { animation-play-state: paused !important; }
+.f-scene-stepped :is(.f-scene-base,.f-scene-layer,.f-angler-body,.f-rod,.f-landed-fish,.f-water-action,.f-time-tint,.f-moonlight,.f-lantern-station,.f-lantern-relit,.f-celestial-sky,.f-moving-sun,.f-moon,.f-stars,.f-catalog-star,.f-cloud-art,.f-cloud-deck,.f-thunderheads,.f-weather,.f-lake-fog,.f-rainfall,.f-rain-mist,.f-heat-haze,.f-butterfly-visit) { transition: none !important; }
 .f-effect-dormant, .f-effect-dormant *, .f-effect-dormant::after { animation-play-state: paused !important; }
 .f-reduced-motion .f-splash, .f-reduced-motion .f-raindrop, .f-reduced-motion .f-wind-wisps, .f-reduced-motion .f-ground-leaf { display: none; }
 .f-reduced-motion .f-bobber-ripple { opacity: .35; }
@@ -394,7 +410,20 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-moon { position: absolute; width: clamp(12px, 1.567vw, 22.667px); height: auto; transform: translate(-50%, -50%); filter: drop-shadow(0 0 3px #d5e1e218); transition: left 1s linear, top 1s linear, opacity 2s; }
 .f-moon-shade { filter: var(--background-filter); transition: filter 8s ease; }
 .f-stars { position: absolute; inset: 0; transition: opacity 1s linear; }
-.f-stars i { position: absolute; border-radius: 50%; background: #e7f0f8; box-shadow: 0 0 5px #e3f1f6a6; animation: f-star-glimmer 5s ease-in-out infinite alternate; }
+.f-night-sky-frame { position: absolute; overflow: hidden; }
+.f-star-catalog, .f-sky-events, .f-aurora, .f-meteor-shower { position: absolute; inset: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+.f-catalog-star { transition: transform 1s linear; }
+.f-catalog-star:nth-child(7n) { animation: f-star-scintillation var(--star-glimmer, 7s) ease-in-out infinite alternate; animation-delay: var(--star-delay, 0s); }
+.f-sky-events { mask-image: linear-gradient(#000 0%, #000 32%, transparent 56%); }
+.f-aurora { transform: translateY(-17%); }
+.f-aurora-curtain { transform-origin: 50% 40%; animation: f-aurora-drift 39s ease-in-out infinite alternate, f-aurora-breathe 17s ease-in-out infinite alternate; }
+.f-aurora-distant { opacity: .28; transform-origin: 50% 30%; animation: f-aurora-drift 57s ease-in-out infinite alternate-reverse; }
+.f-meteor { opacity: 0; stroke-dasharray: 1; stroke-dashoffset: 1; animation: f-meteor-pass var(--meteor-period, 18s) linear infinite; animation-delay: var(--meteor-delay, 0s); }
+@keyframes f-star-scintillation { from { fill-opacity: .8; } to { fill-opacity: 1; } }
+@keyframes f-aurora-drift { from { transform: translateX(-1.5%) skewX(-3deg); } to { transform: translateX(1.5%) skewX(3deg); } }
+@keyframes f-aurora-breathe { from { opacity: .6; } to { opacity: 1; } }
+@keyframes f-meteor-pass { 0% { stroke-dashoffset: 1; opacity: 0; } 2% { opacity: .9; } 6% { opacity: .8; } 9%, 100% { stroke-dashoffset: -1; opacity: 0; } }
+.f-reduced-motion .f-meteor-shower { display: none; }
 @keyframes f-star-glimmer { from { opacity: .45; } to { opacity: 1; } }
 .f-period-late-night .f-birds, .f-period-early-night .f-birds { opacity: 0; }
 .f-dim-light ~ .f-scene-hud .f-scene-heading, .f-dim-light ~ .f-scene-hud .f-scene-heading .MuiButton-root { color: #f2ead5; text-shadow: 0 2px 8px #0e243a; }
@@ -505,6 +534,24 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-retrieve-footer small { font-size: 10px; color: #b7ccc0; }
 .f-retrieve-footer .MuiButton-root { font-size: 11px; }
 .f-water-nibble .f-bobber { animation: f-nibble-bob .65s ease-in-out infinite; }
+.f-retrieve-nibble .f-caret { animation: f-nibble-letter .65s ease-in-out infinite; border-radius: 3px; }
+@keyframes f-nibble-letter { 50% { color: #fff6cb; background: #e7c76a66; box-shadow: 0 0 12px #edd68166; } }
+.f-fight-meters { display: flex; gap: 18px; margin: 16px 0; font-size: 11px; color: #bccfbf; }
+.f-fight-meters label { flex: 1; min-width: 0; }
+.f-fight-meters strong { float: right; font-weight: 500; }
+.f-fight-meters progress { display: block; appearance: none; width: 100%; height: 5px; border: 0; border-radius: 5px; overflow: hidden; background: #284f44; margin-top: 6px; accent-color: #abd4b1; }
+.f-fight-meters progress::-webkit-progress-bar { background: #284f44; }
+.f-fight-meters progress::-webkit-progress-value { background: #abd4b1; }
+.f-fight-meters label:first-child progress { accent-color: var(--fight-color); }
+.f-fight-meters label:first-child progress::-webkit-progress-value { background: var(--fight-color); }
+.f-fight-meters label:first-child progress::-moz-progress-bar { background: var(--fight-color); }
+.f-char-tension { color: var(--fight-color); background: #dca83518; border-bottom-color: var(--fight-color); }
+.f-fish-caret { position: relative; }
+.f-fish-caret::before { content: ''; position: absolute; left: -2px; top: -5px; bottom: -2px; width: 2px; background: var(--fight-color); }
+.f-fish-caret::after { content: '◂'; position: absolute; left: -5px; top: -18px; font-size: 14px; color: var(--fight-color); }
+.f-fight-jolting { border-color: var(--fight-color); }
+.f-fish-fight .f-retrieve-footer { flex-wrap: wrap; }
+@media(max-width:700px) { .f-fish-fight .f-phrase { font-size: 16px; line-height: 1.6; } .f-fight-meters { font-size: 10px; gap: 12px; } }
 @keyframes f-nibble-bob { 0%,100% { transform: translateY(0) rotate(-3deg); } 50% { transform: translateY(5px) rotate(5deg); } }
 @media (max-width: 700px) {
   .f-lake-retrieving .f-weather-label { visibility: hidden; }

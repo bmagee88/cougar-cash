@@ -16,7 +16,7 @@ function applyWind(root: HTMLDivElement, value: number, reduced: boolean, force 
 }
 
 /** Change speed without replacing an animation or resetting its current phase. */
-export function useWeatherMotion(scene: RefObject<HTMLDivElement>, wind: number, reducedMotion: boolean) {
+export function useWeatherMotion(scene: RefObject<HTMLDivElement>, wind: number, reducedMotion: boolean, intervalMs = 0) {
   const strength = useRef(wind);
   useEffect(() => {
     const root = scene.current; if (!root) return;
@@ -29,7 +29,7 @@ export function useWeatherMotion(scene: RefObject<HTMLDivElement>, wind: number,
   useEffect(() => {
     const root = scene.current; if (!root) return;
     const from = strength.current;
-    if (reducedMotion || Math.abs(from - wind) < .0001) {
+    if (reducedMotion || intervalMs || Math.abs(from - wind) < .0001) {
       strength.current = wind; applyWind(root, wind, reducedMotion, true); return;
     }
     const started = performance.now(); let frame = 0;
@@ -42,5 +42,5 @@ export function useWeatherMotion(scene: RefObject<HTMLDivElement>, wind: number,
     };
     frame = requestAnimationFrame(move);
     return () => cancelAnimationFrame(frame);
-  }, [scene, wind, reducedMotion]);
+  }, [scene, wind, reducedMotion, intervalMs]);
 }

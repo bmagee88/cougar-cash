@@ -6,7 +6,7 @@ export function nextWake(state: GameState, now: number, ready: boolean): number 
   switch (state.phase) {
     case 'casting': return state.waitAt;
     case 'waiting': return state.biteAt;
-    case 'typing': return ready ? state.typing.deadline : undefined;
+    case 'typing': return ready ? state.fight ? now+100 : state.typing.deadline : undefined;
     case 'landing': return state.resultAt;
     case 'retrieving': {
       const r = state.retrieve;

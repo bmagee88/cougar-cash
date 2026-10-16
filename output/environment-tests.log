@@ -1,0 +1,11 @@
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx (9.391 s)
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx (5.67 s)
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (13.585 s)
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/fishFightGame.test.tsx (6.766 s)
+
+Test Suites: 5 passed, 5 total
+Tests:       29 passed, 29 total
+Snapshots:   0 total
+Time:        42.795 s
+Ran all test suites matching /FishingTypingGame.*(environment|performance|butterflyFlight|weatherTransitions|fishFightGame)/i.

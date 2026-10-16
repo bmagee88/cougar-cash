@@ -1,3 +1,5 @@
+import { readEnvironmentRender } from './environment';
+import { readLineGear } from './fishFight';
 import { BALANCE, LOCATIONS, SPECIES } from './config';
 import { CatchRecord, CatchTypingMemory, DAY_PERIODS, Encounter, FishingConditions, MOON_PHASES, Performance, QUALITIES, RARITIES, RetrieveMemory, SaveData, SEASONS, WEATHERS } from './types';
 import { DEFAULT_TACKLE, normalizeTackle, RETRIEVES } from './tackle';
@@ -24,8 +26,8 @@ function readTypingMemory(value: unknown): CatchTypingMemory | undefined {
 }
 export function emptySave(): SaveData {
   return { version: 1, sizeQualityVersion:1, livewell: [], notebook: [], butterflyDiscoveries:[], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
-    tackle: { ...DEFAULT_TACKLE },
-    settings: { weather: 'sunny', sound: false, reducedMotion: false, keepScreenAwake: true, fishingMode: 'interactive', hideFishDetails: true, measurements: 'imperial' },
+    tackle: { ...DEFAULT_TACKLE }, lineGear: readLineGear(),
+    settings: { weather: 'sunny', sound: false, reducedMotion: false, keepScreenAwake: true, fishingMode: 'interactive', wordCheckpoint: false, environmentRender: 'natural', hideFishDetails: true, measurements: 'imperial' },
     stats: { caught: 0, escaped: 0, discovered: [], byRarity: Object.fromEntries(RARITIES.map(r => [r, 0])) as SaveData['stats']['byRarity'],
       byQuality: Object.fromEntries(QUALITIES.map(q => [q, 0])) as SaveData['stats']['byQuality'], albinos: 0, albinoDiscovered: [], largest: {}, bestWpm: 0, totalWpm: 0, currentStreak: 0, longestStreak: 0 } };
 }
@@ -43,7 +45,7 @@ export function deserializeSave(raw: string | null): SaveData {
     stats.albinoDiscovered = Array.isArray(data.stats.albinoDiscovered) ? data.stats.albinoDiscovered.filter((id: string) => SPECIES.some(s => s.id === id)) : [];
     stats.largest = Object.fromEntries(Object.entries(data.stats.largest || {}).filter(([id, size]: [string, any]) => SPECIES.some(s => s.id === id) && number(size?.lengthCm) > 0 && number(size?.weightKg) > 0));
     const naturalWeather=data.settings?.weatherMode === 'natural' ? readNaturalWeather(data.settings.naturalWeather) : undefined;
-    const loaded:SaveData = { ...fallback, stats, notebook:readNotebook(data.notebook), tackle: normalizeTackle(data.tackle), balance: number(data.balance, BALANCE.initialBalance), location: LOCATIONS.some(l => l.id === data.location) ? data.location : 'dock',
+    const loaded:SaveData = { ...fallback, lineGear: readLineGear(data.lineGear), stats, notebook:readNotebook(data.notebook), tackle: normalizeTackle(data.tackle), balance: number(data.balance, BALANCE.initialBalance), location: LOCATIONS.some(l => l.id === data.location) ? data.location : 'dock',
       awardedIds: data.awardedIds.filter((id: unknown) => typeof id === 'string'),
       livewell: data.livewell.filter((c: CatchRecord) => c && typeof c.id === 'string' && SPECIES.some(s => s.id === c.speciesId) && RARITIES.includes(c.rarity) && QUALITIES.includes(c.quality) && typeof c.isAlbino === 'boolean' && number(c.lengthCm) > 0 && number(c.weightKg) > 0 && Number.isFinite(c.wpm) && Number.isFinite(c.accuracy) && typeof c.caughtAt === 'string').slice(-BALANCE.livewellCapacity).map((c: CatchRecord) => {
         const { typing: savedTyping, conditions: savedConditions, retrieve: savedRetrieve, ...record } = c; const typing = readTypingMemory(savedTyping); const retrieve=readRetrieve(savedRetrieve);
@@ -56,7 +58,7 @@ export function deserializeSave(raw: string | null): SaveData {
           ...(savedConditions.tackle ? { tackle: normalizeTackle(savedConditions.tackle) } : {}) } : undefined;
         return { ...record, ...(typing ? { typing } : {}), ...(retrieve ? { retrieve } : {}), ...(conditions ? { conditions } : {}) };
       }),
-      settings: { sound: data.settings?.sound === true, reducedMotion: data.settings?.reducedMotion === true, keepScreenAwake: typeof data.settings?.keepScreenAwake === 'boolean' ? data.settings.keepScreenAwake : true, hideFishDetails:data.settings?.hideFishDetails!==false, measurements:data.settings?.measurements==='metric'?'metric':'imperial', fishingMode: data.settings?.fishingMode==='standard' ? 'standard' : 'interactive', weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
+      settings: { sound: data.settings?.sound === true, reducedMotion: data.settings?.reducedMotion === true, keepScreenAwake: typeof data.settings?.keepScreenAwake === 'boolean' ? data.settings.keepScreenAwake : true, hideFishDetails:data.settings?.hideFishDetails!==false, measurements:data.settings?.measurements==='metric'?'metric':'imperial', fishingMode: data.settings?.fishingMode==='fish-fight' ? 'fish-fight' : data.settings?.fishingMode==='standard' ? 'standard' : 'interactive', wordCheckpoint: data.settings?.wordCheckpoint===true, environmentRender: readEnvironmentRender(data.settings?.environmentRender), weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
         ...(data.settings?.weatherMode === 'natural' ? { weatherMode: 'natural' as const, ...(naturalWeather ? { naturalWeather } : {}) } : {}),
         ...(data.settings?.weatherMode !== 'natural' && data.settings?.weather === 'thunderstorm' && number(data.settings?.stormStartedAt) > 0 ? { stormStartedAt: data.settings.stormStartedAt } : {}) } };
     if(data.sizeQualityVersion!==1){

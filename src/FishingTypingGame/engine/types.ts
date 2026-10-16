@@ -1,3 +1,4 @@
+import { EnvironmentRender } from './environment';
 export const RARITIES = ['Common', 'Uncommon', 'Rare', 'Mythic-Rare', 'Ultra-Rare'] as const;
 export const QUALITIES = ['C', 'B', 'A', 'S', 'SS'] as const;
 export type Rarity = typeof RARITIES[number];
@@ -17,11 +18,18 @@ export type LureColor = 'natural' | 'silver' | 'perch' | 'chartreuse' | 'black' 
 export type RigType = 'float' | 'slip-float' | 'bottom' | 'jighead' | 'texas' | 'carolina' | 'direct' | 'leader';
 export type Retrieve = 'still' | 'lift-pause' | 'slow-drag' | 'slow-roll' | 'steady' | 'burn' | 'twitch-pause' | 'long-pause' | 'pop-pause' | 'figure-eight';
 export interface TackleSetup { lure: LureType; color: LureColor; rig: RigType; retrieve: Retrieve }
-export interface FishingConditions { season: Season; period: DayPeriod; moonPhase: MoonPhase; weather?: Weather; stormAgeMs?: number; weatherDurationMs?: number; tackle?: TackleSetup; observedRetrieve?: Retrieve }
+export interface FishingConditions { fightOptions?: FightOptions; season: Season; period: DayPeriod; moonPhase: MoonPhase; weather?: Weather; stormAgeMs?: number; weatherDurationMs?: number; tackle?: TackleSetup; observedRetrieve?: Retrieve }
 export interface WorldConditions extends FishingConditions { hour: number; dayProgress: number; gameDay: number; seasonDate: string }
 export interface WorldOverrides { season?: Season; hour?: number; moonPhase?: MoonPhase }
 export type Random = () => number;
-export type FishingMode = 'standard' | 'interactive';
+export type FishingMode = 'standard' | 'interactive' | 'fish-fight';
+export interface LineGear { equipped: number; spools: Record<string, number> }
+export interface FightOptions { testLb: number; spoolM: number; wordCheckpoint: boolean }
+export interface FishFightState extends FightOptions {
+  fishCursor: number; stamina: number; maxStamina: number; temperament: number;
+  lastAt: number; nextJoltAt: number; castLengthM: number;
+  jolt?: { ability: string; remaining: number; intervalMs: number; nextAt: number; endsAt: number };
+}
 export type RetrieveRhythm = 'steady' | 'jerky' | 'dead-stick';
 export interface RetrieveMemory { phrase: string; reeled: number; rhythm: RetrieveRhythm; grass: boolean }
 export interface FishCheckRow { speciesId: string; weight: number; chance: number; candidateChance: number; bite: number; nibble: number }
@@ -33,6 +41,7 @@ export interface FishCheck {
   speciesId?: string; rolls?: { contact?: number; species?: number; promotion?: number; bite?: number }; forced?: boolean;
 }
 export interface RetrieveState {
+  fight?: FightOptions;
   typing: TypingState; cover: boolean[]; keys: number[]; rhythm: RetrieveRhythm;
   lastKeyAt: number; lastRollAt: number; maxReeled: number;
   nibble?: { speciesId: string; resolvesAt: number; grass: boolean };
@@ -55,14 +64,14 @@ export interface TypingState {
 export interface Performance { wpm: number; accuracy: number; timeRemaining: number; correctCharacters: number }
 export type GameState = (
   | { phase: 'idle' }
-  | { phase: 'casting'; biteAt: number; waitAt: number; tackle?: TackleSetup; waitRange?: [number, number]; mode?: FishingMode; castDistance?: number }
+  | { phase: 'casting'; fight?: FightOptions; biteAt: number; waitAt: number; tackle?: TackleSetup; waitRange?: [number, number]; mode?: FishingMode; castDistance?: number }
   | { phase: 'waiting'; biteAt: number; tackle?: TackleSetup; waitRange?: [number, number]; castDistance?: number }
   | { phase: 'retrieving'; retrieve: RetrieveState; tackle: TackleSetup; castDistance: number }
   | { phase: 'retrieved' }
-  | { phase: 'typing'; encounter: Encounter; typing: TypingState }
+  | { phase: 'typing'; encounter: Encounter; typing: TypingState; fight?: FishFightState }
   | { phase: 'landing'; encounter: Encounter; performance: Performance; resultAt: number }
   | { phase: 'result'; outcome: 'caught'; encounter: Encounter; performance: Performance }
-  | { phase: 'result'; outcome: 'escaped'; performance: Performance }) & { check?: FishCheck };
+  | { phase: 'result'; outcome: 'escaped'; performance: Performance; reason?: 'line-snapped'; lineLossM?: number; lineTestLb?: number }) & { check?: FishCheck };
 export type CharacterState = 'idle' | 'preparing' | 'casting' | 'waiting' | 'bite' | 'reeling' | 'success' | 'escape' | 'returning';
 export interface CatchTypingMemory {
   phrase: string;
@@ -89,9 +98,10 @@ export interface FishingStats {
   bestWpm: number; totalWpm: number; currentStreak: number; longestStreak: number;
 }
 export interface SaveData {
+  lineGear?: LineGear;
   version: 1; livewell: CatchRecord[]; stats: FishingStats; balance: number;
   location: string; awardedIds: string[]; tackle: TackleSetup; notebook?: NotebookEntry[]; butterflyDiscoveries?:string[]; sizeQualityVersion?: 1;
-  settings: { sound: boolean; reducedMotion: boolean; keepScreenAwake?: boolean; hideFishDetails?: boolean; measurements?: MeasurementSystem; weather: Weather; fishingMode?: FishingMode; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
+  settings: { sound: boolean; reducedMotion: boolean; keepScreenAwake?: boolean; hideFishDetails?: boolean; measurements?: MeasurementSystem; weather: Weather; fishingMode?: FishingMode; wordCheckpoint?: boolean; environmentRender?: EnvironmentRender; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
 }
 export interface EncounterOverrides { speciesId?: string; rarity?: Rarity; quality?: Quality; isAlbino?: boolean; targetWpm?: number; wpmAdjustment?: number; lineRemaining?: number; castDistance?: number }
 export interface SceneAsset {

@@ -1,6 +1,7 @@
 import React, { CSSProperties, memo, useId } from 'react';
 import { SceneAsset, Season } from '../engine/types';
 import contours from './skyline-contours';
+import { lakeFrame } from './lakeFrame';
 
 export function MountainHaze({ style, embedded = false }: { style: CSSProperties; embedded?: boolean }) {
   return <div data-layer="mountain-weather-haze" data-scene-depth={embedded ? undefined : 'background'} aria-hidden="true" className={`${embedded ? 'f-backdrop-content' : 'f-scene-layer'} f-mountain-haze`} style={{ ...style, opacity: 'var(--mountain-haze-opacity, 0)' }} />;
@@ -10,7 +11,7 @@ export function MountainHaze({ style, embedded = false }: { style: CSSProperties
 export default memo(function LakeBackdrop({ layer, season }: { layer: SceneAsset; season: Season }) {
   const id = `ridge-${useId().replace(/:/g, '')}`;
   const mask = `mask-${id}`; const feather = `feather-${id}`;
-  const style = { left: 'calc(50% - max(51cqw, 102cqh))', top: 'calc(50% - max(25.5cqw, 51cqh))', width: 'max(102cqw, 204cqh)', height: 'max(51cqw, 102cqh)',
+  const style = { ...lakeFrame('dock'),
     opacity: layer.opacity, '--layer-scale': layer.scale, '--parallax': layer.parallax } as CSSProperties;
   return <>
     <svg width="0" height="0" aria-hidden="true" style={{ position: 'absolute' }}>

@@ -4,6 +4,8 @@ import { cast, createTyping, tick, triggerBite, typeKey } from './engine/game';
 import { awardCatch, awardEscape, persistSave, readSave } from './engine/storage';
 import { EncounterOverrides, FishCheck, FishingConditions, GameState, SaveData } from './engine/types';
 import { nextWake } from './engine/nextWake';
+import { readLineGear } from './engine/fishFight';
+import { typingPerformance } from './engine/typing';
 
 export function useFishingGame(conditions: (save: SaveData) => FishingConditions, recordChecks = false) {
   const [game, setGame] = useState<GameState>({ phase: 'idle' });
@@ -29,12 +31,16 @@ export function useFishingGame(conditions: (save: SaveData) => FishingConditions
     gameRef.current = next; setGame(next);
     if (next.phase === 'landing' && prev.phase !== 'landing') updateSave(s => awardCatch(s, next.encounter, next.performance));
     if (next.phase === 'result' && next.outcome === 'escaped' && prev.phase !== 'result') updateSave(s => awardEscape(s, next.performance));
+    if(next.phase==='result'&&next.outcome==='escaped'&&next.reason==='line-snapped'&&prev.phase!=='result')updateSave(s=>{
+      const gear=readLineGear(s.lineGear),lb=next.lineTestLb!;
+      return {...s,lineGear:{...gear,spools:{...gear.spools,[lb]:Math.max(0,gear.spools[lb]-(next.lineLossM??0))}}};
+    });
   }, [updateSave]);
   const armChallenge = useCallback(() => {
     const current = gameRef.current;
     if (current.phase === 'typing' && !ready.current) {
       ready.current = true;
-      commit({ ...current, typing: createTyping(current.encounter.phrase, performance.now()) });
+      commit(current.fight?{...current,typing:{...current.typing}}:{ ...current, typing: createTyping(current.encounter.phrase, performance.now()) });
     }
   }, [commit]);
   useEffect(() => {
@@ -66,7 +72,8 @@ export function useFishingGame(conditions: (save: SaveData) => FishingConditions
   const key = useCallback((keyValue: string) => { if (ready.current || gameRef.current.phase === 'retrieving') commit(typeKey(gameRef.current, keyValue, performance.now(),Math.random,process.env.NODE_ENV === 'development' ? overrides.current : {},conditionsRef.current(saveRef.current),inspect.current)); }, [commit]);
   const again = useCallback(() => { if (gameRef.current.phase === 'result' || gameRef.current.phase === 'retrieved') commit({ phase: 'idle' }); }, [commit]);
   const reelIn = useCallback(() => { if (gameRef.current.phase === 'retrieving') commit({ phase: 'retrieved' }); },[commit]);
+  const letFishGo=useCallback(()=>{const current=gameRef.current;if(current.phase==='typing'&&current.fight)commit({phase:'result',outcome:'escaped',performance:{...typingPerformance(current.typing,performance.now()),timeRemaining:0}});},[commit]);
   const biteNow = useCallback(() => { if (process.env.NODE_ENV === 'development') commit(triggerBite(gameRef.current, performance.now(), Math.random, overrides.current, conditionsRef.current(saveRef.current),inspect.current,true)); }, [commit]);
   const clearChecks=useCallback(()=>setChecks([]),[]);
-  return { game, save, updateSave, castLine, key, again, reelIn, armChallenge, biteNow, overrides, storageError,checks,clearChecks };
+  return { game, save, updateSave, castLine, key, again, reelIn, letFishGo, armChallenge, biteNow, overrides, storageError,checks,clearChecks };
 }

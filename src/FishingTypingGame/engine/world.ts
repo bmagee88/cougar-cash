@@ -1,4 +1,5 @@
 import { DAY_PERIODS, DayPeriod, MOON_PHASES, MoonPhase, SEASONS, Season, WorldConditions, WorldOverrides } from './types';
+import { SKY_RATES } from './astronomy';
 
 export const WORLD = { dayMs: 48 * 60 * 1000, timezone: 'America/New_York', epoch: Date.parse('2026-10-10T00:00:00-04:00') };
 export const SEASON_LABELS: Record<Season, string> = { spring: 'Spring', summer: 'Summer', autumn: 'Autumn', winter: 'Winter' };
@@ -20,8 +21,11 @@ export function worldAt(now: number, overrides: WorldOverrides = {}): WorldCondi
 export function gameClock(hour: number) { const minutes = Math.floor(hour * 60); return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`; }
 export function celestialPosition(hour: number, moon = false) {
   const elapsed = moon ? mod(hour - 18, 24) : mod(hour - 6, 24);
-  const travel = Math.min(1, elapsed / 12);
-  return { x: 10 + travel * 80, y: 35 - Math.sin(travel * Math.PI) * 26, visible: elapsed < 12 };
+  // Keep the illustrated moon arc centered on midnight in the compressed game
+  // calendar, but let it sweep west more slowly than the fixed stars.
+  const rawTravel = moon ? .5 + (elapsed - 6) * SKY_RATES.moon / (24 * 180) : elapsed / 12;
+  const travel = Math.max(0, Math.min(1, rawTravel));
+  return { x: 10 + travel * 80, y: 35 - Math.sin(travel * Math.PI) * 26, visible: moon ? rawTravel >= 0 && rawTravel < 1 : elapsed < 12 };
 }
 const LIGHT = [
   { hour: 0, brightness: 0.18, saturation: 0.88, tint: [3, 7, 13, 0.35] },

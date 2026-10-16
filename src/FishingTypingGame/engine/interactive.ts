@@ -5,7 +5,8 @@ import { HAIKU } from './haiku';
 import { allowedRetrieves, DEFAULT_TACKLE, lureFor, normalizeTackle, tackleFactors } from './tackle';
 import { applyKey, createTyping } from './typing';
 import { fishCheckRows, makeFishCheck } from './fishChecks';
-import { EncounterOverrides, FishingConditions, FishSpecies, GameState, Random, RARITIES, Retrieve, RetrieveRhythm, RetrieveState, TackleSetup } from './types';
+import { beginFight, lineContactFactor } from './fishFight';
+import { EncounterOverrides, FightOptions, FishingConditions, FishSpecies, GameState, Random, RARITIES, Retrieve, RetrieveRhythm, RetrieveState, TackleSetup } from './types';
 
 export const RETRIEVE_WINDOW_MS = 5000;
 export const RHYTHM_LABELS: Record<RetrieveRhythm,string> = { steady: 'Steady', jerky: 'Stop and go', 'dead-stick': 'Dead stick' };
@@ -32,10 +33,10 @@ export function grassCover(phrase: string, random: Random): boolean[] {
   }
   return cover;
 }
-export function beginRetrieve(now: number, random: Random, tackle = DEFAULT_TACKLE, distance = 1): GameState {
+export function beginRetrieve(now: number, random: Random, tackle = DEFAULT_TACKLE, distance = 1, fight?:FightOptions): GameState {
   const poem = HAIKU[Math.min(HAIKU.length-1,Math.floor(random()*HAIKU.length))];
   return { phase: 'retrieving', tackle: normalizeTackle(tackle), castDistance: distance,
-    retrieve: { typing: { ...createTyping(poem.text,now), deadline: Infinity }, cover: grassCover(poem.text,random), keys: [], rhythm: 'steady', lastKeyAt: now, lastRollAt: now, maxReeled: 0 } };
+    retrieve: { fight, typing: { ...createTyping(poem.text,now), deadline: Infinity }, cover: grassCover(poem.text,random), keys: [], rhythm: 'steady', lastKeyAt: now, lastRollAt: now, maxReeled: 0 } };
 }
 export function observedPresentation(tackle: TackleSetup, r: RetrieveState, now: number): Retrieve {
   if (r.rhythm === 'dead-stick') return tackle.lure === 'jerkbait' ? 'long-pause' : 'still';
@@ -65,6 +66,7 @@ export function retrieveContactChance(conditions: FishingConditions, reeled: num
 export function hookRetrieve(state: Extract<GameState,{phase:'retrieving'}>, now: number, random: Random, overrides: EncounterOverrides, conditions: FishingConditions, speciesId?: string, grass = false): GameState {
   const r=state.retrieve; const reeled=Math.min(1,r.maxReeled/r.typing.phrase.length);
   const encounter=generateEncounter(random,{...overrides,...(speciesId ? {speciesId} : {}), lineRemaining:1-reeled,castDistance:state.castDistance},conditions);
+  if(r.fight)return beginFight({...encounter,castDistance:state.castDistance,retrieve:{phrase:r.typing.phrase,reeled,rhythm:r.rhythm,grass}},r.typing,r.fight,now,random);
   return {phase:'typing',encounter:{...encounter,castDistance:state.castDistance,
     retrieve:{phrase:r.typing.phrase,reeled,rhythm:r.rhythm,grass}},typing:createTyping(encounter.phrase,now)};
 }
@@ -72,7 +74,7 @@ function rollContact(state: Extract<GameState,{phase:'retrieving'}>, now: number
   const r=state.retrieve; const c=retrieveConditions(state,now,conditions);
   const grass=!!r.cover[Math.min(r.maxReeled,r.typing.phrase.length-1)];
   const next={...state,retrieve:{...r,lastRollAt:now}};
-  const probability=retrieveContactChance(c,r.maxReeled/r.typing.phrase.length,elapsedMs,grass,r.rhythm);
+  const probability=Math.min(.95,retrieveContactChance(c,r.maxReeled/r.typing.phrase.length,elapsedMs,grass,r.rhythm)*(r.fight?lineContactFactor(r.fight.testLb):1));
   const contact=random(); const rolls: {contact:number;species?:number;promotion?:number;bite?:number}={contact};
   const record=(result:GameState,outcome:'none'|'nibble'|'bite',speciesId?:string):GameState=>inspect ? {...result,check:makeFishCheck({at:now,source:r.rhythm==='dead-stick' ? 'dead-stick' : 'letter',conditions:c,outcome,contactChance:probability,noFish:1-probability,
     rows:fishCheckRows(c,probability,grass),cursor:r.maxReeled,reeled:r.maxReeled/r.typing.phrase.length,grass,rhythm:r.rhythm,elapsedMs,speciesId,rolls})} : result;

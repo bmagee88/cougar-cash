@@ -35,7 +35,7 @@ export function drawRain(context: CanvasRenderingContext2D, width: number, heigh
   context.globalAlpha = 1;
 }
 
-export default memo(function RainCanvas({ weather, reducedMotion, intensity }: { weather: HeavyRain; reducedMotion: boolean; intensity: number }) {
+export default memo(function RainCanvas({ weather, reducedMotion, intensity, intervalMs = 0 }: { weather: HeavyRain; reducedMotion: boolean; intensity: number; intervalMs?:number }) {
   const canvas = useRef<HTMLCanvasElement>(null);
   const enabled = intensity > 0;
   useEffect(() => {
@@ -43,18 +43,21 @@ export default memo(function RainCanvas({ weather, reducedMotion, intensity }: {
     if (!surface || typeof CanvasRenderingContext2D === 'undefined') return;
     const context = surface.getContext('2d'); if (!context) return;
     let width = 0, height = 0, frame = 0, last = -Infinity, elapsed = 0, previous = 0, onScreen = true;
+    let timer:number|undefined;
     const paint = () => drawRain(context, width, height, reducedMotion ? 1700 : elapsed, weather);
     const animate = (now: number) => {
-      if (now - last >= 1000 / 30) {
-        elapsed += previous ? Math.min(100, now - previous) : 0; previous = now;
+      if (now - last >= (intervalMs||1000 / 30)) {
+        elapsed += previous ? Math.min(intervalMs||100, now - previous) : 0; previous = now;
         last = now; paint();
       }
-      frame = requestAnimationFrame(animate);
+      if(intervalMs)timer=window.setTimeout(()=>animate(performance.now()),intervalMs);
+      else frame = requestAnimationFrame(animate);
     };
     const update = () => {
       cancelAnimationFrame(frame); frame = 0; previous = 0;
+      window.clearTimeout(timer);timer=undefined;
       if (!enabled || document.hidden || !onScreen) return;
-      if (reducedMotion) paint(); else frame = requestAnimationFrame(animate);
+      if (reducedMotion) paint(); else if(intervalMs)animate(performance.now());else frame = requestAnimationFrame(animate);
     };
     const resize = () => {
       const box = surface.getBoundingClientRect(); width = box.width; height = box.height;
@@ -67,8 +70,8 @@ export default memo(function RainCanvas({ weather, reducedMotion, intensity }: {
     size?.observe(surface); window.addEventListener('resize', resize);
     const visibility = typeof IntersectionObserver !== 'undefined' ? new IntersectionObserver(entries => { onScreen = entries[0]?.isIntersecting ?? true; update(); }) : undefined;
     visibility?.observe(surface); document.addEventListener('visibilitychange', update); update();
-    return () => { cancelAnimationFrame(frame); size?.disconnect(); visibility?.disconnect(); window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', update); };
-  }, [weather, reducedMotion, enabled]);
+    return () => { cancelAnimationFrame(frame); window.clearTimeout(timer); size?.disconnect(); visibility?.disconnect(); window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', update); surface.width=1;surface.height=1; };
+  }, [weather, reducedMotion, enabled, intervalMs]);
   const density = rainDensity(weather);
   return <canvas ref={canvas} className="f-rain-canvas" data-testid="storm-rain-canvas" data-near-drops={density.near} data-distant-drops={density.distant} data-water-impacts={density.rings} aria-hidden="true" />;
 });
