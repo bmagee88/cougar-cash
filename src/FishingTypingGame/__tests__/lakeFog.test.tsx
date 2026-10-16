@@ -4,8 +4,9 @@ import LakeFog from '../scene/LakeFog';
 import FishingScene from '../scene/FishingScene';
 import { lakeFogLight } from '../scene/fogLighting';
 import { stepAmbientAnimations } from '../scene/useSceneParallax';
-import { MOON_PHASES } from '../engine/types';
+import { MOON_PHASES, Season } from '../engine/types';
 import { WORLD, worldAt } from '../engine/world';
+import { lakeFogAt, weatherFogDensity } from '../engine/lakeFog';
 
 declare const test: any, expect: any, jest: any, beforeEach: any, afterEach: any;
 beforeEach(() => jest.useFakeTimers());
@@ -74,4 +75,71 @@ test('the existing environment timer advances paused fog without seeking game an
   const scene = document.createElement('div'); Object.defineProperty(scene, 'getAnimations', { value: () => [mist, bite] });
   stepAmbientAnimations(scene, 10000);
   expect(mist.currentTime).toBe(10500); expect(bite.currentTime).toBe(500);
+});
+
+test('most warm-season dawns get independently rolled mist, with varied density and occasional clear dawns', () => {
+  for (const season of ['spring', 'summer', 'autumn', 'winter'] as Season[]) {
+    const mornings = Array.from({ length: 512 }, (_, gameDay) => lakeFogAt({ gameDay, season, hour: 6 }));
+    const misty = mornings.filter(fog => fog.density > 0), chance = misty.length / mornings.length;
+    expect(chance).toBeGreaterThan(season === 'winter' ? .1 : .75);
+    expect(chance).toBeLessThan(season === 'winter' ? .35 : .95);
+    expect(Math.max(...misty.map(fog => fog.peak)) - Math.min(...misty.map(fog => fog.peak))).toBeGreaterThan(.4);
+  }
+});
+
+test('a dawn keeps its roll after reloads, then thins smoothly through morning and unloads before noon', () => {
+  for (let gameDay = 0; gameDay < 120; gameDay++) {
+    const conditions = { gameDay, season: 'summer' as const, hour: 6 }, fog = lakeFogAt(conditions);
+    expect(lakeFogAt({ ...conditions })).toEqual(fog);
+    expect(lakeFogAt({ ...conditions, hour: 0 }).density).toBe(0);
+    expect(lakeFogAt({ ...conditions, hour: 12 }).density).toBe(0);
+    if (!fog.occurs) continue;
+    expect(lakeFogAt({ ...conditions, hour: 8 }).density).toBeLessThan(fog.density);
+    let previous = fog.peak;
+    for (let hour = fog.liftHour; hour <= 12; hour += .05) {
+      const density = lakeFogAt({ ...conditions, hour }).density;
+      expect(density).toBeLessThanOrEqual(previous + .000001); previous = density;
+    }
+    for (const hour of [fog.startHour, fog.peakHour, fog.liftHour, fog.endHour]) {
+      const before = lakeFogAt({ ...conditions, hour: hour - .001 }).density;
+      const after = lakeFogAt({ ...conditions, hour: hour + .001 }).density;
+      expect(Math.abs(before - after)).toBeLessThan(.006);
+    }
+  }
+});
+
+test('morning lake mist coexists with changing weather without replacing rain or rerolling its density', () => {
+  const gameDay = Array.from({ length: 20 }, (_, i) => i).find(day => lakeFogAt({ gameDay: day, season: 'summer', hour: 6 }).occurs)!;
+  const dawn = { ...world, gameDay, hour: 6 }, density = lakeFogAt(dawn).density;
+  const props = { game: { phase: 'idle' as const }, location: 'dock', world: dawn, reducedMotion: true };
+  const view = render(<FishingScene {...props} weather="sunny" />);
+  const fog = view.container.querySelector<HTMLElement>('[data-layer="lake-fog"]')!;
+  expect(fog).toHaveStyle({ opacity: String(density) });
+  view.rerender(<FishingScene {...props} weather="rain" />);
+  expect(view.container.querySelector('[data-layer="lake-fog"]')).toBe(fog);
+  expect(fog).toHaveStyle({ opacity: String(density) });
+  expect(view.container.querySelector('[data-weather-layer="rain"]')).not.toBeNull();
+  view.rerender(<FishingScene {...props} weather="wind" />);
+  expect(fog).toHaveStyle({ opacity: String(density) });
+  view.rerender(<FishingScene {...props} weather="sunny" world={{ ...dawn, hour: 10 }} />);
+  expect(Number(fog.style.opacity)).toBeLessThan(density);
+  view.rerender(<FishingScene {...props} weather="sunny" world={{ ...dawn, hour: 12 }} />);
+  expect(fog.querySelector('[data-fog-depth]')).toBeNull();
+  view.unmount(); expect(jest.getTimerCount()).toBe(0);
+});
+
+test('thinner banks are more transparent and shallow, while fog weather retains its own changing thickness', () => {
+  const view = render(<LakeFog active density={.9} distanceHaze={.66} world={world} location="cove" />);
+  const fog = view.container.querySelector<HTMLElement>('[data-layer="lake-fog"]')!;
+  const thickHeight = parseFloat(fog.style.getPropertyValue('--fog-far-height'));
+  const thickHaze = Number(fog.style.getPropertyValue('--fog-distance'));
+  view.rerender(<LakeFog active density={.25} distanceHaze={.66} world={world} location="cove" />);
+  expect(fog).toHaveStyle({ opacity: '.25' });
+  expect(parseFloat(fog.style.getPropertyValue('--fog-far-height'))).toBeLessThan(thickHeight);
+  expect(Number(fog.style.getPropertyValue('--fog-distance'))).toBeLessThan(thickHaze);
+  view.rerender(<LakeFog active density={0} world={world} location="cove" intervalMs={10000} />);
+  expect(fog.querySelector('[data-fog-depth]')).toBeNull(); view.unmount(); expect(jest.getTimerCount()).toBe(0);
+  const weatherDensities = Array.from({ length: 50 }, (_, gameDay) => weatherFogDensity({ ...world, gameDay }));
+  expect(Math.max(...weatherDensities) - Math.min(...weatherDensities)).toBeGreaterThan(.2);
+  expect(weatherDensities.every(value => value >= .57 && value <= .97)).toBe(true);
 });

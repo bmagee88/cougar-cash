@@ -305,3 +305,2011 @@ webpack compiled with 1 warning
 Files successfully emitted, waiting for typecheck results...
 Issues checking in progress...
 No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\FishingGame.tsx
+  Line 100:10:  'wildlifePreview' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  Line 100:26:  'setWildlifePreview' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  Line 141:9:   'observeVisitor' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\FishingGame.tsx
+  Line 100:10:  'wildlifePreview' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  Line 100:26:  'setWildlifePreview' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  Line 141:9:   'observeVisitor' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+src\FishingTypingGame\scene\ButterflyVisitors.tsx
+  Line 3:64:  'butterflyWingspan' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+webpack compiled with 2 warnings
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\components\DebugPanel.tsx
+  Line 33:173:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '&&' and '||'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:192:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+  Line 33:208:  Unexpected mix of '||' and '&&'. Use parentheses to clarify the intended order of operations  no-mixed-operators
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Proxy error: Could not proxy request /assets/fishing/visitors/canada-goose/flight-0.gif from 127.0.0.1:3017 to http://localhost:4000/.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
+Proxy error: Could not proxy request /assets/fishing/visitors/canada-goose/flight-4.gif from 127.0.0.1:3017 to http://localhost:4000/.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
+Proxy error: Could not proxy request /assets/fishing/visitors/canada-goose/flight-8.gif from 127.0.0.1:3017 to http://localhost:4000/.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Proxy error: Could not proxy request /assets/fishing/audio/geese-1.wav from 127.0.0.1:3017 to http://localhost:4000/.
+See https://nodejs.org/api/errors.html#errors_common_system_errors for more information (ECONNREFUSED).
+
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\FishingTypingGame\engine\storage.ts
+  Line 12:10:  'readSoundVolume' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.

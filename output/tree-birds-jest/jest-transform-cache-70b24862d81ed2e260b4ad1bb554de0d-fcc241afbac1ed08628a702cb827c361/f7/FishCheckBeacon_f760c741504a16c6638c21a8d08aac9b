@@ -1,0 +1,52 @@
+deaadbc5a5da41bde93945af3aa54e04
+"use strict";
+
+var _interopRequireWildcard = require("C:/Users/Kathleen Dippyolito/Documents/Clemente Projects/cougar-cash/node_modules/@babel/runtime/helpers/interopRequireWildcard.js").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = FishCheckBeacon;
+var _react = _interopRequireWildcard(require("react"));
+var _config = require("../engine/config");
+var _jsxDevRuntime = require("react/jsx-dev-runtime");
+var _jsxFileName = "C:\\Users\\Kathleen Dippyolito\\Documents\\Clemente Projects\\cougar-cash\\src\\FishingTypingGame\\scene\\FishCheckBeacon.tsx";
+function FishCheckBeacon({
+  check
+}) {
+  var _SPECIES$find;
+  const [visible, setVisible] = (0, _react.useState)(false);
+  (0, _react.useEffect)(() => {
+    if (!check) {
+      setVisible(false);
+      return;
+    }
+    const remaining = 1500 - (performance.now() - check.at);
+    setVisible(remaining > 0);
+    if (remaining <= 0) return;
+    const timer = setTimeout(() => setVisible(false), remaining);
+    return () => clearTimeout(timer);
+  }, [check]);
+  if (!check || !visible) return null;
+  const fish = (_SPECIES$find = _config.SPECIES.find(f => f.id === check.speciesId)) === null || _SPECIES$find === void 0 ? void 0 : _SPECIES$find.name;
+  return /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("div", {
+    className: `f-check-beacon f-check-${check.outcome}`,
+    "aria-hidden": "true",
+    "data-fish-check": check.id,
+    children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("i", {}, void 0, false, {
+      fileName: _jsxFileName,
+      lineNumber: 17,
+      columnNumber: 130
+    }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("span", {
+      children: ["#", check.id, " \xB7 ", check.outcome === 'none' ? 'no fish' : check.outcome, fish && ` · ${fish}`]
+    }, void 0, true, {
+      fileName: _jsxFileName,
+      lineNumber: 17,
+      columnNumber: 135
+    }, this)]
+  }, check.id, true, {
+    fileName: _jsxFileName,
+    lineNumber: 17,
+    columnNumber: 10
+  }, this);
+}
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJfcmVhY3QiLCJfaW50ZXJvcFJlcXVpcmVXaWxkY2FyZCIsInJlcXVpcmUiLCJfY29uZmlnIiwiX2pzeERldlJ1bnRpbWUiLCJfanN4RmlsZU5hbWUiLCJGaXNoQ2hlY2tCZWFjb24iLCJjaGVjayIsIl9TUEVDSUVTJGZpbmQiLCJ2aXNpYmxlIiwic2V0VmlzaWJsZSIsInVzZVN0YXRlIiwidXNlRWZmZWN0IiwicmVtYWluaW5nIiwicGVyZm9ybWFuY2UiLCJub3ciLCJhdCIsInRpbWVyIiwic2V0VGltZW91dCIsImNsZWFyVGltZW91dCIsImZpc2giLCJTUEVDSUVTIiwiZmluZCIsImYiLCJpZCIsInNwZWNpZXNJZCIsIm5hbWUiLCJqc3hERVYiLCJjbGFzc05hbWUiLCJvdXRjb21lIiwiY2hpbGRyZW4iLCJmaWxlTmFtZSIsImxpbmVOdW1iZXIiLCJjb2x1bW5OdW1iZXIiXSwic291cmNlcyI6WyJGaXNoQ2hlY2tCZWFjb24udHN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCBSZWFjdCwgeyB1c2VFZmZlY3QsIHVzZVN0YXRlIH0gZnJvbSAncmVhY3QnO1xuaW1wb3J0IHsgRmlzaENoZWNrIH0gZnJvbSAnLi4vZW5naW5lL3R5cGVzJztcbmltcG9ydCB7IFNQRUNJRVMgfSBmcm9tICcuLi9lbmdpbmUvY29uZmlnJztcblxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gRmlzaENoZWNrQmVhY29uKHtjaGVja306e2NoZWNrPzpGaXNoQ2hlY2t9KSB7XG4gIGNvbnN0IFt2aXNpYmxlLHNldFZpc2libGVdPXVzZVN0YXRlKGZhbHNlKTtcbiAgdXNlRWZmZWN0KCgpPT57XG4gICAgaWYoIWNoZWNrKXtzZXRWaXNpYmxlKGZhbHNlKTtyZXR1cm47fVxuICAgIGNvbnN0IHJlbWFpbmluZz0xNTAwLShwZXJmb3JtYW5jZS5ub3coKS1jaGVjay5hdCk7XG4gICAgc2V0VmlzaWJsZShyZW1haW5pbmc+MCk7XG4gICAgaWYocmVtYWluaW5nPD0wKXJldHVybjtcbiAgICBjb25zdCB0aW1lcj1zZXRUaW1lb3V0KCgpPT5zZXRWaXNpYmxlKGZhbHNlKSxyZW1haW5pbmcpO1xuICAgIHJldHVybiAoKT0+Y2xlYXJUaW1lb3V0KHRpbWVyKTtcbiAgfSxbY2hlY2tdKTtcbiAgaWYoIWNoZWNrIHx8ICF2aXNpYmxlKXJldHVybiBudWxsO1xuICBjb25zdCBmaXNoPVNQRUNJRVMuZmluZChmPT5mLmlkPT09Y2hlY2suc3BlY2llc0lkKT8ubmFtZTtcbiAgcmV0dXJuIDxkaXYga2V5PXtjaGVjay5pZH0gY2xhc3NOYW1lPXtgZi1jaGVjay1iZWFjb24gZi1jaGVjay0ke2NoZWNrLm91dGNvbWV9YH0gYXJpYS1oaWRkZW49XCJ0cnVlXCIgZGF0YS1maXNoLWNoZWNrPXtjaGVjay5pZH0+PGkgLz48c3Bhbj4je2NoZWNrLmlkfSDCtyB7Y2hlY2sub3V0Y29tZT09PSdub25lJyA/ICdubyBmaXNoJyA6IGNoZWNrLm91dGNvbWV9e2Zpc2ggJiYgYCDCtyAke2Zpc2h9YH08L3NwYW4+PC9kaXY+O1xufVxuIl0sIm1hcHBpbmdzIjoiOzs7Ozs7O0FBQUEsSUFBQUEsTUFBQSxHQUFBQyx1QkFBQSxDQUFBQyxPQUFBO0FBRUEsSUFBQUMsT0FBQSxHQUFBRCxPQUFBO0FBQTJDLElBQUFFLGNBQUEsR0FBQUYsT0FBQTtBQUFBLElBQUFHLFlBQUE7QUFFNUIsU0FBU0MsZUFBZUEsQ0FBQztFQUFDQztBQUF3QixDQUFDLEVBQUU7RUFBQSxJQUFBQyxhQUFBO0VBQ2xFLE1BQU0sQ0FBQ0MsT0FBTyxFQUFDQyxVQUFVLENBQUMsR0FBQyxJQUFBQyxlQUFRLEVBQUMsS0FBSyxDQUFDO0VBQzFDLElBQUFDLGdCQUFTLEVBQUMsTUFBSTtJQUNaLElBQUcsQ0FBQ0wsS0FBSyxFQUFDO01BQUNHLFVBQVUsQ0FBQyxLQUFLLENBQUM7TUFBQztJQUFPO0lBQ3BDLE1BQU1HLFNBQVMsR0FBQyxJQUFJLElBQUVDLFdBQVcsQ0FBQ0MsR0FBRyxDQUFDLENBQUMsR0FBQ1IsS0FBSyxDQUFDUyxFQUFFLENBQUM7SUFDakROLFVBQVUsQ0FBQ0csU0FBUyxHQUFDLENBQUMsQ0FBQztJQUN2QixJQUFHQSxTQUFTLElBQUUsQ0FBQyxFQUFDO0lBQ2hCLE1BQU1JLEtBQUssR0FBQ0MsVUFBVSxDQUFDLE1BQUlSLFVBQVUsQ0FBQyxLQUFLLENBQUMsRUFBQ0csU0FBUyxDQUFDO0lBQ3ZELE9BQU8sTUFBSU0sWUFBWSxDQUFDRixLQUFLLENBQUM7RUFDaEMsQ0FBQyxFQUFDLENBQUNWLEtBQUssQ0FBQyxDQUFDO0VBQ1YsSUFBRyxDQUFDQSxLQUFLLElBQUksQ0FBQ0UsT0FBTyxFQUFDLE9BQU8sSUFBSTtFQUNqQyxNQUFNVyxJQUFJLElBQUFaLGFBQUEsR0FBQ2EsZUFBTyxDQUFDQyxJQUFJLENBQUNDLENBQUMsSUFBRUEsQ0FBQyxDQUFDQyxFQUFFLEtBQUdqQixLQUFLLENBQUNrQixTQUFTLENBQUMsY0FBQWpCLGFBQUEsdUJBQXZDQSxhQUFBLENBQXlDa0IsSUFBSTtFQUN4RCxvQkFBTyxJQUFBdEIsY0FBQSxDQUFBdUIsTUFBQTtJQUFvQkMsU0FBUyxFQUFFLDBCQUEwQnJCLEtBQUssQ0FBQ3NCLE9BQU8sRUFBRztJQUFDLGVBQVksTUFBTTtJQUFDLG1CQUFpQnRCLEtBQUssQ0FBQ2lCLEVBQUc7SUFBQU0sUUFBQSxnQkFBQyxJQUFBMUIsY0FBQSxDQUFBdUIsTUFBQTtNQUFBSSxRQUFBLEVBQUExQixZQUFBO01BQUEyQixVQUFBO01BQUFDLFlBQUE7SUFBQSxPQUFJLENBQUMsbUJBQUE3QixjQUFBLENBQUF1QixNQUFBO01BQUFHLFFBQUEsR0FBTSxHQUFDLEVBQUN2QixLQUFLLENBQUNpQixFQUFFLEVBQUMsUUFBRyxFQUFDakIsS0FBSyxDQUFDc0IsT0FBTyxLQUFHLE1BQU0sR0FBRyxTQUFTLEdBQUd0QixLQUFLLENBQUNzQixPQUFPLEVBQUVULElBQUksSUFBSSxNQUFNQSxJQUFJLEVBQUU7SUFBQTtNQUFBVyxRQUFBLEVBQUExQixZQUFBO01BQUEyQixVQUFBO01BQUFDLFlBQUE7SUFBQSxPQUFPLENBQUM7RUFBQSxHQUF4TjFCLEtBQUssQ0FBQ2lCLEVBQUU7SUFBQU8sUUFBQSxFQUFBMUIsWUFBQTtJQUFBMkIsVUFBQTtJQUFBQyxZQUFBO0VBQUEsT0FBcU4sQ0FBQztBQUNqUCIsImlnbm9yZUxpc3QiOltdfQ==

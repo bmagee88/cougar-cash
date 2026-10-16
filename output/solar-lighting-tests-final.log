@@ -1,0 +1,11 @@
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (16.39 s)
+PASS src/FishingTypingGame/__tests__/solarLighting.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/astronomy.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+
+Test Suites: 5 passed, 5 total
+Tests:       30 passed, 30 total
+Snapshots:   0 total
+Time:        31.314 s
+Ran all test suites matching /solarLighting|astronomy|environment.test|scene.test|weatherTransitions/i.

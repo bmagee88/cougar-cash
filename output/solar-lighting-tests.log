@@ -1,0 +1,35 @@
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (20.33 s)
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/astronomy.test.tsx
+FAIL src/FishingTypingGame/__tests__/solarLighting.test.tsx
+  ● glare follows the actual ridge crop, changes warmth, and vanishes in daytime and at night
+
+    expect(received).toBeCloseTo(expected, precision)
+
+    Expected: -0.022312639292393698
+    Received: -0.02296507343873518
+
+    Expected precision:    6
+    Expected difference: < 0.0000005
+    Received difference:   0.000652434146341481
+
+      46 |     const light = at(7.5, width, height);
+      47 |     const frameHeight = Math.max(width * 1.02 / 2, height * 1.02);
+    > 48 |     expect(light.clearance).toBeCloseTo((ridgeHeight(light.x, 'autumn', 'dock') - light.y) * frameHeight / height, 6);
+         |                             ^
+      49 |     expect(light.glare).toBeGreaterThanOrEqual(0); expect(light.glare).toBeLessThanOrEqual(1);
+      50 |   }
+      51 | });
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/solarLighting.test.tsx:48:29)
+      at TestScheduler.scheduleTests (node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 4 passed, 5 total
+Tests:       1 failed, 29 passed, 30 total
+Snapshots:   0 total
+Time:        34.036 s
+Ran all test suites matching /solarLighting|astronomy|environment.test|scene.test|weatherTransitions/i.

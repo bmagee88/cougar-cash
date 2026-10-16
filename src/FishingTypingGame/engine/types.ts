@@ -86,7 +86,7 @@ export interface CatchRecord extends Performance {
 }
 export type MeasurementSystem = 'imperial' | 'metric';
 export interface ButterflyPose {frame:number;rotation:number;flipped:boolean}
-export type NotebookImage = { kind: 'fish'; speciesId: string; lengthCm: number; weightKg: number; isAlbino: boolean } | { kind: 'butterfly'; speciesId?:string; wingspanMm?:number;pose?:ButterflyPose };
+export type NotebookImage = { kind: 'fish'; speciesId: string; lengthCm: number; weightKg: number; isAlbino: boolean } | { kind: 'butterfly'; speciesId?:string; wingspanMm?:number;pose?:ButterflyPose } | {kind:'visitor';speciesId:string;pose?:ButterflyPose};
 export interface NotebookEntry {
   id: string; caughtAt: string; location: string; title: string; name: string; notes: string;
   weightKg?: number; lengthCm?: number; image?: NotebookImage;
@@ -98,10 +98,11 @@ export interface FishingStats {
   bestWpm: number; totalWpm: number; currentStreak: number; longestStreak: number;
 }
 export interface SaveData {
+  visitorDiscoveries?: string[]; santaYears?: number[];
   lineGear?: LineGear;
   version: 1; livewell: CatchRecord[]; stats: FishingStats; balance: number;
   location: string; awardedIds: string[]; tackle: TackleSetup; notebook?: NotebookEntry[]; butterflyDiscoveries?:string[]; sizeQualityVersion?: 1;
-  settings: { sound: boolean; reducedMotion: boolean; keepScreenAwake?: boolean; hideFishDetails?: boolean; measurements?: MeasurementSystem; weather: Weather; fishingMode?: FishingMode; wordCheckpoint?: boolean; environmentRender?: EnvironmentRender; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
+  settings: { sound: boolean; soundVolume?: number; reducedMotion: boolean; keepScreenAwake?: boolean; hideFishDetails?: boolean; measurements?: MeasurementSystem; weather: Weather; fishingMode?: FishingMode; wordCheckpoint?: boolean; environmentRender?: EnvironmentRender; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
 }
 export interface EncounterOverrides { speciesId?: string; rarity?: Rarity; quality?: Quality; isAlbino?: boolean; targetWpm?: number; wpmAdjustment?: number; lineRemaining?: number; castDistance?: number }
 export interface SceneAsset {

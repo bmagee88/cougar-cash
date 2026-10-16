@@ -5,3 +5,244 @@ Browserslist: browsers data (caniuse-lite) is 20 months old. Please run:
 (Use `node --trace-deprecation ...` to show where the warning was created)
 (node:17204) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 (node:17204) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+ERROR in src/FishingTypingGame/engine/visitors.ts:16:50
+TS2339: Property 'visitorDiscoveries' does not exist on type 'SaveData'.
+    14 | export function discoverVisitor(save:SaveData,id:string,now=new Date()):SaveData {
+    15 |   if(id!==SANTA.id&&!visitorById(id))return save;
+  > 16 |   const discoveries=Array.from(new Set([...(save.visitorDiscoveries??[]),id]));
+       |                                                  ^^^^^^^^^^^^^^^^^^
+    17 |   return {...save,visitorDiscoveries:discoveries,...(id===SANTA.id?{santaYears:Array.from(new Set([...(save.santaYears??[]),now.getFullYear()]))}:{})};
+    18 | }
+    19 | export function odonateActivity(season:Season,hour:number,weather:Weather):number {
+
+ERROR in src/FishingTypingGame/engine/visitors.ts:17:19
+TS2322: Type '{ santaYears?: any[]; visitorDiscoveries: any[]; lineGear?: LineGear; version: 1; livewell: CatchRecord[]; stats: FishingStats; balance: number; location: string; ... 5 more ...; settings: { ...; }; }' is not assignable to type 'SaveData'.
+  Object literal may only specify known properties, and 'visitorDiscoveries' does not exist in type 'SaveData'.
+    15 |   if(id!==SANTA.id&&!visitorById(id))return save;
+    16 |   const discoveries=Array.from(new Set([...(save.visitorDiscoveries??[]),id]));
+  > 17 |   return {...save,visitorDiscoveries:discoveries,...(id===SANTA.id?{santaYears:Array.from(new Set([...(save.santaYears??[]),now.getFullYear()]))}:{})};
+       |                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    18 | }
+    19 | export function odonateActivity(season:Season,hour:number,weather:Weather):number {
+    20 |   return season==='winter'||hour<7||hour>=19||!['sunny','overcast','heatwave'].includes(weather)?0:season==='summer'?1:.65;
+
+ERROR in src/FishingTypingGame/engine/visitors.ts:17:109
+TS2339: Property 'santaYears' does not exist on type 'SaveData'.
+    15 |   if(id!==SANTA.id&&!visitorById(id))return save;
+    16 |   const discoveries=Array.from(new Set([...(save.visitorDiscoveries??[]),id]));
+  > 17 |   return {...save,visitorDiscoveries:discoveries,...(id===SANTA.id?{santaYears:Array.from(new Set([...(save.santaYears??[]),now.getFullYear()]))}:{})};
+       |                                                                                                             ^^^^^^^^^^
+    18 | }
+    19 | export function odonateActivity(season:Season,hour:number,weather:Weather):number {
+    20 |   return season==='winter'||hour<7||hour>=19||!['sunny','overcast','heatwave'].includes(weather)?0:season==='summer'?1:.65;
+
+ERROR in src/FishingTypingGame/scene/LakeVisitors.tsx:58:23
+TS2554: Expected 1 arguments, but got 0.
+    56 | export function LakeWildlife({sceneRef,season,weather,reducedMotion,preview={}}:{sceneRef:RefObject<HTMLDivElement>;season:Season;weather:Weather;reducedMotion:boolean;preview?:WildlifePreview}){
+    57 |   const [splashes,setSplashes]=useState<Splash[]>([]),[geese,setGeese]=useState<Geese>();
+  > 58 |   const previewAction=useRef<(kind:'geese'|'splashes')=>void>(),last=useRef<WildlifePreview>({});
+       |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    59 |   useEffect(()=>{
+    60 |     const scene=sceneRef.current;if(!scene||reducedMotion)return;
+    61 |     let timer:ReturnType<typeof setTimeout>|undefined,visible=true,sequence=0;
+
+ERROR in src/FishingTypingGame/scene/LakeVisitors.tsx:58:23
+TS2554: Expected 1 arguments, but got 0.
+    56 | export function LakeWildlife({sceneRef,season,weather,reducedMotion,preview={}}:{sceneRef:RefObject<HTMLDivElement>;season:Season;weather:Weather;reducedMotion:boolean;preview?:WildlifePreview}){
+    57 |   const [splashes,setSplashes]=useState<Splash[]>([]),[geese,setGeese]=useState<Geese>();
+  > 58 |   const previewAction=useRef<(kind:'geese'|'splashes')=>void>(),last=useRef<WildlifePreview>({});
+       |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    59 |   useEffect(()=>{
+    60 |     const scene=sceneRef.current;if(!scene||reducedMotion)return;
+    61 |     let timer:ReturnType<typeof setTimeout>|undefined,visible=true,sequence=0;
+
+ERROR in src/FishingTypingGame/scene/LakeVisitors.tsx:58:23
+TS2554: Expected 1 arguments, but got 0.
+    56 | export function LakeWildlife({sceneRef,season,weather,reducedMotion,preview={}}:{sceneRef:RefObject<HTMLDivElement>;season:Season;weather:Weather;reducedMotion:boolean;preview?:WildlifePreview}){
+    57 |   const [splashes,setSplashes]=useState<Splash[]>([]),[geese,setGeese]=useState<Geese>();
+  > 58 |   const previewAction=useRef<(kind:'geese'|'splashes')=>void>(),last=useRef<WildlifePreview>({});
+       |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    59 |   useEffect(()=>{
+    60 |     const scene=sceneRef.current;if(!scene||reducedMotion)return;
+    61 |     let timer:ReturnType<typeof setTimeout>|undefined,visible=true,sequence=0;
+
+ERROR in src/FishingTypingGame/scene/LakeVisitors.tsx:58:23
+TS2554: Expected 1 arguments, but got 0.
+    56 | export function LakeWildlife({sceneRef,season,weather,reducedMotion,preview={}}:{sceneRef:RefObject<HTMLDivElement>;season:Season;weather:Weather;reducedMotion:boolean;preview?:WildlifePreview}){
+    57 |   const [splashes,setSplashes]=useState<Splash[]>([]),[geese,setGeese]=useState<Geese>();
+  > 58 |   const previewAction=useRef<(kind:'geese'|'splashes')=>void>(),last=useRef<WildlifePreview>({});
+       |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    59 |   useEffect(()=>{
+    60 |     const scene=sceneRef.current;if(!scene||reducedMotion)return;
+    61 |     let timer:ReturnType<typeof setTimeout>|undefined,visible=true,sequence=0;
+
+ERROR in src/FishingTypingGame/scene/LakeVisitors.tsx:58:23
+TS2554: Expected 1 arguments, but got 0.
+    56 | export function LakeWildlife({sceneRef,season,weather,reducedMotion,preview={}}:{sceneRef:RefObject<HTMLDivElement>;season:Season;weather:Weather;reducedMotion:boolean;preview?:WildlifePreview}){
+    57 |   const [splashes,setSplashes]=useState<Splash[]>([]),[geese,setGeese]=useState<Geese>();
+  > 58 |   const previewAction=useRef<(kind:'geese'|'splashes')=>void>(),last=useRef<WildlifePreview>({});
+       |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    59 |   useEffect(()=>{
+    60 |     const scene=sceneRef.current;if(!scene||reducedMotion)return;
+    61 |     let timer:ReturnType<typeof setTimeout>|undefined,visible=true,sequence=0;
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:129:21
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    127 |     // A late decode must never replay an old bite or splash after a tab resumes.
+    128 |     if (!buffer || generation !== this.generation || Date.now() - now > (preview ? 3000 : 650) || !this.audible()) return;
+  > 129 |     const sfx = [...this.voices].filter(voice => voice.kind !== 'rain');
+        |                     ^^^^^^^^^^^
+    130 |     if (sfx.length >= MAX_SPLASH_VOICES) {
+    131 |       if (kind === 'lake' || kind === 'lure') return;
+    132 |       this.finish(sfx.find(voice => voice.kind === 'lake' || voice.kind === 'lure') || sfx[0], true);
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:174:27
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    172 |     try { voice.source.stop(this.context.currentTime + .25); } catch { this.finish(voice); }
+    173 |   }
+  > 174 |   private stopAll() { [...this.voices].forEach(voice => this.finish(voice, true)); this.rainVoice = undefined; this.rainVariant = undefined; this.rainPending = undefined; }
+        |                           ^^^^^^^^^^^
+    175 |   private clearAssets() { this.generation++; this.pending.forEach(request => request.controller.abort()); this.pending.clear(); this.cache.clear(); this.lastPlayed.clear(); }
+    176 |   private releaseContext() {
+    177 |     this.stopAll(); this.clearAssets(); this.master?.disconnect(); this.compressor?.disconnect();
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:129:21
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    127 |     // A late decode must never replay an old bite or splash after a tab resumes.
+    128 |     if (!buffer || generation !== this.generation || Date.now() - now > (preview ? 3000 : 650) || !this.audible()) return;
+  > 129 |     const sfx = [...this.voices].filter(voice => voice.kind !== 'rain');
+        |                     ^^^^^^^^^^^
+    130 |     if (sfx.length >= MAX_SPLASH_VOICES) {
+    131 |       if (kind === 'lake' || kind === 'lure') return;
+    132 |       this.finish(sfx.find(voice => voice.kind === 'lake' || voice.kind === 'lure') || sfx[0], true);
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:174:27
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    172 |     try { voice.source.stop(this.context.currentTime + .25); } catch { this.finish(voice); }
+    173 |   }
+  > 174 |   private stopAll() { [...this.voices].forEach(voice => this.finish(voice, true)); this.rainVoice = undefined; this.rainVariant = undefined; this.rainPending = undefined; }
+        |                           ^^^^^^^^^^^
+    175 |   private clearAssets() { this.generation++; this.pending.forEach(request => request.controller.abort()); this.pending.clear(); this.cache.clear(); this.lastPlayed.clear(); }
+    176 |   private releaseContext() {
+    177 |     this.stopAll(); this.clearAssets(); this.master?.disconnect(); this.compressor?.disconnect();
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:129:21
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    127 |     // A late decode must never replay an old bite or splash after a tab resumes.
+    128 |     if (!buffer || generation !== this.generation || Date.now() - now > (preview ? 3000 : 650) || !this.audible()) return;
+  > 129 |     const sfx = [...this.voices].filter(voice => voice.kind !== 'rain');
+        |                     ^^^^^^^^^^^
+    130 |     if (sfx.length >= MAX_SPLASH_VOICES) {
+    131 |       if (kind === 'lake' || kind === 'lure') return;
+    132 |       this.finish(sfx.find(voice => voice.kind === 'lake' || voice.kind === 'lure') || sfx[0], true);
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:174:27
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    172 |     try { voice.source.stop(this.context.currentTime + .25); } catch { this.finish(voice); }
+    173 |   }
+  > 174 |   private stopAll() { [...this.voices].forEach(voice => this.finish(voice, true)); this.rainVoice = undefined; this.rainVariant = undefined; this.rainPending = undefined; }
+        |                           ^^^^^^^^^^^
+    175 |   private clearAssets() { this.generation++; this.pending.forEach(request => request.controller.abort()); this.pending.clear(); this.cache.clear(); this.lastPlayed.clear(); }
+    176 |   private releaseContext() {
+    177 |     this.stopAll(); this.clearAssets(); this.master?.disconnect(); this.compressor?.disconnect();
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:129:21
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    127 |     // A late decode must never replay an old bite or splash after a tab resumes.
+    128 |     if (!buffer || generation !== this.generation || Date.now() - now > (preview ? 3000 : 650) || !this.audible()) return;
+  > 129 |     const sfx = [...this.voices].filter(voice => voice.kind !== 'rain');
+        |                     ^^^^^^^^^^^
+    130 |     if (sfx.length >= MAX_SPLASH_VOICES) {
+    131 |       if (kind === 'lake' || kind === 'lure') return;
+    132 |       this.finish(sfx.find(voice => voice.kind === 'lake' || voice.kind === 'lure') || sfx[0], true);
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:174:27
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    172 |     try { voice.source.stop(this.context.currentTime + .25); } catch { this.finish(voice); }
+    173 |   }
+  > 174 |   private stopAll() { [...this.voices].forEach(voice => this.finish(voice, true)); this.rainVoice = undefined; this.rainVariant = undefined; this.rainPending = undefined; }
+        |                           ^^^^^^^^^^^
+    175 |   private clearAssets() { this.generation++; this.pending.forEach(request => request.controller.abort()); this.pending.clear(); this.cache.clear(); this.lastPlayed.clear(); }
+    176 |   private releaseContext() {
+    177 |     this.stopAll(); this.clearAssets(); this.master?.disconnect(); this.compressor?.disconnect();
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:129:21
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    127 |     // A late decode must never replay an old bite or splash after a tab resumes.
+    128 |     if (!buffer || generation !== this.generation || Date.now() - now > (preview ? 3000 : 650) || !this.audible()) return;
+  > 129 |     const sfx = [...this.voices].filter(voice => voice.kind !== 'rain');
+        |                     ^^^^^^^^^^^
+    130 |     if (sfx.length >= MAX_SPLASH_VOICES) {
+    131 |       if (kind === 'lake' || kind === 'lure') return;
+    132 |       this.finish(sfx.find(voice => voice.kind === 'lake' || voice.kind === 'lure') || sfx[0], true);
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:174:27
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    172 |     try { voice.source.stop(this.context.currentTime + .25); } catch { this.finish(voice); }
+    173 |   }
+  > 174 |   private stopAll() { [...this.voices].forEach(voice => this.finish(voice, true)); this.rainVoice = undefined; this.rainVariant = undefined; this.rainPending = undefined; }
+        |                           ^^^^^^^^^^^
+    175 |   private clearAssets() { this.generation++; this.pending.forEach(request => request.controller.abort()); this.pending.clear(); this.cache.clear(); this.lastPlayed.clear(); }
+    176 |   private releaseContext() {
+    177 |     this.stopAll(); this.clearAssets(); this.master?.disconnect(); this.compressor?.disconnect();
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:129:21
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    127 |     // A late decode must never replay an old bite or splash after a tab resumes.
+    128 |     if (!buffer || generation !== this.generation || Date.now() - now > (preview ? 3000 : 650) || !this.audible()) return;
+  > 129 |     const sfx = [...this.voices].filter(voice => voice.kind !== 'rain');
+        |                     ^^^^^^^^^^^
+    130 |     if (sfx.length >= MAX_SPLASH_VOICES) {
+    131 |       if (kind === 'lake' || kind === 'lure') return;
+    132 |       this.finish(sfx.find(voice => voice.kind === 'lake' || voice.kind === 'lure') || sfx[0], true);
+
+ERROR in src/FishingTypingGame/audio/LakeAudio.ts:174:27
+TS2802: Type 'Set<Voice>' can only be iterated through when using the '--downlevelIteration' flag or with a '--target' of 'es2015' or higher.
+    172 |     try { voice.source.stop(this.context.currentTime + .25); } catch { this.finish(voice); }
+    173 |   }
+  > 174 |   private stopAll() { [...this.voices].forEach(voice => this.finish(voice, true)); this.rainVoice = undefined; this.rainVariant = undefined; this.rainPending = undefined; }
+        |                           ^^^^^^^^^^^
+    175 |   private clearAssets() { this.generation++; this.pending.forEach(request => request.controller.abort()); this.pending.clear(); this.cache.clear(); this.lastPlayed.clear(); }
+    176 |   private releaseContext() {
+    177 |     this.stopAll(); this.clearAssets(); this.master?.disconnect(); this.compressor?.disconnect();
+
+ERROR in src/FishingTypingGame/scene/GooseVisitors.tsx:47:51
+TS2345: Argument of type '"geese"' is not assignable to parameter of type '"cast" | "nibble" | "bite" | "thrash" | "escape" | "landing" | "release" | "lure" | "lake"'.
+    45 |       if (progress >= 1 || document.hidden) return;
+    46 |       const pose = goosePose(visit, progress);
+  > 47 |       if (pose.x > -3 && pose.x < 103) audio.play('geese', { depth: pose.depth, pan: pose.x / 50 - 1, volume: .52 + visit.birds.length * .025 });
+       |                                                   ^^^^^^^
+    48 |       timer = setTimeout(honk, 4200 + Math.random() * 3600);
+    49 |     };
+    50 |     timer = setTimeout(honk, 500 + Math.random() * 1200);
+
+ERROR in src/FishingTypingGame/scene/GooseVisitors.tsx:67:80
+TS2554: Expected 1 arguments, but got 0.
+    65 | }) {
+    66 |   const [visit, setVisit] = useState<GooseVisit>();
+  > 67 |   const refresh = useRef<(() => void) | undefined>(undefined), previewFlight = useRef<GooseVisit>();
+       |                                                                                ^^^^^^^^^^^^^^^^^^^^
+    68 |   const active = useRef<GooseVisit>();
+    69 |   const latest = useRef({ weather, preview }); latest.current = { weather, preview };
+    70 |   const lastPreview = useRef(0), suppressed = useRef(new Set<string>());
+
+ERROR in src/FishingTypingGame/scene/GooseVisitors.tsx:68:18
+TS2554: Expected 1 arguments, but got 0.
+    66 |   const [visit, setVisit] = useState<GooseVisit>();
+    67 |   const refresh = useRef<(() => void) | undefined>(undefined), previewFlight = useRef<GooseVisit>();
+  > 68 |   const active = useRef<GooseVisit>();
+       |                  ^^^^^^^^^^^^^^^^^^^^
+    69 |   const latest = useRef({ weather, preview }); latest.current = { weather, preview };
+    70 |   const lastPreview = useRef(0), suppressed = useRef(new Set<string>());
+    71 |   useEffect(() => {
+
+ERROR in src/FishingTypingGame/scene/GooseVisitors.tsx:47:51
+TS2345: Argument of type '"geese"' is not assignable to parameter of type '"cast" | "nibble" | "bite" | "thrash" | "escape" | "landing" | "release" | "lure" | "lake"'.
+    45 |       if (progress >= 1 || document.hidden) return;
+    46 |       const pose = goosePose(visit, progress);
+  > 47 |       if (pose.x > -3 && pose.x < 103) audio.play('geese', { depth: pose.depth, pan: pose.x / 50 - 1, volume: .52 + visit.birds.length * .025 });
+       |                                                   ^^^^^^^
+    48 |       timer = setTimeout(honk, 4200 + Math.random() * 3600);
+    49 |     };
+    50 |     timer = setTimeout(honk, 500 + Math.random() * 1200);
+

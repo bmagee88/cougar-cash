@@ -1,0 +1,35 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/tree-birds-jest --testPathPattern=(treeBirds|lakeVisitors|geese|lakeFog|solarLighting|environment)
+
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (27.095 s)
+FAIL src/FishingTypingGame/__tests__/treeBirds.test.tsx (16.628 s)
+  ● map overlays share each landscape crop; reduced motion has no bird timers or sprite layers
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "calc(50% - max(51cqw, 102cqh))"
+    Received: ""
+
+      123 |     expect(map.container.querySelectorAll('[data-mapped-tree]')).toHaveLength(10);
+      124 |     const frame = map.container.querySelector('[data-layer="tree-map"] > div') as HTMLElement;
+    > 125 |     Object.entries(lakeFrame(location)).forEach(([key, value]) => expect((frame.style as any)[key]).toBe(value));
+          |                                                                                                     ^
+      126 |     expect(birdPlane(location)['--bird-plane-w']).toContain(location === 'cove' ? '181.3cqh' : '204cqh'); map.unmount();
+      127 |   }
+      128 |   const view = render(<div ref={sceneRef}><TreeBirds sceneRef={sceneRef} location="cove" reducedMotion flockPreview={1} soloPreview={1}/></div>);
+
+      at forEach (src/FishingTypingGame/__tests__/treeBirds.test.tsx:125:101)
+          at Array.forEach (<anonymous>)
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/treeBirds.test.tsx:125:41)
+
+PASS src/FishingTypingGame/__tests__/lakeFog.test.tsx (7.661 s)
+PASS src/FishingTypingGame/__tests__/geese.test.tsx
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (11.855 s)
+PASS src/FishingTypingGame/__tests__/solarLighting.test.tsx
+
+Test Suites: 1 failed, 5 passed, 6 total
+Tests:       1 failed, 44 passed, 45 total
+Snapshots:   0 total
+Time:        80.613 s
+Ran all test suites matching /(treeBirds|lakeVisitors|geese|lakeFog|solarLighting|environment)/i.

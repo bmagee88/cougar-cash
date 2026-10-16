@@ -1,0 +1,8 @@
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (29.176 s)
+PASS src/FishingTypingGame/__tests__/waterAudio.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       15 passed, 15 total
+Snapshots:   0 total
+Time:        42.203 s
+Ran all test suites matching /waterAudio|environment.test/i.

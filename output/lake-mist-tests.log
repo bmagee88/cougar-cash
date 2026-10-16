@@ -1,0 +1,14 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/lake-mist-jest --testPathPattern=(lakeFog|weatherTransitions|solarLighting|geese)
+
+PASS src/FishingTypingGame/__tests__/lakeFog.test.tsx (18.729 s)
+PASS src/FishingTypingGame/__tests__/geese.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/solarLighting.test.tsx
+
+Test Suites: 4 passed, 4 total
+Tests:       26 passed, 26 total
+Snapshots:   0 total
+Time:        35.88 s
+Ran all test suites matching /(lakeFog|weatherTransitions|solarLighting|geese)/i.

@@ -8,6 +8,8 @@ import { siderealAngle, skyEventsAt, SkyPreview } from '../engine/astronomy';
 import { lakeFrame, lakeShoreline } from './lakeFrame';
 import StarField from './StarField';
 import SkyEvents from './SkyEvents';
+import { SolarLight } from './solarLight';
+import { SunGlare } from './SolarLighting';
 
 export const MOON_SHAPES = [
   'M50 0A50 50 0 1 0 50 100A50 50 0 1 0 50 0',
@@ -19,7 +21,7 @@ export const MOON_SHAPES = [
   'M50 0A50 50 0 0 1 50 100Z',
   'M50 0A50 50 0 0 1 50 100A25 50 0 0 1 50 0Z',
 ];
-export default memo(function CelestialSky({ world, background, location = 'dock', skyPreview }: { world: WorldConditions; background: string; location?: string; skyPreview?: SkyPreview }) {
+export default memo(function CelestialSky({ world, background, location = 'dock', skyPreview, solarLight }: { world: WorldConditions; background: string; location?: string; skyPreview?: SkyPreview; solarLight?: SolarLight }) {
   const id = `moon-${useId().replace(/:/g, '')}`;
   const sun = celestialPosition(world.hour); const moon = celestialPosition(world.hour, true);
   const skyColor = useSkyColor(background, moon.x, moon.y);
@@ -33,6 +35,7 @@ export default memo(function CelestialSky({ world, background, location = 'dock'
       <div className="f-stars" data-testid="fishing-stars" data-sidereal-angle={angle.toFixed(4)} style={{ opacity: starVisibility }}>{stars && <StarField angle={angle} shoreline={shoreline} moonlight={moonlightAt(world.hour, world.moonPhase)} />}</div>
       <div className="f-sky-events" style={{ opacity: light.nightAmount * (1 - moonlightAt(world.hour, world.moonPhase) * .25) }}>{light.nightAmount > 0 && <SkyEvents events={events} angle={angle} shoreline={shoreline} />}</div>
     </div>
+    {solarLight && <SunGlare light={solarLight} />}
     <div className="f-sun f-moving-sun" data-testid="fishing-sun" style={position(sun)} />
     <svg className="f-moon" data-testid="fishing-moon" data-moon-phase={world.moonPhase} style={{ ...position(moon), opacity: Number(moon.visible && world.moonPhase !== 'new') }} viewBox="0 0 100 100" aria-label={MOON_LABELS[world.moonPhase]}>
       <defs><clipPath id={id}><path d={MOON_SHAPES[MOON_PHASES.indexOf(world.moonPhase)]} /></clipPath></defs>

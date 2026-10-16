@@ -17,9 +17,9 @@ export function projectStar(ra: number, dec: number, angle: number, shoreline = 
   return { x: .5 + azimuth / 160, y: shoreline - altitude / 120, altitude };
 }
 
-export type SkyPreview = { aurora?: boolean; meteors?: boolean };
+export type SkyPreview = { aurora?: boolean; meteors?: boolean; sailorsDelight?: boolean };
 export interface SkyEvent { id: string; night: number; startHour: number; endHour: number; strength: number }
-export interface SkyEvents { aurora?: SkyEvent; meteors?: SkyEvent }
+export interface SkyEvents { aurora?: SkyEvent; meteors?: SkyEvent; sailorsDelight?: SkyEvent }
 export function skyRandom(seed: number) {
   let n = Math.imul(seed ^ (seed >>> 16), 0x45d9f3b);
   n = Math.imul(n ^ (n >>> 16), 0x45d9f3b);
@@ -36,7 +36,18 @@ export function skyEventsAt(world: Pick<WorldConditions, 'gameDay' | 'hour'>, pr
     const natural = skyRandom(seed) < chance && hour >= startHour && hour < endHour;
     return (preview[kind] ?? natural) ? { id: `${kind}-${night}`, night, startHour, endHour, strength: .55 + skyRandom(seed + 3) * .45 } : undefined;
   };
-  return { aurora: event('aurora', 17377, .07, 20, 4), meteors: event('meteors', 83047, .14, 21, 4) };
+  // A separate daylight roll: it neither chooses nor replaces a weather event.
+  const sunsetSeed = Math.imul(world.gameDay, 1013) + 52181;
+  const startHour = 16.15 + skyRandom(sunsetSeed + 1) * .4;
+  const endHour = 18.85 + skyRandom(sunsetSeed + 2) * .4;
+  const sunset = world.hour >= startHour && world.hour < endHour;
+  const smooth = (n: number) => { const x = Math.max(0, Math.min(1, n)); return x * x * (3 - 2 * x); };
+  const envelope = smooth((world.hour - startHour) / .55) * smooth((endHour - world.hour) / .65);
+  const sailorsDelight = sunset && (preview.sailorsDelight ?? skyRandom(sunsetSeed) < .18) ? {
+    id: `sailors-delight-${world.gameDay}`, night: world.gameDay, startHour, endHour,
+    strength: (.65 + skyRandom(sunsetSeed + 3) * .35) * envelope,
+  } : undefined;
+  return { aurora: event('aurora', 17377, .07, 20, 4), meteors: event('meteors', 83047, .14, 21, 4), sailorsDelight };
 }
 
 /** All shower trails extrapolate back toward one celestial radiant. */

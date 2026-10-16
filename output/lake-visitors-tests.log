@@ -1,0 +1,34 @@
+FAIL src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (9.674 s)
+  √ Santa has one stable real-local Christmas window per year, including midnight boundaries and caught years (19 ms)
+  √ new discoveries and the exact clicked pose survive a reload while editable journal fields stay blank (570 ms)
+  √ guide silhouettes reveal only collected visitors and special guests have their own tab (33 ms)
+  √ odonates hover, patrol, reverse without turning their bodies, and flutter more slowly; depth keeps its water boundary (2 ms)
+  × new insect visitors use painted-pixel catching and clean up arrival timers while hidden (62 ms)
+  √ seasonal geese reverse direction and splashes shrink toward the horizon; ambient visitors stop and unload (19 ms)
+  √ Santa sleeps outside Christmas, rejects transparent clicks, and remains collectible with reduced motion (14 ms)
+  √ catalog includes both groups with smaller jewelwings
+
+  ● new insect visitors use painted-pixel catching and clean up arrival timers while hidden
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: Anything, "green-darner", Any<Number>, ObjectContaining {"frame": Any<Number>}
+    Received: <button aria-label="Observe damselfly" class="f-butterfly-visit" data-depth="0.570" data-flight-state="flying" data-testid="odonate-visitor" data-visitor-species="ebony-jewelwing" data-wing-frame="7" data-wingspan-mm="45.80293087890331" style="left: 101.12772196038044%; top: 73.75020481890941%; width: 34.79661105811454px; height: 34.79661105811454px; opacity: 1; z-index: 11;" title="Add this visitor to your field guide" type="button"><canvas aria-hidden="true" class="f-butterfly-flight" height="320" width="320" /></button>, "ebony-jewelwing", 45.80293087890331, {"flipped": true, "frame": 7, "rotation": 0}
+
+    Number of calls: 1
+
+      84 |   fireEvent.click(visitor,{detail:1,clientX:400,clientY:300});expect(observe).not.toHaveBeenCalled();
+      85 |   alpha.mockReturnValue({data:[0,0,0,255]});fireEvent.click(visitor,{detail:1,clientX:400,clientY:300});
+    > 86 |   expect(observe).toHaveBeenCalledWith(expect.anything(),'green-darner',expect.any(Number),expect.objectContaining({frame:expect.any(Number)}));
+         |                   ^
+      87 |   hidden.mockReturnValue(true);fireEvent(document,new Event('visibilitychange'));expect(jest.getTimerCount()).toBe(0);
+      88 |   view.unmount();expect(jest.getTimerCount()).toBe(0);
+      89 | });
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/lakeVisitors.test.tsx:86:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 7 passed, 8 total
+Snapshots:   0 total
+Time:        12.847 s
+Ran all test suites matching /lakeVisitors/i.

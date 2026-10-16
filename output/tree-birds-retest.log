@@ -1,0 +1,19 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/tree-birds-jest --testPathPattern=treeBirds
+
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (16.479 s)
+  √ each landscape maps exactly ten trees in source-art x/y and distance z; perches stay in their top third (124 ms)
+  √ two independently jittered clocks keep 10–30 game-minute gaps, while the ten-bird clock keeps 24–48 real-minute gaps (965 ms)
+  √ routes launch and land within different tree crowns, vary depth, and flocks either land or leave the frame (5355 ms)
+  √ a bounding path rises and dips repeatedly, with exact endpoint height and scale (5 ms)
+  √ the schedule resumes current time without catch-up bursts and never exceeds twelve natural birds (1623 ms)
+  √ hidden/offscreen birds unload, returning uses elapsed progress, and every timer and observer is released (631 ms)
+  √ map overlays mark ten top-third zones; reduced motion has no bird timers or sprite layers (32 ms)
+  √ stepped rendering advances bird travel and wing poses without advancing fishing cues (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        23.667 s
+Ran all test suites matching /treeBirds/i.

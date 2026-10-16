@@ -1,0 +1,38 @@
+PASS src/FishingTypingGame/__tests__/engine.test.ts (12.572 s)
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (40.308 s)
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (11.448 s)
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (7.353 s)
+PASS src/FishingTypingGame/__tests__/environment.test.tsx
+PASS src/FishingTypingGame/__tests__/world.test.ts
+PASS src/FishingTypingGame/__tests__/fishFightGame.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+PASS src/FishingTypingGame/__tests__/fishFight.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyGuide.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+PASS src/FishingTypingGame/__tests__/astronomy.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/lakeFog.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyPose.test.tsx
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+
+Test Suites: 28 passed, 28 total
+Tests:       199 passed, 199 total
+Snapshots:   0 total
+Time:        110.372 s, estimated 292 s
+Ran all test suites matching /FishingTypingGame/i.

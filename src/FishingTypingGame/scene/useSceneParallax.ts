@@ -2,7 +2,7 @@ import { RefObject, useEffect } from 'react';
 
 // One calm left/right cycle per minute. Depth keeps the background nearly still.
 export const SCENE_DRIFT = { amplitudePx: 8, periodMs: 64000 };
-const AMBIENT_ANIMATIONS=new Set(['f-drift','f-sway','f-shimmer','f-birds','f-angler-breathe','f-willow-sway','f-lantern-breathe','f-star-glimmer','f-star-scintillation','f-aurora-drift','f-aurora-breathe','f-meteor-pass','f-cloud-life','f-cloud-deck-drift','f-fog','f-lake-fog-drift','f-rain-mist-drift','f-heat','f-rain','f-ripple','f-snow-fall','f-snow-blow','f-wind-gust','f-leaf-arrive','f-leaf-caught','f-leaf-release']);
+const AMBIENT_ANIMATIONS=new Set(['f-tree-bird-flight','f-tree-bird-flap','f-geese-pass','f-goose-light','f-goose-flap','f-lantern-orbit','f-lantern-buzz','f-lake-splash','f-drift','f-sway','f-shimmer','f-birds','f-angler-breathe','f-willow-sway','f-lantern-breathe','f-star-glimmer','f-star-scintillation','f-aurora-drift','f-aurora-breathe','f-meteor-pass','f-cloud-life','f-cloud-deck-drift','f-fog','f-lake-fog-drift','f-rain-mist-drift','f-heat','f-rain','f-ripple','f-snow-fall','f-snow-blow','f-wind-gust','f-leaf-arrive','f-leaf-caught','f-leaf-release']);
 /** CSS pauses only ambient layers; the selected timer advances their timelines. */
 export function stepAmbientAnimations(scene:HTMLElement,delta:number){
   (scene.getAnimations?.({subtree:true})??[]).forEach(animation=>{

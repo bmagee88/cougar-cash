@@ -1,7 +1,9 @@
-import React, { CSSProperties, memo, useEffect, useRef, useState } from 'react';
+import React, { CSSProperties, memo, useEffect, useId, useRef, useState } from 'react';
 import { WeatherVisuals } from '../engine/weather';
 import { artwork as imagePath } from '../engine/artwork';
 import { useLayerPresence } from './useLayerPresence';
+import { SolarLight } from './solarLight';
+import { CloudLightFilter } from './SolarLighting';
 
 export const CLOUD_ART = Object.fromEntries(['cirrus', 'cumulus', 'stratus', 'cumulonimbus', 'overcast', 'rain'].map(kind => [kind, imagePath(`weather/clouds/${kind}-painted.png`)])) as Record<'cirrus' | 'cumulus' | 'stratus' | 'cumulonimbus' | 'overcast' | 'rain', string>;
 const CLOUDS = [
@@ -13,7 +15,9 @@ const CLOUDS = [
   { kind: 'stratus', x: 18, y: 7, width: 64, alpha: .32, life: 211, delay: -77 },
 ] as const;
 
-export default memo(function CloudSystem({ visuals, reducedMotion = false, lightningPreview = 0, intervalMs = 0 }: { visuals: WeatherVisuals; reducedMotion?: boolean; lightningPreview?: number; intervalMs?:number }) {
+export default memo(function CloudSystem({ visuals, reducedMotion = false, lightningPreview = 0, intervalMs = 0, solarLight }: { visuals: WeatherVisuals; reducedMotion?: boolean; lightningPreview?: number; intervalMs?:number; solarLight?: SolarLight }) {
+  const sunlightId = `cloud-light-${useId().replace(/:/g, '')}`;
+  const sunlit = !!solarLight && solarLight.delight > 0;
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
   const [flash, setFlash] = useState<number | null>(null); const flashCount = useRef(0);
   const lastPreview = useRef(0);
@@ -51,6 +55,8 @@ export default memo(function CloudSystem({ visuals, reducedMotion = false, light
     onLoad={() => setLoaded(previous => previous[kind] ? previous : { ...previous, [kind]: true })}
   />;
   return <div className="f-cloud-system" data-layer="clouds" data-scene-depth="background" data-weather-stage={visuals.stage} data-lightning-interval-ms={visuals.lightningIntervalMs === undefined ? undefined : Math.round(visuals.lightningIntervalMs)} aria-hidden="true">
+    {sunlit && <CloudLightFilter id={sunlightId} light={solarLight!} transmission={visuals.celestial} />}
+    <div className="f-cloud-banks" data-sunlit-clouds={sunlit} style={sunlit ? { filter: `url(#${sunlightId})` } : undefined}>
     <div className="f-clear-clouds" style={{ opacity: visuals.clear }}>
       {clear && CLOUDS.map((cloud, i) => <div key={i} className="f-cloud-cycle" style={{ left: `${cloud.x}%`, top: `${cloud.y}%`, width: `${cloud.width}%`, '--cloud-opacity': cloud.alpha, '--cloud-life': `${cloud.life}s`, '--cloud-delay': `${cloud.delay}s` } as CSSProperties}>
         {artwork(cloud.kind, i % 2 ? 'f-cloud-mirrored' : '')}
@@ -59,6 +65,7 @@ export default memo(function CloudSystem({ visuals, reducedMotion = false, light
     <div className="f-thunderheads" style={{ opacity: visuals.tower, scale: visuals.towerGrowth }}>{tower && artwork('cumulonimbus')}</div>
     <div className="f-cloud-deck f-cloud-deck-grey" style={{ opacity: visuals.greyDeck, animationPlayState: grey ? 'running' : 'paused' }}>{grey && artwork('overcast')}</div>
     <div className="f-cloud-deck f-cloud-deck-dark" style={{ opacity: visuals.darkDeck, animationPlayState: dark ? 'running' : 'paused' }}>{dark && artwork('rain')}</div>
+    </div>
     {visuals.stage !== 'easing' && !reducedMotion && flash !== null && <div key={flash} className="f-cloud-lightning" data-testid="cloud-lightning-flash" onAnimationEnd={() => setFlash(null)} />}
   </div>;
 });
