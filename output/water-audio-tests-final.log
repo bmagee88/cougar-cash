@@ -1,0 +1,11 @@
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (19.646 s)
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/waterAudio.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       34 passed, 34 total
+Snapshots:   0 total
+Time:        33.19 s
+Ran all test suites matching /waterAudio|lakeVisitors|environment.test|scene.test|storage/i.

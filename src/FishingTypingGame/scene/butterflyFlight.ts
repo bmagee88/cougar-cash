@@ -13,6 +13,7 @@ export interface FlightState {
   x:number;y:number;z:number;vx:number;vy:number;vz:number;age:number;turnIn:number;
   speed:number;heading:number;exitSide:number;departAt:number;fleeing:boolean;
   behindForeground:boolean;closeRadius:number;alarmRadius:number;speedTolerance:number;perch?:ButterflyPerch;
+  facing?:number;
 }
 const between=(random:Random,min:number,max:number)=>min+random()*(max-min);
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));

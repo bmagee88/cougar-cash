@@ -8,6 +8,8 @@ import { HAIKU_BY_TEXT, HAIKU_SOURCE } from './haiku';
 import { notebookEntries, readNotebook } from './notebook';
 import { qualityForWeight } from './specimens';
 import { readButterflyDiscoveries } from './butterflies';
+import { readVisitorDiscoveries } from './visitors';
+import { readSoundVolume } from '../audio/sounds';
 export const SAVE_KEY = 'cougar-fishing-v1';
 function readRetrieve(value: unknown): RetrieveMemory | undefined {
   const memory=value as Partial<RetrieveMemory> | undefined;
@@ -25,9 +27,9 @@ function readTypingMemory(value: unknown): CatchTypingMemory | undefined {
   return { phrase: memory.phrase, ...(validPoem ? { haiku: { id: poem.id, author: poem.author, translator: poem.translator, lines: [...poem.lines] } } : {}) };
 }
 export function emptySave(): SaveData {
-  return { version: 1, sizeQualityVersion:1, livewell: [], notebook: [], butterflyDiscoveries:[], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
+  return { version: 1, sizeQualityVersion:1, livewell: [], notebook: [], butterflyDiscoveries:[], visitorDiscoveries:[], santaYears:[], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
     tackle: { ...DEFAULT_TACKLE }, lineGear: readLineGear(),
-    settings: { weather: 'sunny', sound: false, reducedMotion: false, keepScreenAwake: true, fishingMode: 'interactive', wordCheckpoint: false, environmentRender: 'natural', hideFishDetails: true, measurements: 'imperial' },
+    settings: { weather: 'sunny', sound: false, soundVolume: .55, reducedMotion: false, keepScreenAwake: true, fishingMode: 'interactive', wordCheckpoint: false, environmentRender: 'natural', hideFishDetails: true, measurements: 'imperial' },
     stats: { caught: 0, escaped: 0, discovered: [], byRarity: Object.fromEntries(RARITIES.map(r => [r, 0])) as SaveData['stats']['byRarity'],
       byQuality: Object.fromEntries(QUALITIES.map(q => [q, 0])) as SaveData['stats']['byQuality'], albinos: 0, albinoDiscovered: [], largest: {}, bestWpm: 0, totalWpm: 0, currentStreak: 0, longestStreak: 0 } };
 }
@@ -58,7 +60,8 @@ export function deserializeSave(raw: string | null): SaveData {
           ...(savedConditions.tackle ? { tackle: normalizeTackle(savedConditions.tackle) } : {}) } : undefined;
         return { ...record, ...(typing ? { typing } : {}), ...(retrieve ? { retrieve } : {}), ...(conditions ? { conditions } : {}) };
       }),
-      settings: { sound: data.settings?.sound === true, reducedMotion: data.settings?.reducedMotion === true, keepScreenAwake: typeof data.settings?.keepScreenAwake === 'boolean' ? data.settings.keepScreenAwake : true, hideFishDetails:data.settings?.hideFishDetails!==false, measurements:data.settings?.measurements==='metric'?'metric':'imperial', fishingMode: data.settings?.fishingMode==='fish-fight' ? 'fish-fight' : data.settings?.fishingMode==='standard' ? 'standard' : 'interactive', wordCheckpoint: data.settings?.wordCheckpoint===true, environmentRender: readEnvironmentRender(data.settings?.environmentRender), weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
+      settings: { sound: data.settings?.sound === true,
+        soundVolume: readSoundVolume(data.settings?.soundVolume), reducedMotion: data.settings?.reducedMotion === true, keepScreenAwake: typeof data.settings?.keepScreenAwake === 'boolean' ? data.settings.keepScreenAwake : true, hideFishDetails:data.settings?.hideFishDetails!==false, measurements:data.settings?.measurements==='metric'?'metric':'imperial', fishingMode: data.settings?.fishingMode==='fish-fight' ? 'fish-fight' : data.settings?.fishingMode==='standard' ? 'standard' : 'interactive', wordCheckpoint: data.settings?.wordCheckpoint===true, environmentRender: readEnvironmentRender(data.settings?.environmentRender), weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
         ...(data.settings?.weatherMode === 'natural' ? { weatherMode: 'natural' as const, ...(naturalWeather ? { naturalWeather } : {}) } : {}),
         ...(data.settings?.weatherMode !== 'natural' && data.settings?.weather === 'thunderstorm' && number(data.settings?.stormStartedAt) > 0 ? { stormStartedAt: data.settings.stormStartedAt } : {}) } };
     if(data.sizeQualityVersion!==1){
@@ -72,6 +75,8 @@ export function deserializeSave(raw: string | null): SaveData {
     }
     loaded.notebook=notebookEntries(loaded);
     loaded.butterflyDiscoveries=readButterflyDiscoveries(data.butterflyDiscoveries);
+    loaded.visitorDiscoveries=readVisitorDiscoveries(data.visitorDiscoveries);
+    loaded.santaYears=Array.isArray(data.santaYears)?Array.from(new Set<number>(data.santaYears.filter((year:unknown)=>typeof year==='number'&&Number.isInteger(year)&&year>=2026&&year<=9999))):[];
     return loaded;
   } catch { return fallback; }
 }

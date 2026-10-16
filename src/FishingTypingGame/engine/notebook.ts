@@ -1,6 +1,7 @@
 import { CatchRecord, NotebookEntry, NotebookImage, SaveData } from './types';
 import { SPECIES } from './config';
 import { butterflyById, readButterflyPose } from './butterflies';
+import { SANTA, visitorById } from './visitors';
 
 export function catchImage(record:Pick<CatchRecord,'speciesId'|'lengthCm'|'weightKg'|'isAlbino'>):NotebookImage {
   return {kind:'fish',speciesId:record.speciesId,lengthCm:record.lengthCm,weightKg:record.weightKg,isAlbino:record.isAlbino};
@@ -9,6 +10,10 @@ export function blankEntry(id:string,caughtAt:string,location:string,image?:Note
   return {id,caughtAt,location,title:'',name:'',notes:'',...(image?{image}:{})};
 }
 function readImage(value:any):NotebookImage|undefined {
+  if(value?.kind==='visitor'&&(value.speciesId===SANTA.id||visitorById(value.speciesId))){
+    const pose=readButterflyPose(value.pose);
+    return {kind:'visitor',speciesId:value.speciesId,...(pose?{pose}:{})};
+  }
   if(value?.kind==='butterfly'){
     const species=butterflyById(value.speciesId),span=value.wingspanMm,pose=species?readButterflyPose(value.pose):undefined;
     return {kind:'butterfly',...(species?{speciesId:species.id}:{}),...(species&&typeof span==='number'&&Number.isFinite(span)&&span>=species.wingspanMm[0]&&span<=species.wingspanMm[1]?{wingspanMm:span}:{}),...(pose?{pose}:{})};

@@ -1,0 +1,9 @@
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (60.155 s)
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+
+Test Suites: 3 passed, 3 total
+Tests:       21 passed, 21 total
+Snapshots:   0 total
+Time:        82.853 s
+Ran all test suites matching /lakeVisitors|butterflyFlight|mobile-and-butterflies/i.

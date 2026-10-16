@@ -1,0 +1,8 @@
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (16.023 s)
+PASS src/FishingTypingGame/__tests__/world.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       18 passed, 18 total
+Snapshots:   0 total
+Time:        27.877 s, estimated 64 s
+Ran all test suites matching /lakeVisitors|world.test/i.

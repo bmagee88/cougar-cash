@@ -2,6 +2,7 @@ import React, { CSSProperties, memo, useId } from 'react';
 import { SceneAsset, Season } from '../engine/types';
 import contours from './skyline-contours';
 import { lakeFrame } from './lakeFrame';
+import { MountainBacklight } from './SolarLighting';
 
 export function MountainHaze({ style, embedded = false }: { style: CSSProperties; embedded?: boolean }) {
   return <div data-layer="mountain-weather-haze" data-scene-depth={embedded ? undefined : 'background'} aria-hidden="true" className={`${embedded ? 'f-backdrop-content' : 'f-scene-layer'} f-mountain-haze`} style={{ ...style, opacity: 'var(--mountain-haze-opacity, 0)' }} />;
@@ -29,6 +30,7 @@ export default memo(function LakeBackdrop({ layer, season }: { layer: SceneAsset
     <div data-layer="mountain-plane" data-scene-depth="background" className="f-scene-layer" style={{ ...style, zIndex: 3, maskImage: `url("#${mask}")`, WebkitMaskImage: `url("#${mask}")` }}>
       <img data-layer="mountain-landscape" src={layer.src} alt="" draggable={false} className="f-backdrop-content" />
       <MountainHaze embedded style={{}} />
+      <MountainBacklight />
     </div>
   </>;
 });

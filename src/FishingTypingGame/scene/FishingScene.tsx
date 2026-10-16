@@ -19,8 +19,15 @@ import { useLayerPresence } from './useLayerPresence';
 import { useLanternLighting } from './useLanternLighting';
 import ButterflyVisitors, { ObserveButterfly } from './ButterflyVisitors';
 import LakeFog from './LakeFog';
+import TreeBirds from './TreeBirds';
+import { lakeFogAt, weatherFogDensity } from '../engine/lakeFog';
 import { lakeFrame } from './lakeFrame';
-import { SkyPreview } from '../engine/astronomy';
+import { skyEventsAt, SkyPreview } from '../engine/astronomy';
+import { LakeWildlife, LanternInsects, SantaVisitor, WildlifePreview } from './LakeVisitors';
+import { MountainBacklight, solarStyle, useSolarFrame } from './SolarLighting';
+import { solarLightAt } from './solarLight';
+import { LakeSoundControls } from '../audio/sounds';
+import { useWaterSounds } from './useWaterSounds';
 
 export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }: { layer: SceneAsset; lanternLit?: boolean }) {
   const p = layer.position;
@@ -47,7 +54,8 @@ export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }
   if (layer.format === 'procedural') return layer.id === 'reflections' ? <div data-layer={layer.id} data-scene-depth={depth} style={style} className="f-scene-layer f-reflections" /> : null;
   if (layer.format === 'spritesheet' && layer.sprite) return <div data-scene-depth={depth} style={{ ...style, backgroundImage: `url(${layer.src})`, backgroundSize: `${layer.sprite.frames * 100}% 100%`, animation: `f-sprite ${layer.sprite.frames / layer.sprite.fps}s steps(${layer.sprite.frames}) infinite` }} className="f-scene-layer" />;
   const artwork = <img data-layer={layer.id} data-scene-depth={depth} src={layer.src} alt="" draggable={false} style={style} className={`f-scene-layer ${layer.animation ? `f-${layer.animation}` : ''} ${layer.weatherResponse ? 'f-weather-responsive' : ''}`} />;
-  return layer.id === 'cove-landscape' ? <>{artwork}<MountainHaze style={{ ...style, maskImage: `url("${layer.src}")`, WebkitMaskImage: `url("${layer.src}")`, maskSize: '100% 100%', WebkitMaskSize: '100% 100%', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat' }} /></> : <>{artwork}{lanternLit && depth === 'foreground' && <img data-lantern-surface={layer.id} src={layer.src} alt="" aria-hidden="true" draggable={false} style={style} className={`f-scene-layer f-lantern-relit ${layer.animation ? `f-${layer.animation}` : ''} ${layer.weatherResponse ? 'f-weather-responsive' : ''}`} />}</>;
+  const landscapeMask = { ...style, maskImage: `url("${layer.src}")`, WebkitMaskImage: `url("${layer.src}")`, maskSize: '100% 100%', WebkitMaskSize: '100% 100%', maskRepeat: 'no-repeat', WebkitMaskRepeat: 'no-repeat' };
+  return layer.id === 'cove-landscape' ? <>{artwork}<MountainHaze style={landscapeMask} /><div className="f-scene-layer" style={landscapeMask}><MountainBacklight /></div></> : <>{artwork}{lanternLit && depth === 'foreground' && <img data-lantern-surface={layer.id} src={layer.src} alt="" aria-hidden="true" draggable={false} style={style} className={`f-scene-layer f-lantern-relit ${layer.animation ? `f-${layer.animation}` : ''} ${layer.weatherResponse ? 'f-weather-responsive' : ''}`} />}</>;
 });
 export function characterState(game: GameState, preview?: CharacterState): CharacterState {
   if (preview) return preview;
@@ -80,7 +88,7 @@ export const CharacterAnimator = memo(function CharacterAnimator({ state, tipRef
   const rodStyle: CSSProperties = { left: `${(rig.hand.x - rig.rod.width * rig.rod.grip.x) * 100}%`, top: `${(rig.hand.y - rig.rod.height * rig.rod.grip.y) * 100}%`,
     width: `${rig.rod.width * 100}%`, height: `${rig.rod.height * 100}%`, transformOrigin: `${rig.rod.grip.x * 100}% ${rig.rod.grip.y * 100}%` };
   return <>{lanternLit && <div className={`f-lantern-station ${dock || shoreLayer?.seat ? 'f-character-seated' : ''}`} style={characterStyle} aria-hidden="true">
-    <div className="f-lantern"><i className="f-lantern-halo" /><img data-asset="lantern" src={FISHING_ART.lantern} alt="" draggable={false} /></div>
+    <div className="f-lantern"><i className="f-lantern-halo" /><img data-asset="lantern" src={FISHING_ART.lantern} alt="" draggable={false} />{!reducedMotion&&<LanternInsects/>}</div>
   </div>}<div className={`f-character f-character-${state} ${dock || shoreLayer?.seat ? 'f-character-seated' : ''}`} data-character-state={state} style={characterStyle}>
     <img className="f-angler-body" data-asset="fisherman" data-outfit-season={season} src={ANGLER_OUTFITS[season]} alt="" />
     {lanternLit && <img className="f-angler-body f-lantern-relit" data-lantern-surface="angler" src={ANGLER_OUTFITS[season]} alt="" aria-hidden="true" />}
@@ -197,8 +205,8 @@ export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = we
     <div className={`f-heat-haze ${heatMoving ? '' : 'f-effect-dormant'}`} data-layer="heat-haze" aria-hidden="true" style={{ opacity: visuals.heat }} />
   </>;
 });
-export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly, intervalMs = 0, skyPreview }: {
-  game: GameState; location: string; weather: Weather; reducedMotion: boolean; intervalMs?:number; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly; skyPreview?: SkyPreview;
+export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly, intervalMs = 0, skyPreview, wildlifePreview, onObserveVisitor, santaYears, audio, showTreeMap = false }: {
+  game: GameState; location: string; weather: Weather; reducedMotion: boolean; intervalMs?:number; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly; skyPreview?: SkyPreview; wildlifePreview?:WildlifePreview; onObserveVisitor?:ObserveButterfly; santaYears?:readonly number[]; audio?:LakeSoundControls; showTreeMap?:boolean;
 }) {
   const tipRef = useRef<HTMLElement>(null); const handRef = useRef<HTMLElement>(null); const sceneRef = useRef<HTMLDivElement>(null);
   const landingOriginRef = useRef<HTMLDivElement>(null);
@@ -210,6 +218,12 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
   const phase = game.phase; const mappedAnimation = characterState(game);
   const seasonalManifest = useMemo(() => sceneForLocation(world.season, location, manifest), [world.season, location, manifest]);
   const weatherLook = useMemo(() => weatherState || weatherVisuals(weather), [weatherState, weather]);
+  useWaterSounds(game, battle.progress, battle.struggling, weatherLook.rain, sceneRef, audio);
+  const solarFrame = useSolarFrame(sceneRef);
+  const skyEvents = skyEventsAt(world, skyPreview);
+  const morningFog = lakeFogAt(world);
+  const fogDensity = Math.max(morningFog.density, weather === 'fog' ? weatherFogDensity(world) : 0);
+  const solarLight = solarLightAt(world, location, solarFrame.width, solarFrame.height, skyEvents);
   useWeatherMotion(sceneRef, weatherLook.wind, reducedMotion, intervalMs);
   const light = weatherLighting(world.hour, world.moonPhase, weather, weatherLook);
   const lanternLit = useLayerPresence(light.nightAmount > 0, reducedMotion ? 0 : 8000);
@@ -230,11 +244,11 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
     lastPhase.current = phase;
     return () => clearTimeout(timer);
   }, [phase, mappedAnimation]);
-  return <div ref={sceneRef} data-environment-render-ms={intervalMs} className={`f-scene ${intervalMs ? 'f-scene-stepped' : ''} f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--weather-contrast': weatherLook.contrast, '--weather-veil': weatherLook.veil, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} role={onObserveButterfly?'group':'img'} aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
-    <div className="f-scene-base" aria-hidden="true" /><CelestialSky world={world} background={sky?.src || ''} location={location} skyPreview={skyPreview} /><div className="f-sky-grain" />
+  return <div ref={sceneRef} data-environment-render-ms={intervalMs} className={`f-scene ${intervalMs ? 'f-scene-stepped' : ''} f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ ...solarStyle(solarLight, weatherLook.celestial), '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--weather-contrast': weatherLook.contrast, '--weather-veil': weatherLook.veil, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} data-sailors-delight={!!skyEvents.sailorsDelight} role={onObserveButterfly?'group':'img'} aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
+    <div className="f-scene-base" aria-hidden="true" /><CelestialSky world={world} background={sky?.src || ''} location={location} skyPreview={skyPreview} solarLight={solarLight} /><div className="f-sky-grain" />
     {seasonalManifest.filter(l => !l.spots || l.spots.includes(location)).map(layer => {
       if (layer.id === 'weather') return <WeatherSystem intervalMs={intervalMs} key={layer.id} weather={weather} visuals={weatherLook} location={location} reducedMotion={reducedMotion} />;
-      if (layer.id === 'clouds') return <CloudSystem intervalMs={intervalMs} key={layer.id} visuals={weatherLook} reducedMotion={reducedMotion} lightningPreview={lightningPreview} />;
+      if (layer.id === 'clouds') return <CloudSystem intervalMs={intervalMs} key={layer.id} visuals={weatherLook} reducedMotion={reducedMotion} lightningPreview={lightningPreview} solarLight={solarLight} />;
       if (layer.id === 'angler') return shoreLayer ? null : <CharacterAnimator key={layer.id} lanternLit={lanternLit} season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} dockLayer={dockLayer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />;
       if (layer.id === 'cove-seat') return <div key={layer.id} className="f-cove-ground-plane" style={{
         '--cove-min-width': `${COVE_GROUND_FRAME.minWidth}px`, '--cove-cover-width': `${COVE_GROUND_FRAME.aspectRatio * 100}cqh`, '--cove-seat-screen-x': `${COVE_GROUND_FRAME.screenSeatX * 100}%`,
@@ -248,11 +262,14 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
       if (layer.id === 'foreground-reeds') return <React.Fragment key={layer.id}><SceneLayer layer={layer} lanternLit={lanternLit}/><SceneLayer layer={{...layer,id:'foreground-reeds-right'}} lanternLit={lanternLit}/></React.Fragment>;
       return <SceneLayer key={layer.id} layer={layer} lanternLit={lanternLit} />;
     })}
-    <LakeFog active={weather === 'fog'} world={world} location={location} reducedMotion={reducedMotion} intervalMs={intervalMs} />
+    <TreeBirds sceneRef={sceneRef} location={location} reducedMotion={reducedMotion} soloPreview={wildlifePreview?.treeBirds} flockPreview={wildlifePreview?.treeFlock} showMap={showTreeMap}/>
+    <LakeFog active={fogDensity > 0} density={fogDensity} distanceHaze={weather === 'fog' ? 1 : .66} world={world} location={location} reducedMotion={reducedMotion} intervalMs={intervalMs} />
     <ButterflyVisitors sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={butterflyPreview} onObserve={onObserveButterfly}/>
+    <ButterflyVisitors family="odonates" sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={wildlifePreview?.odonates} onObserve={onObserveVisitor}/>
+    <SantaVisitor sceneRef={sceneRef} period={world.period} years={santaYears} preview={wildlifePreview?.santa} onObserve={onObserveVisitor} reducedMotion={reducedMotion} intervalMs={intervalMs}/>
+    <LakeWildlife frame={solarFrame} location={location} audio={audio} sceneRef={sceneRef} season={world.season} weather={weather} reducedMotion={reducedMotion} preview={wildlifePreview} intervalMs={intervalMs} onSplash={audio?.play}/>
     <div className="f-time-tint" /><div className="f-overcast-light" aria-hidden="true"/>
     <div className="f-moonlight" data-testid="fishing-moonlight" data-moonlight-intensity={moonlight.toFixed(4)} aria-hidden="true" style={{ opacity: moonlight * .20, '--moonlight-x': `${moon.x}%`, '--moonlight-y': `${moon.y}%` } as CSSProperties} />
-    <svg className="f-birds" viewBox="0 0 100 25"><path d="m10 14q5-7 10 0 5-7 10 0m28-6q4-5 8 0 4-5 8 0" fill="none" stroke="currentColor" strokeWidth="1.3" /></svg>
   </div>;
 }
 

@@ -1,0 +1,12 @@
+PASS src/FishingTypingGame/__tests__/solarLighting.test.tsx (5.551 s)
+  √ Sailor’s Delight rolls occasionally per game day, independently of night events (777 ms)
+  √ sunset cloud light fades in and out rather than flashing on at event boundaries (2 ms)
+  √ glare follows the actual ridge crop, changes warmth, and vanishes in daytime and at night (7 ms)
+  √ sunset event keeps its own layer and cloud texture under every weather, and releases its filter afterward (249 ms)
+  √ solar geometry observes resize and releases its observer when the scene unloads (4 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        11.174 s
+Ran all test suites matching /solarLighting/i.

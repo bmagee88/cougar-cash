@@ -1,0 +1,9 @@
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (15.013 s)
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (7.097 s)
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+
+Test Suites: 3 passed, 3 total
+Tests:       22 passed, 22 total
+Snapshots:   0 total
+Time:        29.379 s
+Ran all test suites matching /lakeVisitors|environment.test|scene.test/i.
