@@ -4,8 +4,8 @@ import { WeatherVisuals } from '../engine/weather';
 import WindSystem from './WindSystem';
 import RainCanvas from './RainCanvas';
 
-export default memo(function WeatherParticles({ weather, visuals, location, reducedMotion, active, entering }: {
-  weather: Weather; visuals: WeatherVisuals; location: string; reducedMotion: boolean; active: boolean; entering: boolean;
+export default memo(function WeatherParticles({ weather, visuals, location, reducedMotion, active, entering, intervalMs = 0 }: {
+  weather: Weather; visuals: WeatherVisuals; location: string; reducedMotion: boolean; active: boolean; entering: boolean; intervalMs?:number;
 }) {
   const [shown, setShown] = useState(!entering || reducedMotion || document.hidden);
   useEffect(() => {
@@ -20,7 +20,7 @@ export default memo(function WeatherParticles({ weather, visuals, location, redu
   const heavy = weather === 'thunderstorm' || weather === 'hurricane';
   return <div className={`f-weather f-weather-${weather} f-weather-particles`} data-weather-layer={weather} data-weather-active={active} aria-hidden="true" style={{ opacity: active && (shown || reducedMotion) ? 1 : 0 }}>
     {['rain', 'thunderstorm', 'hurricane'].includes(weather) && <div className={`f-rainfall ${heavy ? 'f-rainfall-heavy' : ''}`} data-rain-intensity={visuals.rain.toFixed(3)} style={{ opacity: visuals.rain }}>
-      {heavy ? <RainCanvas weather={weather as 'thunderstorm' | 'hurricane'} intensity={visuals.rain} reducedMotion={reducedMotion} /> : <>
+      {heavy ? <RainCanvas weather={weather as 'thunderstorm' | 'hurricane'} intensity={visuals.rain} reducedMotion={reducedMotion} intervalMs={intervalMs} /> : <>
       {Array.from({ length: 42 }, (_, i) => <i className="f-raindrop" key={i} style={{ left: `${i * 37.17 % 116 - 8}%`, top: `${i * 23.41 % 100}%`, animationDelay: `${-i * .137}s`, animationDuration: `${.7 + i % 5 * .12}s` }} />)}
       {Array.from({ length: 12 }, (_, i) => <i key={`r${i}`} className="f-rain-ring" style={{ left: `${60 + i * 17 % 34}%`, top: `${54 + i * 7 % 17}%`, animationDelay: `${-i * .32}s`, animationDuration: '1.4s' }} />)}
       </>}

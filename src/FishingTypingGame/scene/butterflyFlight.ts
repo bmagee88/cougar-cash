@@ -17,6 +17,10 @@ export interface FlightState {
 const between=(random:Random,min:number,max:number)=>min+random()*(max-min);
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
 export const flightScale=(z:number)=>1/(.7+z*.85);
+// Perspective puts the water surface at the screen bottom nearby and at the
+// measured far shoreline at the back of the flight volume.
+export const flightBottom=(z:number,horizon=.5)=>1+(clamp(horizon,0,1)-1)*clamp((z-.05)/(MAX_FLIGHT_DEPTH-.05),0,1);
+export const flightMovementScale=(z:number)=>Math.min(1,flightScale(z)/flightScale(.3));
 export const flightOpacity=(z:number)=>clamp((MAX_FLIGHT_DEPTH-z)/.7,0,1);
 export const flightExpired=(flight:FlightState)=>flight.z>=MAX_FLIGHT_DEPTH||flight.x<FLIGHT_BOUNDS.left||flight.x>FLIGHT_BOUNDS.right||flight.y<FLIGHT_BOUNDS.top||flight.y>FLIGHT_BOUNDS.bottom;
 export const isPerched=(flight:FlightState)=>!!flight.perch?.landed&&!flight.perch.finished;
@@ -59,7 +63,7 @@ export function startleFlight(flight:FlightState,pointer:FlightPointer,width:num
   return true;
 }
 /** Advance in seconds. Velocity is in CSS pixels/second, independent of aspect ratio. */
-export function stepFlight(flight:FlightState,dt:number,width:number,height:number,random:Random,pointer?:FlightPointer):void {
+export function stepFlight(flight:FlightState,dt:number,width:number,height:number,random:Random,pointer?:FlightPointer,horizon=.5):void {
   flight.age+=dt;if(flight.age<0)return;
   if(pointer)startleFlight(flight,pointer,width,height);
   const leaving=flight.fleeing||flight.age>flight.departAt;
@@ -71,6 +75,8 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
         const dx=(perch.x-flight.x)*width,dy=(perch.y-flight.y)*height,distance=Math.hypot(dx,dy),speed=flight.speed*1.4;
         const travel=Math.min(distance,speed*dt);
         flight.x+=dx/(distance||1)*travel/Math.max(1,width);flight.y+=dy/(distance||1)*travel/Math.max(1,height);
+        // Reaching low foreground foliage also means approaching the viewer.
+        if(flight.y>horizon&&horizon<1)flight.z=Math.min(flight.z,.05+(MAX_FLIGHT_DEPTH-.05)*(1-flight.y)/(1-horizon));
         flight.vx=dx/(distance||1)*speed;flight.vy=dy/(distance||1)*speed;flight.vz=0;flight.heading=clamp(flight.vy/450,-.55,.55);
         if(distance<=travel+2){perch.landed=true;flight.x=perch.x;flight.y=perch.y;flight.vx=0;flight.vy=0;flight.heading=-.14;}
       }else{
@@ -95,12 +101,17 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
       flight.vx=Math.cos(heading)*flight.speed;
       flight.vy=Math.sin(heading)*flight.speed*.8;
       if(flight.y<.12)flight.vy=Math.abs(flight.vy)+45;
-      if(flight.y>.86)flight.vy=-Math.abs(flight.vy)-45;
+      if(flight.y>flightBottom(flight.z,horizon)-.08)flight.vy=-Math.abs(flight.vy)-45;
       flight.vz=between(random,-.65,.85);
     }
   }
-  flight.x+=flight.vx*dt/Math.max(1,width);flight.y+=flight.vy*dt/Math.max(1,height);
+  const oldBottom=flightBottom(flight.z,horizon),movement=flightMovementScale(flight.z);
+  flight.x+=flight.vx*movement*dt/Math.max(1,width);flight.y+=flight.vy*movement*dt/Math.max(1,height);
   flight.z=Math.max(flight.behindForeground?FOREGROUND_DEPTH+.015:.05,flight.z+flight.vz*dt);
+  const bottom=flightBottom(flight.z,horizon);
+  // Project altitude as depth changes, so receding over the lake rises naturally.
+  if(flight.y>horizon&&oldBottom>horizon)flight.y=horizon+(flight.y-horizon)*(bottom-horizon)/(oldBottom-horizon);
+  if(flight.y>bottom){flight.y=bottom;flight.vy=-Math.abs(flight.vy);}
   if(flight.z>=FOREGROUND_DEPTH)flight.behindForeground=true;
   flight.heading=clamp(flight.vy/450,-.55,.55)*(flight.vx<0?-1:1);
 }

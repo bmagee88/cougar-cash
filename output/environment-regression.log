@@ -1,0 +1,39 @@
+
+> cougar-cash@0.1.0 test:fishing
+> react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame --cacheDirectory=output/environment-jest
+
+PASS src/FishingTypingGame/__tests__/butterflyGuide.test.tsx (9.731 s)
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (70.326 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (10.262 s)
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/fishFight.test.tsx
+PASS src/FishingTypingGame/__tests__/engine.test.ts (10.842 s)
+PASS src/FishingTypingGame/__tests__/world.test.ts
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (18.795 s)
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+PASS src/FishingTypingGame/__tests__/butterflyPose.test.tsx
+PASS src/FishingTypingGame/__tests__/environment.test.tsx
+PASS src/FishingTypingGame/__tests__/fishFightGame.test.tsx
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+
+Test Suites: 25 passed, 25 total
+Tests:       177 passed, 177 total
+Snapshots:   0 total
+Time:        148.563 s
+Ran all test suites matching /FishingTypingGame/i.

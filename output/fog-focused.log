@@ -1,0 +1,12 @@
+PASS src/FishingTypingGame/__tests__/lakeFog.test.tsx
+  √ fog scatters daylight but stays dark at night, with moonlight following phase and elevation (12 ms)
+  √ fog texture mounts on demand, fades out in natural mode, and releases outgoing layers (44 ms)
+  √ timed rendering and reduced motion release outgoing fog immediately without a new timer loop (12 ms)
+  √ mist shares each painted background crop so the waterline does not drift when the viewport changes (56 ms)
+  √ the existing environment timer advances paused fog without seeking game animations (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       5 passed, 5 total
+Snapshots:   0 total
+Time:        5.364 s, estimated 7 s
+Ran all test suites matching /lakeFog/i.

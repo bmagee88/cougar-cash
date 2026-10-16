@@ -9,15 +9,19 @@ type Sprite={image:HTMLImageElement;frameMs:number};
 type RenderedVisitor={button:HTMLButtonElement;canvas:HTMLCanvasElement;sprite?:Sprite;frameKey?:string;pose?:ButterflyPose};
 export type ObserveButterfly=(target:HTMLButtonElement,speciesId:string,wingspanMm:number,pose?:ButterflyPose)=>void;
 const sprites=new Map<string,Promise<Sprite>>();
+export const BUTTERFLY_SPRITE_CACHE_LIMIT=4;
 function loadSprite(id:string):Promise<Sprite> {
   let pending=sprites.get(id);
+  if(pending){sprites.delete(id);sprites.set(id,pending);}
   if(!pending){
     pending=new Promise((resolve,reject)=>{
       const image=new Image();image.onload=()=>resolve({image,frameMs:id==='hummingbird-clearwing'?30:65});image.onerror=reject;
       // Extracted from the GIF: painting and picking share the exact wing frame.
       image.src=butterflyAsset(id,'flight').replace('flight.gif','flight-sheet.webp');
     });
+    pending=pending.catch(error=>{if(sprites.get(id)===pending)sprites.delete(id);throw error;});
     sprites.set(id,pending);
+    while(sprites.size>BUTTERFLY_SPRITE_CACHE_LIMIT)sprites.delete(sprites.keys().next().value!);
   }
   return pending;
 }
@@ -75,7 +79,16 @@ export default function ButterflyVisitors({sceneRef,season,hour,weather,location
     setVisitors(current=>current.filter(visitor=>eligible.has(visitor.speciesId)));
     const scene=sceneRef.current;if(!scene)return;
     let timer:ReturnType<typeof setTimeout>|undefined,frame:number|undefined,onScreen=true,previousTime:number|undefined;
-    let bounds=scene.getBoundingClientRect();
+    let bounds=scene.getBoundingClientRect(),horizon=.5;
+    const measureHorizon=()=>{
+      const background=scene.querySelector<HTMLElement>('[data-layer="lake-background"], [data-layer="cove-landscape"]');
+      if(!background||!bounds.height)return;
+      const landscape=background.getBoundingClientRect();
+      // Shoreline positions within the painted assets; account for responsive crop.
+      const waterline=location==='cove'?.555:.5;
+      horizon=Math.max(0,Math.min(1,(landscape.top-bounds.top+landscape.height*waterline)/bounds.height));
+    };
+    measureHorizon();
     const arrive=(force=false)=>{
       if(document.hidden||!onScreen||(!force&&Math.random()>=activity))return;
       if(!bounds.width||!bounds.height)return;
@@ -109,7 +122,7 @@ export default function ButterflyVisitors({sceneRef,season,hour,weather,location
       const input=mouse?{...mouse,speed:now-mouse.time<100?mouse.speed:0}:undefined;
       const expired=new Set<number>();
       live.current.forEach(visitor=>{
-        stepFlight(visitor.flight,dt,bounds.width,bounds.height,Math.random,input);
+        stepFlight(visitor.flight,dt,bounds.width,bounds.height,Math.random,input,horizon);
         if(flightExpired(visitor.flight))expired.add(visitor.id);
         else {const target=rendered.current.get(visitor.id);if(target)paint(visitor,target);}
       });
@@ -129,7 +142,7 @@ export default function ButterflyVisitors({sceneRef,season,hour,weather,location
       const recent=previous&&now-previous.time<150;
       pointer.current={x,y,previousX:recent?previous.x:x,previousY:recent?previous.y:y,speed:recent?Math.hypot(x-previous.x,y-previous.y)/Math.max(.008,(now-previous.time)/1000):0,time:now};
     };
-    const measure=()=>{bounds=scene.getBoundingClientRect();pointer.current=undefined;};
+    const measure=()=>{bounds=scene.getBoundingClientRect();measureHorizon();pointer.current=undefined;};
     const resize=typeof ResizeObserver==='undefined'?undefined:new ResizeObserver(measure);resize?.observe(scene);
     const observer=typeof IntersectionObserver==='undefined'?undefined:new IntersectionObserver(entries=>{onScreen=entries[0]?.isIntersecting??true;visibility();});
     observer?.observe(scene);document.addEventListener('visibilitychange',visibility);document.addEventListener('pointermove',move,{passive:true});

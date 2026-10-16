@@ -18,7 +18,7 @@ export default function FieldGuide({discoveries=NO_DISCOVERIES,initialTab='fish'
     {tab==='butterflies'?<ButterflyGuide discovered={discoveries.butterflies}/>:<><p className="f-guide-intro">Eight species call these waters home. Every cast could be a new discovery.</p><div className="f-fish-grid">{SPECIES.map(species=>{
     const found=discoveries.discovered.includes(species.id);
     return <article className={`f-fish-card ${found?'':'f-undiscovered'}`} key={species.id}>
-      <img src={species.artwork} alt={found?species.name:'Undiscovered fish silhouette'}/>
+      <img loading="lazy" decoding="async" src={species.artwork} alt={found?species.name:'Undiscovered fish silhouette'}/>
       <h3>{found?species.name:'Undiscovered'}</h3>
       <span className="f-rarity-label" style={{color:RARITY_COLORS[species.rarity]}}>{species.rarity}</span>
       {found&&<><i>{species.scientificName}</i><p>{species.description}</p>{discoveries.albinoDiscovered.includes(species.id)&&<span className="f-albino-badge">✧ Albino discovered</span>}</>}

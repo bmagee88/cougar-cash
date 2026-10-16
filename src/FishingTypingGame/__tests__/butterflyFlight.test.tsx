@@ -1,11 +1,29 @@
 import React, { createRef } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
-import { createFlight, FLIGHT_BOUNDS, FOREGROUND_DEPTH, MAX_FLIGHT_DEPTH, flightExpired, flightScale, isPerched, paintedPixelAt, planPerch, startleFlight, stepFlight, stepPerchedWings } from '../scene/butterflyFlight';
+import { createFlight, FLIGHT_BOUNDS, FOREGROUND_DEPTH, MAX_FLIGHT_DEPTH, flightBottom, flightExpired, flightScale, isPerched, paintedPixelAt, planPerch, startleFlight, stepFlight, stepPerchedWings } from '../scene/butterflyFlight';
 import ButterflyVisitors from '../scene/ButterflyVisitors';
 
 declare const test:any,expect:any,jest:any;
 const rect={x:0,y:0,left:0,top:0,right:800,bottom:600,width:800,height:600,toJSON:()=>({})} as DOMRect;
 const pointer=(x:number,y:number,speed=0,previousX=x,previousY=y)=>({x,y,speed,previousX,previousY});
+
+test('distant flight has smaller movements and stays above the sloping water surface',()=>{
+  const near={...createFlight(()=>.5),x:.5,y:.4,z:.3,vx:150,vy:60,vz:0,turnIn:10};
+  const far={...near,z:3,behindForeground:true};
+  stepFlight(near,.05,800,600,()=>.5);stepFlight(far,.05,800,600,()=>.5);
+  expect(far.x-.5).toBeLessThan(near.x-.5);expect(far.y-.4).toBeLessThan(near.y-.4);
+  expect(flightBottom(.05,.56)).toBe(1);expect(flightBottom(MAX_FLIGHT_DEPTH,.56)).toBeCloseTo(.56);
+  const receding={...near,y:.85,z:.3,vz:1,turnIn:100};
+  const start=receding.y;
+  for(let i=0;i<65;i++){
+    stepFlight(receding,.05,800,600,()=>.5,undefined,.56);
+    expect(receding.y).toBeLessThanOrEqual(flightBottom(receding.z,.56));
+  }
+  expect(receding.y).toBeLessThan(start);
+  const descending={...far,y:.9,vy:150,turnIn:10};
+  stepFlight(descending,.05,800,600,()=>.5,undefined,.56);
+  expect(descending.y).toBe(flightBottom(descending.z,.56));expect(descending.vy).toBeLessThan(0);
+});
 
 test('perched butterflies keep their footing while alternating wing poses, then depart or flee',()=>{
   const flight={...createFlight(()=>.5),x:.3,y:.7,z:.3};

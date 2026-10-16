@@ -27,6 +27,7 @@ export function stormLightningTimes(durationMs = STORM_TIMING.durationMs): reado
   const times: number[] = [];
   for (let at = 90000; at < durationMs * .75; at += lightningIntervalAt(at,durationMs)!) times.push(Math.round(at));
   lightningSchedules.set(durationMs,times);
+  while(lightningSchedules.size>8)lightningSchedules.delete(lightningSchedules.keys().next().value!);
   return times;
 }
 export const STORM_LIGHTNING_TIMES=stormLightningTimes();

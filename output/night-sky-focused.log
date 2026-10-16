@@ -1,0 +1,14 @@
+PASS src/FishingTypingGame/__tests__/astronomy.test.tsx (17.552 s)
+  √ catalog contains real equatorial coordinates and recognizable bright stars (88 ms)
+  √ sidereal rotation is continuous through midnight and slightly faster than the westward moon sweep (11 ms)
+  √ rare aurora and meteor schedules are independent, repeatable, can overlap, and survive midnight (160 ms)
+  √ both sky events retain separate layers under every weather, with clouds above the sky (1353 ms)
+  √ every meteor travels away from the same rotating radiant (28 ms)
+  √ star data loads only at night, releases on daylight, and aborts its request on unmount (49 ms)
+  √ sampled environment rendering advances all sky events without advancing fish cues (4 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        25.674 s
+Ran all test suites matching /astronomy/i.

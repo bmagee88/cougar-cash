@@ -18,6 +18,9 @@ import { pointOnReelPath, reelPath } from './reelPath';
 import { useLayerPresence } from './useLayerPresence';
 import { useLanternLighting } from './useLanternLighting';
 import ButterflyVisitors, { ObserveButterfly } from './ButterflyVisitors';
+import LakeFog from './LakeFog';
+import { lakeFrame } from './lakeFrame';
+import { SkyPreview } from '../engine/astronomy';
 
 export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }: { layer: SceneAsset; lanternLit?: boolean }) {
   const p = layer.position;
@@ -34,9 +37,7 @@ export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }
     width:`calc(var(--ground-width) * ${p.width/100})`,
     ...(layer.aspectRatio?{height:'auto'}:{height:`calc(var(--ground-height) * ${p.height/100})`}),
   });
-  if(['sky','cove-landscape'].includes(layer.id))Object.assign(style,{
-    left:'calc(50% - max(51cqw, 90.65cqh))',top:'calc(50% - max(28.7cqw, 51cqh))',width:'max(102cqw, 181.3cqh)',height:'max(57.4cqw, 102cqh)',
-  });
+  if(['sky','cove-landscape'].includes(layer.id))Object.assign(style,lakeFrame('cove'));
   if(['foreground-reeds','foreground-reeds-right'].includes(layer.id))Object.assign(style,{top:'auto',bottom:'-3%',height:'auto',aspectRatio:3,width:'var(--reeds-width,112%)',
     ...(layer.id==='foreground-reeds'?{left:'var(--reeds-left,-6%)',clipPath:'var(--reeds-left-clip,none)'}:{left:'auto',right:'var(--reeds-right,-6%)',display:'var(--reeds-right-display,none)',clipPath:'var(--reeds-right-clip,none)'}),
   });
@@ -183,35 +184,33 @@ export function FishingLine({ game, tipRef, handRef, landingOriginRef, progress,
     </div>}
   </div>;
 }
-export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = weatherVisuals(weather), location = 'dock', reducedMotion = false }: { weather: Weather; visuals?: WeatherVisuals; location?: string; reducedMotion?: boolean }) {
+export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = weatherVisuals(weather), location = 'dock', reducedMotion = false, intervalMs = 0 }: { weather: Weather; visuals?: WeatherVisuals; location?: string; reducedMotion?: boolean; intervalMs?:number }) {
   const heavy = weather === 'thunderstorm' || weather === 'hurricane';
-  const layers = useWeatherLayers(weather, visuals, reducedMotion);
+  const layers = useWeatherLayers(weather, visuals, reducedMotion || intervalMs > 0);
   const storm = ['thunderstorm','hurricane','blizzard'].includes(weather);
-  const fogMoving = useLayerPresence(weather === 'fog', reducedMotion ? 0 : 8000);
   const stormMoving = useLayerPresence(storm && visuals.fog > 0, reducedMotion ? 0 : 8000);
   const mistMoving = useLayerPresence(heavy && visuals.rain > 0, reducedMotion ? 0 : 6000);
   const heatMoving = useLayerPresence(visuals.heat > 0, reducedMotion ? 0 : 8000);
-  return <>{layers.map(layer => <WeatherParticles key={layer.weather} {...layer} location={location} reducedMotion={reducedMotion} />)}
-    <div className={`f-weather f-weather-fog ${fogMoving ? '' : 'f-effect-dormant'}`} data-layer="lake-fog" aria-hidden="true" style={{ opacity: weather === 'fog' ? 1 : 0 }}><div className="f-fog-bank" /></div>
+  return <>{layers.map(layer => <WeatherParticles key={layer.weather} intervalMs={intervalMs} {...layer} location={location} reducedMotion={reducedMotion} />)}
     <div className={`f-weather f-weather-fog f-storm-fog ${stormMoving ? '' : 'f-effect-dormant'}`} data-layer="storm-fog" aria-hidden="true" style={{ opacity: storm ? visuals.fog : 0 }}><div className="f-fog-bank" /><div className="f-fog-wisp" /></div>
     <div className={`f-rain-mist ${mistMoving ? '' : 'f-effect-dormant'}`} data-layer="rain-mist" aria-hidden="true" style={{ opacity: heavy ? visuals.rain * (weather === 'hurricane' ? .28 : .18) : 0 }} />
     <div className={`f-heat-haze ${heatMoving ? '' : 'f-effect-dormant'}`} data-layer="heat-haze" aria-hidden="true" style={{ opacity: visuals.heat }} />
   </>;
 });
-export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly }: {
-  game: GameState; location: string; weather: Weather; reducedMotion: boolean; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly;
+export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly, intervalMs = 0, skyPreview }: {
+  game: GameState; location: string; weather: Weather; reducedMotion: boolean; intervalMs?:number; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly; skyPreview?: SkyPreview;
 }) {
   const tipRef = useRef<HTMLElement>(null); const handRef = useRef<HTMLElement>(null); const sceneRef = useRef<HTMLDivElement>(null);
   const landingOriginRef = useRef<HTMLDivElement>(null);
   const caughtFish = game.phase === 'landing' || (game.phase === 'result' && game.outcome === 'caught') ? game.encounter : undefined;
   const battle = useFishBattle(game);
-  useSceneParallax(sceneRef, reducedMotion);
+  useSceneParallax(sceneRef, reducedMotion, intervalMs);
   const [animation, setAnimation] = useState<CharacterState>('idle');
   const lastPhase = useRef(game.phase);
   const phase = game.phase; const mappedAnimation = characterState(game);
   const seasonalManifest = useMemo(() => sceneForLocation(world.season, location, manifest), [world.season, location, manifest]);
   const weatherLook = useMemo(() => weatherState || weatherVisuals(weather), [weatherState, weather]);
-  useWeatherMotion(sceneRef, weatherLook.wind, reducedMotion);
+  useWeatherMotion(sceneRef, weatherLook.wind, reducedMotion, intervalMs);
   const light = weatherLighting(world.hour, world.moonPhase, weather, weatherLook);
   const lanternLit = useLayerPresence(light.nightAmount > 0, reducedMotion ? 0 : 8000);
   useLanternLighting(sceneRef, lanternLit, seasonalManifest);
@@ -231,11 +230,11 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
     lastPhase.current = phase;
     return () => clearTimeout(timer);
   }, [phase, mappedAnimation]);
-  return <div ref={sceneRef} className={`f-scene f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--weather-contrast': weatherLook.contrast, '--weather-veil': weatherLook.veil, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} role={onObserveButterfly?'group':'img'} aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
-    <div className="f-scene-base" aria-hidden="true" /><CelestialSky world={world} background={sky?.src || ''} /><div className="f-sky-grain" />
+  return <div ref={sceneRef} data-environment-render-ms={intervalMs} className={`f-scene ${intervalMs ? 'f-scene-stepped' : ''} f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--weather-contrast': weatherLook.contrast, '--weather-veil': weatherLook.veil, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} role={onObserveButterfly?'group':'img'} aria-label={`Animated freshwater lake at ${location === 'cove' ? 'Willow cove' : 'the old dock'}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
+    <div className="f-scene-base" aria-hidden="true" /><CelestialSky world={world} background={sky?.src || ''} location={location} skyPreview={skyPreview} /><div className="f-sky-grain" />
     {seasonalManifest.filter(l => !l.spots || l.spots.includes(location)).map(layer => {
-      if (layer.id === 'weather') return <WeatherSystem key={layer.id} weather={weather} visuals={weatherLook} location={location} reducedMotion={reducedMotion} />;
-      if (layer.id === 'clouds') return <CloudSystem key={layer.id} visuals={weatherLook} reducedMotion={reducedMotion} lightningPreview={lightningPreview} />;
+      if (layer.id === 'weather') return <WeatherSystem intervalMs={intervalMs} key={layer.id} weather={weather} visuals={weatherLook} location={location} reducedMotion={reducedMotion} />;
+      if (layer.id === 'clouds') return <CloudSystem intervalMs={intervalMs} key={layer.id} visuals={weatherLook} reducedMotion={reducedMotion} lightningPreview={lightningPreview} />;
       if (layer.id === 'angler') return shoreLayer ? null : <CharacterAnimator key={layer.id} lanternLit={lanternLit} season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} dockLayer={dockLayer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />;
       if (layer.id === 'cove-seat') return <div key={layer.id} className="f-cove-ground-plane" style={{
         '--cove-min-width': `${COVE_GROUND_FRAME.minWidth}px`, '--cove-cover-width': `${COVE_GROUND_FRAME.aspectRatio * 100}cqh`, '--cove-seat-screen-x': `${COVE_GROUND_FRAME.screenSeatX * 100}%`,
@@ -249,6 +248,7 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
       if (layer.id === 'foreground-reeds') return <React.Fragment key={layer.id}><SceneLayer layer={layer} lanternLit={lanternLit}/><SceneLayer layer={{...layer,id:'foreground-reeds-right'}} lanternLit={lanternLit}/></React.Fragment>;
       return <SceneLayer key={layer.id} layer={layer} lanternLit={lanternLit} />;
     })}
+    <LakeFog active={weather === 'fog'} world={world} location={location} reducedMotion={reducedMotion} intervalMs={intervalMs} />
     <ButterflyVisitors sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={butterflyPreview} onObserve={onObserveButterfly}/>
     <div className="f-time-tint" /><div className="f-overcast-light" aria-hidden="true"/>
     <div className="f-moonlight" data-testid="fishing-moonlight" data-moonlight-intensity={moonlight.toFixed(4)} aria-hidden="true" style={{ opacity: moonlight * .20, '--moonlight-x': `${moon.x}%`, '--moonlight-y': `${moon.y}%` } as CSSProperties} />

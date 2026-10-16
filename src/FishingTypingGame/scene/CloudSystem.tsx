@@ -13,20 +13,20 @@ const CLOUDS = [
   { kind: 'stratus', x: 18, y: 7, width: 64, alpha: .32, life: 211, delay: -77 },
 ] as const;
 
-export default memo(function CloudSystem({ visuals, reducedMotion = false, lightningPreview = 0 }: { visuals: WeatherVisuals; reducedMotion?: boolean; lightningPreview?: number }) {
+export default memo(function CloudSystem({ visuals, reducedMotion = false, lightningPreview = 0, intervalMs = 0 }: { visuals: WeatherVisuals; reducedMotion?: boolean; lightningPreview?: number; intervalMs?:number }) {
   const [loaded, setLoaded] = useState<Record<string, boolean>>({});
   const [flash, setFlash] = useState<number | null>(null); const flashCount = useRef(0);
   const lastPreview = useRef(0);
   const elapsed = useRef(visuals.elapsedMs); elapsed.current = visuals.elapsedMs;
   const { lightning, nextLightningMs } = visuals;
-  const fade = reducedMotion ? 0 : 16000;
+  const fade = reducedMotion || intervalMs ? 0 : 16000;
   const clear = useLayerPresence(visuals.clear > 0, fade), tower = useLayerPresence(visuals.tower > 0, fade);
   const grey = useLayerPresence(visuals.greyDeck > 0, fade), dark = useLayerPresence(visuals.darkDeck > 0, fade);
   useEffect(() => {
-    if (visuals.stage !== 'building') return;
+    if (visuals.stage !== 'building' || intervalMs) return;
     // Warm the approaching deck without mounting its hidden animated layer.
     for (const kind of ['overcast', 'rain'] as const) { const image = new Image(); image.src = CLOUD_ART[kind]; }
-  }, [visuals.stage]);
+  }, [visuals.stage, intervalMs]);
   useEffect(() => {
     if (reducedMotion) { setFlash(null); return; }
     if (!lightning) return;

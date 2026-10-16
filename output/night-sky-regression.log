@@ -1,0 +1,77 @@
+PASS src/FishingTypingGame/__tests__/astronomy.test.tsx (9.601 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (91.359 s)
+  ● Console
+
+    console.error
+      Error: AggregateError
+          at Object.dispatchError (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+          at Request.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+          at Request.emit (node:events:530:35)
+          at ClientRequest.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:121:14)
+          at ClientRequest.emit (node:events:518:28)
+          at emitErrorEvent (node:_http_client:104:11)
+          at Socket.socketErrorListener (node:_http_client:518:5)
+          at Socket.emit (node:events:518:28)
+          at emitErrorNT (node:internal/streams/destroy:170:8)
+          at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+          at processTicksAndRejections (node:internal/process/task_queues:90:21) undefined
+
+      at VirtualConsole.<anonymous> (node_modules/jsdom/lib/jsdom/virtual-console.js:29:45)
+      at Object.dispatchError (node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:66:53)
+      at Request.<anonymous> (node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+      at ClientRequest.<anonymous> (node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+
+    console.error
+      Error: AggregateError
+          at Object.dispatchError (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+          at Request.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+          at Request.emit (node:events:530:35)
+          at ClientRequest.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:121:14)
+          at ClientRequest.emit (node:events:518:28)
+          at emitErrorEvent (node:_http_client:104:11)
+          at Socket.socketErrorListener (node:_http_client:518:5)
+          at Socket.emit (node:events:518:28)
+          at emitErrorNT (node:internal/streams/destroy:170:8)
+          at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+          at processTicksAndRejections (node:internal/process/task_queues:90:21) undefined
+
+      at VirtualConsole.<anonymous> (node_modules/jsdom/lib/jsdom/virtual-console.js:29:45)
+      at Object.dispatchError (node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:66:53)
+      at Request.<anonymous> (node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+      at ClientRequest.<anonymous> (node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (22.907 s)
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (5.41 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (10.237 s)
+PASS src/FishingTypingGame/__tests__/world.test.ts
+PASS src/FishingTypingGame/__tests__/engine.test.ts (8.116 s)
+PASS src/FishingTypingGame/__tests__/fishFightGame.test.tsx (6.716 s)
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/fishFight.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyGuide.test.tsx
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyPose.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/lakeFog.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+
+Test Suites: 27 passed, 27 total
+Tests:       190 passed, 190 total
+Snapshots:   0 total
+Time:        201.57 s
+Ran all test suites matching /FishingTypingGame/i.

@@ -1,0 +1,12 @@
+PASS src/FishingTypingGame/__tests__/engine.test.ts (27.581 s)
+PASS src/FishingTypingGame/__tests__/naturalWeather.test.tsx (9.813 s)
+PASS src/FishingTypingGame/__tests__/fishFight.test.tsx (8.397 s)
+PASS src/SoccerTypingGame/__tests__/soccerTypingEngine.test.ts (12.749 s)
+PASS src/shadow-boxing/__tests__/shadowBoxingEngine.test.ts
+PASS src/FishingTypingGame/__tests__/fishFightGame.test.tsx (15.276 s)
+
+Test Suites: 6 passed, 6 total
+Tests:       65 passed, 65 total
+Snapshots:   0 total
+Time:        86.918 s
+Ran all test suites matching /fishFight|engine.test|naturalWeather/i.

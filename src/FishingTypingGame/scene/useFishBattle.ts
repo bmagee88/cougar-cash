@@ -11,9 +11,9 @@ export function useFishBattle(game: GameState) {
   const landed = game.phase === 'landing' || (game.phase === 'result' && game.outcome === 'caught');
   const escaped = game.phase === 'result' && game.outcome === 'escaped';
   const lastProgress = useRef(0);
-  const start = game.phase === 'typing' ? game.encounter.retrieve?.reeled ?? 0 : 0;
+  const start = game.phase === 'typing'&&!game.fight ? game.encounter.retrieve?.reeled ?? 0 : 0;
   const progress = escaped ? lastProgress.current : game.phase === 'retrieving' ? game.retrieve.maxReeled / game.retrieve.typing.phrase.length
-    : typing?.phrase.length ? start + (1-start)*correct/typing.phrase.length : Number(landed);
+    : typing?.phrase.length ? start + (1-start)*(game.phase==='typing'&&game.fight?.jolt?Math.min(correct,game.fight.fishCursor):correct)/typing.phrase.length : Number(landed);
   // An escape starts at the last reeled-in position, before the typing state is discarded.
   if (!escaped) lastProgress.current = progress;
   const mistake = !!typing && correct < typing.typed.length;
@@ -31,5 +31,5 @@ export function useFishBattle(game: GameState) {
     previousErrors.current = errors;
     return () => { if (timer !== undefined) clearTimeout(timer); };
   }, [errors, isTyping]);
-  return { progress, struggling: isTyping && (mistake || surge), splashBurst };
+  return { progress, struggling: isTyping && (mistake || surge || (game.phase==='typing'&&!!game.fight?.jolt)), splashBurst };
 }

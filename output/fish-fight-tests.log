@@ -1,0 +1,161 @@
+
+> cougar-cash@0.1.0 test:fishing
+> react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame --testPathPattern=fishFight --cacheDirectory=output/fish-fight-jest
+
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (41.292 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (18.754 s)
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx (5.161 s)
+PASS src/FishingTypingGame/__tests__/weather.test.tsx
+FAIL src/FishingTypingGame/__tests__/naturalWeather.test.tsx (5.131 s)
+  ● seeded natural sequences respect history and recover identically after reload and missed events
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -37,10 +37,11 @@
+          },
+          "reducedMotion": false,
+          "sound": false,
+          "weather": "cold-front",
+          "weatherMode": "natural",
+    +     "wordCheckpoint": false,
+        },
+        "sizeQualityVersion": 1,
+        "stats": Object {
+          "albinoDiscovered": Array [],
+          "albinos": 0,
+
+      69 |   while (later>=stepped.settings.naturalWeather!.endsAt) stepped=advanceNaturalWeather(stepped,stepped.settings.naturalWeather!.endsAt,{season:'summer'});
+      70 |   expect(stepped.settings.naturalWeather).toEqual(direct.settings.naturalWeather);
+    > 71 |   expect(advanceNaturalWeather(deserializeSave(JSON.stringify(beginning)),later,{season:'summer'})).toEqual(direct);
+         |                                                                                                     ^
+      72 |   expect(advanceNaturalWeather(direct,later,{season:'summer'})).toBe(direct);
+      73 |   expect(direct.stats).toEqual(beginning.stats); expect(direct.balance).toBe(beginning.balance);
+      74 | });
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/naturalWeather.test.tsx:71:101)
+
+PASS src/FishingTypingGame/__tests__/interactive.test.ts
+PASS src/FishingTypingGame/__tests__/fishFight.test.tsx
+FAIL src/FishingTypingGame/__tests__/engine.test.ts (9.251 s)
+  ● persistent catches reload, awards are idempotent, and release preserves lifetime records
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -43,10 +43,11 @@
+          "keepScreenAwake": true,
+          "measurements": "imperial",
+          "reducedMotion": false,
+          "sound": false,
+          "weather": "sunny",
+    +     "wordCheckpoint": false,
+        },
+        "sizeQualityVersion": 1,
+        "stats": Object {
+          "albinoDiscovered": Array [],
+          "albinos": 0,
+
+      74 | test('persistent catches reload, awards are idempotent, and release preserves lifetime records', () => {
+      75 |   localStorage.removeItem(SAVE_KEY); const e = generateEncounter(seededRandom(10)); const saved = awardCatch(emptySave(), e, performance);
+    > 76 |   expect(awardCatch(saved, e, performance)).toBe(saved); expect(persistSave(saved)).toBe(true); expect(readSave()).toEqual(saved);
+         |                                                                                                                    ^
+      77 |   const released = releaseFish(readSave(), e.id); persistSave(released); const reloaded = readSave();
+      78 |   expect(reloaded.livewell).toHaveLength(0); expect(reloaded.stats.caught).toBe(1); expect(reloaded.stats.discovered).toContain(e.species.id); expect(reloaded.stats.byQuality[e.quality]).toBe(1);
+      79 |   const escaped = awardEscape(reloaded, { ...performance, wpm: 50 }); expect(escaped.stats.bestWpm).toBe(50); expect(escaped.stats.totalWpm).toBe(85); expect(escaped.stats.escaped).toBe(1); expect(escaped.stats.currentStreak).toBe(0); expect(escaped.stats.discovered).toEqual(reloaded.stats.discovered);
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/engine.test.ts:76:116)
+
+PASS src/FishingTypingGame/__tests__/world.test.ts (6.45 s)
+PASS src/FishingTypingGame/__tests__/tackle.test.ts (31.896 s)
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/wakeLock.test.tsx
+PASS src/FishingTypingGame/__tests__/weatherTransitions.test.tsx
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyGuide.test.tsx
+PASS src/FishingTypingGame/__tests__/waterCover.test.tsx
+PASS src/FishingTypingGame/__tests__/fishChecks.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/wind.test.tsx
+PASS src/FishingTypingGame/__tests__/haiku.test.tsx
+PASS src/FishingTypingGame/__tests__/catchStorage.test.ts
+PASS src/FishingTypingGame/__tests__/butterflyPose.test.tsx
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+
+Summary of all failing tests
+FAIL src/FishingTypingGame/__tests__/naturalWeather.test.tsx (5.131 s)
+  ● seeded natural sequences respect history and recover identically after reload and missed events
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -37,10 +37,11 @@
+          },
+          "reducedMotion": false,
+          "sound": false,
+          "weather": "cold-front",
+          "weatherMode": "natural",
+    +     "wordCheckpoint": false,
+        },
+        "sizeQualityVersion": 1,
+        "stats": Object {
+          "albinoDiscovered": Array [],
+          "albinos": 0,
+
+      69 |   while (later>=stepped.settings.naturalWeather!.endsAt) stepped=advanceNaturalWeather(stepped,stepped.settings.naturalWeather!.endsAt,{season:'summer'});
+      70 |   expect(stepped.settings.naturalWeather).toEqual(direct.settings.naturalWeather);
+    > 71 |   expect(advanceNaturalWeather(deserializeSave(JSON.stringify(beginning)),later,{season:'summer'})).toEqual(direct);
+         |                                                                                                     ^
+      72 |   expect(advanceNaturalWeather(direct,later,{season:'summer'})).toBe(direct);
+      73 |   expect(direct.stats).toEqual(beginning.stats); expect(direct.balance).toBe(beginning.balance);
+      74 | });
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/naturalWeather.test.tsx:71:101)
+
+FAIL src/FishingTypingGame/__tests__/engine.test.ts (9.251 s)
+  ● persistent catches reload, awards are idempotent, and release preserves lifetime records
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 0
+    + Received  + 1
+
+    @@ -43,10 +43,11 @@
+          "keepScreenAwake": true,
+          "measurements": "imperial",
+          "reducedMotion": false,
+          "sound": false,
+          "weather": "sunny",
+    +     "wordCheckpoint": false,
+        },
+        "sizeQualityVersion": 1,
+        "stats": Object {
+          "albinoDiscovered": Array [],
+          "albinos": 0,
+
+      74 | test('persistent catches reload, awards are idempotent, and release preserves lifetime records', () => {
+      75 |   localStorage.removeItem(SAVE_KEY); const e = generateEncounter(seededRandom(10)); const saved = awardCatch(emptySave(), e, performance);
+    > 76 |   expect(awardCatch(saved, e, performance)).toBe(saved); expect(persistSave(saved)).toBe(true); expect(readSave()).toEqual(saved);
+         |                                                                                                                    ^
+      77 |   const released = releaseFish(readSave(), e.id); persistSave(released); const reloaded = readSave();
+      78 |   expect(reloaded.livewell).toHaveLength(0); expect(reloaded.stats.caught).toBe(1); expect(reloaded.stats.discovered).toContain(e.species.id); expect(reloaded.stats.byQuality[e.quality]).toBe(1);
+      79 |   const escaped = awardEscape(reloaded, { ...performance, wpm: 50 }); expect(escaped.stats.bestWpm).toBe(50); expect(escaped.stats.totalWpm).toBe(85); expect(escaped.stats.escaped).toBe(1); expect(escaped.stats.currentStreak).toBe(0); expect(escaped.stats.discovered).toEqual(reloaded.stats.discovered);
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/engine.test.ts:76:116)
+
+
+Test Suites: 2 failed, 21 passed, 23 total
+Tests:       2 failed, 167 passed, 169 total
+Snapshots:   0 total
+Time:        154.283 s
+Ran all test suites matching /FishingTypingGame|fishFight/i.
