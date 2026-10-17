@@ -1,0 +1,22 @@
+Use case: stylized-concept.
+Asset type: ONE complete environment reference painting for the next location in Stillwater, an existing 2D freshwater fishing and nature game. This single master will later guide the extraction of sky, mountains, distant trees, lake, foreground bank, and foreground tree layers. Produce only one clean scene, not a contact sheet or a diagram.
+
+Location concept: Birch Point, another quiet shore of the same fictional mountain lake. A low weathered pale granite fishing ledge and a few white-barked birches distinguish it from the existing old wooden dock and dense willow cove. There are no people, boats, buildings, fishing equipment or animals in this master.
+
+Style: richly textured, polished hand-painted natural-history game environment, with visible fine brushwork, crisp readable organic silhouettes, realistic tree anatomy, layered blue-green mountains, dark emerald conifers, restrained early-autumn gold birch foliage, mossy grey granite, teal-blue lake ripples and broken reflections. Match the existing game's inviting illustrated landscape art, not photography, anime, pixel art, a flat vector poster, or a glossy 3D render.
+
+Format: wide landscape, exactly 2:1 composition, ideally 2048 x 1024. Fixed level camera looking across the lake from a low seated fisher's viewpoint. No tilted camera or steep aerial perspective.
+
+Critical spatial compatibility:
+- Across the central 70% of the canvas, the distant land-to-water contact line must sit at exactly 50% of image height, the same middle waterline used by the existing lake backdrop. This is the far shoreline, not the mountain ridge. Keep the shore level, continuous, and clearly readable. Mountains and trees are above it, water and their subtle broken reflections below it.
+- Preserve a generous, uncluttered lower-middle and lower-right water area from roughly x=38% to 92%, y=53% to 96%, for casting, bobbers, splashes, fish fights and reflection overlays.
+- Put a modest low granite ledge at the bottom-left, extending to about x=34%, with a believable flat sitting spot near x=24%, y=79%. Its irregular mossy edge must meet and dip into the water coherently. It is a small foreground bank, not a massive cliff, and must not cover the central water. A few grasses and low shoreline plants gather around the rocks.
+- Frame the far left edge with two slender recognizably white-barked birch trunks, light branches and airy leaves; a small cluster of conifer branches and grasses can frame the far right bottom corner. Keep most foreground foliage close to the edges and below the lower quarter. Do not create a huge overhead canopy or a wall of foreground plants.
+- Include at least ten distinct, well-separated, recognizable midground shoreline trees with readable tops and lower trunks/base positions, spread across both sides and the middle shore. Mix mature pines, cedars and birches. These should provide clear future treetop perches and depth mapping for tiny birds. Keep them rooted in the land, never growing out of open water.
+- The nearest foreground, middle shore trees, far tree belt, mountains, sky and water should read as distinct depth planes with clear contours so they can later become separate assets.
+- Keep broad open sky in the upper third, with a gentle mountain skyline rising and falling between roughly y=22% and 43%. Leave an unobstructed arc through the upper-middle sky for future moving sun, moon, stars, geese, aurora and meteor layers. Mountains should have readable ridge contours for future masking.
+- Make the important foreground seating area and central lake view survive a centered narrower/mobile crop; avoid putting the only useful feature in an extreme corner.
+
+Lighting: neutral clear daylight, moderate balanced contrast, gentle natural surface shading and soft short shadows. All surfaces retain color information for the game's own time-of-day and weather filters. Sky is a simple clear pale blue with a faint warm horizon. NO painted sun or moon, no stars, no aurora, no meteors, no fog banks, rain, snow, lightning, lens flare, golden-hour glare, strong bloom or dramatic directional light beams. Do not bake in weather or independent events. Avoid heavy atmospheric haze that would pre-empt the runtime lake fog.
+
+Output: one finished cohesive landscape reference image, opaque full canvas, natural continuous shoreline, no transparency, text, labels, measurement marks, UI, borders, watermarks, grids or inset panels.

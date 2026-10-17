@@ -11,7 +11,7 @@ test('distant flight has smaller movements and stays above the sloping water sur
   const near={...createFlight(()=>.5),x:.5,y:.4,z:.3,vx:150,vy:60,vz:0,turnIn:10};
   const far={...near,z:3,behindForeground:true};
   stepFlight(near,.05,800,600,()=>.5);stepFlight(far,.05,800,600,()=>.5);
-  expect(far.x-.5).toBeLessThan(near.x-.5);expect(far.y-.4).toBeLessThan(near.y-.4);
+  expect(Math.abs(far.x-.5)).toBeLessThan(Math.abs(near.x-.5));expect(Math.abs(far.y-.4)).toBeLessThan(Math.abs(near.y-.4));
   expect(flightBottom(.05,.56)).toBe(1);expect(flightBottom(MAX_FLIGHT_DEPTH,.56)).toBeCloseTo(.56);
   const receding={...near,y:.85,z:.3,vz:1,turnIn:100};
   const start=receding.y;
@@ -121,7 +121,10 @@ test('mouse clicks fail closed while artwork loads; catching an individual does 
     fireEvent.click(visitor,{detail:1,clientX:400,clientY:300});expect(observe).not.toHaveBeenCalled();
     fireEvent.click(visitor);expect(observe).toHaveBeenCalledTimes(1);
     expect(view.getAllByRole('button',{name:'Observe butterfly'})).toHaveLength(1);
-    act(()=>jest.advanceTimersByTime(100));view.unmount();expect(jest.getTimerCount()).toBe(0);
+    act(()=>jest.advanceTimersByTime(100));
+    view.rerender(<div ref={sceneRef}><ButterflyVisitors {...props} location="cove" preview={1}/></div>);
+    expect(view.queryAllByRole('button',{name:'Observe butterfly'})).toHaveLength(0);
+    view.unmount();expect(jest.getTimerCount()).toBe(0);
   }finally{bounds.mockRestore();jest.useRealTimers();}
 });
 
@@ -129,7 +132,7 @@ test('loaded wing frames reject transparent clicks, accept painted clicks, and p
   jest.useFakeTimers();
   const bounds=jest.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockReturnValue(rect);
   const random=jest.spyOn(Math,'random').mockReturnValue(0);
-  const context={clearRect:jest.fn(),save:jest.fn(),restore:jest.fn(),translate:jest.fn(),rotate:jest.fn(),scale:jest.fn(),drawImage:jest.fn(),getImageData:jest.fn((x:number,y:number)=>({data:[0,0,0,x===160&&y===160?255:0]}))};
+  const context={clearRect:jest.fn(),save:jest.fn(),restore:jest.fn(),translate:jest.fn(),rotate:jest.fn(),scale:jest.fn(),drawImage:jest.fn(),getImageData:jest.fn((x:number,y:number)=>({data:[0,0,0,(x===80||x===160)&&x===y?255:0]}))};
   const canvas=jest.spyOn(HTMLCanvasElement.prototype,'getContext').mockReturnValue(context as any);
   const images=jest.spyOn(window,'Image').mockImplementation(function(){
     const image:any={onload:undefined,onerror:undefined};Object.defineProperty(image,'src',{set:()=>image.onload?.()});return image;

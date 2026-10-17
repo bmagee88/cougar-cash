@@ -1,0 +1,19 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/garden-jest --testPathPattern=(insectInteractions|insectPlants|butterflyFlight|lakeVisitors|butterflyPose|seasonalFoliage|birchPoint|treeBirds|mobile-and-butterflies)\.test
+
+PASS src/FishingTypingGame/__tests__/insectInteractions.test.tsx (7.141 s)
+PASS src/FishingTypingGame/__tests__/birchPoint.test.tsx (9.005 s)
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (10.876 s)
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyPose.test.tsx
+PASS src/FishingTypingGame/__tests__/insectPlants.test.tsx
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (16.035 s)
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/seasonalFoliage.test.tsx
+
+Test Suites: 9 passed, 9 total
+Tests:       52 passed, 52 total
+Snapshots:   0 total
+Time:        57.107 s
+Ran all test suites matching /(insectInteractions|insectPlants|butterflyFlight|lakeVisitors|butterflyPose|seasonalFoliage|birchPoint|treeBirds|mobile-and-butterflies)\.test/i.

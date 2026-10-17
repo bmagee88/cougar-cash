@@ -1,14 +1,18 @@
 # Distant tree birds
 
-`treeMap.ts` records ten recognizable near-shore landscape trees at the old dock
-and ten at Willow cove. Each has a bottom and top `{x, y, z}`, plus crown width.
+`treeMap.ts` records ten recognizable near-shore landscape trees at each location,
+plus two foreground birches at Birch Point and the foreground willow at Willow
+Cove. Each has a bottom and top `{x, y, z}`, plus crown width and an artwork frame.
 x/y run from 0 to 1 in the painted landscape, before its responsive cover crop;
 z is an approximate relative scene distance, with larger values farther away.
 It is an art/animation map, not surveyed geographic distance. Seasonal artwork
 retains the same tree geometry, so the same location map applies in every season.
-Foreground willow and reed artwork is separate and is not a destination.
+Foreground tree routes connect to the distant bank in either direction. Their
+endpoints use the actual seated foreground frame, including desktop/mobile crop
+and parallax. Where the canopy is cropped, they use the top third of the visible
+trunk. Reeds are insect perches, not bird destinations.
 
-Developer tackle box offers **Show distant tree map**, an expandable coordinate
+Developer tackle box offers **Show tree and plant maps**, an expandable coordinate
 listing, **Preview tree bird**, and **Preview tree flock**. The overlay highlights
 each tree's upper third and marks its top/bottom; only developers see these tools.
 Perches vary within 10–30% down from the canopy top and stay inside crown width.
@@ -28,7 +32,8 @@ keep the flock from looking like a repeated row. Birds fade into the crown on
 arrival and despawn. They are decorative, distant silhouettes, not collectibles.
 
 The 1 KB local SVG sheet contains eight poses drawn on 16×16 grids with crisp
-edges. Rendering stays around 2–12 pixels per bird, with a fixed upper size cap;
+edges. Distant birds stay around 2–12 pixels; nearby birds grow smoothly up to
+about 29 pixels while approaching foreground trunks, with a fixed upper size cap;
 there are no high-resolution textures, animated GIF decoders, or outside downloads.
 CSS alternates rapid flap poses and tucked-wing bounds. Day/weather lighting and
 fog shade the birds. Their layer is below all foreground artwork and below lake

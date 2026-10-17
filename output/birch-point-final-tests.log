@@ -1,0 +1,62 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/birch-point-jest --testPathPattern=(birchPoint|scene|treeBirds|solarLighting|lakeFog|lakeVisitors|mobile-and-butterflies|FishingGame|lantern|waterAudio)\.test
+
+PASS src/FishingTypingGame/__tests__/birchPoint.test.tsx (12.615 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (160.782 s)
+  ● Console
+
+    console.error
+      Error: AggregateError
+          at Object.dispatchError (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+          at Request.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+          at Request.emit (node:events:530:35)
+          at ClientRequest.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:121:14)
+          at ClientRequest.emit (node:events:518:28)
+          at emitErrorEvent (node:_http_client:104:11)
+          at Socket.socketErrorListener (node:_http_client:518:5)
+          at Socket.emit (node:events:518:28)
+          at emitErrorNT (node:internal/streams/destroy:170:8)
+          at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+          at processTicksAndRejections (node:internal/process/task_queues:90:21) undefined
+
+      at VirtualConsole.<anonymous> (node_modules/jsdom/lib/jsdom/virtual-console.js:29:45)
+      at Object.dispatchError (node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:66:53)
+      at Request.<anonymous> (node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+      at ClientRequest.<anonymous> (node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+
+    console.error
+      Error: AggregateError
+          at Object.dispatchError (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\xhr-utils.js:63:19)
+          at Request.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\xhr\XMLHttpRequest-impl.js:655:18)
+          at Request.emit (node:events:530:35)
+          at ClientRequest.<anonymous> (C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\jsdom\lib\jsdom\living\helpers\http-request.js:121:14)
+          at ClientRequest.emit (node:events:518:28)
+          at emitErrorEvent (node:_http_client:104:11)
+          at Socket.socketErrorListener (node:_http_client:518:5)
+          at Socket.emit (node:events:518:28)
+          at emitErrorNT (node:internal/streams/destroy:170:8)
+          at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+          at processTicksAndRejections (node:internal/process/task_queues:90:21) undefined
+
+      at VirtualConsole.<anonymous> (node_modules/jsdom/lib/jsdom/virtual-console.js:29:45)
+      at Object.dispatchError (node_modules/jsdom/lib/jsdom/living/xhr/xhr-utils.js:66:53)
+      at Request.<anonymous> (node_modules/jsdom/lib/jsdom/living/xhr/XMLHttpRequest-impl.js:655:18)
+      at ClientRequest.<anonymous> (node_modules/jsdom/lib/jsdom/living/helpers/http-request.js:121:14)
+
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (55.118 s)
+PASS src/FishingTypingGame/__tests__/scene.test.tsx
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (6.633 s)
+PASS src/FishingTypingGame/__tests__/lakeFog.test.tsx
+PASS src/FishingTypingGame/__tests__/solarLighting.test.tsx
+PASS src/FishingTypingGame/__tests__/waterAudio.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/lantern.test.tsx
+
+Test Suites: 10 passed, 10 total
+Tests:       77 passed, 77 total
+Snapshots:   0 total
+Time:        256.196 s
+Ran all test suites matching /(birchPoint|scene|treeBirds|solarLighting|lakeFog|lakeVisitors|mobile-and-butterflies|FishingGame|lantern|waterAudio)\.test/i.

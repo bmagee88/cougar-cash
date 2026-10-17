@@ -85,7 +85,7 @@ export interface CatchRecord extends Performance {
   retrieve?: RetrieveMemory;
 }
 export type MeasurementSystem = 'imperial' | 'metric';
-export interface ButterflyPose {frame:number;rotation:number;flipped:boolean}
+export interface ButterflyPose {frame:number;rotation:number;flipped:boolean;view?:'side'}
 export type NotebookImage = { kind: 'fish'; speciesId: string; lengthCm: number; weightKg: number; isAlbino: boolean } | { kind: 'butterfly'; speciesId?:string; wingspanMm?:number;pose?:ButterflyPose } | {kind:'visitor';speciesId:string;pose?:ButterflyPose};
 export interface NotebookEntry {
   id: string; caughtAt: string; location: string; title: string; name: string; notes: string;

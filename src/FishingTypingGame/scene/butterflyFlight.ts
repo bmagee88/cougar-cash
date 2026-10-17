@@ -1,4 +1,5 @@
 import { Random } from '../engine/types';
+import type { PlantPerch } from './plantMap';
 
 // Coordinates are fractions of the visible scene. The simulation is twice its
 // width and height, allowing an individual to leave the view and loop back.
@@ -8,12 +9,19 @@ export interface FlightPointer {x:number;y:number;previousX:number;previousY:num
 export interface ButterflyPerch {
   x:number;y:number;startAt:number;remaining:number;landed:boolean;finished:boolean;
   frame:number;nextFrameIn:number;fast:boolean;
+  plantId?:string;z?:number;repeats?:number;visits?:number;restFrame?:number;hoverFeed?:boolean;
 }
+export type ButterflyPattern = 'float' | 'flutter' | 'skip' | 'moth' | 'hover';
 export interface FlightState {
   x:number;y:number;z:number;vx:number;vy:number;vz:number;age:number;turnIn:number;
   speed:number;heading:number;exitSide:number;departAt:number;fleeing:boolean;
   behindForeground:boolean;closeRadius:number;alarmRadius:number;speedTolerance:number;perch?:ButterflyPerch;
   facing?:number;
+  pattern?:ButterflyPattern;mode?:'flap'|'glide'|'hover'|'patrol'|'dart';modeIn?:number;
+  wingPhase?:number;wingFrame?:number;phase?:number;plants?:PlantPerch[];
+  motionVx?:number;motionVy?:number;
+  escapeAngle?:number;scaredAt?:number;evadeUntil?:number;plantSearchAt?:number;
+  flowerWait?:{plantId:string;until:number;x:number;y:number};
 }
 const between=(random:Random,min:number,max:number)=>min+random()*(max-min);
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
@@ -25,8 +33,8 @@ export const flightMovementScale=(z:number)=>Math.min(1,flightScale(z)/flightSca
 export const flightOpacity=(z:number)=>clamp((MAX_FLIGHT_DEPTH-z)/.7,0,1);
 export const flightExpired=(flight:FlightState)=>flight.z>=MAX_FLIGHT_DEPTH||flight.x<FLIGHT_BOUNDS.left||flight.x>FLIGHT_BOUNDS.right||flight.y<FLIGHT_BOUNDS.top||flight.y>FLIGHT_BOUNDS.bottom;
 export const isPerched=(flight:FlightState)=>!!flight.perch?.landed&&!flight.perch.finished;
-export function planPerch(flight:FlightState,x:number,y:number,random:Random):void {
-  flight.perch={x,y,startAt:between(random,2.5,5.5),remaining:between(random,6,13),landed:false,finished:false,frame:0,nextFrameIn:between(random,.3,1),fast:random()<.4};
+export function planPerch(flight:FlightState,x:number,y:number,random:Random,options:Partial<ButterflyPerch>={}):void {
+  flight.perch={x,y,startAt:flight.age+between(random,2.5,5.5),remaining:between(random,6,13),landed:false,finished:false,frame:0,nextFrameIn:between(random,.3,1),fast:random()<.4,...options};
 }
 export function stepPerchedWings(perch:ButterflyPerch,dt:number,random:Random):void {
   perch.nextFrameIn-=dt;
@@ -42,7 +50,61 @@ export function createFlight(random:Random,delay=0):FlightState {
     vx:-side*between(random,150,230),vy:between(random,-45,45),vz:between(random,-.2,.25),
     age:-delay,turnIn:.6,speed:between(random,140,250),heading:0,exitSide:-side,
     departAt:between(random,24,42),fleeing:false,behindForeground:false,
-    closeRadius:between(random,2.5,6),alarmRadius:between(random,65,135),speedTolerance:between(random,160,430)};
+    closeRadius:between(random,2.5,6),alarmRadius:between(random,65,135),speedTolerance:between(random,160,430),phase:random()*Math.PI*2,wingPhase:random()*8,mode:'flap',modeIn:between(random,1.5,3.5)};
+}
+export function configureButterflyFlight(flight:FlightState,id:string,random:Random) {
+  flight.pattern=id==='hummingbird-clearwing'?'hover':id==='silver-spotted-skipper'?'skip':id==='monarch'||id.includes('swallowtail')?'float':id.includes('moth')||id.includes('sphinx')?'moth':'flutter';
+  flight.speed=flight.pattern==='float'?between(random,110,175):flight.pattern==='skip'?between(random,180,250):flight.pattern==='moth'?between(random,145,210):between(random,100,165);
+}
+export function stepFlightWings(flight:FlightState,dt:number,hz=5) {
+  if(isPerched(flight)&&!flight.perch?.hoverFeed){flight.wingFrame=flight.perch!.frame;return;}
+  if(flight.mode==='glide'){flight.wingFrame=0;return;}
+  flight.wingPhase=((flight.wingPhase??0)+dt*hz*8)%8;
+  flight.wingFrame=Math.floor(flight.wingPhase);
+}
+
+/** Shared eased landing and resting, including repeated odonate hunting sorties.
+ * A mapped home remains the same plant between takeoff and return. */
+export function stepPerch(flight:FlightState,dt:number,width:number,height:number,random:Random,horizon:number):boolean {
+  const perch=flight.perch;
+  if(!perch||perch.finished)return false;
+  if(flight.fleeing||flight.age>flight.departAt||flight.behindForeground){perch.finished=true;return false;}
+  if(flight.age<(flight.evadeUntil??0))return false;
+  if(flight.age<perch.startAt)return false;
+  if(!perch.landed){
+    const dx=(perch.x-flight.x)*width,dy=(perch.y-flight.y)*height,distance=Math.hypot(dx,dy);
+    const speed=Math.min(flight.speed*1.2,Math.max(14,distance*2.4)),travel=Math.min(distance,speed*dt);
+    flight.x+=dx/(distance||1)*travel/Math.max(1,width);flight.y+=dy/(distance||1)*travel/Math.max(1,height);
+    if(flight.pattern){
+      const wave=(t:number)=>Math.sin(t*10+(flight.phase??0))*4;
+      flight.y+=(wave(flight.age)-wave(flight.age-dt))*Math.min(1,distance/80)/Math.max(1,height);
+      flight.mode='flap';
+    }
+    if(perch.z!==undefined)flight.z+=(perch.z-flight.z)*Math.min(1,dt*3);
+    if(flight.y>horizon&&horizon<1)flight.z=Math.min(flight.z,.05+(MAX_FLIGHT_DEPTH-.05)*(1-flight.y)/(1-horizon));
+    flight.vx=dx/(distance||1)*speed;flight.vy=dy/(distance||1)*speed;flight.vz=0;flight.heading=clamp(flight.vy/450,-.55,.55);
+    if(distance<=travel+2){
+      perch.landed=true;perch.visits=(perch.visits??0)+1;flight.x=perch.x;flight.y=perch.y;flight.vx=0;flight.vy=0;flight.heading=-.14;
+      if(perch.z!==undefined)flight.z=perch.z;
+      if(perch.restFrame!==undefined)perch.frame=perch.restFrame;
+    }
+  }else{
+    perch.remaining-=dt;
+    if(perch.restFrame===undefined&&!perch.hoverFeed)stepPerchedWings(perch,dt,random);
+    if(perch.remaining<=0){
+      if((perch.repeats??0)>0){
+        perch.repeats=(perch.repeats??0)-1;perch.landed=false;perch.startAt=flight.age+between(random,4,7);perch.remaining=between(random,4,8);flight.mode='patrol';flight.turnIn=0;
+        const away=flight.x<.5?1:-1;flight.vx=away*flight.speed;flight.facing=away;flight.vy=-45;
+      }else if(perch.restFrame===undefined&&flight.plants&&flight.age<flight.departAt-5){
+        const next=flight.plants.filter(plant=>plant.id!==perch.plantId);
+        const plant=next[Math.floor(random()*next.length)];
+        if(plant){planPerch(flight,plant.x,plant.y-(perch.hoverFeed?.018:0),random,{plantId:plant.id,z:plant.z,startAt:flight.age+.35,remaining:between(random,3,7),hoverFeed:perch.hoverFeed});}
+        else perch.finished=true;
+      }else perch.finished=true;
+      flight.turnIn=0;
+    }
+  }
+  return !perch.finished&&(perch.landed||flight.age>=perch.startAt);
 }
 function segmentDistance(x:number,y:number,pointer:FlightPointer):number {
   const dx=pointer.x-pointer.previousX,dy=pointer.y-pointer.previousY;
@@ -61,41 +123,51 @@ export function startleFlight(flight:FlightState,pointer:FlightPointer,width:num
   flight.vx=(Math.abs(dx)<1?flight.exitSide:dx/distance)*540;
   flight.vy=(Math.abs(dx)+Math.abs(dy)<1?-1:dy/distance)*400;
   flight.vz=Math.max(.55,flight.vz);flight.turnIn=0;
+  flight.escapeAngle=Math.atan2(flight.vy,flight.vx);flight.scaredAt=flight.age;flight.flowerWait=undefined;
+  flight.motionVx=flight.vx;flight.motionVy=flight.vy;
   return true;
+}
+/** Escape keeps the animal's normal steering rhythm and wing/body behavior.
+ * Every turn stays in the away-facing half-plane, rather than becoming a beam. */
+export function steerEvasion(flight:FlightState,kind:'butterfly'|'dragonfly'|'damselfly',random:Random) {
+  const pattern=flight.pattern??'flutter',age=flight.age-(flight.scaredAt??flight.age);
+  const floating=kind==='butterfly'&&pattern==='float';
+  const wave=Math.sin(age*(floating?5.5:kind==='dragonfly'?8:12)+(flight.phase??0));
+  const angle=(flight.escapeAngle??(flight.exitSide<0?Math.PI:0))+wave*(floating?.52:kind==='dragonfly'?.65:.85)+between(random,-.12,.12);
+  const speed=kind==='dragonfly'?between(random,260,410):kind==='damselfly'?between(random,95,160):flight.speed*between(random,1.45,1.95);
+  flight.vx=Math.cos(angle)*speed;flight.vy=Math.sin(angle)*speed;
+  flight.turnIn=kind==='dragonfly'?between(random,.18,.48):floating?between(random,.35,.7):between(random,.14,.34);
+  flight.vz=flight.fleeing?between(random,.20,.42):((flight.perch?.z??flight.z)-flight.z)*.8;
+  flight.mode=floating&&age>.8&&random()<.18?'glide':kind==='dragonfly'?'dart':'flap';
+  if(flight.mode==='glide')flight.turnIn=Math.min(flight.turnIn,.35);
+  if(kind==='butterfly')flight.facing=undefined;else flight.facing=flight.vx<0?-1:1;
 }
 /** Advance in seconds. Velocity is in CSS pixels/second, independent of aspect ratio. */
 export function stepFlight(flight:FlightState,dt:number,width:number,height:number,random:Random,pointer?:FlightPointer,horizon=.5):void {
   flight.age+=dt;if(flight.age<0)return;
   if(pointer)startleFlight(flight,pointer,width,height);
   const leaving=flight.fleeing||flight.age>flight.departAt;
-  const perch=flight.perch;
-  if(perch&&!perch.finished){
-    if(leaving||flight.behindForeground)perch.finished=true;
-    else if(flight.age>=perch.startAt){
-      if(!perch.landed){
-        const dx=(perch.x-flight.x)*width,dy=(perch.y-flight.y)*height,distance=Math.hypot(dx,dy),speed=flight.speed*1.4;
-        const travel=Math.min(distance,speed*dt);
-        flight.x+=dx/(distance||1)*travel/Math.max(1,width);flight.y+=dy/(distance||1)*travel/Math.max(1,height);
-        // Reaching low foreground foliage also means approaching the viewer.
-        if(flight.y>horizon&&horizon<1)flight.z=Math.min(flight.z,.05+(MAX_FLIGHT_DEPTH-.05)*(1-flight.y)/(1-horizon));
-        flight.vx=dx/(distance||1)*speed;flight.vy=dy/(distance||1)*speed;flight.vz=0;flight.heading=clamp(flight.vy/450,-.55,.55);
-        if(distance<=travel+2){perch.landed=true;flight.x=perch.x;flight.y=perch.y;flight.vx=0;flight.vy=0;flight.heading=-.14;}
-      }else{
-        perch.remaining-=dt;stepPerchedWings(perch,dt,random);
-        if(perch.remaining<=0){perch.finished=true;flight.turnIn=0;}
-      }
-      if(!perch.finished)return;
-    }
+  const evading=flight.fleeing||flight.age<(flight.evadeUntil??0);
+  if(stepPerch(flight,dt,width,height,random,horizon)){stepFlightWings(flight,dt,flight.pattern==='hover'?18:5);return;}
+  flight.motionVx??=flight.vx;flight.motionVy??=flight.vy;
+  const pattern=flight.pattern??'flutter';
+  flight.modeIn=(flight.modeIn??2)-dt;
+  if(!leaving&&!evading&&flight.modeIn<=0){
+    const glide=(pattern==='float'||pattern==='flutter')&&flight.mode!=='glide'&&random()<(pattern==='float'?.75:.25);
+    flight.mode=glide?'glide':pattern==='hover'&&random()<.6?'hover':'flap';
+    flight.modeIn=glide?between(random,.6,1.8):between(random,1.2,3.4);flight.turnIn=0;
   }
+  if(leaving&&!evading)flight.mode='flap';
   flight.turnIn-=dt;
   if(flight.turnIn<=0){
-    flight.turnIn=between(random,.12,.36);
-    if(leaving){
-      flight.vx=flight.exitSide*between(random,flight.fleeing?430:230,flight.fleeing?670:340);
+    flight.turnIn=between(random,pattern==='float'?.65:.22,pattern==='float'?1.6:.65);
+    if(evading)steerEvasion(flight,'butterfly',random);
+    else if(leaving){
+      flight.vx=flight.exitSide*between(random,230,340);
       flight.vy=clamp(flight.vy+between(random,-100,100),-240,240);
       flight.vz=flight.fleeing?between(random,.35,.8):0;
     }else{
-      let heading=between(random,-Math.PI,Math.PI);
+      let heading=Math.atan2(flight.vy,flight.vx)+between(random,pattern==='float'?-.65:-1.7,pattern==='float'?.65:1.7);
       // Gently favor the open scene at its outer edges; do not wrap or respawn.
       if(flight.x<.06)heading=between(random,-.85,.85);
       if(flight.x>.94)heading=Math.PI+between(random,-.85,.85);
@@ -104,10 +176,20 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
       if(flight.y<.12)flight.vy=Math.abs(flight.vy)+45;
       if(flight.y>flightBottom(flight.z,horizon)-.08)flight.vy=-Math.abs(flight.vy)-45;
       flight.vz=between(random,-.65,.85);
+      if(flight.mode==='glide'){flight.vy=between(random,6,24);flight.vz*=.2;flight.turnIn=flight.modeIn;}
+      if(flight.mode==='hover'){flight.vx=between(random,-9,9);flight.vy=between(random,-7,7);flight.vz=0;}
+      if(flight.perch&&!flight.perch.finished&&flight.perch.z!==undefined)flight.vz=(flight.perch.z-flight.z)*.8;
     }
   }
   const oldBottom=flightBottom(flight.z,horizon),movement=flightMovementScale(flight.z);
-  flight.x+=flight.vx*movement*dt/Math.max(1,width);flight.y+=flight.vy*movement*dt/Math.max(1,height);
+  const phase=flight.phase??0;
+  // Analytic displacement keeps bobbing independent of frame rate and smaller
+  // with distance. Glides have a shallow sink instead of a frozen wingbeat bob.
+  const wave=(t:number)=>Math.sin(t*(pattern==='float'?9:15)+phase)*(pattern==='float'?6:3)+Math.sin(t*3.1+phase)*7;
+  const bob=(!leaving||evading)&&flight.mode==='flap'?(wave(flight.age)-wave(flight.age-dt))*movement*(evading?1.2:1):0;
+  const steering=1-Math.exp(-dt*(leaving&&!evading?16:pattern==='float'?3.5:8));
+  flight.motionVx+=(flight.vx-flight.motionVx)*steering;flight.motionVy+=(flight.vy-flight.motionVy)*steering;
+  flight.x+=flight.motionVx*movement*dt/Math.max(1,width);flight.y+=(flight.motionVy*movement*dt+bob)/Math.max(1,height);
   flight.z=Math.max(flight.behindForeground?FOREGROUND_DEPTH+.015:.05,flight.z+flight.vz*dt);
   const bottom=flightBottom(flight.z,horizon);
   // Project altitude as depth changes, so receding over the lake rises naturally.
@@ -115,6 +197,7 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
   if(flight.y>bottom){flight.y=bottom;flight.vy=-Math.abs(flight.vy);}
   if(flight.z>=FOREGROUND_DEPTH)flight.behindForeground=true;
   flight.heading=clamp(flight.vy/450,-.55,.55)*(flight.vx<0?-1:1);
+  stepFlightWings(flight,dt,pattern==='skip'||pattern==='hover'?10:pattern==='float'?5:7);
 }
 
 /** The same canvas pixels are used for painting and picking, including rotation. */

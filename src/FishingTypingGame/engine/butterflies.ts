@@ -9,10 +9,13 @@ export interface ButterflySpecies {
 export const BUTTERFLIES:readonly ButterflySpecies[]=require('../data/butterflies.json');
 export const butterflyById=(id?:string)=>BUTTERFLIES.find(species=>species.id===id);
 export const butterflyAsset=(id:string,stage:'flight'|'adult'|'caterpillar'|'pupa'|'rest')=>`${ASSET_BASE}/butterflies/${id}/${stage}.${stage==='flight'?'gif':'webp'}`;
-export const butterflyPoseAsset=(id:string,frame:number)=>`${ASSET_BASE}/butterflies/${id}/pose-${frame}.webp`;
+export const SIDE_FLIGHT_SPECIES=BUTTERFLIES.map(species=>species.id);
+export const SIDE_BUTTERFLY_SPRITE={width:96,height:112,canvasSize:160};
+export const butterflySideSheet=(id:string)=>`${ASSET_BASE}/butterflies/${id}/flight-side-small-sheet.webp`;
+export const butterflyPoseAsset=(id:string,frame:number,view?:'side')=>`${ASSET_BASE}/butterflies/${id}/${view==='side'&&SIDE_FLIGHT_SPECIES.includes(id)?'side-small-pose':'pose'}-${frame}.webp`;
 export const caterpillarAnimation=(id:string)=>`${ASSET_BASE}/butterflies/${id}/caterpillar-crawl.gif`;
 export function readButterflyPose(value:any):ButterflyPose|undefined {
-  return Number.isInteger(value?.frame)&&value.frame>=0&&value.frame<8&&typeof value.rotation==='number'&&Number.isFinite(value.rotation)&&Math.abs(value.rotation)<=Math.PI&&typeof value.flipped==='boolean'?{frame:value.frame,rotation:value.rotation,flipped:value.flipped}:undefined;
+  return Number.isInteger(value?.frame)&&value.frame>=0&&value.frame<8&&typeof value.rotation==='number'&&Number.isFinite(value.rotation)&&Math.abs(value.rotation)<=Math.PI&&typeof value.flipped==='boolean'?{frame:value.frame,rotation:value.rotation,flipped:value.flipped,...(value.view==='side'?{view:'side' as const}:{})}:undefined;
 }
 export const butterflyTime=(hour:number):'day'|'night'=>hour>=6&&hour<18?'day':'night';
 export function eligibleButterflies(season:Season,hour:number,weather:Weather):readonly ButterflySpecies[] {

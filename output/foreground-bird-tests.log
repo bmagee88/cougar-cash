@@ -1,0 +1,12 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/foreground-bird-jest --testPathPattern=(treeBirds|birchPoint)\.test
+
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (26.728 s)
+PASS src/FishingTypingGame/__tests__/birchPoint.test.tsx (11.691 s)
+
+Test Suites: 2 passed, 2 total
+Tests:       13 passed, 13 total
+Snapshots:   0 total
+Time:        46.803 s
+Ran all test suites matching /(treeBirds|birchPoint)\.test/i.

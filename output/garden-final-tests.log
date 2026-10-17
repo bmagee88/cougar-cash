@@ -1,0 +1,12 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/garden-jest --testPathPattern=(insectInteractions|seasonalFoliage)\.test
+
+PASS src/FishingTypingGame/__tests__/insectInteractions.test.tsx
+PASS src/FishingTypingGame/__tests__/seasonalFoliage.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        14.609 s
+Ran all test suites matching /(insectInteractions|seasonalFoliage)\.test/i.

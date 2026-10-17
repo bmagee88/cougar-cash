@@ -8,8 +8,13 @@ export const ODONATES = [
 ] as const;
 export const SANTA={id:'santa',name:'Santa Claus',description:'A tiny sleigh silhouette passing through the late-night sky. Appears once on December 25, by your real local calendar.'};
 export const visitorById=(id:unknown)=>ODONATES.find(species=>species.id===id);
-export const visitorAsset=(id:string,frame?:number)=>artwork(`visitors/${id}/${frame===undefined?'adult':`pose-${Math.max(0,Math.min(7,Math.round(frame)))}`}.webp`);
-export const visitorSheet=(id:string)=>artwork(`visitors/${id}/flight-sheet.webp`);
+// Revision applies to stills and the sampled flight sheet together, including
+// previously recorded journal poses, so cached opaque wings are not reused.
+const ODONATE_ART_REVISION='clear-wings-small-3';
+export const ODONATE_SPRITE={width:96,height:112,canvasSize:160};
+export const ODONATE_DISPLAY_SCALE=.6;
+export const visitorAsset=(id:string,frame?:number)=>`${artwork(`visitors/${id}/${frame===undefined?'adult':`pose-${Math.max(0,Math.min(7,Math.round(frame)))}`}.webp`)}?v=${ODONATE_ART_REVISION}`;
+export const visitorSheet=(id:string)=>`${artwork(`visitors/${id}/flight-sheet.webp`)}?v=${ODONATE_ART_REVISION}`;
 export const santaAsset=()=>artwork('visitors/santa.webp');
 export const santaSkyAsset=()=>artwork('visitors/santa-sky.webp');
 export const SANTA_SPRITE={width:64,height:28};

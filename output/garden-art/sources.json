@@ -1,0 +1,107 @@
+[
+  {
+    "id": "pearl-crescent",
+    "kind": "side",
+    "source": "output/garden-art/pearl-crescent-atlas.png"
+  },
+  {
+    "id": "cabbage-white",
+    "kind": "side",
+    "source": "output/garden-art/cabbage-white-atlas.png"
+  },
+  {
+    "id": "clouded-sulphur",
+    "kind": "side",
+    "source": "output/garden-art/clouded-sulphur-atlas.png"
+  },
+  {
+    "id": "spicebush-swallowtail",
+    "kind": "side",
+    "source": "output/garden-art/spicebush-swallowtail-atlas.png"
+  },
+  {
+    "id": "american-copper",
+    "kind": "side",
+    "source": "output/garden-art/american-copper-atlas.png"
+  },
+  {
+    "id": "silver-spotted-skipper",
+    "kind": "side",
+    "source": "output/garden-art/silver-spotted-skipper-atlas.png"
+  },
+  {
+    "id": "luna-moth",
+    "kind": "side",
+    "source": "output/garden-art/luna-moth-atlas.png"
+  },
+  {
+    "id": "hummingbird-clearwing",
+    "kind": "side",
+    "source": "output/garden-art/hummingbird-clearwing-atlas.png"
+  },
+  {
+    "id": "giant-swallowtail",
+    "kind": "side",
+    "source": "output/garden-art/giant-swallowtail-atlas.png"
+  },
+  {
+    "id": "blinded-sphinx",
+    "kind": "side",
+    "source": "output/garden-art/blinded-sphinx-atlas.png"
+  },
+  {
+    "id": "hickory-tussock-moth",
+    "kind": "side",
+    "source": "output/garden-art/hickory-tussock-moth-atlas.png"
+  },
+  {
+    "id": "saddleback-caterpillar-moth",
+    "kind": "side",
+    "source": "output/garden-art/saddleback-caterpillar-moth-atlas.png"
+  },
+  {
+    "id": "dock-spring",
+    "kind": "foliage",
+    "source": "output/garden-art/dock-spring-atlas.png"
+  },
+  {
+    "id": "dock-summer",
+    "kind": "foliage",
+    "source": "output/garden-art/dock-summer-atlas.png"
+  },
+  {
+    "id": "dock-autumn",
+    "kind": "foliage",
+    "source": "output/garden-art/dock-autumn-atlas.png"
+  },
+  {
+    "id": "cove-spring",
+    "kind": "foliage",
+    "source": "output/garden-art/cove-spring-atlas.png"
+  },
+  {
+    "id": "cove-summer",
+    "kind": "foliage",
+    "source": "output/garden-art/cove-summer-atlas.png"
+  },
+  {
+    "id": "cove-autumn",
+    "kind": "foliage",
+    "source": "output/garden-art/cove-autumn-atlas.png"
+  },
+  {
+    "id": "birch-spring",
+    "kind": "foliage",
+    "source": "output/garden-art/birch-spring-atlas.png"
+  },
+  {
+    "id": "birch-summer",
+    "kind": "foliage",
+    "source": "output/garden-art/birch-summer-atlas.png"
+  },
+  {
+    "id": "birch-autumn",
+    "kind": "foliage",
+    "source": "output/garden-art/birch-autumn-atlas.png"
+  }
+]
