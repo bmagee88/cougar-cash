@@ -33,6 +33,7 @@ import { LakeSoundControls } from '../audio/sounds';
 import { useWaterSounds } from './useWaterSounds';
 import AnglerShadow from './AnglerShadow';
 import { anglerShadowStyle } from './anglerShadowLight';
+import { environmentTransitionMs } from '../engine/environment';
 
 export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }: { layer: SceneAsset; lanternLit?: boolean }) {
   const p = layer.position;
@@ -200,11 +201,11 @@ export function FishingLine({ game, tipRef, handRef, landingOriginRef, progress,
 }
 export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = weatherVisuals(weather), location = 'dock', reducedMotion = false, intervalMs = 0 }: { weather: Weather; visuals?: WeatherVisuals; location?: string; reducedMotion?: boolean; intervalMs?:number }) {
   const heavy = weather === 'thunderstorm' || weather === 'hurricane';
-  const layers = useWeatherLayers(weather, visuals, reducedMotion || intervalMs > 0);
+  const layers = useWeatherLayers(weather, visuals, reducedMotion, intervalMs ? environmentTransitionMs(intervalMs) : undefined);
   const storm = ['thunderstorm','hurricane','blizzard'].includes(weather);
-  const stormMoving = useLayerPresence(storm && visuals.fog > 0, reducedMotion ? 0 : 8000);
-  const mistMoving = useLayerPresence(heavy && visuals.rain > 0, reducedMotion ? 0 : 6000);
-  const heatMoving = useLayerPresence(visuals.heat > 0, reducedMotion ? 0 : 8000);
+  const stormMoving = useLayerPresence(storm && visuals.fog > 0, reducedMotion ? 0 : intervalMs ? environmentTransitionMs(intervalMs) : 8000);
+  const mistMoving = useLayerPresence(heavy && visuals.rain > 0, reducedMotion ? 0 : intervalMs ? environmentTransitionMs(intervalMs) : 6000);
+  const heatMoving = useLayerPresence(visuals.heat > 0, reducedMotion ? 0 : intervalMs ? environmentTransitionMs(intervalMs) : 8000);
   return <>{layers.map(layer => <WeatherParticles key={layer.weather} intervalMs={intervalMs} {...layer} location={location} reducedMotion={reducedMotion} />)}
     <div className={`f-weather f-weather-fog f-storm-fog ${stormMoving ? '' : 'f-effect-dormant'}`} data-layer="storm-fog" aria-hidden="true" style={{ opacity: storm ? visuals.fog : 0 }}><div className="f-fog-bank" /><div className="f-fog-wisp" /></div>
     <div className={`f-rain-mist ${mistMoving ? '' : 'f-effect-dormant'}`} data-layer="rain-mist" aria-hidden="true" style={{ opacity: heavy ? visuals.rain * (weather === 'hurricane' ? .28 : .18) : 0 }} />
@@ -226,13 +227,13 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
   const weatherLook = useMemo(() => weatherState || weatherVisuals(weather), [weatherState, weather]);
   useWaterSounds(game, battle.progress, battle.struggling, weatherLook.rain, sceneRef, audio);
   const solarFrame = useSolarFrame(sceneRef);
-  const skyEvents = skyEventsAt(world, skyPreview);
-  const morningFog = lakeFogAt(world);
+  const skyEvents = useMemo(() => skyEventsAt(world, skyPreview), [world, skyPreview]);
+  const morningFog = useMemo(() => lakeFogAt(world), [world]);
   const fogDensity = Math.max(morningFog.density, weather === 'fog' ? weatherFogDensity(world) : 0);
-  const solarLight = solarLightAt(world, location, solarFrame.width, solarFrame.height, skyEvents);
+  const solarLight = useMemo(() => solarLightAt(world, location, solarFrame.width, solarFrame.height, skyEvents), [world, location, solarFrame.width, solarFrame.height, skyEvents]);
   useWeatherMotion(sceneRef, weatherLook.wind, reducedMotion, intervalMs);
   const light = weatherLighting(world.hour, world.moonPhase, weather, weatherLook);
-  const lanternLit = useLayerPresence(light.nightAmount > 0, reducedMotion ? 0 : 8000);
+  const lanternLit = useLayerPresence(light.nightAmount > 0, reducedMotion ? 0 : intervalMs ? environmentTransitionMs(intervalMs) : 8000);
   useLanternLighting(sceneRef, lanternLit, seasonalManifest);
   const moonlight = moonlightAt(world.hour, world.moonPhase, weatherLook.celestial);
   const moon = celestialPosition(world.hour, true);
@@ -273,8 +274,8 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
     <LakeFog active={fogDensity > 0} density={fogDensity} distanceHaze={weather === 'fog' ? 1 : .66} world={world} location={location} reducedMotion={reducedMotion} intervalMs={intervalMs} />
     <ButterflyVisitors sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={butterflyPreview} onObserve={onObserveButterfly}/>
     <ButterflyVisitors family="odonates" sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={wildlifePreview?.odonates} onObserve={onObserveVisitor}/>
-    <SantaVisitor sceneRef={sceneRef} period={world.period} years={santaYears} preview={wildlifePreview?.santa} onObserve={onObserveVisitor} reducedMotion={reducedMotion} intervalMs={intervalMs}/>
-    <LakeWildlife frame={solarFrame} location={location} audio={audio} sceneRef={sceneRef} season={world.season} weather={weather} reducedMotion={reducedMotion} preview={wildlifePreview} intervalMs={intervalMs} onSplash={audio?.play}/>
+    <SantaVisitor sceneRef={sceneRef} period={world.period} years={santaYears} preview={wildlifePreview?.santa} onObserve={onObserveVisitor} reducedMotion={reducedMotion}/>
+    <LakeWildlife frame={solarFrame} location={location} audio={audio} sceneRef={sceneRef} season={world.season} weather={weather} reducedMotion={reducedMotion} preview={wildlifePreview} onSplash={audio?.play}/>
     <div className="f-time-tint" /><div className="f-overcast-light" aria-hidden="true"/>
     <div className="f-moonlight" data-testid="fishing-moonlight" data-moonlight-intensity={moonlight.toFixed(4)} aria-hidden="true" style={{ opacity: moonlight * .20, '--moonlight-x': `${moon.x}%`, '--moonlight-y': `${moon.y}%` } as CSSProperties} />
   </div>;

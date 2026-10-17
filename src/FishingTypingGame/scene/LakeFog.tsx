@@ -5,6 +5,7 @@ import { celestialPosition } from '../engine/world';
 import { lakeFogLight } from './fogLighting';
 import { lakeFrame, lakeShoreline } from './lakeFrame';
 import { useLayerPresence } from './useLayerPresence';
+import { environmentTransitionMs } from '../engine/environment';
 
 /** Atmospheric distance haze plus shallow, independent banks of surface mist. */
 export default memo(function LakeFog({ active, density = 1, distanceHaze = 1, world, location, reducedMotion = false, intervalMs = 0 }: {
@@ -12,7 +13,7 @@ export default memo(function LakeFog({ active, density = 1, distanceHaze = 1, wo
 }) {
   const thickness = Number.isFinite(density) ? Math.max(0, Math.min(1, density)) : 0;
   const visible = active && thickness > 0;
-  const present = useLayerPresence(visible, reducedMotion || intervalMs > 0 ? 0 : 8000);
+  const present = useLayerPresence(visible, reducedMotion ? 0 : intervalMs ? environmentTransitionMs(intervalMs) : 8000);
   const light = lakeFogLight(world.hour, world.moonPhase);
   const shore = lakeShoreline(location);
   const moon = celestialPosition(world.hour, true);

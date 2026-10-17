@@ -10,3 +10,5 @@ export function readEnvironmentRender(value:unknown):EnvironmentRender {
   return ENVIRONMENT_RENDER_OPTIONS.some(option=>option.value===value)?value as EnvironmentRender:'natural';
 }
 export const environmentInterval=(value:EnvironmentRender)=>value==='natural'?0:value;
+// Leave a quiet window even with the shortest timed setting.
+export const environmentTransitionMs=(intervalMs:number)=>Math.min(1000,intervalMs/2);

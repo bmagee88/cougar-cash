@@ -151,9 +151,9 @@ test('Birch Point and Willow Cove connect close trunks in both directions and bi
   }
 });
 
-test('stepped rendering advances bird travel and wing poses without advancing fishing cues', () => {
+test('environment samples leave bird travel, wing poses and fishing cues on their natural timelines', () => {
   const animations = ['f-tree-bird-flight', 'f-tree-bird-flap', 'f-danger-bob'].map(animationName => ({ animationName, currentTime: 500, playbackRate: 1, playState: 'paused' }));
   const scene = document.createElement('div'); Object.defineProperty(scene, 'getAnimations', { value: () => animations });
   stepAmbientAnimations(scene, 5000);
-  expect(animations.map(animation => animation.currentTime)).toEqual([5500, 5500, 500]);
+  expect(animations.map(animation => animation.currentTime)).toEqual([500, 500, 500]);
 });
