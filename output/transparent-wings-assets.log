@@ -1,0 +1,19 @@
+green-darner pose 0: median wing alpha 45/255; 473 opaque body pixels
+green-darner pose 1: median wing alpha 43/255; 471 opaque body pixels
+green-darner pose 2: median wing alpha 45/255; 450 opaque body pixels
+green-darner pose 3: median wing alpha 45/255; 472 opaque body pixels
+green-darner pose 4: median wing alpha 45/255; 461 opaque body pixels
+green-darner pose 5: median wing alpha 44/255; 484 opaque body pixels
+green-darner pose 6: median wing alpha 45/255; 471 opaque body pixels
+green-darner pose 7: median wing alpha 44/255; 500 opaque body pixels
+green-darner: eight poses and both animations verified
+ebony-jewelwing pose 0: median wing alpha 57/255; 1219 opaque body pixels
+ebony-jewelwing pose 1: median wing alpha 62/255; 1224 opaque body pixels
+ebony-jewelwing pose 2: median wing alpha 59/255; 1164 opaque body pixels
+ebony-jewelwing pose 3: median wing alpha 70/255; 1228 opaque body pixels
+ebony-jewelwing pose 4: median wing alpha 74/255; 1242 opaque body pixels
+ebony-jewelwing pose 5: median wing alpha 58/255; 1265 opaque body pixels
+ebony-jewelwing pose 6: median wing alpha 60/255; 1219 opaque body pixels
+ebony-jewelwing pose 7: median wing alpha 58/255; 1216 opaque body pixels
+ebony-jewelwing: eight poses and both animations verified
+PASS: 16 translucent poses; opaque bodies; matching sheets, stills and animations.

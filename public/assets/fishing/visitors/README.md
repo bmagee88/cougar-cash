@@ -71,3 +71,22 @@ formation stays within the upper third even on short or narrow screens. Per-bird
 skyline samples darken backlit birds further than birds against the mountains;
 time and weather exposure apply on top. No per-flock JavaScript animation loop
 is used; the existing stepped environmental clock also controls the wing frames.
+
+The darner and jewelwing wing membranes now use genuine partial alpha. Edited
+masters are `output/wildlife-sources/*-transparent.png`; final built-in imagegen
+prompts are in `transparent-wings-final-prompts.txt` beside them. Original masters
+are retained. Repack only these insects with
+`python scripts/assemble-lake-visitors.py --odonates-only`, then verify all sixteen
+poses with `python scripts/verify-odonate-wings.py`. Flight-sheet, adult and pose
+WebPs retain wing alpha, while bodies stay opaque. They serve flight canvases,
+field-guide images and existing journal entries, using one shared art revision.
+`flight.webp` is a full-alpha animated export; legacy GIFs approximate partial
+transparency with ordered alpha dithering because GIF has only binary alpha.
+
+Dragonflies and damselflies now draw at 60% of their previous on-screen size.
+Their eight poses and guide/journal stills are 96×112, with 768×112 flight sheets
+and 160×160 rotating/picking canvases. Halving both dimensions cuts decoded
+sprite and canvas pixel memory by 75%. Transparent wings and painted-pixel
+picking are preserved. The original generated masters remain at full resolution;
+the packer resamples directly from them. Biological wingspans and butterfly
+rendering are unchanged. Asset revision `clear-wings-small-3` refreshes cached art.

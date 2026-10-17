@@ -30,6 +30,17 @@ export const COVE_AUTUMN_ART = {
 };
 // The bank and seated model share this undistorted canvas, including on phones.
 export const COVE_GROUND_FRAME = { minWidth: 780, aspectRatio: 1672 / 941, screenSeatX: 0.24 };
+export const BIRCH_GROUND_FRAME = { minWidth: 780, aspectRatio: 2, screenSeatX: 0.24 };
+export const BIRCH_SEAT = { x: .24, y: .76, characterWidth: .13 };
+/** Shared by foreground art, angler and the foreground tree-map overlay. */
+export function shoreFrameStyle(location: string, seatX: number, parallax = DOCK_PARALLAX) {
+  const frame = location === 'birch' ? BIRCH_GROUND_FRAME : COVE_GROUND_FRAME;
+  return {
+    '--cove-min-width': `${frame.minWidth}px`, '--cove-cover-width': `${frame.aspectRatio * 100}cqh`,
+    '--cove-seat-screen-x': `${frame.screenSeatX * 100}%`, '--cove-seat-x': seatX,
+    '--ground-parallax': parallax, aspectRatio: frame.aspectRatio,
+  };
+}
 export const SEASON_ART = Object.fromEntries((['spring', 'summer', 'autumn', 'winter'] as Season[]).map(season => [season, {
   background: artwork(`locations/cedar/${season === 'autumn' ? '' : `${season}/`}lake-background-painted.png`),
   bank: artwork(`locations/cedar/${season === 'autumn' ? '' : `${season}/`}grass-bank-painted.png`),
@@ -82,7 +93,23 @@ function coveScene(season:Season):SceneAsset[] {
 export const COVE_SCENES=Object.fromEntries((['spring','summer','autumn','winter'] as Season[]).map(season=>[season,coveScene(season)])) as Record<Season,SceneAsset[]>;
 export const COVE_AUTUMN_SCENE=COVE_SCENES.autumn;
 
+function birchScene(season: Season): SceneAsset[] {
+  const base = `locations/birch-point/${season}`;
+  return [
+    layer('birch-sky', 'locations/birch-point/shared/sky-painted.png', 0, 0, 0, 100, 100),
+    ...CEDAR_SCENE.filter(l => l.id === 'clouds'),
+    layer('birch-mountains', `${base}/mountains-painted.png`, 3, 0, 0, 100, 100, { parallax: BACKGROUND_PARALLAX, weatherResponse: true }),
+    layer('birch-far-trees', `${base}/far-trees-painted.png`, 3, 0, 0, 100, 100, { parallax: BACKGROUND_PARALLAX, weatherResponse: true }),
+    layer('birch-treeline-water', `${base}/treeline-water-painted.png`, 3, 0, 0, 100, 100, { parallax: BACKGROUND_PARALLAX, weatherResponse: true }),
+    layer('birch-seat', `${base}/shore-seat-painted.png`, 7, 0, 0, 100, 100, { parallax: DOCK_PARALLAX, weatherResponse: true, seat: BIRCH_SEAT }),
+    layer('birch-trunks', `${base}/birches-painted.png`, 9, 0, 0, 100, 100, { weatherResponse: true }),
+    layer('birch-right-plants', `${base}/right-plants-painted.png`, 10, 0, 0, 100, 100, { weatherResponse: true }),
+    ...CEDAR_SCENE.filter(l => ['weather', 'water-interactions', 'angler'].includes(l.id)),
+  ];
+}
+export const BIRCH_SCENES = Object.fromEntries((['spring', 'summer', 'autumn', 'winter'] as Season[]).map(season => [season, birchScene(season)])) as Record<Season, SceneAsset[]>;
+
 export function sceneForLocation(season: Season, location: string, manifest: SceneAsset[] = CEDAR_SCENE) {
-  const selected = manifest === CEDAR_SCENE && location === 'cove' ? COVE_SCENES[season] : manifest;
+  const selected = manifest === CEDAR_SCENE ? location === 'birch' ? BIRCH_SCENES[season] : location === 'cove' ? COVE_SCENES[season] : manifest : manifest;
   return sceneForSeason(season, selected);
 }

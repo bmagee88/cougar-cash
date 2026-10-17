@@ -11,8 +11,9 @@ if sky_source.exists():
 if '--santa-sky-only' in sys.argv:
     if not sky_source.exists(): raise FileNotFoundError(sky_source)
     print('Packed the low-resolution Santa sky silhouette.'); sys.exit(0)
-for species in ['green-darner','ebony-jewelwing','santa']:
-    im=Image.open(sources/(species+'.png')).convert('RGBA')
+for species in (['green-darner','ebony-jewelwing'] if '--odonates-only' in sys.argv else ['green-darner','ebony-jewelwing','santa']):
+    transparent=sources/(species+'-transparent.png')
+    im=Image.open(transparent if transparent.exists() else sources/(species+'.png')).convert('RGBA')
     if species=='santa':
         im=im.crop(im.getbbox()); im.thumbnail((960,400),Image.Resampling.LANCZOS); im.save(root/'santa.webp',quality=88,method=6); continue
     dest=root/species; dest.mkdir(exist_ok=True); frames=[]
@@ -21,18 +22,27 @@ for species in ['green-darner','ebony-jewelwing','santa']:
         # Register the saturated thorax, so changing wing angles do not shift the body.
         points=[(x,y) for y in range(cell.height) for x in range(int(cell.width*.6),int(cell.width*.92)) if (lambda p:p[3]>180 and p[1]>p[0]*1.35 and p[1]>p[2]*.85)(cell.getpixel((x,y)))]
         anchor=(sum(x for x,y in points)/len(points),sum(y for x,y in points)/len(points)) if points else (cell.width*.8,cell.height*.58)
-        factor=172/cell.width
+        factor=86/cell.width
         resized=cell.resize((round(cell.width*factor),round(cell.height*factor)),Image.Resampling.LANCZOS)
-        frame=Image.new('RGBA',(192,224)); frame.alpha_composite(resized,(round(150-anchor[0]*factor),round(112-anchor[1]*factor)))
+        frame=Image.new('RGBA',(96,112)); frame.alpha_composite(resized,(round(75-anchor[0]*factor),round(56-anchor[1]*factor)))
         frame.save(dest/f'pose-{n}.webp',quality=88,method=6); frames.append(frame)
     frames[0].save(dest/'adult.webp',quality=90,method=6)
-    strip=Image.new('RGBA',(192*8,224))
-    for n,frame in enumerate(frames):strip.alpha_composite(frame,(192*n,0))
+    strip=Image.new('RGBA',(96*8,112))
+    for n,frame in enumerate(frames):strip.alpha_composite(frame,(96*n,0))
     strip.save(dest/'flight-sheet.webp',quality=88,method=6)
+    # Animated WebP preserves the generated partial alpha, unlike binary-alpha GIF.
+    frames[0].save(dest/'flight.webp',save_all=True,append_images=frames[1:],duration=30 if species=='green-darner' else 65,loop=0,lossless=True,method=6)
     gifs=[]
     for frame in frames:
-        pal=frame.convert('RGB').quantize(colors=255); pal.putpalette(pal.getpalette()[:765]+[0,0,0]); pal.paste(255,mask=frame.getchannel('A').point(lambda a:255 if a<40 else 0)); pal.info['transparency']=255; gifs.append(pal)
+        pal=frame.convert('RGB').quantize(colors=255); pal.putpalette(pal.getpalette()[:765]+[0,0,0])
+        # Ordered alpha dithering approximates translucency in the legacy GIF.
+        # Runtime canvases, guide images and journal poses use full-alpha WebP.
+        bayer=((0,8,2,10),(12,4,14,6),(3,11,1,9),(15,7,13,5))
+        mask=Image.new('L',frame.size); mask.putdata([255 if a <= (bayer[y%4][x%4]+.5)*16 else 0 for y in range(frame.height) for x in range(frame.width) for a in [frame.getpixel((x,y))[3]]])
+        pal.paste(255,mask=mask); pal.info['transparency']=255; gifs.append(pal)
     gifs[0].save(dest/'flight.gif',save_all=True,append_images=gifs[1:],duration=30 if species=='green-darner' else 65,loop=0,disposal=2,transparency=255)
+if '--odonates-only' in sys.argv:
+    print('Packed two eight-pose odonates with full-alpha WebP stills, sheets and animations, plus dithered GIF fallbacks.'); sys.exit(0)
 # Native geometry for water drops/ripple rings; no painted input is redrawn.
 frames=[]; rng=random.Random(741); drops=[(rng.uniform(-1,1),rng.uniform(24,62),rng.uniform(1,2.4)) for _ in range(17)]
 for n in range(20):

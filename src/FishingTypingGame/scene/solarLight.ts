@@ -2,6 +2,7 @@ import { SkyEvents } from '../engine/astronomy';
 import { WorldConditions } from '../engine/types';
 import { celestialPosition } from '../engine/world';
 import contours from './skyline-contours';
+const birchRidges: Record<WorldConditions['season'], number[]> = require('./birch-ridges.json');
 
 const ridges = Object.fromEntries(Object.entries(contours).map(([season, points]) => [season,
   points.split(' ').map(point => point.split(',').map(Number)).filter(([x, y]) => x >= 0 && x <= 1 && y < .6),
@@ -12,9 +13,10 @@ const clamp = (x: number) => Math.max(0, Math.min(1, x));
 const smooth = (a: number, b: number, x: number) => { const t = clamp((x - a) / (b - a)); return t * t * (3 - 2 * t); };
 
 export function ridgeHeight(x: number, season: WorldConditions['season'], location: string) {
-  if (location === 'cove') {
-    const index = clamp(x) * (coveRidge.length - 1), left = Math.min(coveRidge.length - 2, Math.floor(index));
-    return coveRidge[left] + (coveRidge[left + 1] - coveRidge[left]) * (index - left);
+  if (location === 'cove' || location === 'birch') {
+    const ridge = location === 'birch' ? birchRidges[season] : coveRidge;
+    const index = clamp(x) * (ridge.length - 1), left = Math.min(ridge.length - 2, Math.floor(index));
+    return ridge[left] + (ridge[left + 1] - ridge[left]) * (index - left);
   }
   const points = ridges[season];
   const right = points.findIndex(point => point[0] >= clamp(x));

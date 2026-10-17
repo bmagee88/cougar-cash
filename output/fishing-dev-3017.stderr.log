@@ -246,3 +246,64 @@ TS2345: Argument of type '"geese"' is not assignable to parameter of type '"cast
     49 |     };
     50 |     timer = setTimeout(honk, 500 + Math.random() * 1200);
 
+ERROR in src/FishingTypingGame/scene/solarLight.ts:5:25
+TS2732: Cannot find module './birch-ridges.json'. Consider using '--resolveJsonModule' to import module with '.json' extension.
+    3 | import { celestialPosition } from '../engine/world';
+    4 | import contours from './skyline-contours';
+  > 5 | import birchRidges from './birch-ridges.json';
+      |                         ^^^^^^^^^^^^^^^^^^^^^
+    6 |
+    7 | const ridges = Object.fromEntries(Object.entries(contours).map(([season, points]) => [season,
+    8 |   points.split(' ').map(point => point.split(',').map(Number)).filter(([x, y]) => x >= 0 && x <= 1 && y < .6),
+
+ERROR in src/FishingTypingGame/scene/solarLight.ts:5:25
+TS2732: Cannot find module './birch-ridges.json'. Consider using '--resolveJsonModule' to import module with '.json' extension.
+    3 | import { celestialPosition } from '../engine/world';
+    4 | import contours from './skyline-contours';
+  > 5 | import birchRidges from './birch-ridges.json';
+      |                         ^^^^^^^^^^^^^^^^^^^^^
+    6 |
+    7 | const ridges = Object.fromEntries(Object.entries(contours).map(([season, points]) => [season,
+    8 |   points.split(' ').map(point => point.split(',').map(Number)).filter(([x, y]) => x >= 0 && x <= 1 && y < .6),
+
+ERROR in src/FishingTypingGame/scene/solarLight.ts:5:25
+TS2732: Cannot find module './birch-ridges.json'. Consider using '--resolveJsonModule' to import module with '.json' extension.
+    3 | import { celestialPosition } from '../engine/world';
+    4 | import contours from './skyline-contours';
+  > 5 | import birchRidges from './birch-ridges.json';
+      |                         ^^^^^^^^^^^^^^^^^^^^^
+    6 |
+    7 | const ridges = Object.fromEntries(Object.entries(contours).map(([season, points]) => [season,
+    8 |   points.split(' ').map(point => point.split(',').map(Number)).filter(([x, y]) => x >= 0 && x <= 1 && y < .6),
+
+ERROR in src/FishingTypingGame/scene/solarLight.ts:5:25
+TS2732: Cannot find module './birch-ridges.json'. Consider using '--resolveJsonModule' to import module with '.json' extension.
+    3 | import { celestialPosition } from '../engine/world';
+    4 | import contours from './skyline-contours';
+  > 5 | import birchRidges from './birch-ridges.json';
+      |                         ^^^^^^^^^^^^^^^^^^^^^
+    6 |
+    7 | const ridges = Object.fromEntries(Object.entries(contours).map(([season, points]) => [season,
+    8 |   points.split(' ').map(point => point.split(',').map(Number)).filter(([x, y]) => x >= 0 && x <= 1 && y < .6),
+
+ERROR in src/FishingTypingGame/scene/plantMap.ts:59:10
+TS2339: Property 'plants' does not exist on type 'FlightState'.
+    57 |   const suitable = plants.filter(plant => plant.uses.includes(use));
+    58 |   if (!suitable.length) return;
+  > 59 |   flight.plants = suitable;
+       |          ^^^^^^
+    60 |   const plant = suitable[Math.min(suitable.length - 1, Math.floor(random() * suitable.length))];
+    61 |   const odonate = use === 'dragonfly' || use === 'damselfly';
+    62 |   planPerch(flight, plant.x, plant.y, random, { plantId: plant.id, z: plant.z, repeats: odonate ? 2 : 0,
+
+ERROR in src/FishingTypingGame/scene/plantMap.ts:62:47
+TS2554: Expected 4 arguments, but got 5.
+    60 |   const plant = suitable[Math.min(suitable.length - 1, Math.floor(random() * suitable.length))];
+    61 |   const odonate = use === 'dragonfly' || use === 'damselfly';
+  > 62 |   planPerch(flight, plant.x, plant.y, random, { plantId: plant.id, z: plant.z, repeats: odonate ? 2 : 0,
+       |                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 63 |     restFrame: use === 'dragonfly' ? 0 : use === 'damselfly' ? 3 : undefined });
+       | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    64 | }
+    65 |
+

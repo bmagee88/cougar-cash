@@ -1,0 +1,45 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/birch-point-jest --testPathPattern=birchPoint.test
+
+  console.log
+    Remaining scene timers [
+      'function() {\n' +
+        "          reject(new exports.DOMException('Aborted', 'AbortError'));\n" +
+        '        }'
+    ]
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/birchPoint.test.tsx:54:11)
+
+FAIL src/FishingTypingGame/__tests__/birchPoint.test.tsx (9.171 s)
+  √ Birch Point travel deducts its price once, survives reload and preserves gear and journal (14 ms)
+  × all four seasons keep seven aligned art layers, foreground trees, seated angler and shared effects (590 ms)
+  √ the travel thumbnail can omit the angler and keeps the complete seasonal shoreline (56 ms)
+  √ ten distant bird trees and two close birches have separate frames and the sun follows the traced skyline (9 ms)
+
+  ● all four seasons keep seven aligned art layers, foreground trees, seated angler and shared effects
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 0
+    Received: 1
+
+      53 |   act(() => jest.runAllTicks()); // Drain React's queued microtasks before counting scene timers.
+      54 |   console.log('Remaining scene timers', Object.values((window.setTimeout as any).clock?.timers ?? {}).map((timer: any) => timer.func.toString()));
+    > 55 |   expect(jest.getTimerCount()).toBe(0);
+         |                                ^
+      56 | });
+      57 |
+      58 | test('the travel thumbnail can omit the angler and keeps the complete seasonal shoreline', () => {
+
+      at Object.<anonymous> (src/FishingTypingGame/__tests__/birchPoint.test.tsx:55:32)
+      at TestScheduler.scheduleTests (node_modules/@jest/core/build/TestScheduler.js:333:13)
+      at runJest (node_modules/@jest/core/build/runJest.js:404:19)
+      at _run10000 (node_modules/@jest/core/build/cli/index.js:320:7)
+      at runCLI (node_modules/@jest/core/build/cli/index.js:173:3)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 3 passed, 4 total
+Snapshots:   0 total
+Time:        15.192 s
+Ran all test suites matching /birchPoint.test/i.

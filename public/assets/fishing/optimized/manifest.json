@@ -1,6 +1,6 @@
 {
-  "sourceBytes": 124704214,
-  "runtimeBytes": 23273234,
+  "sourceBytes": 147619189,
+  "runtimeBytes": 27791420,
   "images": [
     {
       "file": "characters/angler-autumn-painted.png",
@@ -286,6 +286,331 @@
       "runtimeSize": [
         1024,
         512
+      ]
+    },
+    {
+      "file": "locations/birch-point/autumn/birches-painted.png",
+      "sourceBytes": 546630,
+      "runtimeBytes": 192898,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/autumn/far-trees-painted.png",
+      "sourceBytes": 625374,
+      "runtimeBytes": 165168,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/autumn/mountains-painted.png",
+      "sourceBytes": 850726,
+      "runtimeBytes": 198256,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/autumn/right-plants-painted.png",
+      "sourceBytes": 260406,
+      "runtimeBytes": 70642,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/autumn/shore-seat-painted.png",
+      "sourceBytes": 765625,
+      "runtimeBytes": 166628,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/autumn/treeline-water-painted.png",
+      "sourceBytes": 1926376,
+      "runtimeBytes": 363274,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/shared/sky-painted.png",
+      "sourceBytes": 1239774,
+      "runtimeBytes": 17108,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/spring/birches-painted.png",
+      "sourceBytes": 576073,
+      "runtimeBytes": 181146,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/spring/far-trees-painted.png",
+      "sourceBytes": 656283,
+      "runtimeBytes": 152440,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/spring/mountains-painted.png",
+      "sourceBytes": 897224,
+      "runtimeBytes": 182820,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/spring/right-plants-painted.png",
+      "sourceBytes": 423249,
+      "runtimeBytes": 112118,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/spring/shore-seat-painted.png",
+      "sourceBytes": 755537,
+      "runtimeBytes": 156398,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/spring/treeline-water-painted.png",
+      "sourceBytes": 1837937,
+      "runtimeBytes": 290984,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/summer/birches-painted.png",
+      "sourceBytes": 550504,
+      "runtimeBytes": 165190,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/summer/far-trees-painted.png",
+      "sourceBytes": 636893,
+      "runtimeBytes": 151222,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/summer/mountains-painted.png",
+      "sourceBytes": 854620,
+      "runtimeBytes": 162466,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/summer/right-plants-painted.png",
+      "sourceBytes": 268504,
+      "runtimeBytes": 66076,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/summer/shore-seat-painted.png",
+      "sourceBytes": 749953,
+      "runtimeBytes": 156188,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/summer/treeline-water-painted.png",
+      "sourceBytes": 1824527,
+      "runtimeBytes": 279922,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/winter/birches-painted.png",
+      "sourceBytes": 578302,
+      "runtimeBytes": 171160,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/winter/far-trees-painted.png",
+      "sourceBytes": 1785965,
+      "runtimeBytes": 273532,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/winter/mountains-painted.png",
+      "sourceBytes": 1084772,
+      "runtimeBytes": 223384,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/winter/right-plants-painted.png",
+      "sourceBytes": 387136,
+      "runtimeBytes": 100760,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/winter/shore-seat-painted.png",
+      "sourceBytes": 868456,
+      "runtimeBytes": 197554,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
+      ]
+    },
+    {
+      "file": "locations/birch-point/winter/treeline-water-painted.png",
+      "sourceBytes": 1964129,
+      "runtimeBytes": 320852,
+      "sourceSize": [
+        1774,
+        887
+      ],
+      "runtimeSize": [
+        1774,
+        887
       ]
     },
     {

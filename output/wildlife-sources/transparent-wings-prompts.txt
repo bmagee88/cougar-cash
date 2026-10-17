@@ -1,0 +1,7 @@
+Built-in imagegen edit prompts (2026-10-16)
+
+Common green darner:
+Edit the existing 4-column by 2-row sprite sheet. Change only the wing membranes to nearly colorless, genuine 12–22% alpha translucency. Retain delicate higher-alpha grey-brown veins and thin wing edges. Preserve opaque green thorax, blue abdomen, head, eyes, legs, body registration, all eight poses, source aspect ratio and dimensions, and empty transparent background. No white/grey opaque wings, checkerboards, labels, scenery, extra frames or shadows. The lake/notebook must show through the membranes. Keep the painted natural-history style.
+
+Ebony jewelwing:
+Edit the existing 4-column by 2-row sprite sheet. Change only the wing membranes to genuine 25–38% alpha smoky charcoal translucency. Retain higher-alpha dark veins and fine blue-green iridescent edges. Preserve opaque metallic green/teal body, head, eyes, legs, body registration, all eight poses, broad wing shapes, source aspect ratio and dimensions, and empty transparent background. No opaque wing panels, checkerboards, labels, scenery, extra frames or shadows. The lake/notebook must show through the membranes. Keep the existing painted illustration style.

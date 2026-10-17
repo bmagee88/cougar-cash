@@ -13,6 +13,7 @@ export const BALANCE = {
 export const LOCATIONS = [
   { id: 'dock', name: 'Cedar Lake', spot: 'The old dock', cost: 0, description: 'A familiar place to find a little quiet.' },
   { id: 'cove', name: 'Cedar Lake', spot: 'Willow cove', cost: 25, description: 'Golden willows, sheltered water, and room to breathe.' },
+  { id: 'birch', name: 'Cedar Lake', spot: 'Birch Point', cost: 50, description: 'White birches, a granite ledge, and a wide mountain view.' },
 ];
 const asset = (id: string, albino = false) => artwork(`fish/${id}${albino ? '-albino' : ''}-painted.png`);
 // Rarity is a game encounter classification, never conservation status.

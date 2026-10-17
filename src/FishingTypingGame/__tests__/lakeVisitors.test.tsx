@@ -1,6 +1,6 @@
 import React, { createRef } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { discoverVisitor, gooseDirection, nextSantaCheck, ODONATES, santaVisit, santaVisitStart, SANTA_SPRITE, SANTA_VISIT_MS, splashScale } from '../engine/visitors';
+import { discoverVisitor, gooseDirection, nextSantaCheck, ODONATES, ODONATE_SPRITE, santaVisit, santaVisitStart, SANTA_SPRITE, SANTA_VISIT_MS, splashScale } from '../engine/visitors';
 import { deserializeSave, emptySave } from '../engine/storage';
 import { worldAt } from '../engine/world';
 import { blankEntry, saveNotebookEntry } from '../engine/notebook';
@@ -83,8 +83,13 @@ test('new insect visitors use painted-pixel catching and clean up arrival timers
   await act(async()=>view.rerender(<div ref={sceneRef}><ButterflyVisitors {...props} preview={1}/></div>));
   act(()=>jest.advanceTimersByTime(1000));
   const visitor=view.getByRole('button',{name:'Observe dragonfly'});
+  expect(visitor.querySelector('canvas')).toHaveAttribute('width',String(ODONATE_SPRITE.canvasSize));
+  expect(visitor.querySelector('canvas')).toHaveAttribute('height',String(ODONATE_SPRITE.canvasSize));
+  expect(ODONATE_SPRITE.canvasSize**2).toBeLessThanOrEqual(320**2/4);
+  expect(context.drawImage).toHaveBeenCalledWith(expect.anything(),expect.any(Number),0,96,112,-48,-56,96,112);
   fireEvent.click(visitor,{detail:1,clientX:400,clientY:300});expect(observe).not.toHaveBeenCalled();
-  alpha.mockReturnValue({data:[0,0,0,255]});fireEvent.click(visitor,{detail:1,clientX:400,clientY:300});
+  // A visibly translucent wing pixel is still catchable; empty padding is not.
+  alpha.mockReturnValue({data:[0,0,0,38]});fireEvent.click(visitor,{detail:1,clientX:400,clientY:300});
   expect(observe).toHaveBeenCalledWith(expect.anything(),'ebony-jewelwing',expect.any(Number),expect.objectContaining({frame:expect.any(Number)}));
   hidden.mockReturnValue(true);fireEvent(document,new Event('visibilitychange'));expect(jest.getTimerCount()).toBe(0);
   view.unmount();expect(jest.getTimerCount()).toBe(0);

@@ -1,0 +1,102 @@
+0441db17a6102cd18019e32bb94d36b7
+"use strict";
+
+var _interopRequireWildcard = require("C:/Users/Kathleen Dippyolito/Documents/Clemente Projects/cougar-cash/node_modules/@babel/runtime/helpers/interopRequireWildcard.js").default;
+var _interopRequireDefault = require("C:/Users/Kathleen Dippyolito/Documents/Clemente Projects/cougar-cash/node_modules/@babel/runtime/helpers/interopRequireDefault.js").default;
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _react = _interopRequireWildcard(require("react"));
+var _haiku = require("../engine/haiku");
+var _ChallengeTimer = _interopRequireDefault(require("./ChallengeTimer"));
+var _PromptInput = _interopRequireDefault(require("./PromptInput"));
+var _jsxDevRuntime = require("react/jsx-dev-runtime");
+var _jsxFileName = "C:\\Users\\Kathleen Dippyolito\\Documents\\Clemente Projects\\cougar-cash\\src\\FishingTypingGame\\components\\TypingChallenge.tsx";
+var _default = exports.default = /*#__PURE__*/(0, _react.memo)(function TypingChallenge({
+  typing,
+  onKey,
+  onReady
+}) {
+  const input = (0, _react.useRef)(null);
+  (0, _react.useLayoutEffect)(() => {
+    var _window$matchMedia, _window, _input$current;
+    // A phone may focus programmatically without opening its keyboard. Wait
+    // for a real tap before arming the battle's deadline on touch devices.
+    if (!((_window$matchMedia = (_window = window).matchMedia) !== null && _window$matchMedia !== void 0 && _window$matchMedia.call(_window, '(pointer: coarse)').matches)) (_input$current = input.current) === null || _input$current === void 0 ? void 0 : _input$current.focus({
+      preventScroll: true
+    });
+  }, []);
+  const mistake = typing.typed !== typing.phrase.slice(0, typing.typed.length);
+  const poem = _haiku.HAIKU_BY_TEXT.get(typing.phrase);
+  return /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("section", {
+    className: "f-challenge",
+    "aria-labelledby": "f-challenge-title",
+    onClick: () => {
+      var _input$current2;
+      return (_input$current2 = input.current) === null || _input$current2 === void 0 ? void 0 : _input$current2.focus();
+    },
+    children: [/*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)(_ChallengeTimer.default, {
+      deadline: typing.deadline
+    }, void 0, false, {
+      fileName: _jsxFileName,
+      lineNumber: 17,
+      columnNumber: 5
+    }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("div", {
+      className: "f-phrase",
+      "aria-hidden": "true",
+      children: Array.from(typing.phrase).map((char, i) => {
+        const typed = i < typing.typed.length;
+        const wrong = typed && typing.typed[i] !== char;
+        return /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("span", {
+          className: `${typed ? wrong ? 'f-char-wrong' : 'f-char-correct' : ''} ${i === typing.typed.length ? 'f-caret' : ''}`,
+          children: char
+        }, i, false, {
+          fileName: _jsxFileName,
+          lineNumber: 21,
+          columnNumber: 14
+        }, this);
+      })
+    }, void 0, false, {
+      fileName: _jsxFileName,
+      lineNumber: 18,
+      columnNumber: 5
+    }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)(_PromptInput.default, {
+      ref: input,
+      label: `Type this phrase: ${typing.phrase}`,
+      value: typing.typed,
+      onKey: onKey,
+      onFocus: onReady
+    }, void 0, false, {
+      fileName: _jsxFileName,
+      lineNumber: 23,
+      columnNumber: 5
+    }, this), poem && /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("div", {
+      className: "f-haiku-credit",
+      children: ["Haiku \xB7 ", poem.author, " ", /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("span", {
+        children: ["translated by ", _haiku.HAIKU_SOURCE.translator]
+      }, void 0, true, {
+        fileName: _jsxFileName,
+        lineNumber: 24,
+        columnNumber: 68
+      }, this)]
+    }, void 0, true, {
+      fileName: _jsxFileName,
+      lineNumber: 24,
+      columnNumber: 14
+    }, this), /*#__PURE__*/(0, _jsxDevRuntime.jsxDEV)("div", {
+      className: "f-challenge-help",
+      role: "status",
+      children: mistake ? 'Wrong key — press Backspace to correct it' : 'Type every character · spaces count · no Enter needed'
+    }, void 0, false, {
+      fileName: _jsxFileName,
+      lineNumber: 25,
+      columnNumber: 5
+    }, this)]
+  }, void 0, true, {
+    fileName: _jsxFileName,
+    lineNumber: 16,
+    columnNumber: 10
+  }, this);
+});
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJuYW1lcyI6WyJfcmVhY3QiLCJfaW50ZXJvcFJlcXVpcmVXaWxkY2FyZCIsInJlcXVpcmUiLCJfaGFpa3UiLCJfQ2hhbGxlbmdlVGltZXIiLCJfaW50ZXJvcFJlcXVpcmVEZWZhdWx0IiwiX1Byb21wdElucHV0IiwiX2pzeERldlJ1bnRpbWUiLCJfanN4RmlsZU5hbWUiLCJfZGVmYXVsdCIsImV4cG9ydHMiLCJkZWZhdWx0IiwibWVtbyIsIlR5cGluZ0NoYWxsZW5nZSIsInR5cGluZyIsIm9uS2V5Iiwib25SZWFkeSIsImlucHV0IiwidXNlUmVmIiwidXNlTGF5b3V0RWZmZWN0IiwiX3dpbmRvdyRtYXRjaE1lZGlhIiwiX3dpbmRvdyIsIl9pbnB1dCRjdXJyZW50Iiwid2luZG93IiwibWF0Y2hNZWRpYSIsImNhbGwiLCJtYXRjaGVzIiwiY3VycmVudCIsImZvY3VzIiwicHJldmVudFNjcm9sbCIsIm1pc3Rha2UiLCJ0eXBlZCIsInBocmFzZSIsInNsaWNlIiwibGVuZ3RoIiwicG9lbSIsIkhBSUtVX0JZX1RFWFQiLCJnZXQiLCJqc3hERVYiLCJjbGFzc05hbWUiLCJvbkNsaWNrIiwiX2lucHV0JGN1cnJlbnQyIiwiY2hpbGRyZW4iLCJkZWFkbGluZSIsImZpbGVOYW1lIiwibGluZU51bWJlciIsImNvbHVtbk51bWJlciIsIkFycmF5IiwiZnJvbSIsIm1hcCIsImNoYXIiLCJpIiwid3JvbmciLCJyZWYiLCJsYWJlbCIsInZhbHVlIiwib25Gb2N1cyIsImF1dGhvciIsIkhBSUtVX1NPVVJDRSIsInRyYW5zbGF0b3IiLCJyb2xlIl0sInNvdXJjZXMiOlsiVHlwaW5nQ2hhbGxlbmdlLnRzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgUmVhY3QsIHsgbWVtbywgdXNlTGF5b3V0RWZmZWN0LCB1c2VSZWYgfSBmcm9tICdyZWFjdCc7XG5pbXBvcnQgeyBUeXBpbmdTdGF0ZSB9IGZyb20gJy4uL2VuZ2luZS90eXBlcyc7XG5pbXBvcnQgeyBIQUlLVV9CWV9URVhULCBIQUlLVV9TT1VSQ0UgfSBmcm9tICcuLi9lbmdpbmUvaGFpa3UnO1xuaW1wb3J0IENoYWxsZW5nZVRpbWVyIGZyb20gJy4vQ2hhbGxlbmdlVGltZXInO1xuaW1wb3J0IFByb21wdElucHV0IGZyb20gJy4vUHJvbXB0SW5wdXQnO1xuXG5leHBvcnQgZGVmYXVsdCBtZW1vKGZ1bmN0aW9uIFR5cGluZ0NoYWxsZW5nZSh7IHR5cGluZywgb25LZXksIG9uUmVhZHkgfTogeyB0eXBpbmc6IFR5cGluZ1N0YXRlOyBvbktleTogKGtleTogc3RyaW5nKSA9PiB2b2lkOyBvblJlYWR5OiAoKSA9PiB2b2lkIH0pIHtcbiAgY29uc3QgaW5wdXQgPSB1c2VSZWY8SFRNTElucHV0RWxlbWVudD4obnVsbCk7XG4gIHVzZUxheW91dEVmZmVjdCgoKSA9PiB7XG4gICAgLy8gQSBwaG9uZSBtYXkgZm9jdXMgcHJvZ3JhbW1hdGljYWxseSB3aXRob3V0IG9wZW5pbmcgaXRzIGtleWJvYXJkLiBXYWl0XG4gICAgLy8gZm9yIGEgcmVhbCB0YXAgYmVmb3JlIGFybWluZyB0aGUgYmF0dGxlJ3MgZGVhZGxpbmUgb24gdG91Y2ggZGV2aWNlcy5cbiAgICBpZighd2luZG93Lm1hdGNoTWVkaWE/LignKHBvaW50ZXI6IGNvYXJzZSknKS5tYXRjaGVzKWlucHV0LmN1cnJlbnQ/LmZvY3VzKHtwcmV2ZW50U2Nyb2xsOnRydWV9KTtcbiAgfSwgW10pO1xuICBjb25zdCBtaXN0YWtlID0gdHlwaW5nLnR5cGVkICE9PSB0eXBpbmcucGhyYXNlLnNsaWNlKDAsIHR5cGluZy50eXBlZC5sZW5ndGgpO1xuICBjb25zdCBwb2VtID0gSEFJS1VfQllfVEVYVC5nZXQodHlwaW5nLnBocmFzZSk7XG4gIHJldHVybiA8c2VjdGlvbiBjbGFzc05hbWU9XCJmLWNoYWxsZW5nZVwiIGFyaWEtbGFiZWxsZWRieT1cImYtY2hhbGxlbmdlLXRpdGxlXCIgb25DbGljaz17KCkgPT4gaW5wdXQuY3VycmVudD8uZm9jdXMoKX0+XG4gICAgPENoYWxsZW5nZVRpbWVyIGRlYWRsaW5lPXt0eXBpbmcuZGVhZGxpbmV9IC8+XG4gICAgPGRpdiBjbGFzc05hbWU9XCJmLXBocmFzZVwiIGFyaWEtaGlkZGVuPVwidHJ1ZVwiPntBcnJheS5mcm9tKHR5cGluZy5waHJhc2UpLm1hcCgoY2hhciwgaSkgPT4ge1xuICAgICAgY29uc3QgdHlwZWQgPSBpIDwgdHlwaW5nLnR5cGVkLmxlbmd0aDtcbiAgICAgIGNvbnN0IHdyb25nID0gdHlwZWQgJiYgdHlwaW5nLnR5cGVkW2ldICE9PSBjaGFyO1xuICAgICAgcmV0dXJuIDxzcGFuIGtleT17aX0gY2xhc3NOYW1lPXtgJHt0eXBlZCA/IHdyb25nID8gJ2YtY2hhci13cm9uZycgOiAnZi1jaGFyLWNvcnJlY3QnIDogJyd9ICR7aSA9PT0gdHlwaW5nLnR5cGVkLmxlbmd0aCA/ICdmLWNhcmV0JyA6ICcnfWB9PntjaGFyfTwvc3Bhbj47XG4gICAgfSl9PC9kaXY+XG4gICAgPFByb21wdElucHV0IHJlZj17aW5wdXR9IGxhYmVsPXtgVHlwZSB0aGlzIHBocmFzZTogJHt0eXBpbmcucGhyYXNlfWB9IHZhbHVlPXt0eXBpbmcudHlwZWR9IG9uS2V5PXtvbktleX0gb25Gb2N1cz17b25SZWFkeX0vPlxuICAgIHtwb2VtICYmIDxkaXYgY2xhc3NOYW1lPVwiZi1oYWlrdS1jcmVkaXRcIj5IYWlrdSDCtyB7cG9lbS5hdXRob3J9IDxzcGFuPnRyYW5zbGF0ZWQgYnkge0hBSUtVX1NPVVJDRS50cmFuc2xhdG9yfTwvc3Bhbj48L2Rpdj59XG4gICAgPGRpdiBjbGFzc05hbWU9XCJmLWNoYWxsZW5nZS1oZWxwXCIgcm9sZT1cInN0YXR1c1wiPnttaXN0YWtlID8gJ1dyb25nIGtleSDigJQgcHJlc3MgQmFja3NwYWNlIHRvIGNvcnJlY3QgaXQnIDogJ1R5cGUgZXZlcnkgY2hhcmFjdGVyIMK3IHNwYWNlcyBjb3VudCDCtyBubyBFbnRlciBuZWVkZWQnfTwvZGl2PlxuICA8L3NlY3Rpb24+O1xufSk7XG4iXSwibWFwcGluZ3MiOiI7Ozs7Ozs7O0FBQUEsSUFBQUEs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

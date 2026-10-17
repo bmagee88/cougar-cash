@@ -74,7 +74,7 @@ export function LakeWildlife({sceneRef,season,weather,reducedMotion,preview={},i
     const storm=['hurricane','blizzard','thunderstorm'].includes(weather);
     const spawn=()=>{
       const now=Date.now();
-        const bounds=scene.getBoundingClientRect(),background=scene.querySelector<HTMLElement>('[data-layer="lake-background"], [data-layer="cove-landscape"]')?.getBoundingClientRect();
+        const bounds=scene.getBoundingClientRect(),background=scene.querySelector<HTMLElement>('[data-layer="lake-background"], [data-layer="cove-landscape"], [data-layer="birch-treeline-water"]')?.getBoundingClientRect();
         if(!bounds.height||!background)return;
         const waterline=scene.classList.contains('f-spot-cove')?.555:.5;
         const horizon=Math.max(.1,Math.min(.85,(background.top-bounds.top+background.height*waterline)/bounds.height));

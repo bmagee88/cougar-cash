@@ -1,0 +1,14 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/odonate-size-jest --testPathPattern=(lakeVisitors|butterflyPose|butterflyFlight|mobile-and-butterflies)\.test
+
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (23.831 s)
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+PASS src/FishingTypingGame/__tests__/mobile-and-butterflies.test.tsx
+PASS src/FishingTypingGame/__tests__/butterflyPose.test.tsx
+
+Test Suites: 4 passed, 4 total
+Tests:       25 passed, 25 total
+Snapshots:   0 total
+Time:        36.333 s
+Ran all test suites matching /(lakeVisitors|butterflyPose|butterflyFlight|mobile-and-butterflies)\.test/i.

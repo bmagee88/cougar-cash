@@ -1,0 +1,12 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --cacheDirectory=output/transparent-wings-jest --testPathPattern=(lakeVisitors|butterflyFlight)
+
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (9.816 s)
+PASS src/FishingTypingGame/__tests__/butterflyFlight.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       19 passed, 19 total
+Snapshots:   0 total
+Time:        13.628 s
+Ran all test suites matching /(lakeVisitors|butterflyFlight)/i.
