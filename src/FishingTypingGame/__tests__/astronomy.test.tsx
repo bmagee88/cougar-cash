@@ -90,11 +90,12 @@ test('star data loads only at night, releases on daylight, and aborts its reques
   } finally { global.fetch = originalFetch; }
 });
 
-test('sampled environment rendering advances all sky events without advancing fish cues', () => {
-  const animations = ['f-star-scintillation', 'f-aurora-drift', 'f-aurora-breathe', 'f-meteor-pass', 'f-bite-bob'].map(animationName => ({ animationName, currentTime: 500, playbackRate: 1, playState: 'paused' }));
+test('sampled rendering advances persistent sky motion while meteors and fish cues keep their natural timelines', () => {
+  const target=document.createElement('div');target.className='f-celestial-sky';
+  const animations = ['f-star-scintillation', 'f-aurora-drift', 'f-aurora-breathe', 'f-meteor-pass', 'f-bite-bob'].map(animationName => ({ animationName, currentTime: 500, playbackRate: 1, playState: 'paused',effect:{target} }));
   const scene = document.createElement('div'); Object.defineProperty(scene, 'getAnimations', { value: () => animations });
   stepAmbientAnimations(scene, 5000);
-  animations.slice(0, 4).forEach(animation => expect(animation.currentTime).toBe(5500)); expect(animations[4].currentTime).toBe(500);
+  animations.slice(0, 3).forEach(animation => expect(animation.currentTime).toBe(5500)); animations.slice(3).forEach(animation=>expect(animation.currentTime).toBe(500));
 });
 
 test('a pending star request handles cancellation without retrying', async () => {

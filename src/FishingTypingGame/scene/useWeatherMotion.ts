@@ -22,7 +22,13 @@ export function useWeatherMotion(scene: RefObject<HTMLDivElement>, wind: number,
     const root = scene.current; if (!root) return;
     applyWind(root, strength.current, reducedMotion);
     // Incoming gust layers adopt the current speed, including wind-to-wind changes.
-    const observer = new MutationObserver(() => applyWind(root, strength.current, reducedMotion));
+    const selector = '.f-sway, .f-willow, .f-wind-wisps';
+    const observer = new MutationObserver(records => {
+      // Typing and visitor updates also mutate the scene. Only new foliage or
+      // gust layers need their playback rates initialized.
+      if (records.some(record => Array.from(record.addedNodes).some(node => node instanceof Element &&
+        (node.matches(selector) || !!node.querySelector(selector))))) applyWind(root, strength.current, reducedMotion);
+    });
     observer.observe(root, { childList: true, subtree: true });
     return () => observer.disconnect();
   }, [scene, reducedMotion]);

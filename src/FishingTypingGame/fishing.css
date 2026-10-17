@@ -366,10 +366,11 @@ button.f-fish-card:hover { background: #2a5143; }
 @keyframes f-sprite { to { background-position: 100% 0; } }
 .f-reduced-motion *, .f-reduced-motion *::before, .f-reduced-motion *::after { animation: none !important; transition: none !important; }
 .f-scene-paused *, .f-scene-paused *::before, .f-scene-paused *::after { animation-play-state: paused !important; }
-/* Timed rendering samples ambient motion; fish, bobber and catch cues stay live. */
-.f-scene-stepped :is(.f-reflections,.f-drift,.f-sway,.f-shimmer,.f-birds,.f-character-idle,.f-willow,.f-lantern-halo,.f-stars i,.f-catalog-star,.f-aurora-curtain,.f-aurora-distant,.f-meteor,.f-cloud-cycle,.f-cloud-deck,.f-fog-bank,.f-fog-wisp,.f-lake-fog-surface,.f-rain-mist,.f-raindrop,.f-rain-ring,.f-snowflake,.f-wind-wisps g,.f-ground-leaf-particle),
+/* Only backgrounds and persistent weather motion use the sampled timeline.
+   Foreground sway, the angler, wildlife, meteors and temporary effects stay live. */
+.f-scene-stepped :is([data-scene-depth="background"],.f-rain-mist),
+.f-scene-stepped :is(.f-celestial-sky,.f-cloud-system,.f-weather,.f-lake-fog) :is(.f-stars i,.f-catalog-star,.f-aurora-curtain,.f-aurora-distant,.f-cloud-cycle,.f-cloud-deck,.f-fog-bank,.f-fog-wisp,.f-lake-fog-surface,.f-raindrop,.f-rain-ring,.f-snowflake,.f-wind-wisps g),
 .f-scene-stepped .f-heat-haze::after { animation-play-state: paused !important; }
-.f-scene-stepped :is(.f-scene-base,.f-scene-layer,.f-angler-body,.f-rod,.f-landed-fish,.f-water-action,.f-time-tint,.f-moonlight,.f-lantern-station,.f-lantern-relit,.f-celestial-sky,.f-moving-sun,.f-solar-glare,.f-sailors-afterglow,.f-ridge-backlight,.f-moon,.f-stars,.f-catalog-star,.f-cloud-art,.f-cloud-deck,.f-thunderheads,.f-weather,.f-lake-fog,.f-rainfall,.f-rain-mist,.f-heat-haze,.f-butterfly-visit) { transition: none !important; }
 .f-effect-dormant, .f-effect-dormant *, .f-effect-dormant::after { animation-play-state: paused !important; }
 .f-reduced-motion .f-splash, .f-reduced-motion .f-raindrop, .f-reduced-motion .f-wind-wisps, .f-reduced-motion .f-ground-leaf { display: none; }
 .f-reduced-motion .f-bobber-ripple { opacity: .35; }
@@ -392,7 +393,7 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-angler-shadow-boot { left:60%; top:89%; width:39%; height:7%; background:radial-gradient(ellipse,#111b24bf 0%,#1c29336b 32%,transparent 73%); opacity:var(--angler-shadow-contact,.64); transition:opacity 8s ease; }
 .f-angler-shadow-boot-far { left:73%; top:81.5%; width:29%; height:6%; opacity:calc(var(--angler-shadow-contact,.64) * .72); }
 .f-angler-shadow-cast { inset:0; background:#24323c; mask-image:var(--shadow-outfit); mask-size:100% 100%; mask-repeat:no-repeat; clip-path:inset(0 0 40% 0); transform-origin:var(--seat-x,32%) var(--seat-y,58%); transform:matrix(1,0,var(--angler-shadow-shear,.18),var(--angler-shadow-flatten,-.18),0,0); filter:blur(var(--angler-shadow-blur,2px)); opacity:var(--angler-shadow-cast,.18); transition:transform 8s linear,opacity 8s ease,filter 8s ease; }
-.f-scene-stepped .f-angler-shadow i,.f-reduced-motion .f-angler-shadow i { transition:none; }
+.f-reduced-motion .f-angler-shadow i { transition:none; }
 .f-spot-cove { container-type: size; }
 .f-cove-ground-plane { position: absolute; bottom: 0; width: var(--cove-ground-width,max(100%, var(--cove-min-width), var(--cove-cover-width))); left: var(--cove-ground-left,calc(var(--cove-seat-screen-x) - max(100%, var(--cove-min-width), var(--cove-cover-width)) * var(--cove-seat-x))); z-index: 7; pointer-events: none; transform: translate3d(calc(var(--scene-x, 0px) * var(--ground-parallax)), 0, 0); }
 .f-spot-cove > [data-layer="sky"], .f-spot-cove > [data-layer="cove-clouds"], .f-spot-cove > [data-layer="cove-landscape"] { object-fit: cover; }
@@ -777,7 +778,7 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-tree-bird { position:absolute; left:0; top:0; display:block; width:clamp(6px,.6cqw,9px); height:clamp(6px,.6cqw,9px); animation:f-tree-bird-flight var(--bird-duration) linear both; animation-delay:var(--bird-delay); }
 .f-tree-bird-wing { display:block; width:100%; height:100%; background:#0b1416; mask-image:var(--tree-bird-sheet); mask-size:800% 100%; mask-repeat:no-repeat; image-rendering:pixelated; transform:scaleX(var(--bird-face)); animation:f-tree-bird-flap var(--bird-bound-period) step-end infinite; animation-delay:var(--bird-wing-phase); }
 @keyframes f-tree-bird-flap { 0%,100% { mask-position:0 0; } 5%,45% { mask-position:14.285714% 0; } 12%,52% { mask-position:28.571429% 0; } 18%,58% { mask-position:42.857143% 0; } 25% { mask-position:57.142857% 0; } 32% { mask-position:71.428571% 0; } 38% { mask-position:85.714286% 0; } 65%,99% { mask-position:100% 0; } }
-.f-scene-stepped :is(.f-tree-bird,.f-tree-bird-wing),.f-scene-paused :is(.f-tree-bird,.f-tree-bird-wing) { animation-play-state:paused !important; }
+.f-scene-paused :is(.f-tree-bird,.f-tree-bird-wing) { animation-play-state:paused !important; }
 .f-reduced-motion .f-tree-birds { display:none; }
 .f-tree-map { position:absolute; inset:0; z-index:19; pointer-events:none; }
 .f-tree-map > div { position:absolute; transform:translate3d(calc(var(--scene-x,0px) * .02),0,0); }
@@ -899,7 +900,6 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-lake-splashes { display:contents; pointer-events:none; }
 .f-lake-splash { position:absolute; z-index:3; aspect-ratio:8/5; transform:translate(-50%,-72%); background-size:2000% 100%; background-repeat:no-repeat; animation:f-lake-splash 1.6s steps(19) both; opacity:calc(.8 - var(--night-amount,0) * .4); }
 @keyframes f-lake-splash { from { background-position:0% 0; } to { background-position:100% 0; } }
-.f-scene-stepped :is(.f-geese-pass,.f-goose-flight,.f-goose-sampled,.f-lantern-orbit,.f-lantern-orbit i,.f-lake-splash) { animation-play-state:paused !important; }
 .f-scene-paused :is(.f-geese-pass,.f-goose-flight,.f-goose-sampled,.f-lantern-orbit,.f-lantern-orbit i,.f-lake-splash) { animation-play-state:paused !important; }
 .f-reduced-motion :is(.f-geese-pass,.f-lantern-insects,.f-lake-splash) { display:none; }
 .f-plant-map { position:absolute; inset:0; width:100%; height:100%; z-index:19; pointer-events:none; }
@@ -908,3 +908,13 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-seasonal-foliage { display:contents; pointer-events:none; }
 .f-flower-cluster { position:absolute; z-index:7; pointer-events:none; max-width:none; object-fit:fill; transform:translate3d(calc(var(--scene-x,0px) * var(--flower-parallax-x,0)),calc(var(--scene-y,0px) * var(--flower-parallax-y,0)),0); filter:var(--foreground-filter); transition:filter 8s ease; }
 .f-notebook-butterfly img[data-wing-view="side"] { image-rendering:pixelated; }
+
+/* Native transitions settle in one second (half a second at the 1s setting),
+   leaving nine quiet background seconds at the 10s setting. Lighting uses the
+   same short blend without changing foreground animation or gameplay timing. */
+.f-scene-stepped { --environment-transition: 1s; }
+.f-scene-stepped[data-environment-render-ms="1000"] { --environment-transition: .5s; }
+.f-scene.f-scene-stepped :is([data-scene-depth="background"],.f-celestial-sky) { --scene-x:var(--environment-x,0px); --scene-y:0px; }
+.f-scene.f-scene-stepped [data-scene-depth="background"].f-scene-layer { transition-property:filter,transform,opacity; }
+.f-scene.f-scene-stepped :is(.f-scene-base,.f-scene-layer,.f-angler-body,.f-rod,.f-landed-fish,.f-water-action,.f-time-tint,.f-moonlight,.f-lantern-station,.f-lantern-relit,.f-celestial-sky,.f-moving-sun,.f-solar-glare,.f-sailors-afterglow,.f-ridge-backlight,.f-moon,.f-moon-shade,.f-stars,.f-catalog-star,.f-cloud-system,.f-clear-clouds,.f-cloud-art,.f-cloud-deck,.f-thunderheads,.f-weather,.f-wind-system,.f-lake-fog,.f-rainfall,.f-rain-mist,.f-heat-haze,.f-overcast-light,.f-butterfly-visit,.f-flower-cluster,.f-angler-shadow i),
+.f-scene.f-scene-stepped::before { transition-duration:var(--environment-transition); transition-delay:0s; }

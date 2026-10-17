@@ -4,6 +4,7 @@ import { artwork as imagePath } from '../engine/artwork';
 import { useLayerPresence } from './useLayerPresence';
 import { SolarLight } from './solarLight';
 import { CloudLightFilter } from './SolarLighting';
+import { environmentTransitionMs } from '../engine/environment';
 
 export const CLOUD_ART = Object.fromEntries(['cirrus', 'cumulus', 'stratus', 'cumulonimbus', 'overcast', 'rain'].map(kind => [kind, imagePath(`weather/clouds/${kind}-painted.png`)])) as Record<'cirrus' | 'cumulus' | 'stratus' | 'cumulonimbus' | 'overcast' | 'rain', string>;
 const CLOUDS = [
@@ -23,7 +24,7 @@ export default memo(function CloudSystem({ visuals, reducedMotion = false, light
   const lastPreview = useRef(0);
   const elapsed = useRef(visuals.elapsedMs); elapsed.current = visuals.elapsedMs;
   const { lightning, nextLightningMs } = visuals;
-  const fade = reducedMotion || intervalMs ? 0 : 16000;
+  const fade = reducedMotion ? 0 : intervalMs ? environmentTransitionMs(intervalMs) : 16000;
   const clear = useLayerPresence(visuals.clear > 0, fade), tower = useLayerPresence(visuals.tower > 0, fade);
   const grey = useLayerPresence(visuals.greyDeck > 0, fade), dark = useLayerPresence(visuals.darkDeck > 0, fade);
   useEffect(() => {

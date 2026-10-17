@@ -42,10 +42,12 @@ test('fog texture mounts on demand, fades out in natural mode, and releases outg
   view.unmount(); expect(jest.getTimerCount()).toBe(0);
 });
 
-test('timed rendering and reduced motion release outgoing fog immediately without a new timer loop', () => {
+test('timed fog fades for one second and reduced motion releases fog immediately', () => {
   const view = render(<LakeFog active world={world} location="dock" intervalMs={5000} />);
   expect(view.container.querySelector('[data-fog-depth]')).not.toBeNull(); expect(jest.getTimerCount()).toBe(0);
   view.rerender(<LakeFog active={false} world={world} location="dock" intervalMs={5000} />);
+  act(()=>jest.advanceTimersByTime(999));expect(view.container.querySelector('[data-fog-depth]')).not.toBeNull();
+  act(()=>jest.advanceTimersByTime(1));
   expect(view.container.querySelector('[data-fog-depth]')).toBeNull();
   view.rerender(<LakeFog active world={world} location="dock" reducedMotion />);
   view.rerender(<LakeFog active={false} world={world} location="dock" reducedMotion />);
@@ -70,7 +72,8 @@ test('mist shares each painted background crop so the waterline does not drift w
 });
 
 test('the existing environment timer advances paused fog without seeking game animations', () => {
-  const mist = { animationName: 'f-lake-fog-drift', currentTime: 500, playbackRate: 1, playState: 'paused' };
+  const target=document.createElement('div');target.className='f-lake-fog';
+  const mist = { animationName: 'f-lake-fog-drift', currentTime: 500, playbackRate: 1, playState: 'paused',effect:{target} };
   const bite = { animationName: 'f-bite-bob', currentTime: 500, playbackRate: 1, playState: 'running' };
   const scene = document.createElement('div'); Object.defineProperty(scene, 'getAnimations', { value: () => [mist, bite] });
   stepAmbientAnimations(scene, 10000);
@@ -138,6 +141,7 @@ test('thinner banks are more transparent and shallow, while fog weather retains 
   expect(parseFloat(fog.style.getPropertyValue('--fog-far-height'))).toBeLessThan(thickHeight);
   expect(Number(fog.style.getPropertyValue('--fog-distance'))).toBeLessThan(thickHaze);
   view.rerender(<LakeFog active density={0} world={world} location="cove" intervalMs={10000} />);
+  act(()=>jest.advanceTimersByTime(1000));
   expect(fog.querySelector('[data-fog-depth]')).toBeNull(); view.unmount(); expect(jest.getTimerCount()).toBe(0);
   const weatherDensities = Array.from({ length: 50 }, (_, gameDay) => weatherFogDensity({ ...world, gameDay }));
   expect(Math.max(...weatherDensities) - Math.min(...weatherDensities)).toBeGreaterThan(.2);
