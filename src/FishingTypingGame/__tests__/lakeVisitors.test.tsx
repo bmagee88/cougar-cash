@@ -63,11 +63,11 @@ test('odonates hover, patrol, reverse without turning their bodies, and flutter 
   const reverse={...base};const rolls=[.9,.5,.9,.1,.5,.5,.5];stepOdonate(reverse,'dragonfly',.05,800,600,()=>rolls.shift()??.5);
   expect(reverse.vx).toBeLessThan(0);expect(reverse.facing).toBe(1);
   const flutter={...base};stepOdonate(flutter,'damselfly',.05,800,600,()=>.9);expect(Math.abs(flutter.vx)).toBeLessThan(Math.abs(dart.vx));
-  const near={...base,turnIn:10,z:.3,vx:160,vy:30,vz:0},far={...near,z:3,behindForeground:true};
+  const near={...base,turnIn:10,z:.03,vx:160,vy:30,vz:0},far={...near,z:.8,behindForeground:true};
   stepOdonate(near,'dragonfly',.05,800,600,()=>.5);stepOdonate(far,'dragonfly',.05,800,600,()=>.5);
   expect(far.x-.5).toBeLessThan(near.x-.5);
   far.y=.99;far.vz=-1;stepOdonate(far,'damselfly',.1,800,600,()=>.5,undefined,.55);
-  expect(far.y).toBeLessThanOrEqual(flightBottom(far.z,.55));far.z=FOREGROUND_DEPTH;stepOdonate(far,'damselfly',.1,800,600,()=>.5);expect(far.z).toBeGreaterThan(FOREGROUND_DEPTH);
+  expect(far.y).toBeLessThanOrEqual(flightBottom(far.z,.55));far.z=FOREGROUND_DEPTH;stepOdonate(far,'damselfly',.1,800,600,()=>.5);expect(far.z).toBeLessThan(FOREGROUND_DEPTH);expect(far.behindForeground).toBe(false);
   const fleeing={...base};stepOdonate(fleeing,'dragonfly',.05,800,600,()=>.5,{x:400,y:360,previousX:400,previousY:360,speed:0});expect(fleeing.fleeing).toBe(true);
 });
 

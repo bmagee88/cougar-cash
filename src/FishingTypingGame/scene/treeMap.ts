@@ -7,7 +7,7 @@ export interface DistantTree { id: string; label: string; bottom: TreePoint; top
 // part in bird routes, with coordinates in their separate sitting frame.
 type TreeRow = [string, number, number, number, number, number];
 const map = (location: string, rows: TreeRow[]): DistantTree[] => rows.map(([label, x, topY, bottomY, z, crownWidth], index) => ({
-  id: `${location}-tree-${index + 1}`, label, top: { x, y: topY, z }, bottom: { x, y: bottomY, z }, crownWidth, frame: 'landscape',
+  id: `${location}-tree-${index + 1}`, label, top: { x, y: topY, z:z/4.2 }, bottom: { x, y: bottomY, z:z/4.2 }, crownWidth, frame: 'landscape',
 }));
 
 export const LOCATION_TREES: Record<'dock' | 'cove' | 'birch', DistantTree[]> = {
@@ -50,11 +50,11 @@ export const LOCATION_TREES: Record<'dock' | 'cove' | 'birch', DistantTree[]> = 
 };
 
 export const FOREGROUND_TREES: DistantTree[] = [
-  { id: 'birch-foreground-left', label: 'Foreground slender white birch', bottom: { x: .015, y: .565, z: .18 }, top: { x: .047, y: 0, z: .18 }, crownWidth: .16, frame: 'foreground' },
-  { id: 'birch-foreground-right', label: 'Foreground leaning white birch', bottom: { x: .036, y: .655, z: .14 }, top: { x: .105, y: 0, z: .14 }, crownWidth: .23, frame: 'foreground' },
+  { id: 'birch-foreground-left', label: 'Foreground slender white birch', bottom: { x: .015, y: .565, z: .043 }, top: { x: .047, y: 0, z: .043 }, crownWidth: .16, frame: 'foreground' },
+  { id: 'birch-foreground-right', label: 'Foreground leaning white birch', bottom: { x: .036, y: .655, z: .033 }, top: { x: .105, y: 0, z: .033 }, crownWidth: .23, frame: 'foreground' },
 ];
 const COVE_FOREGROUND_TREES: DistantTree[] = [
-  { id: 'cove-foreground-willow', label: 'Foreground willow trunk', bottom: { x: .04, y: .56, z: .18 }, top: { x: .075, y: 0, z: .18 }, crownWidth: .18, frame: 'foreground' },
+  { id: 'cove-foreground-willow', label: 'Foreground willow trunk', bottom: { x: .04, y: .56, z: .043 }, top: { x: .075, y: 0, z: .043 }, crownWidth: .18, frame: 'foreground' },
 ];
 export const treesForLocation = (location: string) => LOCATION_TREES[location === 'birch' ? 'birch' : location === 'cove' ? 'cove' : 'dock'];
 export const foregroundTreesForLocation = (location: string) => location === 'birch' ? FOREGROUND_TREES : location === 'cove' ? COVE_FOREGROUND_TREES : [];

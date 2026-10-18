@@ -1,0 +1,11 @@
+{
+  "id": "water-lily",
+  "tool": "built-in image_gen",
+  "references": [
+    "C:/Users/Kathleen Dippyolito/Documents/Clemente Projects/cougar-cash/public/assets/fishing/plants/v1/water-lily/foliage-autumn.webp",
+    "C:/Users/Kathleen Dippyolito/Documents/Clemente Projects/cougar-cash/public/assets/fishing/locations/birch-point/winter/shore-seat-painted.png"
+  ],
+  "prompt": "Use case: stylized-concept. Asset type: one transparent winter foliage sprite for a painted lake game. Reference image 1 is the existing species foliage: preserve its mature size, recognizable silhouette, leaf anatomy and bottom-center contact. Reference image 2 is STYLE AND WINTER LIGHTING only; do not reproduce its scenery. Create one winter version of this same mature plant, isolated and complete. Rich high-contrast hand-painted naturalistic art, crisp leaf veins, deep dark shadows, cool restrained winter colors and white frost accents matching the snowy shore. Genuine transparent RGBA background, no backdrop, soil, rocks, pot, scene, rectangular snow base, text, labels or cast shadow. ONE centered foliage cutout with all leaf tips inside the frame and generous clear transparent padding; root contact at horizontal center near 92% height, except a pad has its contact at the center. No flowers, flowering stalks, buds or detached fragments. This is foliage only, separately layered under existing stage sprites. White water lily. ONE individual mature round pad, with a single deep radial V notch and center veins, matching reference 1. Winter surface is dark olive-brown, mottled and partly decayed with crisp thin frosted margins and a little slushy snow toward the upper edge. Keep one leaf, no stem, flower, bud, extra pads, water, reflection or ground. View straight down so the game can apply perspective.",
+  "source": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a149bf-9559-7c21-bd97-ac31ba63fa62\\exec-d0d1ddec-a116-44ba-a64f-1a91709a168c.png",
+  "runtime": "public/assets/fishing/plants/v1/water-lily/foliage-winter.webp"
+}

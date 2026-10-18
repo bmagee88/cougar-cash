@@ -4,6 +4,7 @@ import { SCENE_DRIFT, useSceneParallax } from '../scene/useSceneParallax';
 import FishingScene from '../scene/FishingScene';
 import { ANGLER_OUTFITS, COVE_AUTUMN_SCENE, FISHING_ART, sceneForLocation } from '../scene/manifest';
 import { WORLD, worldAt } from '../engine/world';
+import {plantGenerationStats} from '../engine/plantLifecycle';
 
 declare const test: any, expect: any, jest: any, beforeEach: any, afterEach: any;
 
@@ -28,6 +29,16 @@ beforeEach(() => {
   jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => { nextFrame = undefined; });
 });
 afterEach(() => { jest.restoreAllMocks(); });
+
+test('travel thumbnails skip plant generation and ordinary hour changes reuse the plant snapshot',()=>{
+  const before=plantGenerationStats(),world=worldAt(WORLD.epoch+WORLD.dayMs*40);
+  const view=render(<FishingScene game={{phase:'idle'}} location="cove" weather="sunny" world={world} reducedMotion plantsEnabled={false}/>);
+  expect(plantGenerationStats().locationsGenerated).toBe(before.locationsGenerated);expect(view.container.querySelector('[data-life-base]')).toBeNull();
+  view.rerender(<FishingScene game={{phase:'idle'}} location="cove" weather="sunny" world={world} reducedMotion/>);
+  const generated=plantGenerationStats();
+  view.rerender(<FishingScene game={{phase:'idle'}} location="cove" weather="sunny" world={{...world,hour:14}} reducedMotion/>);
+  expect(plantGenerationStats().daysReplayed).toBe(generated.daysReplayed);expect(plantGenerationStats().dailyPlantSteps).toBe(generated.dailyPlantSteps);view.unmount();
+});
 
 test('ambient drift reverses slowly, stays horizontal and ignores mouse position', () => {
   const { getByTestId } = render(<Scene />); const scene = getByTestId('scene');

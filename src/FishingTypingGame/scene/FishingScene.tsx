@@ -34,6 +34,11 @@ import { useWaterSounds } from './useWaterSounds';
 import AnglerShadow from './AnglerShadow';
 import { anglerShadowStyle } from './anglerShadowLight';
 import { environmentTransitionMs } from '../engine/environment';
+import DockShallows from './DockShallows';
+import ShoreShallows from './ShoreShallows';
+import ShorePlants from './ShorePlants';
+import {plantSnapshot} from '../engine/plantLifecycle';
+import ControlledDragonfly from './ControlledDragonfly';
 
 export const SceneLayer = memo(function SceneLayer({ layer, lanternLit = false }: { layer: SceneAsset; lanternLit?: boolean }) {
   const p = layer.position;
@@ -212,8 +217,8 @@ export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = we
     <div className={`f-heat-haze ${heatMoving ? '' : 'f-effect-dormant'}`} data-layer="heat-haze" aria-hidden="true" style={{ opacity: visuals.heat }} />
   </>;
 });
-export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly, intervalMs = 0, skyPreview, wildlifePreview, onObserveVisitor, santaYears, audio, showTreeMap = false }: {
-  game: GameState; location: string; weather: Weather; reducedMotion: boolean; intervalMs?:number; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly; skyPreview?: SkyPreview; wildlifePreview?:WildlifePreview; onObserveVisitor?:ObserveButterfly; santaYears?:readonly number[]; audio?:LakeSoundControls; showTreeMap?:boolean;
+export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly, intervalMs = 0, skyPreview, wildlifePreview, onObserveVisitor, santaYears, audio, showTreeMap = false,plantsEnabled=true,plantDayPreview }: {
+  game: GameState; location: string; weather: Weather; reducedMotion: boolean; intervalMs?:number; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly; skyPreview?: SkyPreview; wildlifePreview?:WildlifePreview; onObserveVisitor?:ObserveButterfly; santaYears?:readonly number[]; audio?:LakeSoundControls; showTreeMap?:boolean;plantsEnabled?:boolean;plantDayPreview?:number;
 }) {
   const tipRef = useRef<HTMLElement>(null); const handRef = useRef<HTMLElement>(null); const sceneRef = useRef<HTMLDivElement>(null);
   const landingOriginRef = useRef<HTMLDivElement>(null);
@@ -223,6 +228,8 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
   const [animation, setAnimation] = useState<CharacterState>('idle');
   const lastPhase = useRef(game.phase);
   const phase = game.phase; const mappedAnimation = characterState(game);
+  const plants=useMemo(()=>plantsEnabled?plantSnapshot(location,{gameDay:world.gameDay,seasonDate:world.seasonDate,season:world.season},undefined,plantDayPreview):undefined,
+    [plantsEnabled,location,world.gameDay,world.seasonDate,world.season,plantDayPreview]);
   const seasonalManifest = useMemo(() => sceneForLocation(world.season, location, manifest), [world.season, location, manifest]);
   const weatherLook = useMemo(() => weatherState || weatherVisuals(weather), [weatherState, weather]);
   useWaterSounds(game, battle.progress, battle.struggling, weatherLook.rain, sceneRef, audio);
@@ -251,14 +258,18 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
     lastPhase.current = phase;
     return () => clearTimeout(timer);
   }, [phase, mappedAnimation]);
-  return <div ref={sceneRef} data-environment-render-ms={intervalMs} className={`f-scene ${intervalMs ? 'f-scene-stepped' : ''} f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ ...solarStyle(solarLight, weatherLook.celestial), ...anglerShadowStyle(world.hour, world.moonPhase, weatherLook.celestial), '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--weather-contrast': weatherLook.contrast, '--weather-veil': weatherLook.veil, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} data-sailors-delight={!!skyEvents.sailorsDelight} role={onObserveButterfly?'group':'img'} aria-label={`Animated freshwater lake at ${LOCATIONS.find(spot => spot.id === location)?.spot ?? location}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
+  return <div ref={sceneRef} data-garden-day={plants?.calendar.seasonDate} data-garden-game-day={plants?.calendar.gameDay} data-plant-cycle={plants?.calendar.cycle} data-plant-generation-version={plants?.world.generationVersion} data-environment-render-ms={intervalMs} className={`f-scene ${intervalMs ? 'f-scene-stepped' : ''} f-spot-${location} f-climate-${weather} f-season-${world.season} f-period-${world.period} ${light.brightness < .8 ? 'f-dim-light' : ''} ${battle.struggling ? 'f-battle-danger' : ''} ${reducedMotion ? 'f-reduced-motion' : ''}`} style={{ ...solarStyle(solarLight, weatherLook.celestial), ...anglerShadowStyle(world.hour, world.moonPhase, weatherLook.celestial), '--time-brightness': light.brightness, '--time-saturation': light.saturation, '--time-tint': light.tint, '--night-amount': light.nightAmount, '--lantern-strength': light.nightAmount, '--weather-brightness': weatherLook.brightness, '--weather-saturation': weatherLook.saturation, '--weather-contrast': weatherLook.contrast, '--weather-veil': weatherLook.veil, '--celestial-opacity': weatherLook.celestial, '--mountain-haze-opacity': Math.max(weatherLook.greyDeck, weatherLook.darkDeck, weatherLook.tower * .25) } as CSSProperties} data-season={world.season} data-period={world.period} data-sailors-delight={!!skyEvents.sailorsDelight} role={onObserveButterfly?'group':'img'} aria-label={`Animated freshwater lake at ${LOCATIONS.find(spot => spot.id === location)?.spot ?? location}, ${SEASON_LABELS[world.season]}, ${PERIOD_LABELS[world.period]}, ${weather} weather`}>
     <div className="f-scene-base" aria-hidden="true" /><CelestialSky world={world} background={sky?.src || ''} location={location} skyPreview={skyPreview} solarLight={solarLight} /><div className="f-sky-grain" />
+    {/* Surface pads clear the z=4 water veil, but precede the z=5 opaque bank. */}
+    {location==='dock'&&plants&&<ShorePlants snapshot={plants}/>}
     {seasonalManifest.filter(l => !l.spots || l.spots.includes(location)).map(layer => {
       if (layer.id === 'weather') return <WeatherSystem intervalMs={intervalMs} key={layer.id} weather={weather} visuals={weatherLook} location={location} reducedMotion={reducedMotion} />;
       if (layer.id === 'clouds') return <CloudSystem intervalMs={intervalMs} key={layer.id} visuals={weatherLook} reducedMotion={reducedMotion} lightningPreview={lightningPreview} solarLight={solarLight} />;
       if (layer.id === 'angler') return shoreLayer ? null : <CharacterAnimator key={layer.id} lanternLit={lanternLit} season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} dockLayer={dockLayer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />;
       if (['birch-trunks', 'birch-right-plants'].includes(layer.id)) return null;
       if (['cove-seat', 'birch-seat'].includes(layer.id)) return <div key={layer.id} className="f-cove-ground-plane" style={shoreFrameStyle(location, layer.seat?.x ?? .29, layer.parallax) as CSSProperties}>
+        {(location==='birch'||location==='cove')&&<ShoreShallows location={location} shoreSrc={layer.src}/>}
+        {plants&&<ShorePlants snapshot={plants}/>}
         {groundArt && <SceneLayer layer={groundArt} lanternLit={lanternLit} />}
         {hasAngler && <CharacterAnimator lanternLit={lanternLit} season={world.season} state={preview || animation} tipRef={tipRef} handRef={handRef} shoreLayer={layer} caughtFish={caughtFish} landingOriginRef={landingOriginRef} reducedMotion={reducedMotion} />}
         {seasonalManifest.filter(art => ['birch-trunks', 'birch-right-plants'].includes(art.id)).map(art => <SceneLayer key={art.id} layer={art} lanternLit={lanternLit} />)}
@@ -268,12 +279,14 @@ export default function FishingScene({ game, location, weather, reducedMotion, w
       if (layer.id === 'foreground-reeds') return <React.Fragment key={layer.id}><SceneLayer layer={layer} lanternLit={lanternLit}/><SceneLayer layer={{...layer,id:'foreground-reeds-right'}} lanternLit={lanternLit}/></React.Fragment>;
       return <SceneLayer key={layer.id} layer={layer} lanternLit={lanternLit} />;
     })}
-    <SeasonalFoliage sceneRef={sceneRef} location={location} season={world.season}/>
+    {location === 'dock' && <DockShallows />}
+    {plants&&<SeasonalFoliage sceneRef={sceneRef} snapshot={plants}/>}
     <TreeBirds sceneRef={sceneRef} location={location} reducedMotion={reducedMotion} soloPreview={wildlifePreview?.treeBirds} flockPreview={wildlifePreview?.treeFlock} showMap={showTreeMap}/>
     {showTreeMap && <PlantMapOverlay sceneRef={sceneRef} location={location}/>}
     <LakeFog active={fogDensity > 0} density={fogDensity} distanceHaze={weather === 'fog' ? 1 : .66} world={world} location={location} reducedMotion={reducedMotion} intervalMs={intervalMs} />
     <ButterflyVisitors sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={butterflyPreview} onObserve={onObserveButterfly}/>
     <ButterflyVisitors family="odonates" sceneRef={sceneRef} season={world.season} hour={world.hour} weather={weather} location={location} reducedMotion={reducedMotion} preview={wildlifePreview?.odonates} onObserve={onObserveVisitor}/>
+    {process.env.NODE_ENV==='development'&&<ControlledDragonfly sceneRef={sceneRef} spawn={wildlifePreview?.controlledDragonfly??0} reducedMotion={reducedMotion} location={location}/>}
     <SantaVisitor sceneRef={sceneRef} period={world.period} years={santaYears} preview={wildlifePreview?.santa} onObserve={onObserveVisitor} reducedMotion={reducedMotion}/>
     <LakeWildlife frame={solarFrame} location={location} audio={audio} sceneRef={sceneRef} season={world.season} weather={weather} reducedMotion={reducedMotion} preview={wildlifePreview} onSplash={audio?.play}/>
     <div className="f-time-tint" /><div className="f-overcast-light" aria-hidden="true"/>

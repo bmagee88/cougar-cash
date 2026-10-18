@@ -8,12 +8,12 @@ const rect={x:0,y:0,left:0,top:0,right:800,bottom:600,width:800,height:600,toJSO
 const pointer=(x:number,y:number,speed=0,previousX=x,previousY=y)=>({x,y,speed,previousX,previousY});
 
 test('distant flight has smaller movements and stays above the sloping water surface',()=>{
-  const near={...createFlight(()=>.5),x:.5,y:.4,z:.3,vx:150,vy:60,vz:0,turnIn:10};
-  const far={...near,z:3,behindForeground:true};
+  const near={...createFlight(()=>.5),x:.5,y:.4,z:.03,vx:150,vy:60,vz:0,turnIn:10};
+  const far={...near,z:.8,behindForeground:true};
   stepFlight(near,.05,800,600,()=>.5);stepFlight(far,.05,800,600,()=>.5);
   expect(Math.abs(far.x-.5)).toBeLessThan(Math.abs(near.x-.5));expect(Math.abs(far.y-.4)).toBeLessThan(Math.abs(near.y-.4));
-  expect(flightBottom(.05,.56)).toBe(1);expect(flightBottom(MAX_FLIGHT_DEPTH,.56)).toBeCloseTo(.56);
-  const receding={...near,y:.85,z:.3,vz:1,turnIn:100};
+  expect(flightBottom(0,.56)).toBe(1);expect(flightBottom(MAX_FLIGHT_DEPTH,.56)).toBeGreaterThan(.56);expect(flightBottom(MAX_FLIGHT_DEPTH,.56)).toBeLessThan(.59);
+  const receding={...near,y:.85,z:.03,vz:.2,turnIn:100};
   const start=receding.y;
   for(let i=0;i<65;i++){
     stepFlight(receding,.05,800,600,()=>.5,undefined,.56);
@@ -26,19 +26,19 @@ test('distant flight has smaller movements and stays above the sloping water sur
 });
 
 test('perched butterflies keep their footing while alternating wing poses, then depart or flee',()=>{
-  const flight={...createFlight(()=>.5),x:.3,y:.7,z:.3};
+  const flight={...createFlight(()=>.5),x:.3,y:.7,z:.03};
   planPerch(flight,.3,.7,()=>.5);flight.perch!.startAt=0;
   stepFlight(flight,.02,800,600,()=>.5);expect(isPerched(flight)).toBe(true);
   const frames=new Set<number>();
   for(let i=0;i<250;i++){stepFlight(flight,.02,800,600,()=>.6);frames.add(flight.perch!.frame);}
-  expect(frames.size).toBeGreaterThan(4);expect(flight.x).toBe(.3);expect(flight.y).toBe(.7);expect(flight.z).toBe(.3);
+  expect(frames.size).toBeGreaterThan(4);expect(flight.x).toBe(.3);expect(flight.y).toBe(.7);expect(flight.z).toBe(.03);
   expect(startleFlight(flight,pointer(240,420),800,600)).toBe(true);expect(isPerched(flight)).toBe(false);
   stepFlight(flight,.05,800,600,()=>.5);expect(flight.x).not.toBe(.3);
   const departed={...createFlight(()=>.5),x:.3,y:.7};planPerch(departed,.3,.7,()=>.5);departed.perch!.startAt=0;
   stepFlight(departed,.02,800,600,()=>.5);departed.perch!.remaining=.01;
   stepFlight(departed,.02,800,600,()=>.5);expect(isPerched(departed)).toBe(false);
-  const distant={...createFlight(()=>.5),behindForeground:true,z:1.5};planPerch(distant,.3,.7,()=>.5);distant.perch!.startAt=0;
-  stepFlight(distant,.02,800,600,()=>.5);expect(isPerched(distant)).toBe(false);expect(distant.z).toBeGreaterThan(1.05);
+  const distant={...createFlight(()=>.5),behindForeground:true,z:.8};planPerch(distant,.3,.7,()=>.5);distant.perch!.startAt=0;
+  stepFlight(distant,.02,800,600,()=>.5);expect(isPerched(distant)).toBe(false);expect(distant.z).toBeGreaterThan(FOREGROUND_DEPTH);
 });
 
 test('perch wing timing includes both quick flutters and slower opening and closing',()=>{
@@ -70,21 +70,21 @@ test('flights enter from either side at speed, can return from outside the view,
   expect(departing.x).toBeGreaterThan(1.5);expect(departing.y).toBeGreaterThan(0);expect(departing.y).toBeLessThan(1);
 });
 
-test('erratic turns change direction and distance, with a permanent foreground depth boundary',()=>{
+test('erratic turns change direction and distance, crossing behind and returning in front of the foreground',()=>{
   const flight={...createFlight(()=>.5),x:.5,y:.5,turnIn:0};
   stepFlight(flight,.02,800,600,()=>.1);const velocity=[flight.vx,flight.vy,flight.vz];
   flight.turnIn=0;stepFlight(flight,.02,800,600,()=>.9);
   expect([flight.vx,flight.vy,flight.vz]).not.toEqual(velocity);
-  expect(flightScale(.1)).toBeGreaterThan(flightScale(2));
+  expect(flightScale(.1)).toBeGreaterThan(flightScale(.8));
   flight.z=FOREGROUND_DEPTH-.01;flight.vz=1;flight.turnIn=10;
   stepFlight(flight,.03,800,600,()=>.5);expect(flight.behindForeground).toBe(true);
   flight.vz=-1;stepFlight(flight,.5,800,600,()=>.5);
-  expect(flight.z).toBeGreaterThanOrEqual(FOREGROUND_DEPTH);expect(flight.behindForeground).toBe(true);
+  expect(flight.z).toBeLessThan(FOREGROUND_DEPTH);expect(flight.behindForeground).toBe(false);
   flight.z=MAX_FLIGHT_DEPTH;expect(flightExpired(flight)).toBe(true);
 });
 
 test('individual tolerances allow slow approaches but react to close cursors and nearby fast swipes',()=>{
-  const calm={...createFlight(()=>0),x:.5,y:.5,z:.35},sensitive={...createFlight(()=>.99),x:.5,y:.5,z:.35};
+  const calm={...createFlight(()=>0),x:.5,y:.5,z:.06},sensitive={...createFlight(()=>.99),x:.5,y:.5,z:.06};
   expect(calm.closeRadius).not.toBe(sensitive.closeRadius);expect(calm.speedTolerance).not.toBe(sensitive.speedTolerance);
   expect(startleFlight(calm,pointer(404,300),800,600)).toBe(false);
   expect(startleFlight(sensitive,pointer(404,300),800,600)).toBe(true);

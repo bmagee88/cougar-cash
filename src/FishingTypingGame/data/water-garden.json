@@ -1,0 +1,66 @@
+{
+  "leaf": [
+    {
+      "image": "shore-plants/modular/leaf-0.webp",
+      "width": 188,
+      "height": 152
+    },
+    {
+      "image": "shore-plants/modular/leaf-1.webp",
+      "width": 188,
+      "height": 147
+    },
+    {
+      "image": "shore-plants/modular/leaf-2.webp",
+      "width": 188,
+      "height": 166
+    },
+    {
+      "image": "shore-plants/modular/leaf-3.webp",
+      "width": 188,
+      "height": 144
+    },
+    {
+      "image": "shore-plants/modular/leaf-4.webp",
+      "width": 188,
+      "height": 144
+    },
+    {
+      "image": "shore-plants/modular/leaf-5.webp",
+      "width": 188,
+      "height": 158
+    }
+  ],
+  "bloom": [
+    {
+      "image": "shore-plants/modular/bloom-0.webp",
+      "width": 188,
+      "height": 142
+    },
+    {
+      "image": "shore-plants/modular/bloom-1.webp",
+      "width": 188,
+      "height": 160
+    },
+    {
+      "image": "shore-plants/modular/bloom-2.webp",
+      "width": 188,
+      "height": 166
+    },
+    {
+      "image": "shore-plants/modular/bloom-3.webp",
+      "width": 188,
+      "height": 138
+    },
+    {
+      "image": "shore-plants/modular/bloom-4.webp",
+      "width": 188,
+      "height": 150
+    },
+    {
+      "image": "shore-plants/modular/bloom-5.webp",
+      "width": 108,
+      "height": 188
+    }
+  ]
+}

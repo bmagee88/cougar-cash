@@ -13,7 +13,7 @@ test('each landscape maps exactly ten trees in source-art x/y and distance z; pe
   Object.values(LOCATION_TREES).forEach(trees => {
     expect(trees).toHaveLength(10); expect(new Set(trees.map(tree => tree.id)).size).toBe(10);
     trees.forEach(tree => {
-      expect(tree.top.y).toBeLessThan(tree.bottom.y); expect(tree.top.z).toBeGreaterThan(1);
+      expect(tree.top.y).toBeLessThan(tree.bottom.y); expect(tree.top.z).toBeGreaterThan(.14);expect(tree.top.z).toBeLessThanOrEqual(1);
       expect(tree.top.z).toBe(tree.bottom.z); expect(tree.bottom.y).toBeLessThan(.56);
       for (const random of [() => 0, () => .5, () => .999999]) {
         const point = treePerch(tree, random);
@@ -71,7 +71,7 @@ test('routes launch and land within different tree crowns, vary depth, and flock
 
 test('a bounding path rises and dips repeatedly, with exact endpoint height and scale', () => {
   const original = makeTreeBirdVisit('arc', 'solo', WORLD.epoch, 1234, 'dock').birds[0];
-  const route = { ...original, from: { x: .2, y: .4, z: 3 }, to: { x: .8, y: .4, z: 3 }, lift: .04, amplitude: .007, bounds: 7 };
+  const route = { ...original, from: { x: .2, y: .4, z: .7 }, to: { x: .8, y: .4, z: .7 }, lift: .04, amplitude: .007, bounds: 7 };
   const samples = Array.from({ length: 401 }, (_, i) => treeBirdPose(route, i / 400));
   let turns = 0;
   for (let i = 1; i < samples.length - 1; i++) if ((samples[i].y - samples[i - 1].y) * (samples[i + 1].y - samples[i].y) < 0) turns++;
