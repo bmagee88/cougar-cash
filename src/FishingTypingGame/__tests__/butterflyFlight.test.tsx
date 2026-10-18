@@ -2,6 +2,7 @@ import React, { createRef } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
 import { createFlight, FLIGHT_BOUNDS, FOREGROUND_DEPTH, MAX_FLIGHT_DEPTH, flightBottom, flightExpired, flightScale, isPerched, paintedPixelAt, planPerch, startleFlight, stepFlight, stepPerchedWings } from '../scene/butterflyFlight';
 import ButterflyVisitors from '../scene/ButterflyVisitors';
+import { GARDEN_READY_EVENT } from '../scene/gardenEvents';
 
 declare const test:any,expect:any,jest:any;
 const rect={x:0,y:0,left:0,top:0,right:800,bottom:600,width:800,height:600,toJSON:()=>({})} as DOMRect;
@@ -77,7 +78,7 @@ test('erratic turns change direction and distance, crossing behind and returning
   expect([flight.vx,flight.vy,flight.vz]).not.toEqual(velocity);
   expect(flightScale(.1)).toBeGreaterThan(flightScale(.8));
   flight.z=FOREGROUND_DEPTH-.01;flight.vz=1;flight.turnIn=10;
-  stepFlight(flight,.03,800,600,()=>.5);expect(flight.behindForeground).toBe(true);
+  stepFlight(flight,.1,800,600,()=>.5);expect(flight.behindForeground).toBe(true);
   flight.vz=-1;stepFlight(flight,.5,800,600,()=>.5);
   expect(flight.z).toBeLessThan(FOREGROUND_DEPTH);expect(flight.behindForeground).toBe(false);
   flight.z=MAX_FLIGHT_DEPTH;expect(flightExpired(flight)).toBe(true);
@@ -143,6 +144,16 @@ test('loaded wing frames reject transparent clicks, accept painted clicks, and p
     const props={sceneRef,season:'summer' as const,hour:22,weather:'sunny' as const,location:'dock',reducedMotion:false,onObserve:observe};
     const view=render(<div ref={sceneRef}><ButterflyVisitors {...props}/></div>);
     await act(async()=>view.rerender(<div ref={sceneRef}><ButterflyVisitors {...props} preview={1}/></div>));
+    const initial=view.getAllByRole('button',{name:'Observe butterfly'})[0];
+    const originalWidth=Number(initial.dataset.wingspanMm)*.45*(192/160)*(320/192)*flightScale(Number(initial.dataset.depth));
+    expect(parseFloat(initial.style.width)).toBeCloseTo(originalWidth*.5,2);
+    context.drawImage.mockClear();
+    await act(async()=>view.rerender(<div ref={sceneRef}><ButterflyVisitors {...props} hour={23} preview={1}/></div>));
+    expect(context.drawImage).not.toHaveBeenCalled();
+    bounds.mockClear();
+    for(let i=0;i<12;i++)fireEvent(sceneRef.current!,new Event(GARDEN_READY_EVENT));
+    expect(bounds).not.toHaveBeenCalled();
+    act(()=>jest.advanceTimersByTime(16));expect(bounds).toHaveBeenCalledTimes(1);
     act(()=>jest.advanceTimersByTime(1800));
     const visitor=view.getAllByRole('button',{name:'Observe butterfly'})[0];
     expect(context.drawImage).toHaveBeenCalled();
@@ -153,7 +164,9 @@ test('loaded wing frames reject transparent clicks, accept painted clicks, and p
     act(()=>jest.advanceTimersByTime(100));expect(visitor.style.left).not.toBe(before);
     fireEvent.click(visitor,{detail:1,clientX:1,clientY:1});expect(observe).not.toHaveBeenCalled();
     const visibleFrame=Number(view.getAllByRole('button',{name:'Observe butterfly'})[1].dataset.wingFrame);
+    context.drawImage.mockClear();
     await act(async()=>{fireEvent.click(visitor,{detail:1,clientX:400,clientY:300});});expect(observe).toHaveBeenCalledTimes(1);
+    expect(context.drawImage).not.toHaveBeenCalled();
     expect(observe.mock.calls[0][3]).toMatchObject({frame:visibleFrame,rotation:expect.any(Number),flipped:expect.any(Boolean)});
     expect(view.getAllByRole('button',{name:'Observe butterfly'})).toHaveLength(1);
     const remaining=view.getByRole('button',{name:'Observe butterfly'});

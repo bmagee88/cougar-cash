@@ -1,0 +1,15 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=repeatPreview --cacheDirectory=output/repeat-preview-jest
+
+PASS src/FishingTypingGame/__tests__/repeatPreview.test.tsx (9.689 s)
+  √ enabling spawns immediately and every ten seconds; disabling cancels repeats (135 ms)
+  √ parent renders use the latest callback without restarting the ten-second clock (28 ms)
+  √ eligibility changes stop and reset an active toggle, with no automatic restart (31 ms)
+  √ every entity spawn control and lightning preview repeats independently (501 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        12.977 s
+Ran all test suites matching /repeatPreview/i.

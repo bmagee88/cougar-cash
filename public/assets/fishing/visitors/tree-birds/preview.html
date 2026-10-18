@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painted cardinal and sparrow animations</title>
+<style>
+body{margin:0;padding:24px;background:#243c39;color:#f4ead7;font:16px/1.5 system-ui,sans-serif}main{max-width:1200px;margin:auto}h1{font-size:26px;margin:0}p{margin:6px 0 20px;color:#cfdbd4}nav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}button{font:inherit;color:inherit;border:1px solid #8da79b;border-radius:20px;padding:8px 16px;background:transparent;cursor:pointer}button[aria-pressed=true]{background:#e0c092;color:#243c39;border-color:#e0c092}section{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}h2{font-size:18px;margin:16px 0 8px}figure{margin:0;border-radius:10px;background:#334d49;overflow:hidden;text-align:center}img{width:100%;height:auto;display:block}figcaption{padding:0 4px 12px;font-size:14px}@media(max-width:700px){body{padding:16px}section{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+<main><h1>Cardinals &amp; sparrows</h1><p>Painted bird animations · six directions · transparent backgrounds</p>
+<nav aria-label="Animation"><button data-state="" aria-pressed="true">Full flight</button><button data-state="-wingbeat" aria-pressed="false">Wingbeat</button><button data-state="-glide" aria-pressed="false">Glide</button><button data-state="-slowdown" aria-pressed="false">Slow to land</button></nav>
+<h2>Cardinal</h2><section id="cardinal"></section><h2>Sparrow</h2><section id="sparrow"></section></main>
+<script>
+const directions=['front','front-left','front-right','back','back-left','back-right'];
+for(const species of ['cardinal','sparrow'])for(const direction of directions){
+ const figure=document.createElement('figure'),image=document.createElement('img'),caption=document.createElement('figcaption');
+ image.src=`${species}/${direction}.gif`;image.alt=`${species}, ${direction}`;image.width=192;image.height=192;image.dataset.base=`${species}/${direction}`;
+ caption.textContent=direction.replace('-',' ');figure.append(image,caption);document.getElementById(species).append(figure);
+}
+for(const button of document.querySelectorAll('button'))button.addEventListener('click',()=>{
+ for(const item of document.querySelectorAll('button'))item.setAttribute('aria-pressed',String(item===button));
+ for(const image of document.querySelectorAll('img'))image.src=`${image.dataset.base}${button.dataset.state}.gif`;
+});
+</script>
+</html>

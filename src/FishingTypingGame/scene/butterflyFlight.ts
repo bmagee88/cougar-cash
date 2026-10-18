@@ -6,11 +6,14 @@ import {advanceSceneDepth,changeSceneDepth,DepthObstruction,depthAtWaterline,dep
 // width and height, allowing an individual to leave the view and loop back.
 export const FLIGHT_BOUNDS={left:-.5,right:1.5,top:-.5,bottom:1.5};
 export const FOREGROUND_DEPTH=SCENE_DEPTH.foreground, MAX_FLIGHT_DEPTH=SCENE_DEPTH.shore;
+export const INSECT_DEPTH_SPEED=.30;
+export const advanceFlightDepth=(z:number,velocity:number,dt:number,perspective?:DepthPerspective)=>advanceSceneDepth(z,velocity*INSECT_DEPTH_SPEED,dt,perspective);
 export interface FlightPointer {x:number;y:number;previousX:number;previousY:number;speed:number}
 export interface ButterflyPerch {
   x:number;y:number;startAt:number;remaining:number;landed:boolean;finished:boolean;
   frame:number;nextFrameIn:number;fast:boolean;
   plantId?:string;z?:number;repeats?:number;visits?:number;restFrame?:number;hoverFeed?:boolean;
+  sideways?:boolean;facing?:number;
 }
 export type ButterflyPattern = 'float' | 'flutter' | 'skip' | 'moth' | 'hover';
 export interface FlightState {
@@ -38,7 +41,8 @@ export const flightOpacity=(z:number)=>clamp((MAX_FLIGHT_DEPTH-z)/.08,0,1);
 export const flightExpired=(flight:FlightState)=>flight.z>=MAX_FLIGHT_DEPTH||flight.x<FLIGHT_BOUNDS.left||flight.x>FLIGHT_BOUNDS.right||flight.y<FLIGHT_BOUNDS.top||flight.y>FLIGHT_BOUNDS.bottom;
 export const isPerched=(flight:FlightState)=>!!flight.perch?.landed&&!flight.perch.finished;
 export function planPerch(flight:FlightState,x:number,y:number,random:Random,options:Partial<ButterflyPerch>={}):void {
-  flight.perch={x,y,startAt:flight.age+between(random,2.5,5.5),remaining:between(random,6,13),landed:false,finished:false,frame:0,nextFrameIn:between(random,.3,1),fast:random()<.4,...options};
+  const butterfly=flight.pattern!==undefined&&flight.pattern!=='moth'&&flight.pattern!=='hover';
+  flight.perch={x,y,startAt:flight.age+between(random,2.5,5.5),remaining:between(random,6,13),landed:false,finished:false,frame:0,nextFrameIn:between(random,.3,1),fast:random()<.4,sideways:butterfly&&random()<.5,...options};
 }
 export function stepPerchedWings(perch:ButterflyPerch,dt:number,random:Random):void {
   perch.nextFrameIn-=dt;
@@ -90,6 +94,8 @@ export function stepPerch(flight:FlightState,dt:number,width:number,height:numbe
     if(flight.y>horizon&&horizon<1)flight.z=Math.min(flight.z,depthAtWaterline(flight.y,horizon,flight.perspective));
     flight.vx=dx/(distance||1)*speed;flight.vy=dy/(distance||1)*speed;flight.vz=0;flight.heading=clamp(flight.vy/450,-.55,.55);
     if(distance<=travel+2){
+      // Preserve the approach direction after landing zeros the flight velocity.
+      perch.facing=(Math.abs(dx)>.01?dx:flight.facing??flight.motionVx??flight.vx)<0?-1:1;
       perch.landed=true;perch.visits=(perch.visits??0)+1;flight.x=perch.x;flight.y=perch.y;flight.vx=0;flight.vy=0;flight.heading=-.14;
       if(perch.z!==undefined)flight.z=perch.z;
       if(perch.restFrame!==undefined)perch.frame=perch.restFrame;
@@ -196,7 +202,7 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
   const steering=1-Math.exp(-dt*(leaving&&!evading?16:pattern==='float'?3.5:8));
   flight.motionVx+=(flight.vx-flight.motionVx)*steering;flight.motionVy+=(flight.vy-flight.motionVy)*steering;
   flight.x+=flight.motionVx*movement*dt/Math.max(1,width);flight.y+=(flight.motionVy*movement*dt+bob)/Math.max(1,height);
-  if(changeSceneDepth(flight,advanceSceneDepth(flight.z,flight.vz,dt,flight.perspective),horizon,obstructed,flight.perspective)){flight.vz=0;flight.turnIn=0;}
+  if(changeSceneDepth(flight,advanceFlightDepth(flight.z,flight.vz,dt,flight.perspective),horizon,obstructed,flight.perspective)){flight.vz=0;flight.turnIn=0;}
   const bottom=flightBottom(flight.z,horizon,flight.perspective);
   if(flight.y>bottom){flight.y=bottom;flight.vy=-Math.abs(flight.vy);}
   flight.behindForeground=flight.z>=foregroundDepth(flight.perspective);

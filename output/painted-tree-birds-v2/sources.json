@@ -1,0 +1,65 @@
+{
+  "generator": "built-in image_gen",
+  "sources": [
+    {
+      "id": "cardinal-front",
+      "species": "cardinal",
+      "view": "front",
+      "source": "output/painted-tree-birds-v2/cardinal-front.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-517e1e1a-e3e2-4e9a-9737-78fa2e2fd512.png"
+    },
+    {
+      "id": "sparrow-front",
+      "species": "sparrow",
+      "view": "front",
+      "source": "output/painted-tree-birds-v2/sparrow-front.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-c4b66076-3a30-4511-9a17-0363fd94c823.png"
+    },
+    {
+      "id": "cardinal-front-left",
+      "species": "cardinal",
+      "view": "front-left",
+      "source": "output/painted-tree-birds-v2/cardinal-front-left.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-e72c090e-3eaf-4a19-a2ec-a604750d7ac5.png"
+    },
+    {
+      "id": "cardinal-back",
+      "species": "cardinal",
+      "view": "back",
+      "source": "output/painted-tree-birds-v2/cardinal-back.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-224616e3-d2fd-4269-a1e7-b5e4208a1325.png"
+    },
+    {
+      "id": "cardinal-back-left",
+      "species": "cardinal",
+      "view": "back-left",
+      "source": "output/painted-tree-birds-v2/cardinal-back-left.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-82fdb3a4-f329-4b1f-9ee4-6a35b0c644a3.png"
+    },
+    {
+      "id": "sparrow-front-left",
+      "species": "sparrow",
+      "view": "front-left",
+      "source": "output/painted-tree-birds-v2/sparrow-front-left.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-b9510e90-a4b3-4d5d-992c-10e2d4298037.png"
+    },
+    {
+      "id": "sparrow-back",
+      "species": "sparrow",
+      "view": "back",
+      "source": "output/painted-tree-birds-v2/sparrow-back.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-73e1f86e-c07a-47af-b004-ac7410a5f683.png"
+    },
+    {
+      "id": "sparrow-back-left",
+      "species": "sparrow",
+      "view": "back-left",
+      "source": "output/painted-tree-birds-v2/sparrow-back-left.png",
+      "original": "C:\\Users\\Kathleen Dippyolito\\.codex\\generated_images\\01a14eed-e4ee-76c3-9bca-90dbd2b6277a\\exec-e7c6a8f7-d5c6-4481-b7e8-b5f5970b1152.png"
+    }
+  ],
+  "mirroredDirections": {
+    "front-right": "front-left",
+    "back-right": "back-left"
+  }
+}

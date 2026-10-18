@@ -1,0 +1,16 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=treeBirds|treeBirdDepth|birdJournal|sceneDepth|environment|performance --cacheDirectory=output/tree-depth-jest
+
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (36.411 s)
+PASS src/FishingTypingGame/__tests__/sceneDepth.test.ts
+PASS src/FishingTypingGame/__tests__/treeBirdDepth.test.tsx (21.599 s)
+PASS src/FishingTypingGame/__tests__/birdJournal.test.tsx (9.505 s)
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (24.534 s)
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+
+Test Suites: 6 passed, 6 total
+Tests:       47 passed, 47 total
+Snapshots:   0 total
+Time:        104.316 s
+Ran all test suites matching /treeBirds|treeBirdDepth|birdJournal|sceneDepth|environment|performance/i.

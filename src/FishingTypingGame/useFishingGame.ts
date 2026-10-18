@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { BALANCE } from './engine/config';
 import { cast, createTyping, tick, triggerBite, typeKey } from './engine/game';
-import { awardCatch, awardEscape, persistSave, readSave } from './engine/storage';
+import { awardCatch, awardEscape, DEFAULT_FISHING_MODE, persistSave, readSave } from './engine/storage';
 import { EncounterOverrides, FishCheck, FishingConditions, GameState, SaveData } from './engine/types';
 import { nextWake } from './engine/nextWake';
 import { readLineGear } from './engine/fishFight';
@@ -67,7 +67,7 @@ export function useFishingGame(conditions: (save: SaveData) => FishingConditions
     return () => { window.clearTimeout(timer); document.removeEventListener('visibilitychange', visible); };
   }, [commit, game]);
   const castLine = useCallback(() => {
-    if (saveRef.current.livewell.length < BALANCE.livewellCapacity) commit(cast(gameRef.current, performance.now(), Math.random, conditionsRef.current(saveRef.current),saveRef.current.settings.fishingMode));
+    if (saveRef.current.livewell.length < BALANCE.livewellCapacity) commit(cast(gameRef.current, performance.now(), Math.random, conditionsRef.current(saveRef.current),saveRef.current.settings.fishingMode??DEFAULT_FISHING_MODE));
   }, [commit]);
   const key = useCallback((keyValue: string) => { if (ready.current || gameRef.current.phase === 'retrieving') commit(typeKey(gameRef.current, keyValue, performance.now(),Math.random,process.env.NODE_ENV === 'development' ? overrides.current : {},conditionsRef.current(saveRef.current),inspect.current)); }, [commit]);
   const again = useCallback(() => { if (gameRef.current.phase === 'result' || gameRef.current.phase === 'retrieved') commit({ phase: 'idle' }); }, [commit]);

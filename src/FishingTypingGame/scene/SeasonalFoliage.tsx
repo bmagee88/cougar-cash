@@ -41,7 +41,12 @@ export default memo(function SeasonalFoliage({sceneRef,snapshot}:{sceneRef:RefOb
     return ()=>{observer?.disconnect();scene.removeEventListener('load',loaded,true);window.removeEventListener('resize',measure);};
   },[sceneRef,snapshot]);
   useLayoutEffect(()=>{sceneRef.current?.dispatchEvent(new Event(GARDEN_READY_EVENT));},[sceneRef,measured]);
-  const stations=measured.key===snapshot.key?measured.stations:[];
+  // Daily growth changes the stalks, not their rooted layout. Retain matching
+  // nodes while measuring the new snapshot so loaded foliage never blanks out.
+  const currentPlants=new Map(snapshot.plants.filter(plant=>plant.visible).map(plant=>[plant.id,plant]));
+  const stations=measured.stations.flatMap(station=>{
+    const plant=currentPlants.get(station.plant.id);return plant?[{...station,plant}]:[];
+  });
   return <div className="f-seasonal-foliage" data-layer="seasonal-foliage" data-garden-key={snapshot.key} aria-hidden="true">
     {stations.map(({plant,left,top,width,height,px,py,z})=><div key={plant.id} className="f-flower-plant f-life-base" data-life-base={plant.id}
       data-plant-species={plant.speciesId} data-plant-kind="flower" data-plant-maturity={plant.maturity} data-active-stems={plant.stems.length} data-plant-depth={z.toFixed(3)}

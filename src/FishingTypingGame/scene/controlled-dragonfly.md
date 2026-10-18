@@ -7,7 +7,8 @@ and weather, including when natural dragonflies are inactive.
 - Arrow keys move across the scene; diagonal movement has the same total speed.
 - At Z 0, each axis covers two scene spans per second (roughly half a second
   from edge to edge), independent of screen resolution. The existing depth
-  slowdown still applies. R/F starts at .22 depth units per second and slows
+  slowdown still applies. R/F starts at .066 depth units per second (30% of
+  the previous .22) and slows
   progressively beyond the foreground. Shift+R/F gives 1% fine depth control.
 - R increases depth, shrinking and projecting toward the far shoreline;
   F reverses that projection, moving closer and growing larger.

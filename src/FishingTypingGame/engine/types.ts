@@ -1,4 +1,5 @@
 import { EnvironmentRender } from './environment';
+import { BirdPose, TreeBirdSpeciesId } from './birds';
 export const RARITIES = ['Common', 'Uncommon', 'Rare', 'Mythic-Rare', 'Ultra-Rare'] as const;
 export const QUALITIES = ['C', 'B', 'A', 'S', 'SS'] as const;
 export type Rarity = typeof RARITIES[number];
@@ -86,7 +87,7 @@ export interface CatchRecord extends Performance {
 }
 export type MeasurementSystem = 'imperial' | 'metric';
 export interface ButterflyPose {frame:number;rotation:number;flipped:boolean;view?:'side'|'front'|'back'}
-export type NotebookImage = { kind: 'fish'; speciesId: string; lengthCm: number; weightKg: number; isAlbino: boolean } | { kind: 'butterfly'; speciesId?:string; wingspanMm?:number;pose?:ButterflyPose } | {kind:'visitor';speciesId:string;pose?:ButterflyPose};
+export type NotebookImage = { kind: 'fish'; speciesId: string; lengthCm: number; weightKg: number; isAlbino: boolean } | { kind: 'butterfly'; speciesId?:string; wingspanMm?:number;pose?:ButterflyPose } | {kind:'visitor';speciesId:string;pose?:ButterflyPose} | {kind:'bird';speciesId:TreeBirdSpeciesId;pose?:BirdPose};
 export interface NotebookEntry {
   id: string; caughtAt: string; location: string; title: string; name: string; notes: string;
   weightKg?: number; lengthCm?: number; image?: NotebookImage;

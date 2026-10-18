@@ -1,8 +1,8 @@
 import React,{RefObject,useEffect,useRef,useState} from 'react';
-import {createFlight,flightBottom,flightMovementScale} from './butterflyFlight';
+import {advanceFlightDepth,createFlight,flightBottom,flightMovementScale} from './butterflyFlight';
 import {stepDragonflyView} from './dragonflyView';
 import {loadVisitorSprite,paintVisitor,RenderedVisitor,Visitor} from './ButterflyVisitors';
-import {advanceSceneDepth,changeSceneDepth,DepthObstruction,foregroundDepth,reframeSceneDepth,sceneDepthFrame,SCENE_DEPTH} from './sceneDepth';
+import {changeSceneDepth,DepthObstruction,foregroundDepth,reframeSceneDepth,sceneDepthFrame,SCENE_DEPTH} from './sceneDepth';
 import {foregroundCollision} from './foregroundCollision';
 import {GARDEN_READY_EVENT} from './gardenEvents';
 
@@ -17,7 +17,7 @@ export function stepControlledDragonfly(visitor:Visitor,keys:ReadonlySet<string>
   let y=Number(keys.has('arrowdown'))-Number(keys.has('arrowup'));
   const length=Math.hypot(x,y);if(length>1){x/=length;y/=length;}
   const beforeZ=flight.z;
-  changeSceneDepth(flight,Math.min(.98,advanceSceneDepth(flight.z,(Number(keys.has('r'))-Number(keys.has('f')))*.22*(keys.has('shift')?.01:1),dt,flight.perspective)),horizon,obstructed,flight.perspective);
+  changeSceneDepth(flight,Math.min(.98,advanceFlightDepth(flight.z,(Number(keys.has('r'))-Number(keys.has('f')))*.22*(keys.has('shift')?.01:1),dt,flight.perspective)),horizon,obstructed,flight.perspective);
   // Two scene spans per second at z=0, independent of viewport resolution.
   const speed=2*flightMovementScale(flight.z,flight.perspective);
   flight.vz=dt?(flight.z-beforeZ)/dt:0;

@@ -1,6 +1,6 @@
 import { Random } from '../engine/types';
-import {advanceSceneDepth,changeSceneDepth,DepthObstruction,foregroundDepth} from './sceneDepth';
-import { FlightPointer, FlightState, flightBottom, flightMovementScale, startleFlight, steerEvasion, stepFlightWings, stepPerch } from './butterflyFlight';
+import {changeSceneDepth,DepthObstruction,foregroundDepth} from './sceneDepth';
+import { advanceFlightDepth, FlightPointer, FlightState, flightBottom, flightMovementScale, startleFlight, steerEvasion, stepFlightWings, stepPerch } from './butterflyFlight';
 
 /** Dragonflies alternate patrols and stationary hover/dart hunting; broad-winged
  * jewelwings flutter in short, slower bouts close to shoreline vegetation. */
@@ -49,7 +49,7 @@ export function stepOdonate(f:FlightState,kind:'dragonfly'|'damselfly',dt:number
   const steering=1-Math.exp(-dt*(kind==='dragonfly'?12:6));
   f.motionVx+=(f.vx-f.motionVx)*steering;f.motionVy+=(f.vy-f.motionVy)*steering;
   f.x+=f.motionVx*movement*dt/Math.max(1,width);f.y+=(f.motionVy*dt+flutter)*movement/Math.max(1,height);
-  if(changeSceneDepth(f,advanceSceneDepth(f.z,f.vz,dt,f.perspective),horizon,obstructed,f.perspective)){f.vz=0;f.turnIn=0;}
+  if(changeSceneDepth(f,advanceFlightDepth(f.z,f.vz,dt,f.perspective),horizon,obstructed,f.perspective)){f.vz=0;f.turnIn=0;}
   const bottom=flightBottom(f.z,horizon,f.perspective);
   if(f.y>bottom){f.y=bottom;f.vy=-Math.abs(f.vy);}
   f.behindForeground=f.z>=foregroundDepth(f.perspective);

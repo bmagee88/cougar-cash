@@ -13,7 +13,7 @@ export interface MappedPlant {
   kind: 'flower' | 'leaf' | 'stem'; uses: PlantUse[]; dedicated?:boolean;
 }
 export interface PlantPerch extends MappedPlant { motion?:{baseX:number;baseY:number;px:number;py:number;water?:WaterMotion;sceneHeight?:number} }
-const leaves: PlantUse[] = ['butterfly','moth'];
+const leaves: PlantUse[] = ['moth'];
 // Anchors are in each cutout's original 0–1 artwork frame, never viewport pixels.
 // Stable painted leaves/stems. Nectar points come from the actual daily stalks.
 export const LOCATION_PLANTS: Record<'dock' | 'cove' | 'birch', MappedPlant[]> = {
@@ -91,10 +91,11 @@ export function visiblePlantPerches(scene: HTMLElement, location: string, bounds
   });
 }
 
+const suitablePlant=(plant:PlantPerch,use:PlantUse)=>plant.uses.includes(use)&&(use!=='butterfly'||plant.kind==='flower');
 export function planPlantVisit(flight: FlightState, plants: PlantPerch[], use: PlantUse, random: Random) {
-  const suitable = plants.filter(plant => plant.uses.includes(use));
-  if (!suitable.length) return;
+  const suitable = plants.filter(plant => suitablePlant(plant,use));
   flight.plants = suitable;
+  if (!suitable.length) return;
   const odonate = use === 'dragonfly' || use === 'damselfly';
   const reeds=suitable.filter(plant=>plant.dedicated),choices=odonate&&reeds.length&&random()<.85?reeds:suitable;
   const plant = choices[Math.min(choices.length - 1, Math.floor(random() * choices.length))];
@@ -105,7 +106,7 @@ export function planPlantVisit(flight: FlightState, plants: PlantPerch[], use: P
 /** Refresh after a lifecycle/layout change. Retire the old occupancy before
  * assigning a new destination, including when a bloom is no longer nectar. */
 export function refreshPlantTargets(flight:FlightState,plants:PlantPerch[],use:PlantUse,random:Random) {
-  const compatible=plants.filter(plant=>plant.uses.includes(use));flight.plants=compatible;
+  const compatible=plants.filter(plant=>suitablePlant(plant,use));flight.plants=compatible;
   const perch=flight.perch,plant=compatible.find(candidate=>candidate.id===perch?.plantId);
   if(!plant||!perch||perch.finished){
     if(perch){perch.finished=true;flight.turnIn=0;flight.flowerWait=undefined;}

@@ -16,6 +16,9 @@ afterEach(()=>{jest.restoreAllMocks();jest.useRealTimers();});
 test('Fish Fight selector exposes checkpoint setting, line choices save, and shop is a teaser',()=>{
   const view=render(<FishingGame/>);
   fireEvent.click(screen.getByRole('button',{name:'Settings'}));
+  expect(screen.getByRole('combobox',{name:/Fishing mode/})).toHaveTextContent('Fish Fight');
+  expect(screen.getByRole('checkbox',{name:/Word checkpoints/})).not.toBeChecked();
+  fireEvent.mouseDown(screen.getByRole('combobox',{name:/Fishing mode/}));fireEvent.click(screen.getByRole('option',{name:'Interactive'}));
   expect(screen.queryByRole('checkbox',{name:/Word checkpoints/})).not.toBeInTheDocument();
   fireEvent.mouseDown(screen.getByRole('combobox',{name:/Fishing mode/}));fireEvent.click(screen.getByRole('option',{name:'Fish Fight'}));
   fireEvent.click(screen.getByRole('checkbox',{name:/Word checkpoints/}));

@@ -1,5 +1,100 @@
 # Fishing performance changes
 
+## Bush and behind-viewer bird routes
+
+The cove and birch maps include bush perches behind their foreground trunks.
+Each location also has two hidden, offscreen trees at z=-.14 in viewport
+coordinates. Natural flights can travel between a background tree and these
+anchors in either direction. Signed camera projection stays finite, grows on
+approach and clips every behind-camera pose; ordinary positive-depth flights
+retain the prior projection and size cap. Camera passes can grow to scale 8 and
+move in front of foreground art below z=.03.
+
+The same 61-point CSS path samples carry projection and draw order. Removing
+stacking contexts from the bird containers lets individual birds pass foreground
+art without duplicate layers. Lighting remains on each bird; camera and ordinary
+parallax are included in sampled positions. No extra animation loop, observer,
+polling timer or per-frame geometry reads were added. Hidden anchors are listed
+in the debug coordinate inspector and omitted from visible map markers. A
+dedicated fly-past preview alternates approach/return flights on both sides.
+All 47 targeted bird/depth/journal/environment/performance tests passed. Browser
+checks confirmed the bush marker, signed route endpoints, finite CSS transforms,
+unrestricted individual draw order and zero opacity after passing the camera.
+The production build compiled successfully.
+
+## Bird journal collection
+
+Painted cardinal and sparrow flights now support pointer and keyboard collection.
+Collection unlocks the Birds field guide and opens a notebook draft with the
+current direction and pose. Background silhouettes remain scenery. A primary
+pointer press registers before a moving bird can leave the release point, with
+a small transparent tap margin and the existing foreground occlusion check.
+Collected birds stay removed across visibility changes, without removing their
+flock. Per-flight IDs expire with visits. Pose sampling happens only on collection;
+the journal reuses the same WebP sheet, without independent GIF decoders, animation loops
+or polling timers. Existing discovery and notebook persistence validates bird IDs
+and poses. The final 23 targeted collection/visitor/notebook tests passed across
+six suites; a live pointer collection opened the observation and Birds guide.
+The final production build compiled successfully.
+
+## Painted bird species
+
+Near-tree routes render cardinal solos or sparrow solos/flocks using painted
+ImageGen artwork matched to the butterflies, with six directions and
+wingbeat/glide/braking poses. Species metadata uses `canFlock`; far-to-far routes
+retain the existing silhouettes. The two WebP sheets total 449,626 bytes, with
+128×128 frames and about 4.5 MiB decoded per species, loaded only when colored
+bird layers mount. Smooth resampling replaces the previous pixelated near art.
+Separate 192×192 GIF exports cover all six directions and three states for each
+species, plus full flight cycles (48 GIFs). The game uses the matching WebP poses
+under its existing CSS clocks, avoiding independent GIF decoders on flock members.
+Schedules, negative delays and visibility handling retain the existing logic.
+Additional perches extend route selection; normal positive-depth routes retain
+their original movement and size curves. All new
+pose changes use native CSS; there is no new JavaScript animation loop or timer.
+See [tree-birds.md](scene/tree-birds.md) for the asset layout and regeneration.
+The asset validation checks all 144 painted poses and 48 GIFs, including real
+frame counts, transparency, edge padding and runtime sheet dimensions.
+All 27 targeted bird, environment and performance tests passed, and the production
+build succeeded. Browser checks confirmed all 12 full-flight GIFs load and a close
+cardinal preview uses the painted WebP sheet. The six-view animation gallery is
+available at `/assets/fishing/visitors/tree-birds/preview.html`.
+
+## Wildlife sizing, growth and flashing audit
+
+Bird silhouettes use their original size curve, converted to the current
+normalized depth coordinates. Butterfly and moth flight sprites are half their
+previous width and height; odonate sizes and identification art are unchanged.
+Wild insects and the controlled dragonfly integrate depth at 30% of the previous
+rate, preserving lateral flight and wingbeat timing. Butterflies choose only
+live bloom destinations, including when growth removes an occupied bloom.
+Daily new-stem and stage-advance chances are now 90% and 65%. Derived checkpoint
+checksums include those rates so old growth caches rebuild from the same seed.
+
+The audit found and addressed three sources of redundant work or visible resets:
+
+- Stable insect callback refs retain loaded sprite views, canvas frame caches
+  and direction across clock updates and catches of other insects. Previously,
+  every parent render detached and reattached every visitor's renderer.
+- Daily flower snapshots retain matching foliage nodes and their loaded state
+  during geometry measurement. Previously, changing the day cleared all flowers
+  for a commit, then recreated the same loaded art.
+- Bursts of scenery load, garden-ready, resize and scroll events coalesce into
+  one insect geometry measurement per frame, per family. Pending measurements
+  cancel on cleanup. Flight frames keep using the cached geometry.
+
+Regression checks cover retained canvas drawing, twelve garden notifications
+coalescing into one measurement, foliage identity/readiness across growth,
+bloom-only landing and retargeting, depth rates, size and seeded growth rates.
+These are functional and work-count checks, not an FPS/GPU benchmark. Local
+browser preview access timed out, so visual confirmation of the reported
+overlay flashing remains pending.
+
+Validation: all 308 fishing tests passed across 44 suites, and the production
+build succeeded with source maps disabled. The standalone `tsc --noEmit` command
+still reports existing test-only typing/target errors in `fishFight.test.tsx`
+and `fishFightGame.test.tsx`; the application build's type check passed.
+
 ## Night sky
 
 The sky now uses a local 85.6 KB catalog of 2,851 real stars, fetched only

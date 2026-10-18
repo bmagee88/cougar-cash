@@ -5,6 +5,7 @@ import {PLANT_ANCHORS_V1,PLANT_SPECIES_V1,PlantAnchor,PlantKind,PlantLocation,Pl
 export const PLANT_GENERATION_VERSION=1;
 export const PLANT_WORLD_KEY='stillwater.plant-world.v1';
 export const PLANT_CHECKPOINT_KEY='stillwater.plant-checkpoints.v1';
+export const PLANT_GROWTH_CHANCE={birth:.90,advance:.65} as const;
 export const STEM_STAGES=['stem','bud','bloom','seed','withering'] as const;
 export type StemStage=typeof STEM_STAGES[number];
 export interface PlantWorld {seed:string;generationVersion:number}
@@ -110,13 +111,13 @@ export function advancePlantStems(world:PlantWorld,plant:Pick<PlantBase,'id'|'sp
     // A seasonal gate makes the daily outcome irrelevant. Stateless seed
     // namespaces let us skip that work without changing any later outcome.
     if(stem.bornDay>=day||(!forcedWinter&&index<2&&!species.bloomSeasons.includes(season)))return [{...stem}];
-    if(plantRandom(world,'advance',stem.id,day)>=.60)return [{...stem}];
+    if(plantRandom(world,'advance',stem.id,day)>=PLANT_GROWTH_CHANCE.advance)return [{...stem}];
     if(index===4)return [];
     if(forcedWinter)return [{...stem,stage:'withering' as const}];
     return [{...stem,stage:STEM_STAGES[index+1]}];
   });
   const birthAllowed=!winter||(species.winterBlooming&&species.bloomSeasons.includes('winter'));
-  if(birthAllowed&&stems.length<5&&plantRandom(world,'birth',plant.id,day)<.75){
+  if(birthAllowed&&stems.length<5&&plantRandom(world,'birth',plant.id,day)<PLANT_GROWTH_CHANCE.birth){
     const empty=[0,1,2,3,4].filter(slot=>!stems.some(stem=>stem.slot===slot));
     const slot=empty[Math.floor(plantRandom(world,'birth-slot',plant.id,day)*empty.length)];
     stems.push({id:stemIdentity(plant.id,slot,day),slot,bornDay:day,stage:'stem'});
@@ -124,7 +125,7 @@ export function advancePlantStems(world:PlantWorld,plant:Pick<PlantBase,'id'|'sp
   return stems.sort((a,b)=>a.slot-b.slot);
 }
 const copyStems=(stems:readonly (readonly PlantStem[])[])=>stems.map(group=>group.map(stem=>({...stem})));
-const checkpointHash=(key:string,day:number,stems:PlantStem[][])=>plantHash(`${key}:${day}:${JSON.stringify(stems)}`).toString(36);
+const checkpointHash=(key:string,day:number,stems:PlantStem[][])=>plantHash(`${key}:${PLANT_GROWTH_CHANCE.birth}:${PLANT_GROWTH_CHANCE.advance}:${day}:${JSON.stringify(stems)}`).toString(36);
 function validCheckpoint(value:any,key:string,layout:readonly PlantBase[],calendar:PlantCalendar):value is Checkpoint {
   return Number.isInteger(value?.day)&&value.day>=calendar.startDay&&value.day<=calendar.endDay&&Array.isArray(value.stems)&&value.stems.length===layout.length&&
     value.stems.every((group:any,index:number)=>Array.isArray(group)&&group.length<=5&&new Set(group.map((stem:any)=>stem?.slot)).size===group.length&&group.every((stem:any)=>

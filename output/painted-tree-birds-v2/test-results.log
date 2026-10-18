@@ -1,0 +1,13 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=treeBirds|performance|environment --cacheDirectory=output/painted-bird-jest
+
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (26.905 s)
+PASS src/FishingTypingGame/__tests__/environment.test.tsx (21.305 s)
+PASS src/FishingTypingGame/__tests__/performance.test.tsx
+
+Test Suites: 3 passed, 3 total
+Tests:       27 passed, 27 total
+Snapshots:   0 total
+Time:        55.853 s
+Ran all test suites matching /treeBirds|performance|environment/i.

@@ -104,7 +104,7 @@ test('depth travel and apparent approach slow with distance, remain frame indepe
 test('natural butterflies, dragonflies and damselflies share the same depth-only projection',()=>{
   for(const kind of ['butterfly','dragonfly','damselfly'] as const){
     const flight={...createFlight(()=>.5),x:.7,y:.7,z:.06,vx:0,vy:0,vz:.2,mode:'hover' as const,turnIn:100,modeIn:100};
-    const expected={...flight};changeSceneDepth(expected,.08,.55);
+    const expected={...flight};changeSceneDepth(expected,.066,.55);
     if(kind==='butterfly')stepFlight(flight,.1,800,600,()=>.5,undefined,.55);
     else stepOdonate(flight,kind,.1,800,600,()=>.5,undefined,.55);
     expect(flight.x).toBeCloseTo(expected.x,12);expect(flight.z).toBeCloseTo(expected.z,12);
@@ -125,6 +125,9 @@ test('shoreline measurement accounts for the rendered artwork crop and location'
 test('all locations use normalized distance for shore trees and foreground plants',()=>{
   for(const location of ['dock','cove','birch']){
     mappedTreesForLocation(location).forEach(tree=>{
+      if(tree.frame==='viewer'){
+        expect(tree.hidden).toBe(true);expect(tree.top.z).toBeLessThan(0);expect(tree.top.x<0||tree.top.x>1).toBe(true);return;
+      }
       expect(tree.top.z).toBeGreaterThan(0);expect(tree.top.z).toBeLessThanOrEqual(1);
       if(tree.frame==='foreground')expect(tree.top.z).toBeLessThan(SCENE_DEPTH.foreground);
       else expect(tree.top.z).toBeGreaterThan(SCENE_DEPTH.foreground);
@@ -150,7 +153,7 @@ test('wild odonates stop their depth course at scenery and have a strong distanc
     const far={...near,z:.8};
     stepOdonate(near,kind,.1,800,600,()=>.5);stepOdonate(far,kind,.1,800,600,()=>.5);
     expect(far.x-.5).toBeLessThan((near.x-.5)*.05);expect(far.y-.3).toBeLessThan((near.y-.3)*.05);
-    const blocked={...near,x:.2,y:.3,z:.13,vz:.2};
+    const blocked={...near,x:.2,y:.3,z:.138,vz:.2};
     stepOdonate(blocked,kind,.1,800,600,()=>.5,undefined,.5,()=>true);
     expect(blocked.z).toBeCloseTo(.139,12);expect(blocked.vz).toBe(0);expect(blocked.turnIn).toBe(0);
   }

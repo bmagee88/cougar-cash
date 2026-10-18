@@ -1,0 +1,35 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=FishingGame.test --testNamePattern=observing a painted bird --cacheDirectory=output/bird-collection-game-jest
+
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (36.247 s)
+  √ observing a painted bird unlocks the journal and records an illustrated bird page (4835 ms)
+  ○ skipped a fresh game defaults to Fish Fight and keeps the screen awake
+  ○ skipped mode setting persists and an interactive haiku focuses, tracks rhythm and saves with a catch
+  ○ skipped reeling in an empty interactive cast permits mode switching and does not count an escape
+  ○ skipped software keyboard input reels and lands a fish, touch waits for focus, and a catch is recorded only by choice
+  ○ skipped observing a butterfly opens an illustrated draft, keeps it while consulting the guide, and records only by choice
+  ○ skipped scenic mode hides the HUD, blocks hidden casts and restores the same scenery and save
+  ○ skipped embedded fullscreen exits with Escape and dialogs stay inside the fullscreen game
+  ○ skipped native fullscreen follows browser exits without interrupting an active typing challenge
+  ○ skipped tackle selectors keep valid combinations, persist across reload and lock during a cast
+  ○ skipped a storm settling during active typing preserves the challenge and its progress
+  ○ skipped a natural event changes during typing without resetting the phrase, deadline, gear or lifetime save
+  ○ skipped a storm expires into rain during typing without changing the text, progress or deadline
+  ○ skipped a playable cast focuses typing, accepts corrections, reveals and persists exactly one catch
+  ○ skipped an expired challenge launches the float from its final progress without leaking encounter attributes
+  ○ skipped reduced motion shows the escape result without an airborne float or splash
+  ○ skipped correct characters reel the float in, while an error triggers a recoverable struggle
+  ○ skipped reloading keeps individual catches, and release keeps discovery and albino distinctions
+  ○ skipped the world clock advances across a moon boundary without resetting an active typing challenge
+  ○ skipped a landed haiku stays with its fish after reload and shows both original lines and typed text
+  ○ skipped release now clears the landed fish and returns to casting while retaining its lifetime rewards
+  ○ skipped livewell management selects catches individually or together and persists only the requested releases
+
+Test Suites: 1 passed, 1 total
+Tests:       21 skipped, 1 passed, 22 total
+Snapshots:   0 total
+Time:        42.956 s
+Ran all test suites matching /FishingGame.test/i with tests matching "observing a painted bird".
