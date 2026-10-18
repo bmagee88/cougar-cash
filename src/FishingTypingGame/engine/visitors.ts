@@ -1,6 +1,7 @@
 import { artwork } from './artwork';
 import { ButterflyPose, SaveData, Season, Weather } from './types';
 import { WORLD } from './world';
+import { birdById } from './birds';
 
 export const ODONATES = [
   {id:'green-darner',name:'Common green darner',scientificName:'Anax junius',kind:'dragonfly',wingspanMm:[80,100] as const,description:'A powerful patrol flier: long purposeful runs, sudden darts, hovering, and short backward corrections.',source:'https://mdc.mo.gov/discover-nature/field-guide/common-green-darner'},
@@ -23,9 +24,9 @@ export const visitorSheet=(id:string,view?:ButterflyPose['view'])=>`${artwork(`v
 export const santaAsset=()=>artwork('visitors/santa.webp');
 export const santaSkyAsset=()=>artwork('visitors/santa-sky.webp');
 export const SANTA_SPRITE={width:64,height:28};
-export function readVisitorDiscoveries(raw:unknown):string[]{return Array.isArray(raw)?Array.from(new Set(raw.filter(id=>id===SANTA.id||!!visitorById(id)))):[];}
+export function readVisitorDiscoveries(raw:unknown):string[]{return Array.isArray(raw)?Array.from(new Set(raw.filter(id=>id===SANTA.id||!!visitorById(id)||!!birdById(id)))):[];}
 export function discoverVisitor(save:SaveData,id:string,now=new Date()):SaveData {
-  if(id!==SANTA.id&&!visitorById(id))return save;
+  if(id!==SANTA.id&&!visitorById(id)&&!birdById(id))return save;
   const discoveries=Array.from(new Set([...(save.visitorDiscoveries??[]),id]));
   return {...save,visitorDiscoveries:discoveries,...(id===SANTA.id&&now.getMonth()===11&&now.getDate()===25?{santaYears:Array.from(new Set([...(save.santaYears??[]),now.getFullYear()]))}:{})};
 }

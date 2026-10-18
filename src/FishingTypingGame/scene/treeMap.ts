@@ -1,6 +1,6 @@
 export type TreePoint = { x: number; y: number; z: number };
-export type TreeFrame = 'landscape' | 'foreground';
-export interface DistantTree { id: string; label: string; bottom: TreePoint; top: TreePoint; crownWidth: number; frame?: TreeFrame }
+export type TreeFrame = 'landscape' | 'foreground' | 'viewer';
+export interface DistantTree { id: string; label: string; bottom: TreePoint; top: TreePoint; crownWidth: number; frame?: TreeFrame; kind?:'tree'|'bush'; hidden?:boolean }
 // x/y are normalized coordinates in the painted landscape, before its cover crop.
 // z is relative scene distance: larger means farther away. Only the ten nearest
 // recognizable landscape trees are mapped below. Foreground trees also take
@@ -56,9 +56,21 @@ export const FOREGROUND_TREES: DistantTree[] = [
 const COVE_FOREGROUND_TREES: DistantTree[] = [
   { id: 'cove-foreground-willow', label: 'Foreground willow trunk', bottom: { x: .04, y: .56, z: .043 }, top: { x: .075, y: 0, z: .043 }, crownWidth: .18, frame: 'foreground' },
 ];
+// These existing painted shrubs sit behind the close trunks (larger positive z).
+const LOCATION_BUSHES:Record<'cove'|'birch',DistantTree[]>={
+  cove:[{id:'cove-bush',label:'Bush behind the foreground willow',kind:'bush',frame:'foreground',top:{x:.16,y:.46,z:.11},bottom:{x:.16,y:.56,z:.11},crownWidth:.12}],
+  birch:[{id:'birch-bush',label:'Bush behind the foreground birches',kind:'bush',frame:'foreground',top:{x:.15,y:.49,z:.10},bottom:{x:.15,y:.61,z:.10},crownWidth:.10}],
+};
+// Viewer-frame anchors stay outside every responsive crop. Negative z means
+// behind the camera; they are destinations/directions, never visible scenery.
+export const behindViewerTreesForLocation=(location:string):DistantTree[]=>[
+  {id:`${location}-behind-viewer-left`,label:'Hidden tree behind viewer, left',kind:'tree',hidden:true,frame:'viewer',top:{x:-.24,y:.24,z:-.14},bottom:{x:-.24,y:.70,z:-.14},crownWidth:.12},
+  {id:`${location}-behind-viewer-right`,label:'Hidden tree behind viewer, right',kind:'tree',hidden:true,frame:'viewer',top:{x:1.24,y:.24,z:-.14},bottom:{x:1.24,y:.70,z:-.14},crownWidth:.12},
+];
+export const bushesForLocation=(location:string)=>location==='cove'?LOCATION_BUSHES.cove:location==='birch'?LOCATION_BUSHES.birch:[];
 export const treesForLocation = (location: string) => LOCATION_TREES[location === 'birch' ? 'birch' : location === 'cove' ? 'cove' : 'dock'];
 export const foregroundTreesForLocation = (location: string) => location === 'birch' ? FOREGROUND_TREES : location === 'cove' ? COVE_FOREGROUND_TREES : [];
-export const mappedTreesForLocation = (location: string) => [...treesForLocation(location), ...foregroundTreesForLocation(location)];
+export const mappedTreesForLocation = (location: string) => [...treesForLocation(location), ...foregroundTreesForLocation(location), ...bushesForLocation(location), ...behindViewerTreesForLocation(location)];
 export function treePerch(tree: DistantTree, random: () => number): TreePoint {
   const height = .10 + random() * .20;
   return { x: tree.top.x + (tree.bottom.x - tree.top.x) * height + (random() - .5) * tree.crownWidth * .32,
@@ -68,5 +80,6 @@ export function treePerch(tree: DistantTree, random: () => number): TreePoint {
 export function birdPlane(location: string) {
   const cove = location === 'cove';
   return { '--bird-plane-w': cove ? 'max(102cqw,181.3cqh)' : 'max(102cqw,204cqh)',
-    '--bird-plane-h': cove ? 'max(57.4cqw,102cqh)' : 'max(51cqw,102cqh)' };
+    '--bird-plane-h': cove ? 'max(57.4cqw,102cqh)' : 'max(51cqw,102cqh)',
+    '--bird-view-left':'calc((var(--bird-plane-w) - 100cqw) / 2)', '--bird-view-top':'calc((var(--bird-plane-h) - 100cqh) / 2)' };
 }

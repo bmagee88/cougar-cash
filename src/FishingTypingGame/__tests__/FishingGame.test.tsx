@@ -10,6 +10,7 @@ import { WORLD, worldAt } from '../engine/world';
 import { biteWaitRange } from '../engine/feeding';
 import { startNaturalWeather, WEATHER_DURATIONS } from '../engine/naturalWeather';
 import * as worldClock from '../useWorldClock';
+import * as treeBirds from '../engine/treeBirds';
 
 declare const test: (name: string, fn: () => void, timeout?: number) => void;
 declare const expect: any;
@@ -40,11 +41,11 @@ function bite() {
   act(() => { jest.advanceTimersByTime(BALANCE.castMs + minimum * 1000 + 50); });
 }
 
-test('a fresh game defaults to Interactive fishing and keeps the screen awake',()=>{
+test('a fresh game defaults to Fish Fight and keeps the screen awake',()=>{
   localStorage.clear();mount();
-  expect(screen.getByText('Type a haiku to retrieve. Vary your rhythm to tempt a fish.')).toBeInTheDocument();
+  expect(screen.getByText('One haiku from cast to catch. Backspace during jolts to ease the line.')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button',{name:'Settings'}));
-  expect(screen.getByRole('combobox',{name:/^Fishing mode/})).toHaveTextContent('Interactive');
+  expect(screen.getByRole('combobox',{name:/^Fishing mode/})).toHaveTextContent('Fish Fight');
   expect(screen.getByRole('checkbox',{name:'Keep screen awake'})).toBeChecked();
   expect(screen.getByRole('checkbox',{name:'Hide automatic fish details'})).toBeChecked();
   expect(screen.getByRole('combobox',{name:'Measurements'})).toHaveTextContent('Imperial');
@@ -135,6 +136,35 @@ test('observing a butterfly opens an illustrated draft, keeps it while consultin
   fireEvent.click(screen.getByRole('tab',{name:'My notebook'}));
   expect(screen.getByLabelText('Subject')).toHaveValue('Orange butterfly');
   expect(screen.getByRole('img',{name:'The butterfly you observed'})).toBeInTheDocument();
+});
+
+test('observing a painted bird unlocks the journal and records an illustrated bird page',()=>{
+  const save=emptySave();save.location='cove';localStorage.setItem(SAVE_KEY,JSON.stringify(save));
+  jest.spyOn(worldClock,'useWorldClock').mockReturnValue(worldAt(Date.now(),{season:'spring',hour:12}));
+  const visit=treeBirds.previewTreeBirdVisit(Date.now()-1000,'cove',9,false);
+  expect(visit.birds[0].species).toBe('cardinal');expect(treeBirds.usesSpeciesBirdArt(visit.birds[0])).toBe(true);
+  jest.spyOn(treeBirds,'treeBirdSchedule').mockReturnValue({visits:[visit],nextAt:Date.now()+60000});
+  mount();
+  fireEvent.click(screen.getByRole('button',{name:'Observe cardinal'}));
+  const entry=screen.getByRole('dialog',{name:'A bird observation'});
+  expect(within(entry).getByRole('img',{name:'The bird you observed'})).toBeInTheDocument();
+  expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).visitorDiscoveries).toEqual(['cardinal']);
+  expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).notebook).toHaveLength(0);
+  fireEvent.change(within(entry).getByLabelText('Entry title'),{target:{value:'At the willow'}});
+  fireEvent.click(within(entry).getByRole('button',{name:'Open field guide'}));
+  const guide=screen.getByRole('dialog',{name:'Field guide'});
+  expect(within(guide).getByRole('tab',{name:'Birds · 1/2'})).toHaveAttribute('aria-selected','true');
+  expect(within(guide).getByRole('heading',{name:'Cardinal'})).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button',{name:'Close field guide'}));act(()=>jest.advanceTimersByTime(300));
+  fireEvent.click(within(entry).getByRole('button',{name:'Record entry'}));
+  const recorded=JSON.parse(localStorage.getItem(SAVE_KEY)!);
+  expect(recorded.notebook[0]).toMatchObject({title:'At the willow',image:{kind:'bird',speciesId:'cardinal',pose:{direction:'front-left'}}});
+  expect(recorded.stats.caught).toBe(0);expect(recorded.balance).toBe(save.balance);
+  fireEvent.click(screen.getByRole('button',{name:'Close A bird observation'}));act(()=>jest.advanceTimersByTime(300));
+  fireEvent.click(screen.getByRole('button',{name:'Journal'}));
+  fireEvent.click(screen.getByRole('tab',{name:'My notebook'}));
+  expect(screen.getByLabelText('Entry title')).toHaveValue('At the willow');
+  expect(screen.getByRole('img',{name:'The bird you observed'})).toBeInTheDocument();
 });
 
 test('scenic mode hides the HUD, blocks hidden casts and restores the same scenery and save', () => {

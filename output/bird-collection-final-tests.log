@@ -1,0 +1,20 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=treeBirds|birdJournal|lakeVisitors|notebook|butterflyGuide|FishingGame.test --testNamePattern=bird|Bird|visitor|notebook|guide --cacheDirectory=output/bird-journal-jest
+
+PASS src/FishingTypingGame/__tests__/birdJournal.test.tsx (12.648 s)
+PASS src/FishingTypingGame/__tests__/butterflyGuide.test.tsx
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/FishingGame.test.tsx (33.256 s)
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (17.214 s)
+FakeTimers: cancelAnimationFrame was invoked to clear a native timer instead of one created by this library.
+To automatically clean-up native timers, use `shouldClearNativeTimers`.
+PASS src/FishingTypingGame/__tests__/notebook.test.tsx (7.818 s)
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx
+
+Test Suites: 6 passed, 6 total
+Tests:       45 skipped, 23 passed, 68 total
+Snapshots:   0 total
+Time:        83.99 s
+Ran all test suites matching /treeBirds|birdJournal|lakeVisitors|notebook|butterflyGuide|FishingGame.test/i with tests matching "bird|Bird|visitor|notebook|guide".

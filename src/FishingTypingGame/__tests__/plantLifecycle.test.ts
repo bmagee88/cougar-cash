@@ -19,16 +19,17 @@ test('world identity persists with its generation version and never writes fishi
   expect(module.plantSnapshot('dock',date(10)).unsupported).toBe(true);expect(JSON.parse(localStorage.getItem(PLANT_WORLD_KEY)!).generationVersion).toBe(99);
 });
 
-test('births are one seeded 75% opportunity per base and cannot advance on their birthday',()=>{
+test('daily birth and stage advancement rates are 90% and 65%, with no birthday advancement',()=>{
   const plant={id:'birth-test',speciesId:'cornflower'};
+  const original=stem(plant.id,0,0,'stem');
   let births=0,advances=0;
   for(let day=1;day<=10000;day++){
     const grown=advancePlantStems(world,plant,[],day,'summer');expect(grown.length).toBeLessThanOrEqual(1);
     if(grown.length){births++;expect(grown[0]).toMatchObject({bornDay:day,stage:'stem'});}
-    if(plantRandom(world,'advance',stemIdentity(plant.id,0,0),day)<.6)advances++;
+    if(advancePlantStems(world,plant,[original],day,'summer').find(s=>s.id===original.id)!.stage==='bud')advances++;
   }
-  expect(births/10000).toBeGreaterThan(.73);expect(births/10000).toBeLessThan(.77);
-  expect(advances/10000).toBeGreaterThan(.58);expect(advances/10000).toBeLessThan(.62);
+  expect(births/10000).toBeGreaterThan(.88);expect(births/10000).toBeLessThan(.92);
+  expect(advances/10000).toBeGreaterThan(.63);expect(advances/10000).toBeLessThan(.67);
   const newborn=stem(plant.id,0,4,'stem');expect(advancePlantStems(world,plant,[newborn],4,'summer').find(s=>s.id===newborn.id)!.stage).toBe('stem');
 });
 
@@ -44,7 +45,7 @@ test('bloom seasons gate stem and bud advancement, without an automatic season-b
   const plant={id:'fall-aster',speciesId:'aster'},original=stem(plant.id,0,0,'stem');
   let states=[original];for(let day=1;day<40;day++)states=advancePlantStems(world,plant,states,day,'summer');
   expect(states.every(s=>s.stage==='stem')).toBe(true);
-  let failed=40;while(plantRandom(world,'advance',original.id,failed)<.6)failed++;
+  let failed=40;while(plantRandom(world,'advance',original.id,failed)<.65)failed++;
   expect(advancePlantStems(world,plant,[original],failed,'autumn').find(s=>s.id===original.id)!.stage).toBe('stem');
   const passed=successfulDay(original.id,'advance',failed+1),bud=advancePlantStems(world,plant,[original],passed,'autumn').find(s=>s.id===original.id)!;
   expect(bud.stage).toBe('bud');expect(advancePlantStems(world,plant,[bud],passed+1,'summer').find(s=>s.id===bud.id)!.stage).toBe('bud');
@@ -55,7 +56,7 @@ test('ordinary perennials retain failed stages and skip successful pre-withering
   for(const stage of ['stem','bud','bloom','seed'] as const){
     const original=stem(plant.id,0,0,stage),passed=successfulDay(original.id,'advance',90);
     expect(advancePlantStems(world,plant,[original],passed,'winter')).toEqual([{...original,stage:'withering'}]);
-    let failed=90;while(plantRandom(world,'advance',original.id,failed)<.6)failed++;
+    let failed=90;while(plantRandom(world,'advance',original.id,failed)<.65)failed++;
     expect(advancePlantStems(world,plant,[original],failed,'winter')).toEqual([original]);
   }
   for(let day=90;day<130;day++)expect(advancePlantStems(world,plant,[],day,'winter')).toEqual([]);

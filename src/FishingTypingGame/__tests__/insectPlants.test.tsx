@@ -1,6 +1,6 @@
 import { configureButterflyFlight, createFlight, isPerched, planPerch, startleFlight, stepFlight } from '../scene/butterflyFlight';
 import { stepOdonate } from '../scene/odonateFlight';
-import { LOCATION_PLANTS, MappedPlant, planPlantVisit, plantsForLocation, visiblePlantPerches } from '../scene/plantMap';
+import { LOCATION_PLANTS, MappedPlant, planPlantVisit, plantsForLocation, refreshPlantTargets, visiblePlantPerches } from '../scene/plantMap';
 import { blankEntry, saveNotebookEntry } from '../engine/notebook';
 import { deserializeSave, emptySave } from '../engine/storage';
 import { butterflyPoseAsset } from '../engine/butterflies';
@@ -8,6 +8,18 @@ import { butterflyPoseAsset } from '../engine/butterflies';
 declare const test:any,expect:any,jest:any,afterEach:any;
 afterEach(()=>jest.restoreAllMocks());
 const rect=(left=0,top=0,width=800,height=600)=>({left,top,right:left+width,bottom:top+height,x:left,y:top,width,height,toJSON:()=>({})} as DOMRect);
+
+test('butterflies land only on blooms, including retargets when a flower stops blooming',()=>{
+  const leaf:MappedPlant={id:'leaf',label:'Leaf',layer:'leaf',x:.5,y:.7,z:.06,kind:'leaf',uses:['butterfly','moth']};
+  const bloom:MappedPlant={...leaf,id:'bloom',kind:'flower'};
+  const f=createFlight(()=>.5);
+  planPlantVisit(f,[leaf],'butterfly',()=>.5);expect(f.perch).toBeUndefined();expect(f.plants).toEqual([]);
+  planPlantVisit(f,[leaf,bloom],'butterfly',()=>0);expect(f.perch!.plantId).toBe('bloom');expect(f.plants).toEqual([bloom]);
+  f.perch!.landed=true;
+  refreshPlantTargets(f,[leaf,{...bloom,kind:'stem'}],'butterfly',()=>.5);
+  expect(isPerched(f)).toBe(false);expect(f.plants).toEqual([]);
+  const moth=createFlight(()=>.5);planPlantVisit(moth,[leaf],'moth',()=>.5);expect(moth.perch!.plantId).toBe('leaf');
+});
 
 test('every location has mapped nectar, leaves and stalks; responsive crop and hidden cutouts filter destinations',()=>{
   Object.values(LOCATION_PLANTS).forEach(plants=>{

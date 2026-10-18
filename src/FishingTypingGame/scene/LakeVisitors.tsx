@@ -7,7 +7,7 @@ import { paintedPixelAt } from './butterflyFlight';
 import { LakeSoundControls, PlayWaterSound } from '../audio/sounds';
 import GooseVisitors from './GooseVisitors';
 
-export type WildlifePreview={santa?:number;odonates?:number;controlledDragonfly?:number;geese?:number;splashes?:number;treeBirds?:number;treeFlock?:number};
+export type WildlifePreview={santa?:number;odonates?:number;controlledDragonfly?:number;geese?:number;splashes?:number;treeBirds?:number;treeFlock?:number;treeFlyby?:number};
 export function LanternInsects(){
   return <span className="f-lantern-insects" data-layer="lantern-insects" aria-hidden="true">{Array.from({length:7},(_,i)=><span key={i} className="f-lantern-orbit" style={{'--insect-radius':`${13+i*3}px`,'--insect-tilt':`${i*47}deg`,animationDuration:`${1.9+i*.43}s`,animationDelay:`-${i*.37}s`} as CSSProperties}><i style={{animationDelay:`-${i*.17}s`}}/></span>)}</span>;
 }

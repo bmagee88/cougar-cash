@@ -58,6 +58,19 @@ test('the same plant gets substantially smaller farther up the bank without movi
   view.unmount();
 });
 
+test('daily growth retains loaded foliage nodes and their ready state',()=>{
+  dimensions();const garden=snapshot(40),view=render(<Fixture garden={garden}/>);
+  const image=view.container.querySelector<HTMLImageElement>('[data-life-art]')!,parent=image.parentElement!;
+  fireEvent.load(image);expect(parent.dataset.gardenReady).toBe('true');
+  const removed:Node[]=[];const observer=new MutationObserver(records=>records.forEach(record=>removed.push(...Array.from(record.removedNodes))));
+  observer.observe(view.container,{childList:true,subtree:true});
+  view.rerender(<Fixture garden={snapshot(41)}/>);
+  observer.takeRecords().forEach(record=>removed.push(...Array.from(record.removedNodes)));observer.disconnect();
+  expect(view.container.querySelector(`[data-life-art="${image.dataset.lifeArt}"]`)).toBe(image);
+  expect(parent.dataset.gardenReady).toBe('true');expect(removed.some(node=>node===parent||node.contains(parent))).toBe(false);
+  view.unmount();
+});
+
 test('foliage and stalk silhouettes vary by seed while keeping their grounded contacts and stable daily shapes',()=>{
   const garden=snapshot(40),next=snapshot(41);
   const shapes=garden.plants.filter(p=>p.kind!=='lily').map(plant=>{

@@ -1,0 +1,26 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=treeBirds --cacheDirectory=output/bird-journal-jest
+
+PASS src/FishingTypingGame/__tests__/treeBirds.test.tsx (41.83 s)
+  √ collecting one painted flock bird records its current pose once, keeps its neighbors and survives visibility changes (6516 ms)
+  √ distant silhouette birds have no collection controls (119 ms)
+  √ birds cannot be collected before departure or through opaque foreground artwork (383 ms)
+  √ cardinals visit alone while sparrows can visit alone or in the unchanged ten-bird flock (277 ms)
+  √ all six directions have painted sheets and real GIF exports for wingbeat, glide and slowing to land (84 ms)
+  √ close routes use species art while far crossings retain the original silhouettes and timers clean up (1870 ms)
+  √ each landscape maps exactly ten trees in source-art x/y and distance z; perches stay in their top third (95 ms)
+  √ two independently jittered clocks keep 10–30 game-minute gaps, while the ten-bird clock keeps 24–48 real-minute gaps (1804 ms)
+  √ routes launch and land within different tree crowns, vary depth, and flocks either land or leave the frame (13932 ms)
+  √ a bounding path rises and dips repeatedly, with exact endpoint height and scale (24 ms)
+  √ the schedule resumes current time without catch-up bursts and never exceeds twelve natural birds (3421 ms)
+  √ hidden/offscreen birds unload, returning uses elapsed progress, and every timer and observer is released (1379 ms)
+  √ map overlays mark ten top-third zones; reduced motion has no bird timers or sprite layers (66 ms)
+  √ Birch Point and Willow Cove connect close trunks in both directions and birds grow continuously on approach (67 ms)
+  √ environment samples leave bird travel, wing poses and fishing cues on their natural timelines (2 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       15 passed, 15 total
+Snapshots:   0 total
+Time:        48.348 s
+Ran all test suites matching /treeBirds/i.

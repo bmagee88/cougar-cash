@@ -21,8 +21,14 @@ not a claim to reproduce measured wingbeats or exact species aerodynamics.
 - Ebony jewelwings make smaller, slower fluttering trips near leaves and stems.
   They fold their wings when resting; the darner rests with wings spread.
 - Approaches brake near their destination. Butterflies can then visit another
-  compatible plant. A scare cancels a planned return and takes priority over
+  live bloom; foliage, buds, seeds and withering flowers are excluded. A scare cancels a planned return and takes priority over
   feeding, landing and patrol behavior.
+- Butterfly landings choose between the top view and a side profile. A side
+  landing holds that view through the slow final approach and resting wingbeats,
+  retaining its left/right facing after stopping. The recorded journal pose uses
+  the same view. Hover-feeding clearwings and odonate resting poses are unchanged.
+- Depth travel runs at 30% of the previous rate for wild insects and the
+  controlled dragonfly. Lateral flight and wingbeat timing keep their cadence.
 - An occupied flower can cause a visitor to wait nearby for 2.2–4 seconds. If
   the resident leaves, the approach resumes; otherwise the waiting insect
   chooses another plant. In 35% of encounters the resident is displaced and

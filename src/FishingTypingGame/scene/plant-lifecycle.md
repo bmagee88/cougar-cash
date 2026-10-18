@@ -41,7 +41,7 @@ stay fixed throughout the cycle. Every lily group has exactly five leaf pads;
 each pad is one stem slot. Reeds and flower bases also have five slots.
 
 Every subsequent game day processes existing stems first: each has a seeded
-60% opportunity to advance. Then the eligible base has one seeded 75% opportunity
+65% opportunity to advance. Then the eligible base has one seeded 90% opportunity
 to create one stem in a free slot. Newborns cannot advance on their birth day.
 Withering stems count toward the five-stem cap. Removal deletes only that stem,
 not its foliage; a replacement receives a different birth identity.

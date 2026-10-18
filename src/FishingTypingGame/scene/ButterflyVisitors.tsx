@@ -1,4 +1,4 @@
-import React, { RefObject, useEffect, useRef, useState } from 'react';
+import React, { memo, RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { ButterflyPose, Season, Weather } from '../engine/types';
 import { butterflyAsset, butterflyDisplayWidth, butterflySideSheet, butterflyTime, chooseButterfly, eligibleButterflies, SIDE_BUTTERFLY_SPRITE, SIDE_FLIGHT_SPECIES } from '../engine/butterflies';
 import { butterflyCount, visitorActivity } from './butterflies';
@@ -72,12 +72,14 @@ export function paintedVisitorButton(scene:HTMLElement,x:number,y:number):HTMLBu
   });
 }
 function paint(visitor:Visitor,rendered:RenderedVisitor):void {
-  const directional=hasDirectionalVisitor(visitor.speciesId)&&!isPerched(visitor.flight);
+  const flight=visitor.flight,perched=isPerched(flight),perch=flight.perch;
+  const directional=hasDirectionalVisitor(visitor.speciesId)&&!perched;
   const direction=directional?visitor.direction?.view:undefined;
   const depthSprite=direction==='front'?rendered.frontSprite:direction==='back'?rendered.backSprite:undefined;
-  const side=!!rendered.sideSprite&&!isPerched(visitor.flight)&&Math.abs(visitor.flight.vx)>35;
+  const sidewaysLanding=perch?.sideways&&!perch.finished&&!flight.fleeing&&!flight.behindForeground&&flight.age>=perch.startAt;
+  const side=!!rendered.sideSprite&&(perched?perch?.sideways:sidewaysLanding||Math.abs(flight.vx)>35);
   const sprite=side?SIDE_BUTTERFLY_SPRITE:visitorById(visitor.speciesId)?ODONATE_SPRITE:BUTTERFLY_SPRITE;
-  const flight=visitor.flight,scale=flightScale(flight.z,flight.perspective),size=visitor.size*sprite.canvasSize/sprite.width*scale;
+  const scale=flightScale(flight.z,flight.perspective),size=visitor.size*sprite.canvasSize/sprite.width*scale;
   const style=rendered.button.style;
   style.left=`${flight.x*100}%`;style.top=`${flight.y*100}%`;style.width=`${size}px`;style.height=`${size}px`;
   style.opacity=String(flight.age<0?0:flightOpacity(flight.z));style.zIndex=flight.behindForeground?'4':'11';
@@ -90,7 +92,7 @@ function paint(visitor:Visitor,rendered:RenderedVisitor):void {
   const frame=isPerched(flight)&&!flight.perch?.hoverFeed?flight.perch!.frame:flight.mode==='glide'?(side?3:0):flight.wingFrame??Math.floor(Math.max(0,flight.age)*1000/rendered.sprite.frameMs)%8;
   const view=depthSprite?direction as 'front'|'back':side?'side':undefined;
   const angle=depthSprite?0:Math.round(flight.heading*24)/24;
-  const facingLeft=directional?direction==='left'||(direction!=='right'&&(flight.motionVx??flight.vx)<0):(flight.facing??flight.vx)<0;
+  const facingLeft=directional?direction==='left'||(direction!=='right'&&(flight.motionVx??flight.vx)<0):(perched&&side?perch?.facing??flight.facing??flight.vx:flight.facing??flight.vx)<0;
   const flip=!depthSprite&&facingLeft?-1:1;
   const key=`${frame}:${angle}:${flip}:${view??'dorsal'}:${isPerched(flight)?'rest':'flight'}`;
   if(rendered.frameKey===key)return;
@@ -106,7 +108,30 @@ function paint(visitor:Visitor,rendered:RenderedVisitor):void {
 }
 export { loadSprite as loadVisitorSprite, paint as paintVisitor };
 
-export default function ButterflyVisitors({sceneRef,season,hour,weather,location,reducedMotion,preview=0,onObserve,family='butterflies'}:{sceneRef:RefObject<HTMLDivElement>;season:Season;hour:number;weather:Weather;location:string;reducedMotion:boolean;preview?:number;onObserve?:ObserveButterfly;family?:'butterflies'|'odonates'}) {
+/** Keep the canvas and loaded views attached across clock and sibling updates. */
+function VisitorButton({visitor,rendered,family,enabled,onClick}:{visitor:Visitor;rendered:RefObject<Map<number,RenderedVisitor>>;family:'butterflies'|'odonates';enabled:boolean;onClick:React.MouseEventHandler<HTMLButtonElement>}) {
+  const attach=useCallback((button:HTMLButtonElement|null)=>{
+    if(!button){rendered.current?.delete(visitor.id);return;}
+    const canvas=button.querySelector('canvas')!,target:RenderedVisitor={button,canvas};rendered.current!.set(visitor.id,target);paint(visitor,target);
+    const load=(view?:ButterflyPose['view'])=>{
+      void loadSprite(visitor.speciesId,view).then(sprite=>{
+        if(rendered.current?.get(visitor.id)!==target)return;
+        if(view==='side')target.sideSprite=sprite;else if(view==='front')target.frontSprite=sprite;else if(view==='back')target.backSprite=sprite;else target.sprite=sprite;
+        paint(visitor,target);
+      }).catch(()=>{/* Retain available artwork; missing pixels cannot be caught. */});
+    };
+    load();
+    if(SIDE_FLIGHT_SPECIES.includes(visitor.speciesId))load('side');
+    if(hasDirectionalVisitor(visitor.speciesId)){load('front');load('back');}
+  },[visitor,rendered]);
+  const size=family==='odonates'?ODONATE_SPRITE.canvasSize:BUTTERFLY_SPRITE.canvasSize;
+  return <button type="button" ref={attach} className="f-butterfly-visit" aria-label={family==='odonates'?`Observe ${visitorById(visitor.speciesId)?.kind}`:'Observe butterfly'} title="Add this visitor to your field guide" disabled={!enabled} onClick={onClick}
+    data-testid={family==='odonates'?'odonate-visitor':'butterfly-visitor'} data-visitor-species={visitor.speciesId} data-wingspan-mm={visitor.wingspanMm}>
+    <canvas className="f-butterfly-flight" width={size} height={size} aria-hidden="true"/>
+  </button>;
+}
+
+export default memo(function ButterflyVisitors({sceneRef,season,hour,weather,location,reducedMotion,preview=0,onObserve,family='butterflies'}:{sceneRef:RefObject<HTMLDivElement>;season:Season;hour:number;weather:Weather;location:string;reducedMotion:boolean;preview?:number;onObserve?:ObserveButterfly;family?:'butterflies'|'odonates'}) {
   const [visitors,setVisitors]=useState<Visitor[]>([]);
   const live=useRef(visitors);live.current=visitors;
   const rendered=useRef(new Map<number,RenderedVisitor>()),pointer=useRef<(FlightPointer&{time:number})|undefined>(undefined);
@@ -122,7 +147,7 @@ export default function ButterflyVisitors({sceneRef,season,hour,weather,location
     const moved=previousLocation.current!==location;previousLocation.current=location;
     setVisitors(current=>moved?[]:current.filter(visitor=>eligible.has(visitor.speciesId)));
     const scene=sceneRef.current;if(!scene)return;
-    let timer:ReturnType<typeof setTimeout>|undefined,frame:number|undefined,onScreen=true,previousTime:number|undefined;
+    let timer:ReturnType<typeof setTimeout>|undefined,frame:number|undefined,measurement:number|undefined,onScreen=true,previousTime:number|undefined;
     let bounds=scene.getBoundingClientRect(),camera=sceneDepthFrame(scene,location,bounds),horizon=camera.horizon,plants=visiblePlantPerches(scene,location,bounds);
     const obstacles=foregroundCollision(scene);obstacles.measure(bounds);
     const measureHorizon=()=>{
@@ -148,7 +173,7 @@ export default function ButterflyVisitors({sceneRef,season,hour,weather,location
         else configureButterflyFlight(flight,species.id,Math.random);
         flight.z=Math.min(flight.z,foregroundDepth(camera)*.65);
         flight.closeRadius*=Math.min(1,wingspanMm/65);
-        const size=butterflyDisplayWidth(wingspanMm)*(family==='odonates'?ODONATE_DISPLAY_SCALE:1);
+        const size=butterflyDisplayWidth(wingspanMm)*(family==='odonates'?ODONATE_DISPLAY_SCALE:.5);
         const margin=Math.min(.45,size*sprite.canvasSize/sprite.width*flightScale(flight.z,camera)/2/bounds.width+.015);
         flight.x=flight.x<0?-margin:1+margin;
         const kind=visitorById(species.id)?.kind??('kind' in species&&species.kind==='moth'&&species.id!=='hummingbird-clearwing'?'moth':'butterfly');
@@ -199,31 +224,26 @@ export default function ButterflyVisitors({sceneRef,season,hour,weather,location
       pointer.current={x,y,previousX:recent?previous.x:x,previousY:recent?previous.y:y,speed:recent?Math.hypot(x-previous.x,y-previous.y)/Math.max(.008,(now-previous.time)/1000):0,time:now};
     };
     const measure=()=>{
+      measurement=undefined;
       bounds=scene.getBoundingClientRect();measureHorizon();obstacles.measure(bounds);pointer.current=undefined;plants=visiblePlantPerches(scene,location,bounds);
       live.current.forEach(visitor=>{
         const use=visitorById(visitor.speciesId)?.kind??(visitor.flight.pattern==='moth'?'moth':'butterfly');
         refreshPlantTargets(visitor.flight,plants,use,Math.random);
       });
     };
-    const resize=typeof ResizeObserver==='undefined'?undefined:new ResizeObserver(measure);resize?.observe(scene);
-    scene.addEventListener('load',measure,true);
-    scene.addEventListener(GARDEN_READY_EVENT,measure);
+    // A garden can load dozens of cutouts together. Snapshot it once per frame.
+    const scheduleMeasure=()=>{if(measurement===undefined)measurement=requestAnimationFrame(measure);};
+    const resize=typeof ResizeObserver==='undefined'?undefined:new ResizeObserver(scheduleMeasure);resize?.observe(scene);
+    scene.addEventListener('load',scheduleMeasure,true);
+    scene.addEventListener(GARDEN_READY_EVENT,scheduleMeasure);
     const observer=typeof IntersectionObserver==='undefined'?undefined:new IntersectionObserver(entries=>{onScreen=entries[0]?.isIntersecting??true;visibility();});
     observer?.observe(scene);document.addEventListener('visibilitychange',visibility);document.addEventListener('pointermove',move,{passive:true});
-    window.addEventListener('scroll',measure,true);window.addEventListener('resize',measure);
+    window.addEventListener('scroll',scheduleMeasure,true);window.addEventListener('resize',scheduleMeasure);
     if(preview!==lastPreview.current)arrive(true);
     if(frame===undefined)frame=requestAnimationFrame(animate);schedule(true);
-    return ()=>{clearTimeout(timer);if(frame!==undefined)cancelAnimationFrame(frame);observer?.disconnect();resize?.disconnect();scene.removeEventListener('load',measure,true);scene.removeEventListener(GARDEN_READY_EVENT,measure);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('pointermove',move);window.removeEventListener('scroll',measure,true);window.removeEventListener('resize',measure);pointer.current=undefined;};
+    return ()=>{clearTimeout(timer);if(frame!==undefined)cancelAnimationFrame(frame);if(measurement!==undefined)cancelAnimationFrame(measurement);observer?.disconnect();resize?.disconnect();scene.removeEventListener('load',scheduleMeasure,true);scene.removeEventListener(GARDEN_READY_EVENT,scheduleMeasure);document.removeEventListener('visibilitychange',visibility);document.removeEventListener('pointermove',move);window.removeEventListener('scroll',scheduleMeasure,true);window.removeEventListener('resize',scheduleMeasure);pointer.current=undefined;};
   },[activity,reducedMotion,preview,sceneRef,location,season,time,weather,family,sprite]);
-  return <div className="f-butterfly-visitors" aria-hidden={onObserve?undefined:true} data-layer={family}>{visitors.map(visitor=><button type="button" key={visitor.id} ref={button=>{
-    if(!button){rendered.current.delete(visitor.id);return;}
-    const canvas=button.querySelector('canvas')!;const target:RenderedVisitor={button,canvas};rendered.current.set(visitor.id,target);paint(visitor,target);
-    void loadSprite(visitor.speciesId).then(sprite=>{if(rendered.current.get(visitor.id)===target){target.sprite=sprite;paint(visitor,target);}}).catch(()=>{/* Unloaded artwork is never a catchable rectangle. */});
-    if(SIDE_FLIGHT_SPECIES.includes(visitor.speciesId))void loadSprite(visitor.speciesId,'side').then(sprite=>{if(rendered.current.get(visitor.id)===target){target.sideSprite=sprite;paint(visitor,target);}}).catch(()=>{/* The existing dorsal art remains available. */});
-    if(hasDirectionalVisitor(visitor.speciesId))(['front','back'] as const).forEach(view=>{
-      void loadSprite(visitor.speciesId,view).then(sprite=>{if(rendered.current.get(visitor.id)===target){target[view==='front'?'frontSprite':'backSprite']=sprite;paint(visitor,target);}}).catch(()=>{/* Keep the side view while optional directional artwork is unavailable. */});
-    });
-  }} className="f-butterfly-visit" aria-label={family==='odonates'?`Observe ${visitorById(visitor.speciesId)?.kind}`:'Observe butterfly'} title="Add this visitor to your field guide" disabled={!onObserve} onClick={event=>{
+  return <div className="f-butterfly-visitors" aria-hidden={onObserve?undefined:true} data-layer={family}>{visitors.map(visitor=><VisitorButton key={visitor.id} visitor={visitor} rendered={rendered} family={family} enabled={!!onObserve} onClick={event=>{
     const scene=sceneRef.current;
     // Keyboard activation remains available; mouse/touch must hit painted pixels.
     const keyboard=event.detail===0&&event.clientX===0&&event.clientY===0;
@@ -237,7 +257,5 @@ export default function ButterflyVisitors({sceneRef,season,hour,weather,location
     if(snapshot.pose)observe.current?.(snapshot.button,caught.speciesId,caught.wingspanMm,{...snapshot.pose});
     else observe.current?.(snapshot.button,caught.speciesId,caught.wingspanMm);
     setVisitors(current=>current.filter(item=>item.id!==caught.id));
-  }} data-testid={family==='odonates'?'odonate-visitor':'butterfly-visitor'} data-visitor-species={visitor.speciesId} data-wingspan-mm={visitor.wingspanMm}>
-    <canvas className="f-butterfly-flight" width={sprite.canvasSize} height={sprite.canvasSize} aria-hidden="true"/>
-  </button>)}</div>;
-}
+  }}/>)}</div>;
+});

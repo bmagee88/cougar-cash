@@ -10,7 +10,7 @@ afterEach(()=>{jest.restoreAllMocks();jest.useRealTimers();});
 const visitor=():Visitor=>({id:-1,speciesId:'green-darner',wingspanMm:90,size:40,
   flight:{...createFlight(()=>.5),age:0,x:.5,y:.75,z:.06,perch:undefined}});
 
-test('at zero depth arrows cross either axis in about half a second at any desktop resolution, retaining depth speed',()=>{
+test('arrows retain their speed while depth movement runs at 30% and Shift adds fine control',()=>{
   for(const [width,height] of [[800,600],[1920,1080],[2560,1440]]){
     for(const [key,axis,start,end] of [['arrowright','x',.07,.93],['arrowleft','x',.93,.07],['arrowdown','y',.08,1],['arrowup','y',1,.08]] as const){
       const fly=visitor();fly.flight.z=0;fly.flight[axis]=start;
@@ -22,11 +22,11 @@ test('at zero depth arrows cross either axis in about half a second at any deskt
   }
   const fly=visitor();
   stepControlledDragonfly(fly,new Set(['r']),.25,1920,1080);
-  expect(fly.flight.z).toBeCloseTo(.06+.22*.25,12);
+  expect(fly.flight.z).toBeCloseTo(.06+.22*.3*.25,12);
   stepControlledDragonfly(fly,new Set(['f']),.25,1920,1080);
   expect(fly.flight.z).toBeCloseTo(.06,12);
   stepControlledDragonfly(fly,new Set(['r','shift']),.25,1920,1080);
-  expect(fly.flight.z).toBeCloseTo(.06+.22*.01*.25,12);
+  expect(fly.flight.z).toBeCloseTo(.06+.22*.3*.01*.25,12);
 });
 
 test('at the angler depth, moving sideways over water stays at the boots instead of the distant water',()=>{
@@ -50,7 +50,7 @@ test('manual vectors move the dragonfly, select the existing front/rear art, and
   expect(fly.direction?.view).toBe('front');
   for(let n=0;n<300;n++)stepControlledDragonfly(fly,new Set(['arrowleft','arrowup','f']),.05,800,600);
   expect(fly.flight.x).toBe(.07);expect(fly.flight.y).toBe(.08);expect(fly.flight.z).toBe(0);
-  for(let n=0;n<300;n++)stepControlledDragonfly(fly,new Set(['r']),.05,800,600);
+  for(let n=0;n<1000;n++)stepControlledDragonfly(fly,new Set(['r']),.05,800,600);
   expect(fly.flight.z).toBe(.98);expect(fly.flight.behindForeground).toBe(true);expect(Math.abs(fly.flight.y-.5)).toBeLessThan(.02);
 });
 
@@ -71,10 +71,10 @@ test('spawn is explicit, controls respect text input, blur releases held keys, a
   fireEvent(window,new Event('blur'));const stopped=fly.style.left;act(()=>jest.advanceTimersByTime(200));expect(fly.style.left).toBe(stopped);
   const input=view.getByRole('textbox');fireEvent.keyDown(input,{key:'ArrowLeft'});act(()=>jest.advanceTimersByTime(200));expect(fly.style.left).toBe(stopped);
   const nearY=parseFloat(fly.style.top),nearSize=parseFloat(fly.style.width);
-  fireEvent.keyDown(document,{key:'r'});act(()=>jest.advanceTimersByTime(1000));fireEvent.keyUp(document,{key:'r'});
+  fireEvent.keyDown(document,{key:'r'});act(()=>jest.advanceTimersByTime(2000));fireEvent.keyUp(document,{key:'r'});
   expect(fly).toHaveAttribute('data-wing-view','back');expect(Number(fly.dataset.depth)).toBeGreaterThan(.14);expect(fly.style.zIndex).toBe('4');
   expect(parseFloat(fly.style.top)).toBeLessThan(nearY);expect(parseFloat(fly.style.width)).toBeLessThan(nearSize);
-  fireEvent.keyDown(document,{key:'f'});act(()=>jest.advanceTimersByTime(1000));fireEvent.keyUp(document,{key:'f'});
+  fireEvent.keyDown(document,{key:'f'});act(()=>jest.advanceTimersByTime(2000));fireEvent.keyUp(document,{key:'f'});
   expect(fly).toHaveAttribute('data-wing-view','front');expect(fly.style.zIndex).toBe('11');
   // Timer windows can differ by one RAF tick; the inverse projection itself
   // is checked to twelve decimal places in sceneDepth.test.ts.

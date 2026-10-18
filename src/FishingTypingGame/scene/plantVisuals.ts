@@ -43,7 +43,7 @@ export function plantSprites(plant:GrowingPlant,snapshot:PlantSnapshot):PlantSpr
     const width=height/aspect*art.width/art.height,flower=stem?.stage==='bloom'&&plant.kind!=='reed';
     sprites.push({id,role,art,left:root.x-width*art.root.x,top:root.y-height*art.root.y,width,height,angle,flipped,flat,stretch,
       point:spritePoint(art,art.perch,angle,flipped,flat,stretch),label:`${species.name}${stem?` · ${stem.stage} · stem ${stem.slot+1}`:' · foliage'}`,
-      kind:flower?'flower':stem?'stem':'leaf',uses:flower?['butterfly','dragonfly','damselfly']:stem?['dragonfly','damselfly']:['butterfly','moth','dragonfly','damselfly'],
+      kind:flower?'flower':stem?'stem':'leaf',uses:flower?['butterfly','dragonfly','damselfly']:stem?['dragonfly','damselfly']:['moth','dragonfly','damselfly'],
       dedicated:plant.kind==='reed'&&!!stem,stage:stem?.stage,slot});
   };
   const foliage=library[`foliage-${snapshot.calendar.season==='winter'?'winter':plant.maturity}`];
