@@ -1,0 +1,125 @@
+{
+  "dock": {
+    "reeds": {
+      "image": "shore-plants/dock/reeds.webp",
+      "width": 348,
+      "height": 269,
+      "root": {
+        "x": 0.35344827586206895,
+        "y": 0.9739776951672863
+      },
+      "anchors": [
+        {
+          "x": 0.27873563218390807,
+          "y": 0.02973977695167286,
+          "label": "Cattail tip",
+          "use": "dragonfly"
+        },
+        {
+          "x": 0.21551724137931033,
+          "y": 0.16728624535315986,
+          "label": "Lower cattail",
+          "use": "damselfly"
+        },
+        {
+          "x": 0.6896551724137931,
+          "y": 0.38661710037174724,
+          "label": "Curved reed leaf",
+          "use": "damselfly"
+        }
+      ]
+    },
+    "lily-pads": {
+      "image": "shore-plants/dock/lily-pads.webp",
+      "width": 348,
+      "height": 102
+    },
+    "pondweed": {
+      "image": "shore-plants/dock/pondweed.webp",
+      "width": 348,
+      "height": 114
+    }
+  },
+  "cove": {
+    "reeds": {
+      "image": "shore-plants/cove/reeds.webp",
+      "width": 348,
+      "height": 238,
+      "root": {
+        "x": 0.3706896551724138,
+        "y": 0.9789915966386554
+      },
+      "anchors": [
+        {
+          "x": 0.2988505747126437,
+          "y": 0.0546218487394958,
+          "label": "Rush seed tip",
+          "use": "dragonfly"
+        },
+        {
+          "x": 0.5632183908045977,
+          "y": 0.21008403361344538,
+          "label": "Side rush tip",
+          "use": "dragonfly"
+        },
+        {
+          "x": 0.10057471264367816,
+          "y": 0.24369747899159663,
+          "label": "Low rush leaf",
+          "use": "damselfly"
+        }
+      ]
+    },
+    "lily-pads": {
+      "image": "shore-plants/cove/lily-pads.webp",
+      "width": 348,
+      "height": 115
+    },
+    "pondweed": {
+      "image": "shore-plants/cove/pondweed.webp",
+      "width": 348,
+      "height": 113
+    }
+  },
+  "birch": {
+    "reeds": {
+      "image": "shore-plants/birch/reeds.webp",
+      "width": 348,
+      "height": 241,
+      "root": {
+        "x": 0.33620689655172414,
+        "y": 0.975103734439834
+      },
+      "anchors": [
+        {
+          "x": 0.7040229885057471,
+          "y": 0.0912863070539419,
+          "label": "Bare twig tip",
+          "use": "dragonfly"
+        },
+        {
+          "x": 0.20977011494252873,
+          "y": 0.03319502074688797,
+          "label": "Sedge seed tip",
+          "use": "damselfly"
+        },
+        {
+          "x": 0.6005747126436781,
+          "y": 0.3817427385892116,
+          "label": "Twig side branch",
+          "use": "damselfly"
+        }
+      ]
+    },
+    "lily-pads": {
+      "image": "shore-plants/birch/lily-pads.webp",
+      "width": 348,
+      "height": 104
+    },
+    "pondweed": {
+      "image": "shore-plants/birch/pondweed.webp",
+      "width": 348,
+      "height": 112
+    }
+  }
+}

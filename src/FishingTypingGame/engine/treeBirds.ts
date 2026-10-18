@@ -1,6 +1,7 @@
 import { skyRandom } from './astronomy';
 import { WORLD } from './world';
 import { TreeFrame, TreePoint, treePerch, mappedTreesForLocation } from '../scene/treeMap';
+import {depthScale,perspectiveRatio} from '../scene/sceneDepth';
 
 export const GAME_MINUTE_MS = WORLD.dayMs / (24 * 60);
 // Independent jittered clocks. Consecutive gaps are 10–30 game minutes for
@@ -42,7 +43,7 @@ export function makeTreeBirdVisit(id: string, stream: string, startAt: number, s
   const pace = .052 + random() * .032;
   const birds = Array.from({ length: count }, (_, index) => {
     const from = treePerch(source, random);
-    const to = exits ? { x: toRight ? 1.10 : -.10, y: Math.max(.10, from.y - .07 + random() * .08), z: 2.4 + random() * 1.8 } : treePerch(target, random);
+    const to = exits ? { x: toRight ? 1.10 : -.10, y: Math.max(.10, from.y - .07 + random() * .08), z: .57 + random() * .43 } : treePerch(target, random);
     const distance = Math.hypot(to.x - from.x, to.y - from.y);
     const durationMs = Math.max(3200, Math.min(14500, distance / pace * 1000)) * (.96 + random() * .08);
     const bounds = Math.max(3, Math.round(durationMs / (850 + random() * 250)));
@@ -59,15 +60,15 @@ export function makeTreeBirdVisit(id: string, stream: string, startAt: number, s
 export function treeBirdPose(route: TreeBirdRoute, progress: number) {
   const t = clamp(progress), p = smooth((t - .025) / .93);
   const z = mix(route.from.z, route.to.z, p), horizon = .52;
-  const x = .5 + mix((route.from.x - .5) * route.from.z, (route.to.x - .5) * route.to.z, p) / z;
-  const baseline = horizon + mix((route.from.y - horizon) * route.from.z, (route.to.y - horizon) * route.to.z, p) / z;
+  const fromDistance=1/perspectiveRatio(route.from.z),toDistance=1/perspectiveRatio(route.to.z),distance=mix(fromDistance,toDistance,p);
+  const x = .5 + mix((route.from.x - .5) * fromDistance, (route.to.x - .5) * toDistance, p) / distance;
+  const baseline = horizon + mix((route.from.y - horizon) * fromDistance, (route.to.y - horizon) * toDistance, p) / distance;
   const envelope = Math.sin(p * Math.PI);
   const arc = -route.lift * 4 * p * (1 - p) - route.amplitude * Math.sin(p * route.bounds * Math.PI * 2) * envelope;
-  // Continue growing throughout a foreground approach, while keeping the
-  // 16-pixel silhouette small. Distant birds retain their previous size curve.
-  const sizeDistance = z >= 1.4 ? z : 1.4 * Math.pow(z / 1.4, .35);
-  return { x, y: baseline + arc, z, blend: p * route.to.z / z, arc,
-    scale: Math.max(.35, Math.min(3.2, 1.9 / sizeDistance)), opacity: smooth(t / .035) * smooth((1 - t) / .045) };
+  // Birds share the camera's perspective curve; their larger physical size
+  // supplies a species multiplier rather than flattening growth near a tree.
+  return { x, y: baseline + arc, z, blend: p * toDistance / distance, arc,
+    scale: 3*depthScale(z), opacity: smooth(t / .035) * smooth((1 - t) / .045) };
 }
 
 /** At most two solos plus one ten-bird flock; one sleeping timer services all. */

@@ -1,0 +1,147 @@
+{
+  "node": "v22.18.0",
+  "dayMs": 2880000,
+  "case": "119-day cold reconstruction; 1000 cache hits; reload from checkpoints",
+  "samples": [
+    {
+      "coldMs": {
+        "dock": 34.1090999999999,
+        "cove": 25.640800000000127,
+        "birch": 28.35719999999992
+      },
+      "hot1000Ms": 37.20690000000013,
+      "reloadThreeLocationsMs": 11.861400000000003,
+      "coldStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 357,
+        "dailyPlantSteps": 5950,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "reloadStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 0,
+        "dailyPlantSteps": 0,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "checkpointBytes": 10636
+    },
+    {
+      "coldMs": {
+        "dock": 31.433199999999943,
+        "cove": 17.66689999999994,
+        "birch": 15.996699999999919
+      },
+      "hot1000Ms": 33.55639999999994,
+      "reloadThreeLocationsMs": 11.133899999999812,
+      "coldStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 357,
+        "dailyPlantSteps": 5950,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "reloadStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 0,
+        "dailyPlantSteps": 0,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "checkpointBytes": 10636
+    },
+    {
+      "coldMs": {
+        "dock": 42.45919999999978,
+        "cove": 19.48810000000003,
+        "birch": 23.610400000000027
+      },
+      "hot1000Ms": 30.73660000000018,
+      "reloadThreeLocationsMs": 15.468199999999797,
+      "coldStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 357,
+        "dailyPlantSteps": 5950,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "reloadStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 0,
+        "dailyPlantSteps": 0,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "checkpointBytes": 10636
+    },
+    {
+      "coldMs": {
+        "dock": 23.869900000000143,
+        "cove": 13.548600000000079,
+        "birch": 27.07420000000002
+      },
+      "hot1000Ms": 45.65660000000025,
+      "reloadThreeLocationsMs": 7.024899999999889,
+      "coldStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 357,
+        "dailyPlantSteps": 5950,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "reloadStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 0,
+        "dailyPlantSteps": 0,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "checkpointBytes": 10636
+    },
+    {
+      "coldMs": {
+        "dock": 23.78879999999981,
+        "cove": 23.35590000000002,
+        "birch": 26.245300000000043
+      },
+      "hot1000Ms": 29.623999999999796,
+      "reloadThreeLocationsMs": 10.123000000000047,
+      "coldStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 357,
+        "dailyPlantSteps": 5950,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "reloadStats": {
+        "locationsGenerated": 3,
+        "daysReplayed": 0,
+        "dailyPlantSteps": 0,
+        "cacheHits": 0,
+        "snapshots": 3,
+        "baseLayouts": 3,
+        "checkpointGroups": 3
+      },
+      "checkpointBytes": 10636
+    }
+  ]
+}

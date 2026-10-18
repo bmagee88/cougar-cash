@@ -31,7 +31,7 @@ export function stepGardenEncounter(flight:FlightState,dt:number,width:number,he
   const perch=flight.perch;
   if(!perch||perch.finished||perch.landed||flight.age<perch.startAt||!perch.plantId){flight.flowerWait=undefined;return false;}
   const plant=flight.plants?.find(candidate=>candidate.id===perch.plantId);
-  if(plant?.kind!=='flower'){flight.flowerWait=undefined;return false;}
+  if(!plant||(plant.kind!=='flower'&&perch.restFrame===undefined)){flight.flowerWait=undefined;return false;}
   const distance=(candidate:FlightState)=>Math.hypot((candidate.x-perch.x)*width,(candidate.y-perch.y)*height);
   if(distance(flight)>58&&!flight.flowerWait)return false;
   const contenders=peers.filter(peer=>peer!==flight&&!peer.fleeing&&peer.age>=0&&!peer.perch?.finished&&peer.perch?.plantId===perch.plantId);

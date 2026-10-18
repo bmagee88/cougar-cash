@@ -1,6 +1,6 @@
 import { configureButterflyFlight, createFlight, isPerched, planPerch, startleFlight, stepFlight } from '../scene/butterflyFlight';
 import { stepOdonate } from '../scene/odonateFlight';
-import { LOCATION_PLANTS, planPlantVisit, plantsForLocation, visiblePlantPerches } from '../scene/plantMap';
+import { LOCATION_PLANTS, MappedPlant, planPlantVisit, plantsForLocation, visiblePlantPerches } from '../scene/plantMap';
 import { blankEntry, saveNotebookEntry } from '../engine/notebook';
 import { deserializeSave, emptySave } from '../engine/storage';
 import { butterflyPoseAsset } from '../engine/butterflies';
@@ -12,15 +12,17 @@ const rect=(left=0,top=0,width=800,height=600)=>({left,top,right:left+width,bott
 test('every location has mapped nectar, leaves and stalks; responsive crop and hidden cutouts filter destinations',()=>{
   Object.values(LOCATION_PLANTS).forEach(plants=>{
     expect(new Set(plants.map(plant=>plant.id)).size).toBe(plants.length);
-    expect(new Set(plants.map(plant=>plant.kind)).size).toBe(3);
+    expect(new Set(plants.map(plant=>plant.kind)).size).toBe(1);
     plants.forEach(plant=>{expect(plant.z).toBeLessThan(1.05);expect(plant.x).toBeGreaterThan(0);expect(plant.y).toBeLessThan(1);});
   });
   const scene=document.createElement('div'),bank=document.createElement('img');bank.dataset.layer='cove-seat';scene.appendChild(bank);
-  jest.spyOn(bank,'getBoundingClientRect').mockReturnValue(rect(-300,-200,1200,800));
+  jest.spyOn(bank,'getBoundingClientRect').mockReturnValue(rect(-100,-200,1200,800));
   const projected=visiblePlantPerches(scene,'cove',rect());
   expect(projected.map(plant=>plant.id)).not.toContain('cove-left-flowers');
-  const flower=projected.find(plant=>plant.id==='cove-ledge-flowers')!;
-  expect(flower.x).toBeCloseTo((-300+1200*.31)/800);expect(flower.y).toBeCloseTo((-200+800*.84)/600);
+  expect(projected.find(plant=>plant.id==='cove-ledge-flowers')).toBeUndefined();
+  expect(projected.find(plant=>plant.id==='cove-bank-stalk')).toBeUndefined();
+  const leaf=projected.find(plant=>plant.id==='cove-root-leaves')!;
+  expect(leaf.x).toBeCloseTo((-100+1200*.16)/800);expect(leaf.y).toBeCloseTo((-200+800*.61)/600);
   bank.style.display='none';expect(visiblePlantPerches(scene,'cove',rect())).toHaveLength(0);
 });
 
@@ -64,7 +66,11 @@ test('dragonflies and jewelwings land, hunt, and return twice to their own mappe
 
 test('butterflies visit another compatible plant and a startled perched insect abandons its return route',()=>{
   const f={...createFlight(()=>.5),x:.3,y:.7,z:.3,departAt:100};
-  const flowers=plantsForLocation('cove').filter(plant=>plant.kind==='flower');
+  // Retargeting needs two nectar destinations, regardless of today's garden.
+  const flowers:MappedPlant[]=[
+    {id:'aster-a',label:'Aster A',layer:'aster-a',x:.3,y:.7,z:.06,kind:'flower',uses:['butterfly']},
+    {id:'aster-b',label:'Aster B',layer:'aster-b',x:.5,y:.7,z:.06,kind:'flower',uses:['butterfly']},
+  ];
   planPlantVisit(f,flowers,'butterfly',()=>.5);f.x=f.perch!.x;f.y=f.perch!.y;f.perch!.startAt=0;
   stepFlight(f,.02,800,600,()=>.5);const first=f.perch!.plantId;f.perch!.remaining=.01;
   stepFlight(f,.02,800,600,()=>.5);expect(f.perch!.plantId).not.toBe(first);

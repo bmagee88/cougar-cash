@@ -20,7 +20,7 @@ export type Retrieve = 'still' | 'lift-pause' | 'slow-drag' | 'slow-roll' | 'ste
 export interface TackleSetup { lure: LureType; color: LureColor; rig: RigType; retrieve: Retrieve }
 export interface FishingConditions { fightOptions?: FightOptions; season: Season; period: DayPeriod; moonPhase: MoonPhase; weather?: Weather; stormAgeMs?: number; weatherDurationMs?: number; tackle?: TackleSetup; observedRetrieve?: Retrieve }
 export interface WorldConditions extends FishingConditions { hour: number; dayProgress: number; gameDay: number; seasonDate: string }
-export interface WorldOverrides { season?: Season; hour?: number; moonPhase?: MoonPhase }
+export interface WorldOverrides { season?: Season; hour?: number; moonPhase?: MoonPhase; plantDay?:number }
 export type Random = () => number;
 export type FishingMode = 'standard' | 'interactive' | 'fish-fight';
 export interface LineGear { equipped: number; spools: Record<string, number> }
@@ -85,7 +85,7 @@ export interface CatchRecord extends Performance {
   retrieve?: RetrieveMemory;
 }
 export type MeasurementSystem = 'imperial' | 'metric';
-export interface ButterflyPose {frame:number;rotation:number;flipped:boolean;view?:'side'}
+export interface ButterflyPose {frame:number;rotation:number;flipped:boolean;view?:'side'|'front'|'back'}
 export type NotebookImage = { kind: 'fish'; speciesId: string; lengthCm: number; weightKg: number; isAlbino: boolean } | { kind: 'butterfly'; speciesId?:string; wingspanMm?:number;pose?:ButterflyPose } | {kind:'visitor';speciesId:string;pose?:ButterflyPose};
 export interface NotebookEntry {
   id: string; caughtAt: string; location: string; title: string; name: string; notes: string;

@@ -1,0 +1,818 @@
+{
+  "dock": [
+    {
+      "id": "dock-flower-base-0",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "near-shore",
+          "x": 0.7,
+          "y": 0.78
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.7,
+          "y": 0.8
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.68,
+          "y": 0.78
+        }
+      ]
+    },
+    {
+      "id": "dock-flower-base-1",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "near-shore",
+          "x": 0.4,
+          "y": 0.66
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.38,
+          "y": 0.66
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.42,
+          "y": 0.68
+        }
+      ]
+    },
+    {
+      "id": "dock-flower-base-2",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "near-shore",
+          "x": 0.86,
+          "y": 0.82
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.78,
+          "y": 0.8
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.86,
+          "y": 0.8
+        }
+      ]
+    },
+    {
+      "id": "dock-flower-base-3",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "near-shore",
+          "x": 0.3,
+          "y": 0.79
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.32,
+          "y": 0.79
+        },
+        {
+          "layer": "near-shore",
+          "x": 0.3,
+          "y": 0.73
+        }
+      ]
+    },
+    {
+      "id": "dock-flower-base-4",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "right-grassy-bank",
+          "x": 0.83,
+          "y": 0.85
+        },
+        {
+          "layer": "right-grassy-bank",
+          "x": 0.85,
+          "y": 0.83
+        },
+        {
+          "layer": "right-grassy-bank",
+          "x": 0.83,
+          "y": 0.83
+        }
+      ]
+    },
+    {
+      "id": "dock-flower-base-5",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "right-grassy-bank",
+          "x": 0.85,
+          "y": 0.83
+        },
+        {
+          "layer": "right-grassy-bank",
+          "x": 0.85,
+          "y": 0.81
+        },
+        {
+          "layer": "right-grassy-bank",
+          "x": 0.83,
+          "y": 0.85
+        }
+      ]
+    },
+    {
+      "id": "dock-reed-base-0",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.1,
+          "y": 0.79
+        }
+      ],
+      "width": 0.095
+    },
+    {
+      "id": "dock-reed-base-1",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.405,
+          "y": 0.96
+        }
+      ],
+      "width": 0.085
+    },
+    {
+      "id": "dock-lily-base-0-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.410191,
+          "y": 0.879595
+        }
+      ],
+      "width": 0.115,
+      "floatingLayer": 0,
+      "angle": 65
+    },
+    {
+      "id": "dock-lily-base-0-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.180736,
+          "y": 0.811617
+        }
+      ],
+      "width": 0.1,
+      "floatingLayer": 0,
+      "angle": 35
+    },
+    {
+      "id": "dock-lily-base-1-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.456201,
+          "y": 0.950905
+        }
+      ],
+      "width": 0.145,
+      "floatingLayer": 1,
+      "angle": 70
+    },
+    {
+      "id": "dock-lily-base-1-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.394706,
+          "y": 0.881128
+        }
+      ],
+      "width": 0.105,
+      "floatingLayer": 1,
+      "angle": 58
+    },
+    {
+      "id": "dock-lily-base-1-2",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.420335,
+          "y": 0.947331
+        }
+      ],
+      "width": 0.11,
+      "floatingLayer": 1,
+      "angle": 45
+    },
+    {
+      "id": "dock-lily-base-2-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.421249,
+          "y": 0.966
+        }
+      ],
+      "width": 0.17,
+      "floatingLayer": 2,
+      "angle": 60
+    },
+    {
+      "id": "dock-lily-base-2-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.223359,
+          "y": 0.841647
+        }
+      ],
+      "width": 0.15,
+      "floatingLayer": 2,
+      "angle": 32
+    },
+    {
+      "id": "dock-lily-base-2-2",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "water-frame",
+          "x": 0.433702,
+          "y": 0.887994
+        }
+      ],
+      "width": 0.14,
+      "floatingLayer": 2,
+      "angle": 55
+    }
+  ],
+  "cove": [
+    {
+      "id": "cove-flower-base-0",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.41,
+          "y": 0.96
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.41,
+          "y": 0.98
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.39,
+          "y": 0.96
+        }
+      ]
+    },
+    {
+      "id": "cove-flower-base-1",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.49,
+          "y": 0.92
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.45,
+          "y": 0.9
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.51,
+          "y": 0.92
+        }
+      ]
+    },
+    {
+      "id": "cove-flower-base-2",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.39,
+          "y": 0.96
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.41,
+          "y": 0.96
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.41,
+          "y": 0.98
+        }
+      ]
+    },
+    {
+      "id": "cove-flower-base-3",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.14,
+          "y": 0.73
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.16,
+          "y": 0.75
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.14,
+          "y": 0.75
+        }
+      ]
+    },
+    {
+      "id": "cove-flower-base-4",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.41,
+          "y": 0.96
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.45,
+          "y": 0.9
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.41,
+          "y": 0.98
+        }
+      ]
+    },
+    {
+      "id": "cove-flower-base-5",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.08,
+          "y": 0.65
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.1,
+          "y": 0.71
+        },
+        {
+          "layer": "cove-seat",
+          "x": 0.08,
+          "y": 0.69
+        }
+      ]
+    },
+    {
+      "id": "cove-reed-base-0",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.449,
+          "y": 0.69
+        }
+      ],
+      "width": 0.055
+    },
+    {
+      "id": "cove-reed-base-1",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.43,
+          "y": 0.9
+        }
+      ],
+      "width": 0.06
+    },
+    {
+      "id": "cove-reed-base-2",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.57,
+          "y": 0.92
+        }
+      ],
+      "width": 0.066
+    },
+    {
+      "id": "cove-lily-base-0-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.455601,
+          "y": 0.668706
+        }
+      ],
+      "width": 0.095,
+      "floatingLayer": 0,
+      "angle": 28
+    },
+    {
+      "id": "cove-lily-base-0-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.590489,
+          "y": 0.761222
+        }
+      ],
+      "width": 0.105,
+      "floatingLayer": 0,
+      "angle": 20
+    },
+    {
+      "id": "cove-lily-base-1-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.644121,
+          "y": 0.786783
+        }
+      ],
+      "width": 0.125,
+      "floatingLayer": 1,
+      "angle": 22
+    },
+    {
+      "id": "cove-lily-base-1-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.71942,
+          "y": 0.824556
+        }
+      ],
+      "width": 0.145,
+      "floatingLayer": 1,
+      "angle": 22
+    },
+    {
+      "id": "cove-lily-base-1-2",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.888718,
+          "y": 0.89624
+        }
+      ],
+      "width": 0.14,
+      "floatingLayer": 1,
+      "angle": 24
+    },
+    {
+      "id": "cove-lily-base-2-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.552271,
+          "y": 0.736373
+        }
+      ],
+      "width": 0.135,
+      "floatingLayer": 2,
+      "angle": 22
+    },
+    {
+      "id": "cove-lily-base-2-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.798001,
+          "y": 0.858597
+        }
+      ],
+      "width": 0.17,
+      "floatingLayer": 2,
+      "angle": 23
+    },
+    {
+      "id": "cove-lily-base-2-2",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "cove-seat",
+          "x": 0.954456,
+          "y": 0.960114
+        }
+      ],
+      "width": 0.175,
+      "floatingLayer": 2,
+      "angle": 35
+    }
+  ],
+  "birch": [
+    {
+      "id": "birch-flower-base-0",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.37,
+          "y": 0.76
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.34,
+          "y": 0.94
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.14,
+          "y": 0.71
+        }
+      ]
+    },
+    {
+      "id": "birch-flower-base-1",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.34,
+          "y": 0.94
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.37,
+          "y": 0.76
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.1,
+          "y": 0.93
+        }
+      ]
+    },
+    {
+      "id": "birch-flower-base-2",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.37,
+          "y": 0.76
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.34,
+          "y": 0.94
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.14,
+          "y": 0.71
+        }
+      ]
+    },
+    {
+      "id": "birch-flower-base-3",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.1,
+          "y": 0.79
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.08,
+          "y": 0.79
+        },
+        {
+          "layer": "birch-seat",
+          "x": 0.08,
+          "y": 0.77
+        }
+      ]
+    },
+    {
+      "id": "birch-flower-base-4",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "birch-right-plants",
+          "x": 0.86,
+          "y": 0.96
+        },
+        {
+          "layer": "birch-right-plants",
+          "x": 0.86,
+          "y": 0.94
+        },
+        {
+          "layer": "birch-right-plants",
+          "x": 0.88,
+          "y": 0.92
+        }
+      ]
+    },
+    {
+      "id": "birch-flower-base-5",
+      "kind": "flower",
+      "choices": [
+        {
+          "layer": "birch-right-plants",
+          "x": 0.96,
+          "y": 0.92
+        },
+        {
+          "layer": "birch-right-plants",
+          "x": 0.92,
+          "y": 0.9
+        },
+        {
+          "layer": "birch-right-plants",
+          "x": 0.96,
+          "y": 0.94
+        }
+      ]
+    },
+    {
+      "id": "birch-reed-base-0",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.352,
+          "y": 0.917
+        }
+      ],
+      "width": 0.046
+    },
+    {
+      "id": "birch-reed-base-1",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.478,
+          "y": 0.86
+        }
+      ],
+      "width": 0.06
+    },
+    {
+      "id": "birch-reed-base-2",
+      "kind": "reed",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.478,
+          "y": 1.02
+        }
+      ],
+      "width": 0.056
+    },
+    {
+      "id": "birch-lily-base-0-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.384506,
+          "y": 0.712272
+        }
+      ],
+      "width": 0.09,
+      "floatingLayer": 0,
+      "angle": 35
+    },
+    {
+      "id": "birch-lily-base-0-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.417848,
+          "y": 0.766508
+        }
+      ],
+      "width": 0.1,
+      "floatingLayer": 0,
+      "angle": 29
+    },
+    {
+      "id": "birch-lily-base-1-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.480772,
+          "y": 0.830664
+        }
+      ],
+      "width": 0.125,
+      "floatingLayer": 1,
+      "angle": 38
+    },
+    {
+      "id": "birch-lily-base-1-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.38725,
+          "y": 0.909487
+        }
+      ],
+      "width": 0.1,
+      "floatingLayer": 1,
+      "angle": 167
+    },
+    {
+      "id": "birch-lily-base-1-2",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.452142,
+          "y": 0.949718
+        }
+      ],
+      "width": 0.14,
+      "floatingLayer": 1,
+      "angle": 38
+    },
+    {
+      "id": "birch-lily-base-2-0",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.368414,
+          "y": 0.897631
+        }
+      ],
+      "width": 0.13,
+      "floatingLayer": 2,
+      "angle": -3
+    },
+    {
+      "id": "birch-lily-base-2-1",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.395991,
+          "y": 0.741549
+        }
+      ],
+      "width": 0.125,
+      "floatingLayer": 2,
+      "angle": 33
+    },
+    {
+      "id": "birch-lily-base-2-2",
+      "kind": "lily",
+      "choices": [
+        {
+          "layer": "birch-seat",
+          "x": 0.465053,
+          "y": 0.802584
+        }
+      ],
+      "width": 0.15,
+      "floatingLayer": 2,
+      "angle": 36
+    }
+  ]
+}

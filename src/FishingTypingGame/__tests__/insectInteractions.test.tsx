@@ -69,3 +69,13 @@ test('visitor families share occupancy, and caught or unmounted visitors release
   empty();expect(gardenFlights(scene)).toEqual([a,b]);releaseA();expect(gardenFlights(scene)).toEqual([b]);
   releaseB();expect(gardenFlights(scene)).toEqual([]);
 });
+
+test('odonates cannot land together on a dedicated reed tip',()=>{
+  const reed={...plants[0],id:'reed',kind:'stem' as const,uses:['dragonfly' as const],dedicated:true};
+  const resident=visitor(true),incoming=visitor();
+  for(const flight of [resident,incoming]){flight.plants=[reed];flight.perch!.plantId=reed.id;flight.perch!.restFrame=0;}
+  expect(stepGardenEncounter(incoming,.02,800,600,[resident,incoming],()=>.9)).toBe(true);
+  expect(isPerched(incoming)).toBe(false);expect(incoming.flowerWait?.plantId).toBe('reed');
+  resident.perch!.finished=true;
+  expect(stepGardenEncounter(incoming,.02,800,600,[resident,incoming],()=>.9)).toBe(false);
+});

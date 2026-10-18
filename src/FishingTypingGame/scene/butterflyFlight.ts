@@ -1,10 +1,11 @@
 import { Random } from '../engine/types';
 import type { PlantPerch } from './plantMap';
+import {advanceSceneDepth,changeSceneDepth,DepthObstruction,depthAtWaterline,depthScale,DepthPerspective,foregroundDepth,perspectiveRatio,SceneDepthFrame,SCENE_DEPTH,waterlineAtDepth} from './sceneDepth';
 
 // Coordinates are fractions of the visible scene. The simulation is twice its
 // width and height, allowing an individual to leave the view and loop back.
 export const FLIGHT_BOUNDS={left:-.5,right:1.5,top:-.5,bottom:1.5};
-export const FOREGROUND_DEPTH=1.05, MAX_FLIGHT_DEPTH=3.8;
+export const FOREGROUND_DEPTH=SCENE_DEPTH.foreground, MAX_FLIGHT_DEPTH=SCENE_DEPTH.shore;
 export interface FlightPointer {x:number;y:number;previousX:number;previousY:number;speed:number}
 export interface ButterflyPerch {
   x:number;y:number;startAt:number;remaining:number;landed:boolean;finished:boolean;
@@ -22,15 +23,18 @@ export interface FlightState {
   motionVx?:number;motionVy?:number;
   escapeAngle?:number;scaredAt?:number;evadeUntil?:number;plantSearchAt?:number;
   flowerWait?:{plantId:string;until:number;x:number;y:number};
+  perspective?:SceneDepthFrame;
 }
 const between=(random:Random,min:number,max:number)=>min+random()*(max-min);
 const clamp=(value:number,min:number,max:number)=>Math.max(min,Math.min(max,value));
-export const flightScale=(z:number)=>1/(.7+z*.85);
+export const flightScale=depthScale;
 // Perspective puts the water surface at the screen bottom nearby and at the
 // measured far shoreline at the back of the flight volume.
-export const flightBottom=(z:number,horizon=.5)=>1+(clamp(horizon,0,1)-1)*clamp((z-.05)/(MAX_FLIGHT_DEPTH-.05),0,1);
-export const flightMovementScale=(z:number)=>Math.min(1,flightScale(z)/flightScale(.3));
-export const flightOpacity=(z:number)=>clamp((MAX_FLIGHT_DEPTH-z)/.7,0,1);
+export const flightBottom=waterlineAtDepth;
+// Keep close flight lively while making a distant patrol almost stationary
+// on screen (about 2% of close movement at the far shore).
+export const flightMovementScale=(z:number,perspective?:DepthPerspective)=>Math.pow(Math.min(1,perspectiveRatio(z,perspective)/perspectiveRatio(SCENE_DEPTH.arrival,perspective)),1.65);
+export const flightOpacity=(z:number)=>clamp((MAX_FLIGHT_DEPTH-z)/.08,0,1);
 export const flightExpired=(flight:FlightState)=>flight.z>=MAX_FLIGHT_DEPTH||flight.x<FLIGHT_BOUNDS.left||flight.x>FLIGHT_BOUNDS.right||flight.y<FLIGHT_BOUNDS.top||flight.y>FLIGHT_BOUNDS.bottom;
 export const isPerched=(flight:FlightState)=>!!flight.perch?.landed&&!flight.perch.finished;
 export function planPerch(flight:FlightState,x:number,y:number,random:Random,options:Partial<ButterflyPerch>={}):void {
@@ -46,8 +50,10 @@ export function stepPerchedWings(perch:ButterflyPerch,dt:number,random:Random):v
 }
 export function createFlight(random:Random,delay=0):FlightState {
   const side=random()<.5?-1:1;
-  return {x:side<0?-.09:1.09,y:between(random,.2,.78),z:between(random,.18,.62),
-    vx:-side*between(random,150,230),vy:between(random,-45,45),vz:between(random,-.2,.25),
+  return {x:side<0?-.09:1.09,y:between(random,.2,.78),z:between(random,.025,.10),
+    // Enter sideways before choosing a depth course; an immediate approach
+    // would project the offscreen starting point farther outside the view.
+    vx:-side*between(random,170,260),vy:between(random,-45,45),vz:0,
     age:-delay,turnIn:.6,speed:between(random,140,250),heading:0,exitSide:-side,
     departAt:between(random,24,42),fleeing:false,behindForeground:false,
     closeRadius:between(random,2.5,6),alarmRadius:between(random,65,135),speedTolerance:between(random,160,430),phase:random()*Math.PI*2,wingPhase:random()*8,mode:'flap',modeIn:between(random,1.5,3.5)};
@@ -81,7 +87,7 @@ export function stepPerch(flight:FlightState,dt:number,width:number,height:numbe
       flight.mode='flap';
     }
     if(perch.z!==undefined)flight.z+=(perch.z-flight.z)*Math.min(1,dt*3);
-    if(flight.y>horizon&&horizon<1)flight.z=Math.min(flight.z,.05+(MAX_FLIGHT_DEPTH-.05)*(1-flight.y)/(1-horizon));
+    if(flight.y>horizon&&horizon<1)flight.z=Math.min(flight.z,depthAtWaterline(flight.y,horizon,flight.perspective));
     flight.vx=dx/(distance||1)*speed;flight.vy=dy/(distance||1)*speed;flight.vz=0;flight.heading=clamp(flight.vy/450,-.55,.55);
     if(distance<=travel+2){
       perch.landed=true;perch.visits=(perch.visits??0)+1;flight.x=perch.x;flight.y=perch.y;flight.vx=0;flight.vy=0;flight.heading=-.14;
@@ -113,7 +119,7 @@ function segmentDistance(x:number,y:number,pointer:FlightPointer):number {
 }
 export function startleFlight(flight:FlightState,pointer:FlightPointer,width:number,height:number):boolean {
   if(flight.fleeing||flight.age<0||flight.x<0||flight.x>1||flight.y<0||flight.y>1)return false;
-  const x=flight.x*width,y=flight.y*height,scale=flightScale(flight.z);
+  const x=flight.x*width,y=flight.y*height,scale=flightScale(flight.z,flight.perspective);
   const close=Math.hypot(pointer.x-x,pointer.y-y)<flight.closeRadius*scale;
   const fast=pointer.speed>flight.speedTolerance&&segmentDistance(x,y,pointer)<flight.alarmRadius*scale;
   if(!close&&!fast)return false;
@@ -122,7 +128,7 @@ export function startleFlight(flight:FlightState,pointer:FlightPointer,width:num
   if(flight.perch)flight.perch.finished=true;
   flight.vx=(Math.abs(dx)<1?flight.exitSide:dx/distance)*540;
   flight.vy=(Math.abs(dx)+Math.abs(dy)<1?-1:dy/distance)*400;
-  flight.vz=Math.max(.55,flight.vz);flight.turnIn=0;
+  flight.vz=Math.max(.55/3.8,flight.vz);flight.turnIn=0;
   flight.escapeAngle=Math.atan2(flight.vy,flight.vx);flight.scaredAt=flight.age;flight.flowerWait=undefined;
   flight.motionVx=flight.vx;flight.motionVy=flight.vy;
   return true;
@@ -137,13 +143,13 @@ export function steerEvasion(flight:FlightState,kind:'butterfly'|'dragonfly'|'da
   const speed=kind==='dragonfly'?between(random,260,410):kind==='damselfly'?between(random,95,160):flight.speed*between(random,1.45,1.95);
   flight.vx=Math.cos(angle)*speed;flight.vy=Math.sin(angle)*speed;
   flight.turnIn=kind==='dragonfly'?between(random,.18,.48):floating?between(random,.35,.7):between(random,.14,.34);
-  flight.vz=flight.fleeing?between(random,.20,.42):((flight.perch?.z??flight.z)-flight.z)*.8;
+  flight.vz=flight.fleeing?between(random,.20,.42)/3.8:((flight.perch?.z??flight.z)-flight.z)*.8;
   flight.mode=floating&&age>.8&&random()<.18?'glide':kind==='dragonfly'?'dart':'flap';
   if(flight.mode==='glide')flight.turnIn=Math.min(flight.turnIn,.35);
   if(kind==='butterfly')flight.facing=undefined;else flight.facing=flight.vx<0?-1:1;
 }
 /** Advance in seconds. Velocity is in CSS pixels/second, independent of aspect ratio. */
-export function stepFlight(flight:FlightState,dt:number,width:number,height:number,random:Random,pointer?:FlightPointer,horizon=.5):void {
+export function stepFlight(flight:FlightState,dt:number,width:number,height:number,random:Random,pointer?:FlightPointer,horizon=.5,obstructed?:DepthObstruction):void {
   flight.age+=dt;if(flight.age<0)return;
   if(pointer)startleFlight(flight,pointer,width,height);
   const leaving=flight.fleeing||flight.age>flight.departAt;
@@ -165,7 +171,7 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
     else if(leaving){
       flight.vx=flight.exitSide*between(random,230,340);
       flight.vy=clamp(flight.vy+between(random,-100,100),-240,240);
-      flight.vz=flight.fleeing?between(random,.35,.8):0;
+      flight.vz=flight.fleeing?between(random,.35,.8)/3.8:0;
     }else{
       let heading=Math.atan2(flight.vy,flight.vx)+between(random,pattern==='float'?-.65:-1.7,pattern==='float'?.65:1.7);
       // Gently favor the open scene at its outer edges; do not wrap or respawn.
@@ -174,14 +180,14 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
       flight.vx=Math.cos(heading)*flight.speed;
       flight.vy=Math.sin(heading)*flight.speed*.8;
       if(flight.y<.12)flight.vy=Math.abs(flight.vy)+45;
-      if(flight.y>flightBottom(flight.z,horizon)-.08)flight.vy=-Math.abs(flight.vy)-45;
-      flight.vz=between(random,-.65,.85);
-      if(flight.mode==='glide'){flight.vy=between(random,6,24);flight.vz*=.2;flight.turnIn=flight.modeIn;}
+      if(flight.y>flightBottom(flight.z,horizon,flight.perspective)-.08)flight.vy=-Math.abs(flight.vy)-45;
+      flight.vz=between(random,-.65,.85)/3.8;
+      if(flight.mode==='glide'){flight.vy=between(random,6,24);flight.vz=0;flight.turnIn=flight.modeIn;}
       if(flight.mode==='hover'){flight.vx=between(random,-9,9);flight.vy=between(random,-7,7);flight.vz=0;}
       if(flight.perch&&!flight.perch.finished&&flight.perch.z!==undefined)flight.vz=(flight.perch.z-flight.z)*.8;
     }
   }
-  const oldBottom=flightBottom(flight.z,horizon),movement=flightMovementScale(flight.z);
+  const movement=flightMovementScale(flight.z,flight.perspective);
   const phase=flight.phase??0;
   // Analytic displacement keeps bobbing independent of frame rate and smaller
   // with distance. Glides have a shallow sink instead of a frozen wingbeat bob.
@@ -190,12 +196,10 @@ export function stepFlight(flight:FlightState,dt:number,width:number,height:numb
   const steering=1-Math.exp(-dt*(leaving&&!evading?16:pattern==='float'?3.5:8));
   flight.motionVx+=(flight.vx-flight.motionVx)*steering;flight.motionVy+=(flight.vy-flight.motionVy)*steering;
   flight.x+=flight.motionVx*movement*dt/Math.max(1,width);flight.y+=(flight.motionVy*movement*dt+bob)/Math.max(1,height);
-  flight.z=Math.max(flight.behindForeground?FOREGROUND_DEPTH+.015:.05,flight.z+flight.vz*dt);
-  const bottom=flightBottom(flight.z,horizon);
-  // Project altitude as depth changes, so receding over the lake rises naturally.
-  if(flight.y>horizon&&oldBottom>horizon)flight.y=horizon+(flight.y-horizon)*(bottom-horizon)/(oldBottom-horizon);
+  if(changeSceneDepth(flight,advanceSceneDepth(flight.z,flight.vz,dt,flight.perspective),horizon,obstructed,flight.perspective)){flight.vz=0;flight.turnIn=0;}
+  const bottom=flightBottom(flight.z,horizon,flight.perspective);
   if(flight.y>bottom){flight.y=bottom;flight.vy=-Math.abs(flight.vy);}
-  if(flight.z>=FOREGROUND_DEPTH)flight.behindForeground=true;
+  flight.behindForeground=flight.z>=foregroundDepth(flight.perspective);
   flight.heading=clamp(flight.vy/450,-.55,.55)*(flight.vx<0?-1:1);
   stepFlightWings(flight,dt,pattern==='skip'||pattern==='hover'?10:pattern==='float'?5:7);
 }

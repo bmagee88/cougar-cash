@@ -478,7 +478,7 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-snowfall { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .f-snowflake { position: absolute; width: var(--flake-size); height: var(--flake-size); border-radius: 50%; background: #f3f8ffcf; box-shadow: 0 0 4px #fff5; animation: f-snow-fall 9s linear infinite; }
 .f-blowing-snow .f-snowflake { animation-name: f-snow-blow; }
-.f-heat-haze { position: absolute; z-index: 3; left: 0; right: 0; top: 25%; height: 45%; background: linear-gradient(transparent, #f8ce8c24 55%, transparent); pointer-events: none; transition: opacity 8s ease; }
+.f-heat-haze { position: absolute; z-index: 4; left: 0; right: 0; top: 25%; height: 45%; background: linear-gradient(transparent, #f8ce8c24 55%, transparent); pointer-events: none; transition: opacity 8s ease; }
 .f-heat-haze::after { content: ''; position: absolute; inset: 0; background: repeating-linear-gradient(transparent 0 18px, #ffedc00a 19px 20px, transparent 22px 35px); animation: f-heat 8s ease-in-out infinite alternate; }
 @keyframes f-snow-fall { from { translate: 0 -80px; opacity: 0; } 10% { opacity: .9; } 90% { opacity: .8; } to { translate: 65px 700px; opacity: 0; } }
 @keyframes f-snow-blow { from { translate: -400px -60px; opacity: 0; } 10% { opacity: .95; } 90% { opacity: .85; } to { translate: 1400px 260px; opacity: 0; } }
@@ -898,7 +898,9 @@ button.f-fish-card:hover { background: #2a5143; }
 @keyframes f-lantern-orbit { 0% { transform:rotate(var(--insect-tilt)) translate(var(--insect-radius),3px); } 25% { transform:rotate(calc(var(--insect-tilt) + 90deg)) translate(calc(var(--insect-radius) * .6),-12px); } 48% { transform:rotate(calc(var(--insect-tilt) + 175deg)) translate(var(--insect-radius),-3px); } 65% { transform:rotate(calc(var(--insect-tilt) + 205deg)) translate(calc(var(--insect-radius) * .5),-19px); } 100% { transform:rotate(calc(var(--insect-tilt) + 360deg)) translate(var(--insect-radius),3px); } }
 @keyframes f-lantern-buzz { from { scale:1 1; opacity:.85; } to { scale:1.8 .5; opacity:.45; } }
 .f-lake-splashes { display:contents; pointer-events:none; }
-.f-lake-splash { position:absolute; z-index:3; aspect-ratio:8/5; transform:translate(-50%,-72%); background-size:2000% 100%; background-repeat:no-repeat; animation:f-lake-splash 1.6s steps(19) both; opacity:calc(.8 - var(--night-amount,0) * .4); }
+/* Surface splashes share the lake's lighting below tint, moonlight, haze,
+   fog, rain mist and foreground banks. Keep the brief sprite animation live. */
+.f-lake-splash { position:absolute; z-index:3; aspect-ratio:8/5; transform:translate(-50%,-72%); background-size:2000% 100%; background-repeat:no-repeat; animation:f-lake-splash 1.6s steps(19) both; opacity:.8; filter:var(--background-filter); transition:filter var(--environment-transition,8s) ease; }
 @keyframes f-lake-splash { from { background-position:0% 0; } to { background-position:100% 0; } }
 .f-scene-paused :is(.f-geese-pass,.f-goose-flight,.f-goose-sampled,.f-lantern-orbit,.f-lantern-orbit i,.f-lake-splash) { animation-play-state:paused !important; }
 .f-reduced-motion :is(.f-geese-pass,.f-lantern-insects,.f-lake-splash) { display:none; }
@@ -906,7 +908,48 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-plant-map circle { fill:#b6f59866; stroke:#c3ffad; stroke-width:1; vector-effect:non-scaling-stroke; }
 .f-plant-map text { font:9px monospace; fill:#e8ffdf; stroke:#123224; stroke-width:2px; paint-order:stroke; }
 .f-seasonal-foliage { display:contents; pointer-events:none; }
-.f-flower-cluster { position:absolute; z-index:7; pointer-events:none; max-width:none; object-fit:fill; transform:translate3d(calc(var(--scene-x,0px) * var(--flower-parallax-x,0)),calc(var(--scene-y,0px) * var(--flower-parallax-y,0)),0); filter:var(--foreground-filter); transition:filter 8s ease; }
+.f-flower-plant { position:absolute; z-index:7; pointer-events:none; transform:translate3d(calc(var(--scene-x,0px) * var(--flower-parallax-x,0)),calc(var(--scene-y,0px) * var(--flower-parallax-y,0)),0); filter:var(--plant-filter); transition:filter 8s ease; }
+.f-flower-stalk { display:block; width:100%; height:100%; object-fit:contain; transform-origin:var(--flower-root-x) var(--flower-root-y); transform:rotate(var(--flower-lean)) scaleX(var(--flower-flip)); mask-image:linear-gradient(#000 93%,transparent 99%); }
+.f-shore-plants { display:contents; pointer-events:none; }
+.f-dock-plant-frame { position:absolute; left:var(--ground-left); bottom:0; width:var(--ground-width); height:var(--ground-height); transform:translate3d(calc(var(--scene-x,0px) * var(--ground-parallax)),0,0); }
+.f-dock-water-plants { z-index:5; }
+.f-dock-reed-plants { z-index:6; }
+.f-floating-plant-layer { position:absolute; inset:0; z-index:6; pointer-events:none; }
+.f-floating-plant-patch { position:absolute; aspect-ratio:1; transform-origin:50% 50%; transform:translate(-50%,-50%) scale(var(--plant-distance-scale,1)); transition:opacity 8s ease; }
+.f-floating-plant-motion { position:absolute; inset:0; filter:var(--foreground-filter); transition:filter 8s ease; animation:f-water-plant-rock var(--water-period) ease-in-out infinite; animation-delay:var(--water-phase); }
+.f-floating-plant-patch[data-water-growing="false"] .f-floating-plant-motion { animation-play-state:paused; }
+.f-pad-leaf { position:absolute; aspect-ratio:1; transform:translate(-50%,-50%); }
+.f-pad-leaf img { display:block; width:100%; height:100%; object-fit:contain; filter:brightness(.72) saturate(.68) contrast(1.12); transform:scaleY(var(--water-flatten)) rotate(var(--leaf-angle)) scaleX(var(--flip-x)); }
+.f-water-bloom { position:absolute; height:auto; transform-origin:50% 96%; transform:translate(-50%,-96%) scaleY(var(--bloom-flatten)) rotate(var(--bloom-angle)); }
+@keyframes f-water-plant-rock { 0%,100% { transform:translate3d(-.6px,.3px,0) rotate(-.45deg); } 45% { transform:translate3d(.7px,-.7px,0) rotate(.5deg); } 75% { transform:translate3d(.25px,.4px,0) rotate(.15deg); } }
+.f-scene-paused .f-floating-plant-motion { animation-play-state:paused; }
+.f-reduced-motion .f-floating-plant-motion { animation:none; }
+@media(prefers-reduced-motion:reduce) { .f-floating-plant-motion { animation:none; } }
+.f-perch-reeds { position:absolute; z-index:8; pointer-events:none; transform:translateY(calc(var(--reed-root-y) * -1)); filter:var(--foreground-filter); transition:filter 8s ease; }
+.f-perch-reed-art { display:block; width:100%; height:100%; object-fit:contain; transform-origin:var(--reed-root-x) var(--reed-root-y); transform:scaleX(var(--flip-x)); mask-image:linear-gradient(#000 93%,transparent 100%); }
+.f-perch-reed-art { filter:contrast(1.16) saturate(1.08); }
+/* Preserve the source plant artwork; share only foreground scene lighting. */
+.f-scene { --plant-filter:var(--foreground-filter); }
+.f-life-base { pointer-events:none; }
+.f-life-sprite { position:absolute; display:block; pointer-events:none; }
+.f-life-art { display:block; width:100%; height:100%; max-width:none; object-fit:fill; transform-origin:var(--life-root-x) var(--life-root-y); transform:scale(var(--life-stretch,1),var(--life-flat,1)) rotate(var(--life-angle,0deg)) scaleX(var(--flower-flip,1)); }
+.f-dock-water-plants .f-life-pad { filter:drop-shadow(0 .7px .2px #102c2f80); }
+.f-life-reeds { position:absolute; z-index:8; transform-origin:50% 96%; transform:translate(-50%,-96%) scale(var(--plant-distance-scale,1)); filter:var(--plant-filter); transition:filter 8s ease; }
+.f-life-water-motion { position:absolute; inset:0; filter:var(--plant-filter); transition:filter 8s ease; animation:f-life-water-bob linear infinite; }
+@keyframes f-life-water-bob { 0%,50%,100% { transform:translateY(0); } 25% { transform:translateY(-.7px); } 75% { transform:translateY(.7px); } }
+.f-reduced-motion .f-life-water-motion { animation:none; }
+.f-life-map-water { animation:f-life-map-bob linear infinite; }
+@keyframes f-life-map-bob { 0%,50%,100% { transform:translateY(0); } 25% { transform:translateY(calc(-1 * var(--water-map-amplitude))); } 75% { transform:translateY(var(--water-map-amplitude)); } }
+@media(prefers-reduced-motion:reduce) { .f-life-water-motion { animation:none; } }
+.f-controlled-dragonfly { display:contents; }
+.f-controlled-dragonfly-sprite { filter:drop-shadow(0 0 5px #9effdb) drop-shadow(0 0 11px #70ffcb); }
+.f-controlled-dragonfly-sprite::before { content:""; position:absolute; inset:22%; border-radius:50%; background:radial-gradient(#c6ffe56b,transparent 72%); pointer-events:none; }
+.f-controlled-dragonfly-sprite canvas { position:relative; }
+.f-dragonfly-controls { position:absolute; left:50%; bottom:14px; transform:translateX(-50%); z-index:22; max-width:calc(100% - 24px); box-sizing:border-box; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px 12px; padding:9px 12px; border:1px solid #a6edce88; border-radius:9px; background:#102f2bea; color:#eafff2; font:12px/1.4 sans-serif; text-align:center; }
+.f-dragonfly-controls output { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.f-dragonfly-controls button { color:inherit; background:transparent; border:1px solid #a6edce88; border-radius:5px; padding:4px 7px; cursor:pointer; }
+.f-season-autumn :is(.f-perch-reed-art,.f-pad-leaf) { filter:contrast(1.12) saturate(.85) sepia(.16); }
+.f-season-spring :is(.f-perch-reed-art,.f-pad-leaf) { filter:contrast(1.12) saturate(1.04); }
 .f-notebook-butterfly img[data-wing-view="side"] { image-rendering:pixelated; }
 
 /* Native transitions settle in one second (half a second at the 1s setting),
@@ -918,3 +961,42 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-scene.f-scene-stepped [data-scene-depth="background"].f-scene-layer { transition-property:filter,transform,opacity; }
 .f-scene.f-scene-stepped :is(.f-scene-base,.f-scene-layer,.f-angler-body,.f-rod,.f-landed-fish,.f-water-action,.f-time-tint,.f-moonlight,.f-lantern-station,.f-lantern-relit,.f-celestial-sky,.f-moving-sun,.f-solar-glare,.f-sailors-afterglow,.f-ridge-backlight,.f-moon,.f-moon-shade,.f-stars,.f-catalog-star,.f-cloud-system,.f-clear-clouds,.f-cloud-art,.f-cloud-deck,.f-thunderheads,.f-weather,.f-wind-system,.f-lake-fog,.f-rainfall,.f-rain-mist,.f-heat-haze,.f-overcast-light,.f-butterfly-visit,.f-flower-cluster,.f-angler-shadow i),
 .f-scene.f-scene-stepped::before { transition-duration:var(--environment-transition); transition-delay:0s; }
+
+/* Dock shallows: a stationary bottom fades into the painted lake. Only small
+   caustic and contact-wave groups animate; their cadence belongs to foreground. */
+.f-dock-shallows { display:contents; pointer-events:none; }
+.f-dock-shallow-frame { position:absolute; left:var(--ground-left); bottom:0; width:var(--ground-width); height:var(--ground-height); overflow:visible; pointer-events:none; transform:translate3d(calc(var(--scene-x,0px) * var(--shallows-parallax)),0,0); }
+.f-shallow-bottom { z-index:4; filter:var(--foreground-filter); transition:filter var(--environment-transition,8s) ease; }
+.f-shallow-bed { opacity:calc(.94 - var(--weather-veil,0) * .34); }
+.f-dock-shallow-right { position:absolute; right:-8%; bottom:-3%; width:calc(var(--right-bank-width,max(30%,160px)) * 2.1); height:auto; aspect-ratio:600 / 340; overflow:visible; pointer-events:none; transform:translate3d(calc(var(--scene-x,0px) * .7125),0,0); }
+.f-shore-wavelets { position:absolute; z-index:6; pointer-events:none; filter:var(--foreground-filter); transition:filter 8s ease; --shore-wave-tempo:1; --shore-wave-gain:.7; }
+.f-shore-surface-frame { inset:0; width:100%; height:100%; }
+.f-wave-dock-bank { z-index:4; }
+.f-wave-dock-right { z-index:5; }
+.f-wave-dock-posts { z-index:7; }
+.f-shore-wavelet { position:absolute; transform-origin:50% var(--wave-crest); transform:translate(-50%,calc(var(--wave-crest) * -1)) rotate(var(--wave-angle)); }
+.f-shore-wavelet-motion { display:block; width:100%; height:100%; opacity:0; transform-origin:50% var(--wave-crest); animation:f-shore-wavelet-arrival calc(var(--wave-period) * var(--shore-wave-tempo)) linear infinite; animation-delay:var(--wave-phase); }
+.f-shore-glints { z-index:4; pointer-events:none; filter:var(--foreground-filter); transition:filter 8s ease; }
+.f-caustic-glints { opacity:calc(.75 - var(--weather-veil,0) * .6); }
+.f-caustic-light { opacity:.035; transform-box:fill-box; transform-origin:center; animation:f-caustic-light 12.7s ease-in-out infinite alternate; }
+.f-caustic-light-second { animation-duration:16.3s; animation-delay:-7.1s; animation-direction:alternate-reverse; }
+.f-climate-overcast .f-caustic-glints { opacity:.22; }
+.f-climate-fog .f-caustic-glints { opacity:.08; }
+.f-climate-wind .f-shore-wavelets,.f-climate-cold-front .f-shore-wavelets { --shore-wave-tempo:.8; --shore-wave-gain:.9; }
+.f-climate-thunderstorm .f-shore-wavelets,.f-climate-hurricane .f-shore-wavelets { --shore-wave-tempo:.65; --shore-wave-gain:1; }
+.f-season-winter .f-shore-wavelets { --shore-wave-gain:.4; }
+@keyframes f-shore-wavelet-arrival {
+  0% { transform:translateY(var(--wave-reach)) scale(.94,.8); opacity:0; }
+  18% { opacity:calc(var(--shore-wave-gain) * .35); }
+  48% { transform:translateY(-14%) scale(1.02,1); opacity:calc(var(--shore-wave-gain) * .65); }
+  69% { transform:translateY(0) scale(1.035,.68); opacity:calc(var(--shore-wave-gain) * .38); }
+  86%,100% { transform:translateY(-10%) scale(1.07,.4); opacity:0; }
+}
+@keyframes f-caustic-light { from { transform:translate(-1px,0) scale(.995); opacity:.025; } to { transform:translate(1.5px,1px) scale(1.015); opacity:.085; } }
+.f-reduced-motion .f-shore-wavelet-motion { opacity:0; }
+@media(prefers-reduced-motion:reduce) { .f-shore-wavelet-motion { animation:none; opacity:0; } .f-caustic-light { animation:none; opacity:.035; } }
+
+/* These layers inherit the exact shore/angler frame and its one parallax
+   transform. The static bed and submerged bank never animate or seek time. */
+.f-shore-shallows { position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+.f-shore-contact-shadow { fill:none; stroke:#173e3e; stroke-width:4; stroke-linecap:round; opacity:.11; }

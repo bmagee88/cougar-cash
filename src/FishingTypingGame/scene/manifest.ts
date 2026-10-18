@@ -53,6 +53,8 @@ export function sceneForSeason(season: Season, manifest: SceneAsset[] = CEDAR_SC
 }
 // Normalized attachment points keep separately painted equipment easy to swap.
 export const ANGLER_RIG = {
+  // Ground contact at the nearer boot, shared by the seasonal outfits.
+  feet: { x: .80, y: .93 },
   hand: { x: 0.85, y: 0.435 },
   rod: { width: 1.2, height: 0.63, grip: { x: 0.21, y: 0.75 }, tip: { x: 0.965, y: 0.035 } },
   // Align the painted hips to a point on the dock's top planks, at every size.

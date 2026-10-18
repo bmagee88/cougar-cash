@@ -1,5 +1,5 @@
 import { artwork } from './artwork';
-import { SaveData, Season, Weather } from './types';
+import { ButterflyPose, SaveData, Season, Weather } from './types';
 import { WORLD } from './world';
 
 export const ODONATES = [
@@ -10,11 +10,16 @@ export const SANTA={id:'santa',name:'Santa Claus',description:'A tiny sleigh sil
 export const visitorById=(id:unknown)=>ODONATES.find(species=>species.id===id);
 // Revision applies to stills and the sampled flight sheet together, including
 // previously recorded journal poses, so cached opaque wings are not reused.
-const ODONATE_ART_REVISION='clear-wings-small-3';
+const ODONATE_ART_REVISION='directional-clear-wings-4';
 export const ODONATE_SPRITE={width:96,height:112,canvasSize:160};
-export const ODONATE_DISPLAY_SCALE=.6;
-export const visitorAsset=(id:string,frame?:number)=>`${artwork(`visitors/${id}/${frame===undefined?'adult':`pose-${Math.max(0,Math.min(7,Math.round(frame)))}`}.webp`)}?v=${ODONATE_ART_REVISION}`;
-export const visitorSheet=(id:string)=>`${artwork(`visitors/${id}/flight-sheet.webp`)}?v=${ODONATE_ART_REVISION}`;
+export const ODONATE_DISPLAY_SCALE=.3;
+// Foot-contact pixels in the original resting frames. Land around these pixels,
+// rather than placing the canvas/thorax center directly on a stem.
+export const visitorPerchContact=(id:string)=>id==='green-darner'?{x:67,y:74}:id==='ebony-jewelwing'?{x:67,y:82}:undefined;
+export const hasDirectionalVisitor=(id:string)=>visitorById(id)?.kind==='dragonfly';
+const viewPrefix=(id:string,view?:ButterflyPose['view'])=>hasDirectionalVisitor(id)&&(view==='front'||view==='back')?`${view}-`:'';
+export const visitorAsset=(id:string,frame?:number,view?:ButterflyPose['view'])=>`${artwork(`visitors/${id}/${viewPrefix(id,view)}${frame===undefined?'adult':`pose-${Math.max(0,Math.min(7,Math.round(frame)))}`}.webp`)}?v=${ODONATE_ART_REVISION}`;
+export const visitorSheet=(id:string,view?:ButterflyPose['view'])=>`${artwork(`visitors/${id}/${viewPrefix(id,view)}flight-sheet.webp`)}?v=${ODONATE_ART_REVISION}`;
 export const santaAsset=()=>artwork('visitors/santa.webp');
 export const santaSkyAsset=()=>artwork('visitors/santa-sky.webp');
 export const SANTA_SPRITE={width:64,height:28};

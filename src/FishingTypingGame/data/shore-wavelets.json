@@ -1,0 +1,38 @@
+[
+  {
+    "image": "effects/shore-wavelets/wavelet-0.webp",
+    "width": 392,
+    "height": 60,
+    "crestY": 0.42837
+  },
+  {
+    "image": "effects/shore-wavelets/wavelet-1.webp",
+    "width": 392,
+    "height": 86,
+    "crestY": 0.40706
+  },
+  {
+    "image": "effects/shore-wavelets/wavelet-2.webp",
+    "width": 392,
+    "height": 92,
+    "crestY": 0.47166
+  },
+  {
+    "image": "effects/shore-wavelets/wavelet-3.webp",
+    "width": 392,
+    "height": 91,
+    "crestY": 0.48722
+  },
+  {
+    "image": "effects/shore-wavelets/wavelet-4.webp",
+    "width": 392,
+    "height": 85,
+    "crestY": 0.47172
+  },
+  {
+    "image": "effects/shore-wavelets/wavelet-5.webp",
+    "width": 392,
+    "height": 102,
+    "crestY": 0.5307
+  }
+]

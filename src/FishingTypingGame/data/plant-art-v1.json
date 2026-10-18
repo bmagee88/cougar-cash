@@ -1,0 +1,1073 @@
+{
+  "violet": {
+    "foliage-spring": {
+      "image": "plants/v1/violet/foliage-spring.webp",
+      "width": 320,
+      "height": 213,
+      "root": {
+        "x": 0.843931,
+        "y": 0.973913
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.121739
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/violet/foliage-summer.webp",
+      "width": 320,
+      "height": 305,
+      "root": {
+        "x": 0.635638,
+        "y": 0.997207
+      },
+      "perch": {
+        "x": 0.529255,
+        "y": 0.111732
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/violet/foliage-autumn.webp",
+      "width": 320,
+      "height": 221,
+      "root": {
+        "x": 0.206349,
+        "y": 0.977011
+      },
+      "perch": {
+        "x": 0.473545,
+        "y": 0.118774
+      }
+    },
+    "stem": {
+      "image": "plants/v1/violet/stem.webp",
+      "width": 292,
+      "height": 320,
+      "root": {
+        "x": 0.589595,
+        "y": 0.984169
+      },
+      "perch": {
+        "x": 0.589595,
+        "y": 0.110818
+      }
+    },
+    "bud": {
+      "image": "plants/v1/violet/bud.webp",
+      "width": 220,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.984199
+      },
+      "perch": {
+        "x": 0.503289,
+        "y": 0.110609
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/violet/bloom.webp",
+      "width": 195,
+      "height": 320,
+      "root": {
+        "x": 0.498168,
+        "y": 0.986577
+      },
+      "perch": {
+        "x": 0.498168,
+        "y": 0.098434
+      }
+    },
+    "seed": {
+      "image": "plants/v1/violet/seed.webp",
+      "width": 175,
+      "height": 320,
+      "root": {
+        "x": 0.463115,
+        "y": 0.986577
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.105145
+      }
+    },
+    "withering": {
+      "image": "plants/v1/violet/withering.webp",
+      "width": 179,
+      "height": 320,
+      "root": {
+        "x": 0.518519,
+        "y": 0.986175
+      },
+      "perch": {
+        "x": 0.419753,
+        "y": 0.110599
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/violet/foliage-winter.webp",
+      "width": 320,
+      "height": 209,
+      "root": {
+        "x": 0.504801,
+        "y": 0.980021
+      },
+      "perch": {
+        "x": 0.47668,
+        "y": 0.105152
+      }
+    }
+  },
+  "cornflower": {
+    "foliage-spring": {
+      "image": "plants/v1/cornflower/foliage-spring.webp",
+      "width": 320,
+      "height": 239,
+      "root": {
+        "x": 0.49848,
+        "y": 0.97561
+      },
+      "perch": {
+        "x": 0.553191,
+        "y": 0.117886
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/cornflower/foliage-summer.webp",
+      "width": 265,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.997773
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.109131
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/cornflower/foliage-autumn.webp",
+      "width": 320,
+      "height": 308,
+      "root": {
+        "x": 0.515406,
+        "y": 0.979651
+      },
+      "perch": {
+        "x": 0.498599,
+        "y": 0.113372
+      }
+    },
+    "stem": {
+      "image": "plants/v1/cornflower/stem.webp",
+      "width": 236,
+      "height": 320,
+      "root": {
+        "x": 0.689441,
+        "y": 0.983945
+      },
+      "perch": {
+        "x": 0.555901,
+        "y": 0.112385
+      }
+    },
+    "bud": {
+      "image": "plants/v1/cornflower/bud.webp",
+      "width": 184,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.987603
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.11157
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/cornflower/bloom.webp",
+      "width": 192,
+      "height": 320,
+      "root": {
+        "x": 0.469595,
+        "y": 0.98783
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.099391
+      }
+    },
+    "seed": {
+      "image": "plants/v1/cornflower/seed.webp",
+      "width": 185,
+      "height": 320,
+      "root": {
+        "x": 0.521127,
+        "y": 0.985772
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.111789
+      }
+    },
+    "withering": {
+      "image": "plants/v1/cornflower/withering.webp",
+      "width": 174,
+      "height": 320,
+      "root": {
+        "x": 0.604839,
+        "y": 0.984615
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.10989
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/cornflower/foliage-winter.webp",
+      "width": 320,
+      "height": 306,
+      "root": {
+        "x": 0.528892,
+        "y": 0.994132
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.104778
+      }
+    }
+  },
+  "aster": {
+    "foliage-spring": {
+      "image": "plants/v1/aster/foliage-spring.webp",
+      "width": 320,
+      "height": 302,
+      "root": {
+        "x": 0.49863,
+        "y": 0.997101
+      },
+      "perch": {
+        "x": 0.430137,
+        "y": 0.115942
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/aster/foliage-summer.webp",
+      "width": 269,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.997727
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.111364
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/aster/foliage-autumn.webp",
+      "width": 317,
+      "height": 320,
+      "root": {
+        "x": 0.546875,
+        "y": 0.997423
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.113402
+      }
+    },
+    "stem": {
+      "image": "plants/v1/aster/stem.webp",
+      "width": 274,
+      "height": 320,
+      "root": {
+        "x": 0.670623,
+        "y": 0.984733
+      },
+      "perch": {
+        "x": 0.569733,
+        "y": 0.111959
+      }
+    },
+    "bud": {
+      "image": "plants/v1/aster/bud.webp",
+      "width": 164,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.987261
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.099788
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/aster/bloom.webp",
+      "width": 191,
+      "height": 320,
+      "root": {
+        "x": 0.498221,
+        "y": 0.987261
+      },
+      "perch": {
+        "x": 0.498221,
+        "y": 0.099788
+      }
+    },
+    "seed": {
+      "image": "plants/v1/aster/seed.webp",
+      "width": 167,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.985138
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.099788
+      }
+    },
+    "withering": {
+      "image": "plants/v1/aster/withering.webp",
+      "width": 183,
+      "height": 320,
+      "root": {
+        "x": 0.452675,
+        "y": 0.985915
+      },
+      "perch": {
+        "x": 0.497942,
+        "y": 0.110329
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/aster/foliage-winter.webp",
+      "width": 320,
+      "height": 279,
+      "root": {
+        "x": 0.529555,
+        "y": 0.994424
+      },
+      "perch": {
+        "x": 0.499595,
+        "y": 0.104089
+      }
+    }
+  },
+  "hellebore": {
+    "foliage-spring": {
+      "image": "plants/v1/hellebore/foliage-spring.webp",
+      "width": 320,
+      "height": 241,
+      "root": {
+        "x": 0.530259,
+        "y": 0.996169
+      },
+      "perch": {
+        "x": 0.409222,
+        "y": 0.122605
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/hellebore/foliage-summer.webp",
+      "width": 320,
+      "height": 296,
+      "root": {
+        "x": 0.497396,
+        "y": 0.997183
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.112676
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/hellebore/foliage-autumn.webp",
+      "width": 320,
+      "height": 268,
+      "root": {
+        "x": 0.53125,
+        "y": 0.996894
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.114907
+      }
+    },
+    "stem": {
+      "image": "plants/v1/hellebore/stem.webp",
+      "width": 268,
+      "height": 320,
+      "root": {
+        "x": 0.593472,
+        "y": 0.985075
+      },
+      "perch": {
+        "x": 0.513353,
+        "y": 0.11194
+      }
+    },
+    "bud": {
+      "image": "plants/v1/hellebore/bud.webp",
+      "width": 214,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.98627
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.098398
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/hellebore/bloom.webp",
+      "width": 236,
+      "height": 320,
+      "root": {
+        "x": 0.483077,
+        "y": 0.984091
+      },
+      "perch": {
+        "x": 0.498462,
+        "y": 0.1
+      }
+    },
+    "seed": {
+      "image": "plants/v1/hellebore/seed.webp",
+      "width": 216,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.986301
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.098174
+      }
+    },
+    "withering": {
+      "image": "plants/v1/hellebore/withering.webp",
+      "width": 182,
+      "height": 320,
+      "root": {
+        "x": 0.385892,
+        "y": 0.983491
+      },
+      "perch": {
+        "x": 0.485477,
+        "y": 0.110849
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/hellebore/foliage-winter.webp",
+      "width": 320,
+      "height": 237,
+      "root": {
+        "x": 0.5,
+        "y": 0.993846
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.104615
+      }
+    }
+  },
+  "cattail": {
+    "foliage-spring": {
+      "image": "plants/v1/cattail/foliage-spring.webp",
+      "width": 312,
+      "height": 320,
+      "root": {
+        "x": 0.498489,
+        "y": 0.99705
+      },
+      "perch": {
+        "x": 0.450151,
+        "y": 0.115044
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/cattail/foliage-summer.webp",
+      "width": 245,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.997992
+      },
+      "perch": {
+        "x": 0.356021,
+        "y": 0.110442
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/cattail/foliage-autumn.webp",
+      "width": 298,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.997573
+      },
+      "perch": {
+        "x": 0.377604,
+        "y": 0.11165
+      }
+    },
+    "stem": {
+      "image": "plants/v1/cattail/stem.webp",
+      "width": 203,
+      "height": 320,
+      "root": {
+        "x": 0.626582,
+        "y": 0.997988
+      },
+      "perch": {
+        "x": 0.585443,
+        "y": 0.110664
+      }
+    },
+    "bud": {
+      "image": "plants/v1/cattail/bud.webp",
+      "width": 124,
+      "height": 320,
+      "root": {
+        "x": 0.458564,
+        "y": 0.987179
+      },
+      "perch": {
+        "x": 0.497238,
+        "y": 0.098291
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/cattail/bloom.webp",
+      "width": 140,
+      "height": 320,
+      "root": {
+        "x": 0.558824,
+        "y": 0.987124
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.098712
+      }
+    },
+    "seed": {
+      "image": "plants/v1/cattail/seed.webp",
+      "width": 139,
+      "height": 320,
+      "root": {
+        "x": 0.423645,
+        "y": 0.987179
+      },
+      "perch": {
+        "x": 0.497537,
+        "y": 0.098291
+      }
+    },
+    "withering": {
+      "image": "plants/v1/cattail/withering.webp",
+      "width": 170,
+      "height": 320,
+      "root": {
+        "x": 0.331984,
+        "y": 0.987124
+      },
+      "perch": {
+        "x": 0.591093,
+        "y": 0.098712
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/cattail/foliage-winter.webp",
+      "width": 299,
+      "height": 320,
+      "root": {
+        "x": 0.495682,
+        "y": 0.952419
+      },
+      "perch": {
+        "x": 0.380829,
+        "y": 0.104839
+      }
+    }
+  },
+  "rush": {
+    "foliage-spring": {
+      "image": "plants/v1/rush/foliage-spring.webp",
+      "width": 307,
+      "height": 318,
+      "root": {
+        "x": 0.498371,
+        "y": 0.977987
+      },
+      "perch": {
+        "x": 0.543974,
+        "y": 0.122642
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/rush/foliage-summer.webp",
+      "width": 236,
+      "height": 320,
+      "root": {
+        "x": 0.485095,
+        "y": 0.998004
+      },
+      "perch": {
+        "x": 0.520325,
+        "y": 0.10978
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/rush/foliage-autumn.webp",
+      "width": 259,
+      "height": 320,
+      "root": {
+        "x": 0.498623,
+        "y": 0.997768
+      },
+      "perch": {
+        "x": 0.404959,
+        "y": 0.111607
+      }
+    },
+    "stem": {
+      "image": "plants/v1/rush/stem.webp",
+      "width": 137,
+      "height": 320,
+      "root": {
+        "x": 0.567164,
+        "y": 0.985075
+      },
+      "perch": {
+        "x": 0.527363,
+        "y": 0.110874
+      }
+    },
+    "bud": {
+      "image": "plants/v1/rush/bud.webp",
+      "width": 102,
+      "height": 320,
+      "root": {
+        "x": 0.496732,
+        "y": 0.987552
+      },
+      "perch": {
+        "x": 0.496732,
+        "y": 0.105809
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/rush/bloom.webp",
+      "width": 121,
+      "height": 320,
+      "root": {
+        "x": 0.516484,
+        "y": 0.985477
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.099585
+      }
+    },
+    "seed": {
+      "image": "plants/v1/rush/seed.webp",
+      "width": 129,
+      "height": 320,
+      "root": {
+        "x": 0.502564,
+        "y": 0.987552
+      },
+      "perch": {
+        "x": 0.497436,
+        "y": 0.099585
+      }
+    },
+    "withering": {
+      "image": "plants/v1/rush/withering.webp",
+      "width": 142,
+      "height": 320,
+      "root": {
+        "x": 0.227723,
+        "y": 0.986813
+      },
+      "perch": {
+        "x": 0.594059,
+        "y": 0.10989
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/rush/foliage-winter.webp",
+      "width": 264,
+      "height": 320,
+      "root": {
+        "x": 0.515068,
+        "y": 0.994721
+      },
+      "perch": {
+        "x": 0.395434,
+        "y": 0.103318
+      }
+    }
+  },
+  "sedge": {
+    "foliage-spring": {
+      "image": "plants/v1/sedge/foliage-spring.webp",
+      "width": 320,
+      "height": 312,
+      "root": {
+        "x": 0.5,
+        "y": 0.997118
+      },
+      "perch": {
+        "x": 0.558989,
+        "y": 0.115274
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/sedge/foliage-summer.webp",
+      "width": 267,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.997826
+      },
+      "perch": {
+        "x": 0.5625,
+        "y": 0.113043
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/sedge/foliage-autumn.webp",
+      "width": 290,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.997642
+      },
+      "perch": {
+        "x": 0.382812,
+        "y": 0.113208
+      }
+    },
+    "stem": {
+      "image": "plants/v1/sedge/stem.webp",
+      "width": 277,
+      "height": 320,
+      "root": {
+        "x": 0.738019,
+        "y": 0.98338
+      },
+      "perch": {
+        "x": 0.661342,
+        "y": 0.116343
+      }
+    },
+    "bud": {
+      "image": "plants/v1/sedge/bud.webp",
+      "width": 216,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.983908
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.098851
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/sedge/bloom.webp",
+      "width": 179,
+      "height": 320,
+      "root": {
+        "x": 0.534979,
+        "y": 0.986207
+      },
+      "perch": {
+        "x": 0.497942,
+        "y": 0.098851
+      }
+    },
+    "seed": {
+      "image": "plants/v1/sedge/seed.webp",
+      "width": 145,
+      "height": 320,
+      "root": {
+        "x": 0.507614,
+        "y": 0.986207
+      },
+      "perch": {
+        "x": 0.497462,
+        "y": 0.098851
+      }
+    },
+    "withering": {
+      "image": "plants/v1/sedge/withering.webp",
+      "width": 166,
+      "height": 320,
+      "root": {
+        "x": 0.193694,
+        "y": 0.986014
+      },
+      "perch": {
+        "x": 0.599099,
+        "y": 0.109557
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/sedge/foliage-winter.webp",
+      "width": 320,
+      "height": 282,
+      "root": {
+        "x": 0.508235,
+        "y": 0.97331
+      },
+      "perch": {
+        "x": 0.663529,
+        "y": 0.104982
+      }
+    }
+  },
+  "water-lily": {
+    "foliage-spring": {
+      "image": "plants/v1/water-lily/foliage-spring.webp",
+      "width": 240,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.498069,
+        "y": 0.112717
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/water-lily/foliage-summer.webp",
+      "width": 274,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.498688,
+        "y": 0.11236
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/water-lily/foliage-autumn.webp",
+      "width": 266,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.498623,
+        "y": 0.10984
+      }
+    },
+    "stem": {
+      "image": "plants/v1/water-lily/stem.webp",
+      "width": 248,
+      "height": 320,
+      "root": {
+        "x": 0.611842,
+        "y": 0.984694
+      },
+      "perch": {
+        "x": 0.618421,
+        "y": 0.112245
+      }
+    },
+    "bud": {
+      "image": "plants/v1/water-lily/bud.webp",
+      "width": 183,
+      "height": 320,
+      "root": {
+        "x": 0.256604,
+        "y": 0.987069
+      },
+      "perch": {
+        "x": 0.430189,
+        "y": 0.099138
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/water-lily/bloom.webp",
+      "width": 264,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.987124
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.098712
+      }
+    },
+    "seed": {
+      "image": "plants/v1/water-lily/seed.webp",
+      "width": 121,
+      "height": 320,
+      "root": {
+        "x": 0.497175,
+        "y": 0.987207
+      },
+      "perch": {
+        "x": 0.497175,
+        "y": 0.098081
+      }
+    },
+    "withering": {
+      "image": "plants/v1/water-lily/withering.webp",
+      "width": 159,
+      "height": 320,
+      "root": {
+        "x": 0.402655,
+        "y": 0.986842
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.109649
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/water-lily/foliage-winter.webp",
+      "width": 320,
+      "height": 300,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.499579,
+        "y": 0.104933
+      }
+    }
+  },
+  "lotus": {
+    "foliage-spring": {
+      "image": "plants/v1/lotus/foliage-spring.webp",
+      "width": 261,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.112022
+      }
+    },
+    "foliage-summer": {
+      "image": "plants/v1/lotus/foliage-summer.webp",
+      "width": 273,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.113333
+      }
+    },
+    "foliage-autumn": {
+      "image": "plants/v1/lotus/foliage-autumn.webp",
+      "width": 320,
+      "height": 293,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.113636
+      }
+    },
+    "stem": {
+      "image": "plants/v1/lotus/stem.webp",
+      "width": 254,
+      "height": 320,
+      "root": {
+        "x": 0.695925,
+        "y": 0.985075
+      },
+      "perch": {
+        "x": 0.670846,
+        "y": 0.114428
+      }
+    },
+    "bud": {
+      "image": "plants/v1/lotus/bud.webp",
+      "width": 82,
+      "height": 320,
+      "root": {
+        "x": 0.5,
+        "y": 0.987578
+      },
+      "perch": {
+        "x": 0.5,
+        "y": 0.099379
+      }
+    },
+    "bloom": {
+      "image": "plants/v1/lotus/bloom.webp",
+      "width": 244,
+      "height": 320,
+      "root": {
+        "x": 0.498645,
+        "y": 0.987578
+      },
+      "perch": {
+        "x": 0.498645,
+        "y": 0.099379
+      }
+    },
+    "seed": {
+      "image": "plants/v1/lotus/seed.webp",
+      "width": 229,
+      "height": 320,
+      "root": {
+        "x": 0.623529,
+        "y": 0.987395
+      },
+      "perch": {
+        "x": 0.517647,
+        "y": 0.109244
+      }
+    },
+    "withering": {
+      "image": "plants/v1/lotus/withering.webp",
+      "width": 153,
+      "height": 320,
+      "root": {
+        "x": 0.263158,
+        "y": 0.987395
+      },
+      "perch": {
+        "x": 0.552632,
+        "y": 0.109244
+      }
+    },
+    "foliage-winter": {
+      "image": "plants/v1/lotus/foliage-winter.webp",
+      "width": 320,
+      "height": 290,
+      "root": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "perch": {
+        "x": 0.499608,
+        "y": 0.104671
+      }
+    }
+  }
+}

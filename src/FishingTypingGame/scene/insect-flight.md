@@ -32,7 +32,7 @@ not a claim to reproduce measured wingbeats or exact species aerodynamics.
   wingbeats. Their course bends around an away bearing, with broad butterfly
   curves, dragonfly darts and gentler damselfly flutter.
 
-`plantMap.ts` keeps six base anchors per location, each with an ID, visual label,
+`plantMap.ts` keeps painted leaf anchors per location, each with an ID, visual label,
 artwork layer, source-art x/y, relative depth z and compatible visitor groups.
 Names describe the painted habitat rather than assert a botanical identity.
 Projection reads the actual responsive cutout rectangle, handles the desktop
@@ -41,15 +41,29 @@ the map and active plant destinations. The developer's **Show tree and plant
 maps** checkbox displays the visible anchors; **Inspect plant map** shows the
 complete source coordinates.
 
-`foliage.ts` adds six patches at each location, with separate spring, summer
-and autumn cutouts. Their 2–3 flower heads and leaf rest points come from the
-actual artwork pixels in `data/foliage.json`. `SeasonalFoliage` projects them
-onto the responsive bank layers and inherits their parallax and environment
-filter. Winter removes these patches and destinations. Only the current
-season's visible patches mount; no foliage animation loop is added.
+`ShorePlants` adds small cattail, rush and sedge/twig cutouts in each shore's
+own coordinate frame. Traced tip and leaf pixels provide dedicated dragonfly
+or damselfly perches; both groups may also use actual flower heads and leaves.
+Estimated scenery stem points are retired. Resting sprites rotate around a
+painted foot-contact pixel, and cached projection follows the existing camera
+drift without per-frame geometry reads. Reed occupancy is shared across visitors.
+Three floating-plant layers hold fixed, seeded five-pad groups near the bank.
+Their foliage matures with the season; ordinary perennials retain autumn leaves
+in winter. Subtle CSS water movement is independent of weather and growth.
+
+`plantLifecycle.ts` lazily reconstructs the visited location from its persistent
+world seed and date. Species, roots and five stem slots stay fixed for the
+spring-to-winter cycle. Each stem advances independently through stem, bud,
+bloom, seed and withering; removal releases only that stem's perch. The next
+spring resets all foliage and stems. Foliage and stage artwork are rendered
+separately, with loaded opaque contacts traced in `data/plant-art-v1.json`.
+Perspective, species height, root-centered rotation and mirroring are applied
+to both artwork and map points. Layout, stage changes and image loads refresh
+destinations; removed anchors release their insects. Only blooms offer nectar.
+See `plant-lifecycle.md` for exact seed, calendar, winter, artwork and cache rules.
 
 The movement retains the doubled flight volume, side entrances/exits, depth
-scaling, water/horizon floor, permanent foreground depth crossing and individual
+scaling, water/horizon floor, reversible foreground depth crossing and individual
 pointer tolerances. It uses the existing capped visitor RAF loop. Plant geometry
 is read on layout, image load, scroll and resize, never on every animation frame.
 Hidden/offscreen scenes pause; timers, observers and listeners are released.
@@ -60,15 +74,17 @@ The game loads these only for
 visitors that use them and samples the same canvas for painting and pixel picking.
 Glides use the level-wing pose. Notebook captures persist the side-view flag,
 frame, angle and facing; older journal entries retain their original artwork.
-The bounded sprite cache still holds at most four source sheets.
+The bounded sprite cache holds at most six source sheets, including directional
+dragonfly views. See `scene-depth.md` for shared perspective and distance units.
 
 Art was generated with the built-in imagegen tool. The first two species'
 original atlases and prompts are in `output/insect-flight-art/`. The remaining
-twelve species and nine seasonal foliage atlases, with exact prompts, are in
-`output/garden-art/`. Repack the current small side sprites and foliage with
+twelve species and the earlier foliage atlases, with exact prompts, are in
+`output/garden-art/`. Repack the small side sprites with
 `scripts/pack-garden-art.py`; it reuses the first two species' original frames.
-New runtime files live alongside each species' existing assets, plus
-`public/assets/fishing/foliage/` for plants, and do not replace earlier art.
+The current individual plant cutouts use `scripts/pack-plant-lifecycle.py` and
+live in `public/assets/fishing/plants/v1/`. Exact species prompts and original
+atlases are in `output/plant-lifecycle-art/`; earlier plant assets are preserved.
 
 ## Research references
 
