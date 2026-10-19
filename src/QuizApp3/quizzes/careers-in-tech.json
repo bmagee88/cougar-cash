@@ -1,0 +1,136 @@
+{
+  "id": "careers-in-tech",
+  "quizName": "Careers in Tech",
+  "quizNumber": 6,
+  "gradeLevel": 6,
+  "teacher": "Magbr",
+  "sources": [
+    {
+      "textbook": "Careers",
+      "chapters": "Chapter 1",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "legacy-1",
+      "conceptName": "What does a help desk technician do?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a help desk technician do?"
+      ],
+      "answerVariants": [
+        "They help users solve computer, account, software, and device problems."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "legacy-2",
+      "conceptName": "What does a software developer create?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a software developer create?"
+      ],
+      "answerVariants": [
+        "They design, write, test, and maintain computer programs and apps."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "legacy-3",
+      "conceptName": "What does a cybersecurity analyst help protect?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a cybersecurity analyst help protect?"
+      ],
+      "answerVariants": [
+        "They help protect systems, networks, accounts, and data from threats."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "legacy-4",
+      "conceptName": "What does a network administrator manage?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a network administrator manage?"
+      ],
+      "answerVariants": [
+        "They manage network devices, connections, users, and network reliability."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "legacy-5",
+      "conceptName": "What does a data analyst look for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a data analyst look for?"
+      ],
+      "answerVariants": [
+        "They study data to find patterns, answer questions, and support decisions."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "legacy-6",
+      "conceptName": "What does a UX designer focus on?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a UX designer focus on?"
+      ],
+      "answerVariants": [
+        "They focus on making technology easier and better for people to use."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "legacy-7",
+      "conceptName": "What is an IT project manager responsible for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is an IT project manager responsible for?"
+      ],
+      "answerVariants": [
+        "They organize people, tasks, timelines, and resources for technology projects."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "legacy-8",
+      "conceptName": "Why are communication skills important in technology careers?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why are communication skills important in technology careers?"
+      ],
+      "answerVariants": [
+        "Tech workers often explain problems, teach users, and work on teams."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "legacy-9",
+      "conceptName": "What is one way to prepare for a tech career while in school?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is one way to prepare for a tech career while in school?"
+      ],
+      "answerVariants": [
+        "Practice problem-solving, learn basic coding or hardware skills, and build projects."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "legacy-10",
+      "conceptName": "Why do technology workers keep learning?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why do technology workers keep learning?"
+      ],
+      "answerVariants": [
+        "Technology changes often, so workers need to keep their skills current."
+      ]
+    }
+  ]
+}

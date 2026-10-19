@@ -16,6 +16,7 @@ const TypingDdrPage = lazy(() => import("./typingProject/pages/TypingDdrPage"));
 const SnakeGamePage = lazy(() => import("./SnakeGamePage"));
 const ComplianceQuizPage = lazy(() => import("./ComplianceQuizProject/ComplianceQuizPage"));
 const CQuiz2Page = lazy(() => import("./CQuiz2/CQuiz2Page"));
+const QuizApp3Page = lazy(() => import("./QuizApp3/QuizApp3Page"));
 const TimerApp = lazy(() => import("./TimerApp/TimerApp"));
 const Demo = lazy(() => import("./components/FetchProgressModal/Demo"));
 const Oroboros = lazy(() => import("./oroboros/Oroboros"));
@@ -94,6 +95,7 @@ function App() {
             <Route path="/snake" element={<SnakeGamePage />}></Route>
             <Route path="/c-quiz" element={<ComplianceQuizPage />}></Route>
             <Route path="/c-quiz-2" element={<CQuiz2Page />}></Route>
+            <Route path="/quiz-app-3" element={<QuizApp3Page />}></Route>
             <Route path="/timer" element={<TimerApp />}></Route>
             <Route path="/fpm" element={<Demo />}></Route>
             <Route path="/oroboros" element={<Oroboros />}></Route>

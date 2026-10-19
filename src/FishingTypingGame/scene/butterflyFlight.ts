@@ -24,6 +24,7 @@ export interface FlightState {
   pattern?:ButterflyPattern;mode?:'flap'|'glide'|'hover'|'patrol'|'dart';modeIn?:number;
   wingPhase?:number;wingFrame?:number;phase?:number;plants?:PlantPerch[];
   motionVx?:number;motionVy?:number;
+  odonateLaunchElapsed?:number;
   escapeAngle?:number;scaredAt?:number;evadeUntil?:number;plantSearchAt?:number;
   flowerWait?:{plantId:string;until:number;x:number;y:number};
   perspective?:SceneDepthFrame;

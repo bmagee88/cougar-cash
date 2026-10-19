@@ -135,6 +135,14 @@ const tiles = [
     category: "utility",
   },
   {
+    path: "/quiz-app-3",
+    title: "Quiz App 3",
+    subtitle: "Four-question matching practice with progress saved on your device.",
+    emoji: "Q3",
+    gradient: "linear-gradient(135deg, #134e4a, #172b43)",
+    category: "utility",
+  },
+  {
     path: "/map",
     title: "Regions Map",
     subtitle: "World Generation",

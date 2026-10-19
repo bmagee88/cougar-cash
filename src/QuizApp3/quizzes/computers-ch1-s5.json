@@ -1,0 +1,276 @@
+{
+  "id": "computers-ch1-s5",
+  "quizName": "Input, Processing, Memory, Storage, and Output",
+  "quizNumber": 2,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 1",
+      "sections": "1.5"
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "input-role",
+      "conceptName": "Input Brings Information In",
+      "confusabilityGroup": "information-jobs",
+      "questionVariants": [
+        "What does the input job do in a computing system?",
+        "How does information move during input?",
+        "What happens when a computer carries out its input job?",
+        "What is meant by input when describing a computer's work?",
+        "What is the purpose of the input job?"
+      ],
+      "answerVariants": [
+        "Data or commands enter the system for it to use.",
+        "Information or directions come into the machine from a source.",
+        "The system takes in information or commands.",
+        "Data or instructions arrive from a source outside the task being done.",
+        "The machine receives information or directions to use in its work."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "sensor-collects-readings",
+      "conceptName": "Sensors Gather Real-World Readings",
+      "confusabilityGroup": "input-sources",
+      "questionVariants": [
+        "How can a sensor gather facts about the room around it?",
+        "What job does a sensor do before its results can be used by a computer?",
+        "How does a sensor collect data without someone typing it in?",
+        "What does a sensor do when checking the air in a classroom?",
+        "How does a sensor help a machine learn about its surroundings?"
+      ],
+      "answerVariants": [
+        "It measures a physical condition, such as temperature, and supplies the reading.",
+        "It takes a measurement of a real-world condition and passes on the reading.",
+        "It checks a physical condition and provides a measurement for the system to use.",
+        "It measures something in the physical world and sends that reading to the system.",
+        "It collects a measurement, such as how warm the air is, and passes it along."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "processing-role",
+      "conceptName": "Processing Works on Data",
+      "confusabilityGroup": "information-jobs",
+      "questionVariants": [
+        "What is processing in a computing system?",
+        "What does the processing job involve?",
+        "How would you explain processing to a classmate?",
+        "What happens during the processing part of a computer task?",
+        "What does it mean when a computer is processing data?"
+      ],
+      "answerVariants": [
+        "Following instructions to do work on information.",
+        "Carrying out steps that act on information.",
+        "Using directions or rules to work on information.",
+        "Following a set of instructions to handle information.",
+        "Doing work on information by carrying out given steps."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "cpu-main-processor",
+      "conceptName": "The CPU Is a Main Processing Part",
+      "confusabilityGroup": "processing-parts",
+      "questionVariants": [
+        "What main computer part is often shortened to CPU?",
+        "What does the name CPU stand for?",
+        "Write out the full name behind the letters CPU.",
+        "What is the full name of the main chip known as the CPU?",
+        "Which full name belongs to the computer part called the CPU?"
+      ],
+      "answerVariants": [
+        "Central processing unit, a main part that follows instructions.",
+        "The central processing unit, a main part that does work on data.",
+        "A central processing unit, a main part used to carry out instructions.",
+        "Central processing unit, the main part that carries out instructions.",
+        "The central processing unit, a main part for carrying out instructions."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "special-processors",
+      "conceptName": "Some Processors Have Special Jobs",
+      "confusabilityGroup": "processing-parts",
+      "questionVariants": [
+        "How can other chips help the CPU with certain tasks?",
+        "Why might a computer have chips besides its main CPU to help do work?",
+        "How can a computer use extra chips to help with a particular type of work?",
+        "What kind of help can other chips provide alongside a computer's CPU?",
+        "How can a machine share some work with chips other than its main CPU?"
+      ],
+      "answerVariants": [
+        "Special processors can be built for one particular kind of job.",
+        "Special-purpose processors handle a certain kind of job instead of many kinds.",
+        "Processors designed for a specific job can handle that part of the task.",
+        "Special processors focus on a particular kind of job.",
+        "Processors made for specific jobs can take on those duties."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "ram-working-memory",
+      "conceptName": "RAM Holds Work in Use Now",
+      "confusabilityGroup": "keeping-information",
+      "questionVariants": [
+        "What job does RAM do while a computer is running?",
+        "Why does a computer use RAM during a task?",
+        "What does RAM hold ready for a computer to use?",
+        "How does RAM help with the work a computer is doing now?",
+        "What is the purpose of RAM during a program's work?"
+      ],
+      "answerVariants": [
+        "Fast working memory holds the data and instructions in use right now.",
+        "A fast workspace keeps information and directions ready for the current task.",
+        "Fast temporary memory holds the information and instructions being used at the moment.",
+        "A fast workspace holds the data and directions needed for the current task.",
+        "Fast working memory keeps current information and instructions close at hand."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "persistent-storage",
+      "conceptName": "Persistent Storage Keeps Files for Later",
+      "confusabilityGroup": "keeping-information",
+      "questionVariants": [
+        "What does persistent storage do that a temporary workspace cannot?",
+        "Why is persistent storage useful when you shut a computer down?",
+        "What job does persistent storage have after power is switched off?",
+        "How does persistent storage help you use your work another day?",
+        "Why does a computer need persistent storage as well as a temporary workspace?"
+      ],
+      "answerVariants": [
+        "It keeps saved files and programs available even without power.",
+        "It holds saved work and programs for later use, including after shutdown.",
+        "Saved information and programs stay there even when the machine is off.",
+        "It keeps saved work and programs for later without needing the machine to stay on.",
+        "It preserves saved information and programs through a shutdown for use later."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "output-role",
+      "conceptName": "Output Gives a Result",
+      "confusabilityGroup": "information-jobs",
+      "questionVariants": [
+        "What is the output job in a computing system?",
+        "What does output give after a computer does its work?",
+        "How would you explain output to a classmate?",
+        "What can a computer produce as output?",
+        "What is meant by output in a computer task?"
+      ],
+      "answerVariants": [
+        "Information or an action produced as a result.",
+        "A result that may be information or physical movement.",
+        "Information or a physical effect that the system produces.",
+        "A result, such as a message, sound, or movement.",
+        "Information or an action that comes from the system's work."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "haptic-feedback",
+      "conceptName": "Haptic Feedback Can Be Felt",
+      "confusabilityGroup": "kinds-of-feedback",
+      "questionVariants": [
+        "How does haptic feedback reach a person using a device?",
+        "What can you feel when a device gives haptic feedback?",
+        "What does haptic feedback mean for someone using a device?",
+        "How is haptic feedback different from a picture or sound?",
+        "What kind of signal does haptic feedback provide?"
+      ],
+      "answerVariants": [
+        "A vibration from a small motor gives a signal through touch.",
+        "A small motor makes a vibration that you feel through touch.",
+        "A motor makes the device buzz, giving a signal you can feel.",
+        "A felt vibration, made by a small motor, carries the signal.",
+        "A small motor produces a touch signal by making the device vibrate."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "touchscreen-two-roles",
+      "conceptName": "A Touchscreen Shows and Senses",
+      "confusabilityGroup": "devices-with-two-roles",
+      "questionVariants": [
+        "How does a touchscreen do both an input job and an output job?",
+        "Why can a touchscreen count as both input and output?",
+        "What two things does a touchscreen do that give it an input role and an output role?",
+        "What two jobs allow a touchscreen to work in both directions?",
+        "What makes a touchscreen more than an output-only device?"
+      ],
+      "answerVariants": [
+        "Detects where you press and displays pictures and text.",
+        "Senses a finger's presses and presents words and pictures.",
+        "Tracks where a finger presses and displays information for you to see.",
+        "Detects finger presses and presents visible information.",
+        "Senses where you press while presenting pictures and words."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "network-interface-two-directions",
+      "conceptName": "A Network Interface Sends and Receives",
+      "confusabilityGroup": "devices-with-two-roles",
+      "questionVariants": [
+        "How does a network interface do both an input job and an output job?",
+        "Why can a network interface work in both directions?",
+        "What two jobs give a network interface its input and output roles?",
+        "How can a network interface act as more than an input-only part?",
+        "What makes a network interface both an input part and an output part?"
+      ],
+      "answerVariants": [
+        "Receives messages from other machines and sends messages back to them.",
+        "Accepts incoming messages from other machines and delivers outgoing ones to them.",
+        "Takes in messages from other machines and passes messages out to them.",
+        "Sends messages to other machines as well as receiving messages from them.",
+        "Brings in messages from other machines and delivers messages back out to them."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "storage-read-write-directions",
+      "conceptName": "Writing and Reading Move Stored Data",
+      "confusabilityGroup": "devices-with-two-roles",
+      "questionVariants": [
+        "How does data move on a drive when you save a file and later open it?",
+        "Compare the directions data travels when you save a file and open it later.",
+        "What opposite actions happen inside a drive when a file is saved and then opened?",
+        "Describe the two directions data moves on a drive during a file save and a later file open.",
+        "How does a drive handle data differently when you save your work and when you open it again?"
+      ],
+      "answerVariants": [
+        "Writing puts data into the device; reading brings saved data back out.",
+        "Writing sends data into the device, while reading returns what was kept there.",
+        "Writing means putting data in; reading means getting kept data back out.",
+        "During writing, data goes into the device; during reading, kept data comes back out.",
+        "Writing places data inside the device, and reading gets that saved data back."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "roles-follow-information-flow",
+      "conceptName": "Role Names Describe the Current Job",
+      "confusabilityGroup": "information-flow-rules",
+      "questionVariants": [
+        "What decides whether a device acts as input or output during an activity?",
+        "Why can one device be called input in one activity and output in another?",
+        "How should you decide which information role a device has?",
+        "What should you examine before calling a device input, processing, storage, or output?",
+        "Why should you avoid giving a device one permanent information-role label?"
+      ],
+      "answerVariants": [
+        "Look at what it is doing with data at that moment; the job can change with the task.",
+        "Its job depends on how data moves in the task being done, rather than on one fixed category.",
+        "Examine its current job with data, since that job can change in another task.",
+        "Follow the data and the job being done now, instead of assuming the same job always applies.",
+        "The current job with data matters; another task may give the same part a different job."
+      ]
+    }
+  ]
+}
