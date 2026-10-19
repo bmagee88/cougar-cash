@@ -41,6 +41,7 @@ const PatternGameApp = lazy(() => import("./PatternGame/PatternGameApp"));
 const FishingCardGame = lazy(() => import("./FishingCardGame/FishingCardGame"));
 const CrossyRoad = lazy(() => import("./CrossyRoad/CrossyRoad"));
 const CaptiveChess = lazy(() => import("./CaptiveChess/CaptiveChess"));
+const CricketClimb = lazy(() => import("./CricketClimb/CricketClimb"));
 const ShadowBoxingGame = lazy(() => import("./shadow-boxing/ShadowBoxingGame"));
 const SoccerTypingGame = lazy(() => import("./SoccerTypingGame/SoccerTypingGame"));
 const FishingTypingGame = lazy(() => import("./FishingTypingGame/FishingGame"));
@@ -123,6 +124,7 @@ function App() {
             <Route path="/fishing-card-game" element={<FishingCardGame />} />
             <Route path="/crossy-road" element={<CrossyRoad />} />
             <Route path="/captive-chess" element={<CaptiveChess />} />
+            <Route path="/cricket-climb" element={<CricketClimb />} />
             <Route
               path="/games/vocab/shadow-boxing"
               element={<ShadowBoxingGame />}

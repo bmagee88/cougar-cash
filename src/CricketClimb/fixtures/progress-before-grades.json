@@ -1,0 +1,94 @@
+{
+  "version": 1,
+  "seed": "before-grade-checkboxes",
+  "level": 140,
+  "lane": 1,
+  "best": 139,
+  "settings": {
+    "platforms": 3,
+    "fallMode": "limited",
+    "skills": [
+      "letters",
+      "letterPairs",
+      "sounds",
+      "spelling",
+      "sightWords",
+      "counting",
+      "addition",
+      "subtraction",
+      "pictures",
+      "symbols",
+      "computers",
+      "algorithms"
+    ],
+    "voice": true,
+    "sounds": true,
+    "theme": "sunny",
+    "spider": true,
+    "spiderMisses": 3,
+    "spiderWindow": 5
+  },
+  "rulesKey": "[3,\"limited\",[\"addition\",\"algorithms\",\"computers\",\"counting\",\"letterPairs\",\"letters\",\"pictures\",\"sightWords\",\"sounds\",\"spelling\",\"subtraction\",\"symbols\"],true,3,5]",
+  "rows": [
+    {
+      "level": 136,
+      "visits": 1,
+      "choices": [
+        "🧘",
+        "🚌",
+        "🐄"
+      ]
+    },
+    {
+      "level": 137,
+      "visits": 1,
+      "choices": [
+        "6",
+        "2",
+        "7"
+      ]
+    },
+    {
+      "level": 138,
+      "visits": 1,
+      "choices": [
+        "s",
+        "w",
+        "u"
+      ]
+    },
+    {
+      "level": 139,
+      "visits": 1,
+      "choices": [
+        "💾",
+        "❔",
+        "↶"
+      ]
+    },
+    {
+      "level": 140,
+      "visits": 1,
+      "choices": [
+        "b",
+        "d",
+        "o"
+      ]
+    }
+  ],
+  "history": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "celebratedThrough": 13
+}
