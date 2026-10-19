@@ -1,0 +1,13 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=wildlifeSpeed --cacheDirectory=output/wildlife-speed-jest
+
+PASS src/FishingTypingGame/__tests__/wildlifeSpeed.test.ts (9.077 s)
+  √ only hidden-tree routes take four times as long, with the same flight shape (25 ms)
+  √ both odonates ramp from rest for half a second and then retain full cruising speed (28 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        20.189 s
+Ran all test suites matching /wildlifeSpeed/i.

@@ -59,20 +59,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import SettingsIcon from "@mui/icons-material/Settings";
 import TodayIcon from "@mui/icons-material/Today";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
-import {
-  DndContext,
-  DragEndEvent,
-  PointerSensor,
-  TouchSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import MatchingBoard from "./MatchingBoard";
 import {
   Bar,
   BarChart,
@@ -92,7 +79,6 @@ import {
   QuizAttempt,
   QuizSummary,
   RoundAnswer,
-  RoundQuestion,
   RoundResponse,
   SessionResponse,
   SubmitRoundResponse,
@@ -2597,52 +2583,6 @@ const TeacherDataView: React.FC<{ settings: UserSettingsResponse }> = ({ setting
   );
 };
 
-const SortableAnswer: React.FC<{
-  item: RoundAnswer;
-  checked: boolean;
-  onCheckedChange: (id: string, checked: boolean) => void;
-}> = ({ item, checked, onCheckedChange }) => {
-  const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({
-    id: item.id,
-  });
-
-  return (
-    <Paper
-      ref={setNodeRef}
-      elevation={0}
-      tabIndex={0}
-      {...attributes}
-      {...listeners}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition: undefined,
-      }}
-      sx={{
-        p: 1,
-        display: "flex",
-        gap: 1,
-        alignItems: "center",
-        cursor: "grab",
-        userSelect: "none",
-        bgcolor: checked
-          ? alpha(theme.palette.success.main, 0.12)
-          : isDragging
-            ? alpha(theme.palette.primary.main, 0.12)
-            : "background.paper",
-      }}
-    >
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onCheckedChange(item.id, event.target.checked)}
-        onPointerDown={(event) => event.stopPropagation()}
-        aria-label="Mark answer"
-      />
-      <Typography variant="body2">{item.text}</Typography>
-    </Paper>
-  );
-};
-
 const QuizRunner: React.FC<{
   quiz: QuizSummary;
   onAttemptRecorded: () => Promise<void>;
@@ -2653,13 +2593,6 @@ const QuizRunner: React.FC<{
   const [result, setResult] = useState<SubmitRoundResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(TouchSensor, {
-      activationConstraint: { delay: 220, tolerance: 5 },
-    }),
-  );
 
   const startRound = useCallback(
     async (attemptSessionId?: string) => {
@@ -2690,25 +2623,6 @@ const QuizRunner: React.FC<{
     setCheckedAnswers({});
     startRound();
   }, [quiz.id, startRound]);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = answers.findIndex((answer) => answer.id === active.id);
-    const newIndex = answers.findIndex((answer) => answer.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-
-    setAnswers((prev) => {
-      const next = [...prev];
-      [next[oldIndex], next[newIndex]] = [next[newIndex], next[oldIndex]];
-      return next;
-    });
-    setCheckedAnswers((prev) => ({
-      ...prev,
-      [String(active.id)]: true,
-      [String(over.id)]: false,
-    }));
-  };
 
   const submitRound = async () => {
     if (!round) return;
@@ -2812,62 +2726,13 @@ const QuizRunner: React.FC<{
             {result && <LinearProgress sx={{ mt: 1 }} variant="determinate" value={result.score} />}
           </Paper>
 
-          <Paper elevation={0} sx={{ p: 2, userSelect: "none" }}>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-                gap: 2,
-                mb: 1,
-              }}
-            >
-              <Typography variant="h6">Questions</Typography>
-              <Typography variant="h6">Answers</Typography>
-            </Box>
-
-            <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-              <SortableContext
-                items={answers.map((answer) => answer.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <Stack spacing={1.25}>
-                  {round.questions.map((question: RoundQuestion, index: number) => {
-                    const answer = answers[index];
-                    return (
-                      <Box
-                        key={question.id}
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)",
-                          gap: 2,
-                          alignItems: "center",
-                        }}
-                      >
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 1.25,
-                            bgcolor: "background.paper",
-                          }}
-                        >
-                          <Typography variant="body2">{question.text}</Typography>
-                        </Paper>
-                        {answer && (
-                          <SortableAnswer
-                            item={answer}
-                            checked={!!checkedAnswers[answer.id]}
-                            onCheckedChange={(id, checked) =>
-                              setCheckedAnswers((prev) => ({ ...prev, [id]: checked }))
-                            }
-                          />
-                        )}
-                      </Box>
-                    );
-                  })}
-                </Stack>
-              </SortableContext>
-            </DndContext>
-          </Paper>
+          <MatchingBoard
+            questions={round.questions}
+            answers={answers}
+            setAnswers={setAnswers}
+            checkedAnswers={checkedAnswers}
+            setCheckedAnswers={setCheckedAnswers}
+          />
 
           <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 2 }}>
             {canSubmit && (

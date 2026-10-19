@@ -52,8 +52,9 @@ export function makeTreeBirdVisit(id: string, stream: string, startAt: number, s
     const from = treePerch(source, random);
     const to = exits ? { x: toRight ? 1.10 : -.10, y: Math.max(.10, from.y - .07 + random() * .08), z: .57 + random() * .43 } : treePerch(target, random);
     const distance = Math.hypot(to.x - from.x, to.y - from.y);
-    const durationMs = Math.max(3200, Math.min(14500, distance / pace * 1000)) * (.96 + random() * .08);
-    const bounds = Math.max(3, Math.round(durationMs / (850 + random() * 250)));
+    const originalDurationMs = Math.max(3200, Math.min(14500, distance / pace * 1000)) * (.96 + random() * .08);
+    const durationMs = originalDurationMs * (source.hidden || target.hidden ? 4 : 1);
+    const bounds = Math.max(3, Math.round(originalDurationMs / (850 + random() * 250)));
     return { from, to, species, fromTree: source.id, toTree: exits ? undefined : target.id,
       fromFrame: source.frame, toFrame: exits ? 'landscape' as const : target.frame,
       delayMs: index * (85 + random() * 70), durationMs, bounds, phase: random(),

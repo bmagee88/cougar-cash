@@ -1,0 +1,416 @@
+{
+  "id": "digital-citizenship-concepts",
+  "quizName": "Digital Citizenship Concepts",
+  "quizNumber": 7,
+  "gradeLevel": 6,
+  "teacher": "Magbr",
+  "sources": [
+    {
+      "textbook": "Digital Literacy",
+      "chapters": "Chapter 3",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "personal-information",
+      "conceptName": "Personal information",
+      "confusabilityGroup": "online-privacy",
+      "questionVariants": [
+        "What counts as personal information online?",
+        "What information should you keep private when using websites or apps?",
+        "Which details can identify you and should be shared carefully?",
+        "What kind of information can reveal who or where you are?",
+        "What does personal information mean in digital citizenship?"
+      ],
+      "answerVariants": [
+        "Details like full name, address, phone number, birth date, school, or login info.",
+        "Information that can identify, locate, or contact you in real life.",
+        "Private details about who you are, where you are, or how to reach you.",
+        "Data such as passwords, home address, phone number, or personal accounts.",
+        "Identifying details that should only be shared with trusted permission."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "strong-passwords",
+      "conceptName": "Strong passwords",
+      "confusabilityGroup": "account-security",
+      "questionVariants": [
+        "What makes a password strong?",
+        "How can you create a safer password for an account?",
+        "Why should passwords be long and hard to guess?",
+        "What kind of password is harder for others to break?",
+        "What is the main goal of using a strong password?"
+      ],
+      "answerVariants": [
+        "A long, unique password that others cannot easily guess.",
+        "A password with enough length and variety to protect an account.",
+        "A secret sign-in phrase that is difficult to predict or reuse.",
+        "A unique password that avoids names, birthdays, and common words.",
+        "A password designed to keep other people out of your account."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "password-manager",
+      "conceptName": "Password manager",
+      "confusabilityGroup": "account-security",
+      "questionVariants": [
+        "What does a password manager help you do?",
+        "Why might someone use a password manager?",
+        "How does a password manager support safer accounts?",
+        "What tool can store many unique passwords for you?",
+        "What is the purpose of a password manager?"
+      ],
+      "answerVariants": [
+        "It stores and helps create unique passwords for different accounts.",
+        "It keeps passwords organized so you do not have to reuse weak ones.",
+        "It protects many account passwords behind one strong master password.",
+        "It helps you use different secure passwords without memorizing every one.",
+        "It is a secure place to save and manage login passwords."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "multi-factor-authentication",
+      "conceptName": "Multi-factor authentication",
+      "confusabilityGroup": "account-security",
+      "questionVariants": [
+        "What is multi-factor authentication?",
+        "Why does a code from your phone make logging in safer?",
+        "What security step asks for more than just a password?",
+        "How does two-step login help protect an account?",
+        "What does MFA add to the sign-in process?"
+      ],
+      "answerVariants": [
+        "It requires another proof of identity in addition to a password.",
+        "It adds a second check, such as a code, app prompt, or security key.",
+        "It makes sign-in safer by needing more than one kind of evidence.",
+        "It protects accounts by combining a password with another verification step.",
+        "It is an extra login layer that confirms the user is really you."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "phishing",
+      "conceptName": "Phishing",
+      "confusabilityGroup": "online-scams",
+      "questionVariants": [
+        "What is phishing?",
+        "What kind of message tries to trick you into giving private information?",
+        "Why should you be careful with urgent links asking for login details?",
+        "What scam pretends to be a trusted person or company online?",
+        "What is happening when a fake message asks for passwords or account info?"
+      ],
+      "answerVariants": [
+        "A scam message that tries to steal information by pretending to be trusted.",
+        "A trick that uses fake emails, texts, or sites to get private data.",
+        "An online scam that asks for passwords, codes, money, or personal details.",
+        "A fake request designed to make people click, sign in, or share secrets.",
+        "A deceptive message that impersonates someone to steal account information."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "secure-websites",
+      "conceptName": "Secure websites",
+      "confusabilityGroup": "online-safety",
+      "questionVariants": [
+        "What does HTTPS usually show about a website connection?",
+        "Why should you look for a secure connection before entering private details?",
+        "What does the lock symbol near a web address usually mean?",
+        "How does a secure website connection help protect information?",
+        "What website sign suggests data is encrypted while it travels?"
+      ],
+      "answerVariants": [
+        "The connection is encrypted, which helps protect data sent to the site.",
+        "It means information traveling between your browser and the site is better protected.",
+        "It shows the site is using HTTPS to help keep communication private.",
+        "It reduces the chance that others can read information you send online.",
+        "A lock or HTTPS means the browser is using an encrypted web connection."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "privacy-settings",
+      "conceptName": "Privacy settings",
+      "confusabilityGroup": "online-privacy",
+      "questionVariants": [
+        "What do privacy settings control?",
+        "Why should you check privacy settings on an app or website?",
+        "What settings decide who can see your posts or profile?",
+        "How can privacy settings help protect your information?",
+        "What tool lets you limit sharing on an online account?"
+      ],
+      "answerVariants": [
+        "They control who can see your information, activity, or posts.",
+        "They let you limit what an app or website shares about you.",
+        "They help decide what is public, private, or visible to certain people.",
+        "They are account controls for audience, data sharing, and visibility.",
+        "They help protect privacy by reducing who can access your content."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "digital-footprint",
+      "conceptName": "Digital footprint",
+      "confusabilityGroup": "online-privacy",
+      "questionVariants": [
+        "What is a digital footprint?",
+        "What do your online posts, searches, and accounts leave behind?",
+        "Why can online actions affect your reputation later?",
+        "What term means the trail of information you create online?",
+        "How do likes, comments, and uploads connect to digital citizenship?"
+      ],
+      "answerVariants": [
+        "The trail of information you leave through online activity.",
+        "Records and clues created by what you post, share, click, or upload.",
+        "A lasting online trace that can affect how others see you.",
+        "The collection of data connected to your actions on the internet.",
+        "Your online history made from posts, accounts, comments, and other activity."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "cyberbullying",
+      "conceptName": "Cyberbullying",
+      "confusabilityGroup": "digital-citizenship",
+      "questionVariants": [
+        "What is cyberbullying?",
+        "What should you call repeated mean behavior using digital tools?",
+        "Why is posting hurtful messages about someone online a serious problem?",
+        "What online behavior uses technology to harass or embarrass another person?",
+        "What digital citizenship issue involves repeated online cruelty?"
+      ],
+      "answerVariants": [
+        "Using digital tools to repeatedly hurt, threaten, embarrass, or harass someone.",
+        "Online bullying through messages, posts, images, games, or social media.",
+        "Repeated harmful behavior toward another person using technology.",
+        "Cruel or threatening digital actions meant to upset or shame someone.",
+        "Bullying that happens through phones, computers, apps, or websites."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "malware",
+      "conceptName": "Malware",
+      "confusabilityGroup": "online-safety",
+      "questionVariants": [
+        "What is malware?",
+        "What type of software is designed to damage or take over a device?",
+        "Why can suspicious downloads be dangerous for a computer?",
+        "What do viruses, spyware, and ransomware all have in common?",
+        "What term describes harmful software on a device?"
+      ],
+      "answerVariants": [
+        "Harmful software made to damage, spy on, lock, or control a device.",
+        "Software that can steal data, break systems, or cause unwanted actions.",
+        "A general name for viruses, spyware, ransomware, and other harmful programs.",
+        "Code installed on a device to do something unsafe or unwanted.",
+        "Malicious software that can hurt privacy, files, accounts, or performance."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "software-updates",
+      "conceptName": "Software updates",
+      "confusabilityGroup": "device-care",
+      "questionVariants": [
+        "Why are software updates important?",
+        "How can updating an app or operating system improve safety?",
+        "What do updates often fix besides adding new features?",
+        "Why should devices not ignore important security updates?",
+        "What helps patch known problems in software?"
+      ],
+      "answerVariants": [
+        "Updates can fix bugs and security weaknesses in software.",
+        "They patch problems that attackers or errors could use.",
+        "They improve safety, reliability, and sometimes add useful features.",
+        "They help keep apps and devices protected from known issues.",
+        "They repair software flaws and keep systems working more securely."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "backups",
+      "conceptName": "Backups",
+      "confusabilityGroup": "device-care",
+      "questionVariants": [
+        "What is a backup?",
+        "Why should important files be backed up?",
+        "How can a backup help after a device breaks or files are deleted?",
+        "What do you call an extra copy of important data?",
+        "Why are backups part of responsible device use?"
+      ],
+      "answerVariants": [
+        "An extra copy of files saved somewhere safe.",
+        "A saved copy that can restore work if the original is lost.",
+        "A way to recover data after deletion, damage, theft, or device failure.",
+        "A duplicate of important information kept in another location.",
+        "Protection for files so one problem does not erase everything."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "public-wifi",
+      "conceptName": "Public Wi-Fi",
+      "confusabilityGroup": "online-safety",
+      "questionVariants": [
+        "Why can public Wi-Fi be risky?",
+        "What should you remember when using Wi-Fi in a public place?",
+        "Why is it safer to avoid private account work on unknown networks?",
+        "How can open Wi-Fi make personal information less protected?",
+        "What network safety issue comes with using free public Wi-Fi?"
+      ],
+      "answerVariants": [
+        "Other people on the network may be able to interfere with or watch traffic.",
+        "Open networks can be less secure than trusted home or school networks.",
+        "It may be easier for attackers to trick users or capture information.",
+        "Unknown Wi-Fi should be used carefully, especially for private accounts.",
+        "Public networks can expose data if sites, apps, or settings are unsafe."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "safe-downloads",
+      "conceptName": "Safe downloads",
+      "confusabilityGroup": "online-safety",
+      "questionVariants": [
+        "How can you download files or apps more safely?",
+        "Why should downloads come from trusted sources?",
+        "What should you check before installing an app or file?",
+        "Why can random download links be unsafe?",
+        "What habit helps prevent harmful downloads?"
+      ],
+      "answerVariants": [
+        "Use trusted sources and avoid suspicious links, pop-ups, or attachments.",
+        "Check the source, reviews, permissions, and whether the file seems expected.",
+        "Download only from official stores, known websites, or teacher-approved sources.",
+        "Be cautious because fake downloads can install malware or steal information.",
+        "Verify the file and source before opening or installing anything."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "reliable-sources",
+      "conceptName": "Reliable sources",
+      "confusabilityGroup": "information-literacy",
+      "questionVariants": [
+        "What makes an online source reliable?",
+        "How can you judge whether a website is trustworthy?",
+        "Why should you check the author, date, and evidence of a source?",
+        "What kind of source is better for research or learning?",
+        "How do reliable sources help prevent misinformation?"
+      ],
+      "answerVariants": [
+        "It has accurate information from a trustworthy author or organization.",
+        "It provides evidence, clear authorship, current details, and a serious purpose.",
+        "It can be checked against other trustworthy sources and facts.",
+        "It is a source with credible information, not just opinion or rumor.",
+        "It supports claims with facts so readers are less likely to be misled."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "search-keywords",
+      "conceptName": "Search keywords",
+      "confusabilityGroup": "information-literacy",
+      "questionVariants": [
+        "What are search keywords?",
+        "How do keywords help you find better information online?",
+        "Why should you choose important words instead of typing a whole paragraph?",
+        "What search strategy uses the main words from your question?",
+        "How can changing keywords improve search results?"
+      ],
+      "answerVariants": [
+        "Important words or short phrases used to search for information.",
+        "Main terms that tell a search engine what topic you need.",
+        "Focused words that help narrow results to the idea you are researching.",
+        "The key ideas from a question written as searchable terms.",
+        "Words you adjust to get more useful and accurate search results."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "copyright",
+      "conceptName": "Copyright",
+      "confusabilityGroup": "digital-citizenship",
+      "questionVariants": [
+        "What is copyright?",
+        "Why can you not freely copy every image, song, video, or article online?",
+        "What protects creators' original work from being used without permission?",
+        "Why should you credit or get permission for someone else's digital work?",
+        "What rule gives creators control over how their work is used?"
+      ],
+      "answerVariants": [
+        "A legal protection for original creative work.",
+        "A rule that gives creators rights over copying, sharing, and using their work.",
+        "Protection that means online content still belongs to its creator.",
+        "A reason to get permission, follow licenses, or give credit when using work.",
+        "Creators' control over how others use their writing, images, music, or videos."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "cloud-storage",
+      "conceptName": "Cloud storage",
+      "confusabilityGroup": "device-care",
+      "questionVariants": [
+        "What is cloud storage?",
+        "How can saving a file to the cloud help you access it later?",
+        "Why might cloud storage help when you switch devices?",
+        "What does it mean when files are stored online instead of only on one device?",
+        "How does cloud storage support backups and collaboration?"
+      ],
+      "answerVariants": [
+        "Saving files on internet-connected servers so they can be accessed online.",
+        "Online storage that can sync files across devices.",
+        "A way to keep files available from different devices with the same account.",
+        "Storage outside one computer, often used for backup, sharing, or teamwork.",
+        "A service that stores files online and can update copies automatically."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "file-organization",
+      "conceptName": "File organization",
+      "confusabilityGroup": "device-care",
+      "questionVariants": [
+        "Why is file organization important?",
+        "How do folders and clear file names help with school work?",
+        "What habit makes saved work easier to find later?",
+        "Why should files be named and stored in a planned way?",
+        "What does organizing digital files help you avoid?"
+      ],
+      "answerVariants": [
+        "It makes files easier to find, use, share, and turn in.",
+        "Clear names and folders prevent lost work and confusion.",
+        "It keeps digital work sorted so you can locate the right version quickly.",
+        "A planned folder and naming system helps manage many documents.",
+        "It reduces wasted time searching for misplaced or poorly named files."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "netiquette",
+      "conceptName": "Netiquette",
+      "confusabilityGroup": "digital-citizenship",
+      "questionVariants": [
+        "What is netiquette?",
+        "How should people communicate respectfully online?",
+        "What digital citizenship concept means using good manners on the internet?",
+        "Why should tone and word choice matter in online messages?",
+        "What behavior helps online spaces stay respectful and useful?"
+      ],
+      "answerVariants": [
+        "Respectful and responsible manners for communicating online.",
+        "Using kind, clear, and appropriate behavior in digital spaces.",
+        "Online etiquette that helps people treat each other well.",
+        "Choosing words and actions that are respectful in messages, posts, and chats.",
+        "Good digital manners that support safe and productive communication."
+      ]
+    }
+  ]
+}

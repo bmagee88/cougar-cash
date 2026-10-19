@@ -1,0 +1,136 @@
+{
+  "id": "corporate-control",
+  "quizName": "Corporate Control",
+  "quizNumber": 4,
+  "gradeLevel": 6,
+  "teacher": "Magbr",
+  "sources": [
+    {
+      "textbook": "Digital Citizenship",
+      "chapters": "Chapter 1",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "legacy-1",
+      "conceptName": "What does it mean when a device is managed by an organization?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does it mean when a device is managed by an organization?"
+      ],
+      "answerVariants": [
+        "The organization can set rules, install settings, and protect the device."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "legacy-2",
+      "conceptName": "Why do schools or companies use managed accounts?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why do schools or companies use managed accounts?"
+      ],
+      "answerVariants": [
+        "They help protect data, enforce rules, and provide access to approved tools."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "legacy-3",
+      "conceptName": "What is an acceptable use policy?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is an acceptable use policy?"
+      ],
+      "answerVariants": [
+        "A set of rules for how technology and accounts may be used."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "legacy-4",
+      "conceptName": "Why might an organization block some websites?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why might an organization block some websites?"
+      ],
+      "answerVariants": [
+        "To protect users, reduce distractions, and lower security risks."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "legacy-5",
+      "conceptName": "What is device monitoring used for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is device monitoring used for?"
+      ],
+      "answerVariants": [
+        "It helps detect misuse, security issues, or devices that need support."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "legacy-6",
+      "conceptName": "Why should you not try to bypass management settings?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why should you not try to bypass management settings?"
+      ],
+      "answerVariants": [
+        "Bypassing settings can violate policy and create security risks."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "legacy-7",
+      "conceptName": "What is the principle of least privilege?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is the principle of least privilege?"
+      ],
+      "answerVariants": [
+        "Users should only have the access they need to do their work."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "legacy-8",
+      "conceptName": "Why are software updates often controlled by an organization?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why are software updates often controlled by an organization?"
+      ],
+      "answerVariants": [
+        "Updates can be tested and scheduled to keep devices secure and reliable."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "legacy-9",
+      "conceptName": "What should you do if a managed device blocks something needed for class?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What should you do if a managed device blocks something needed for class?"
+      ],
+      "answerVariants": [
+        "Ask the teacher or technology support for help."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "legacy-10",
+      "conceptName": "What kind of data should not be stored on a school or company device?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What kind of data should not be stored on a school or company device?"
+      ],
+      "answerVariants": [
+        "Personal, private, or unauthorized data that does not belong on the device."
+      ]
+    }
+  ]
+}

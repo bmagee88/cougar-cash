@@ -1,0 +1,316 @@
+{
+  "id": "computers-ch1-s3-s4",
+  "quizName": "Computing Systems, Hardware, Software, and Data",
+  "quizNumber": 1,
+  "gradeLevel": null,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 1",
+      "sections": "1.3.1–1.4.4"
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "computing-system",
+      "conceptName": "What a Computing System Is",
+      "confusabilityGroup": "computing-system-basics",
+      "questionVariants": [
+        "What makes up a computing system?",
+        "What two kinds of parts work together in a computing system?",
+        "How would you describe a computing system to a classmate?",
+        "What does the term computing system mean?",
+        "What must work as a team to form a computing system?"
+      ],
+      "answerVariants": [
+        "Physical equipment and programs that work together to handle information.",
+        "Machines and the instructions they run, acting as a team to work with data.",
+        "A team of equipment and programs used to handle information.",
+        "Physical parts joined with programs to do work with data.",
+        "Equipment working with a set of instructions to handle information."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "four-computer-functions",
+      "conceptName": "Four Main Jobs of a Computing System",
+      "confusabilityGroup": "information-flow",
+      "questionVariants": [
+        "What are the four main information jobs of a computer?",
+        "Which four jobs make up the basic model of how a computer works?",
+        "What four kinds of work does the basic computer model include?",
+        "Which four jobs should a diagram of a basic computer system include?",
+        "What are the four main jobs used to explain how a computer handles information?"
+      ],
+      "answerVariants": [
+        "Input, processing, storage, and output.",
+        "Receiving data, working on it, keeping it, and giving results.",
+        "Taking data in, following steps to use it, saving it, and producing results.",
+        "Getting data, acting on it, saving it for later, and giving a result.",
+        "Input to receive data, processing to use it, storage to keep it, and output to give results."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "typing-information-path",
+      "conceptName": "How Typed Information Moves Through a Computer",
+      "confusabilityGroup": "information-flow",
+      "questionVariants": [
+        "Trace what happens inside a computer when you type your name, see it, and save it.",
+        "How do the parts of a computer handle a word from the first key press until it is saved?",
+        "Explain the steps that let a typed message appear and be kept for later.",
+        "What steps connect typing a name, seeing it on a display, and saving the document?",
+        "Describe the path a typed word takes before you can see it and open it again later."
+      ],
+      "answerVariants": [
+        "Input enters, instructions process it, working memory holds it, output presents it, and storage keeps it for later.",
+        "Data comes in, programs and equipment work on it, memory holds the current work, output presents it, and storage keeps a copy.",
+        "The system receives data, handles it using instructions and memory, produces visible output, and stores a copy for later use.",
+        "Incoming data is processed and held in memory, then presented as output and kept in lasting storage.",
+        "Input is processed with help from working memory, presented as output, and placed in storage for later use."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "working-memory-vs-storage",
+      "conceptName": "Working Memory Compared With Saved Storage",
+      "confusabilityGroup": "information-storage",
+      "questionVariants": [
+        "How does working memory differ from storage for saved files?",
+        "Why do working memory and saved-file storage have different jobs?",
+        "Compare the jobs of working memory and long-term storage.",
+        "What is the difference between memory for current work and a drive for saved files?",
+        "How do memory and lasting storage help a computer in different ways?"
+      ],
+      "answerVariants": [
+        "Temporary space holds what is being used now; lasting space keeps information even after power is off.",
+        "A short-term workspace holds information in use, while a lasting place keeps files through shutdown.",
+        "The temporary workspace helps with the task in progress; the lasting place keeps a copy without power.",
+        "Information in use goes in a temporary workspace; information needed later is kept in a place that lasts through shutdown.",
+        "A temporary workspace serves the task in progress, while a lasting place keeps information after shutdown."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "computer-forms",
+      "conceptName": "Computers Do Not Need a Traditional Shape",
+      "confusabilityGroup": "types-of-computers",
+      "questionVariants": [
+        "Why can a device count as a computer without a keyboard or monitor?",
+        "Can a machine without a normal screen or keyboard contain a computer? Explain.",
+        "Why is a desktop shape not needed for something to be a computing system?",
+        "Must all computers look like the ones in a classroom? Explain your answer.",
+        "What should you remember before deciding a small device cannot contain a computer?"
+      ],
+      "answerVariants": [
+        "These systems come in many forms and can be built inside other products.",
+        "There are many possible shapes, including systems hidden inside other products.",
+        "Such systems can have different forms and work from inside a larger product.",
+        "A system may be built into another product instead of standing on its own.",
+        "Some systems are parts of other products, so their outside appearance can vary."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "general-purpose-computer",
+      "conceptName": "General-Purpose Computers",
+      "confusabilityGroup": "computer-purposes",
+      "questionVariants": [
+        "What makes a computer general-purpose?",
+        "What range of work is a general-purpose computer designed for?",
+        "How would you explain the job of a general-purpose computer?",
+        "What can a general-purpose computer do by running different software?",
+        "Why is a general-purpose computer useful for more than one activity?"
+      ],
+      "answerVariants": [
+        "It can run many kinds of programs to do many different tasks.",
+        "It handles a wide variety of tasks by using different programs.",
+        "It uses many kinds of programs for activities such as writing and drawing.",
+        "It can do many tasks rather than being made for just one special job.",
+        "It runs a variety of programs, allowing it to do many kinds of work."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "embedded-computer",
+      "conceptName": "Embedded Computing Systems",
+      "confusabilityGroup": "computer-purposes",
+      "questionVariants": [
+        "What makes a computing system embedded?",
+        "How is an embedded computer used in a product?",
+        "What does embedded mean when describing a computing system?",
+        "What job does an embedded computer have within a machine?",
+        "How would you describe an embedded computing system?"
+      ],
+      "answerVariants": [
+        "It is built inside another product to carry out a particular job.",
+        "It works as part of a larger device to do a specific task.",
+        "It is a built-in part of another product that helps that product do its job.",
+        "It is placed inside a larger device for a particular purpose.",
+        "It serves a specific task from inside another product."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "hardware",
+      "conceptName": "Hardware Is Physical Equipment",
+      "confusabilityGroup": "hardware-software-data",
+      "questionVariants": [
+        "What does hardware mean in computing?",
+        "Which parts of a computing system count as hardware?",
+        "How would you explain the word hardware?",
+        "What kind of thing belongs in the hardware category?",
+        "What makes something hardware in a computing system?"
+      ],
+      "answerVariants": [
+        "The real, physical equipment, both inside a device and attached to it.",
+        "Physical parts such as chips, screens, and cables.",
+        "Equipment you could physically touch, including internal and connected parts.",
+        "The actual machinery and other physical parts used by the system.",
+        "Physical equipment, whether it is inside the main device or connected outside it."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "peripheral",
+      "conceptName": "Peripherals Are Connected Hardware",
+      "confusabilityGroup": "computer-hardware-types",
+      "questionVariants": [
+        "What is a computer peripheral?",
+        "How does a peripheral help a computer?",
+        "What makes an added device a peripheral?",
+        "What role does a peripheral have in a computer setup?",
+        "How would you describe a peripheral to someone setting up a computer?"
+      ],
+      "answerVariants": [
+        "An extra piece of equipment attached to add or extend an ability.",
+        "An added piece of equipment that connects to expand what the main machine can do.",
+        "An attached device that adds a useful function, such as printing or recording.",
+        "Extra equipment connected to give the main machine another ability.",
+        "An added device that extends the main machine's functions through a connection."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "software",
+      "conceptName": "Software Provides Instructions",
+      "confusabilityGroup": "hardware-software-data",
+      "questionVariants": [
+        "What does software mean in computing?",
+        "What kind of thing belongs in the software category?",
+        "How would you explain computer software?",
+        "What makes something software rather than a physical part?",
+        "What role does software play in a computing system?"
+      ],
+      "answerVariants": [
+        "Programs and instructions that tell equipment what to do.",
+        "The directions a machine runs to carry out its actions.",
+        "Programs that guide the actions of physical equipment.",
+        "Sets of instructions that direct what the machine does.",
+        "Programs, such as browsers and games, that give equipment its instructions."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "software-changes-tasks",
+      "conceptName": "Different Software Gives the Same Hardware Different Jobs",
+      "confusabilityGroup": "hardware-software-relationships",
+      "questionVariants": [
+        "Why can one laptop switch from drawing to doing sums without replacing any parts?",
+        "How can a Chromebook edit a picture and then open a website using the same equipment?",
+        "What lets a classroom machine change from writing a story to playing a game?",
+        "Why does switching activities on a laptop usually not require a new machine?",
+        "What allows a single device to carry out many activities while its physical parts stay the same?"
+      ],
+      "answerVariants": [
+        "Running different software gives the hardware a new set of instructions.",
+        "Different programs direct the hardware to do different jobs.",
+        "Changing the software changes the instructions that the hardware follows.",
+        "The hardware can follow a new set of directions when another program runs.",
+        "Programs supply different instructions, letting the hardware take on a new job."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "data",
+      "conceptName": "Data Is Information for Computing",
+      "confusabilityGroup": "hardware-software-data",
+      "questionVariants": [
+        "What does data mean in computing?",
+        "How would you describe computer data?",
+        "What kinds of things count as data for a computing system?",
+        "What is meant by the word data when talking about computers?",
+        "What must something be like to count as computer data?"
+      ],
+      "answerVariants": [
+        "Information in a form a machine can use, keep, or send.",
+        "Information represented so it can be stored and worked on by a machine.",
+        "Machine-readable information, such as text, pictures, sounds, or numbers.",
+        "Information put into a form that equipment can store or work with.",
+        "Information represented in a way that programs and equipment can use."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "binary-digits",
+      "conceptName": "Digital Information Uses Zeros and Ones",
+      "confusabilityGroup": "digital-information",
+      "questionVariants": [
+        "Which two digits does binary use to represent digital information?",
+        "What are the two possible digits in the binary system?",
+        "Name the two digits that form patterns in binary.",
+        "Which pair of digits is used when computer information is described in binary?",
+        "What two digits can appear in a binary number?"
+      ],
+      "answerVariants": [
+        "0 and 1.",
+        "Zero and one.",
+        "Only 0s and 1s.",
+        "Zeros and ones.",
+        "The pair 0, 1."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "photo-file-vs-editor",
+      "conceptName": "A Photograph File Is Data, Not Editing Software",
+      "confusabilityGroup": "hardware-software-data",
+      "questionVariants": [
+        "How do a saved photograph and the program used to change it differ?",
+        "Compare a picture file with the application used to edit it.",
+        "What different roles do an image file and its editing application have?",
+        "Why is a saved photograph a different kind of thing from its editor?",
+        "Explain the difference between a digital picture and the app used to change it."
+      ],
+      "answerVariants": [
+        "The content being worked on is data; the tool that gives directions for changing it is software.",
+        "Data holds the content, while software supplies the instructions that act on it.",
+        "Stored content is data; the instructions that act on that content are software.",
+        "Data is the material being worked on, and software directs the work done to it.",
+        "The content is data, while the tool that tells the machine how to change that content is software."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "hardware-software-cooperation",
+      "conceptName": "Hardware and Software Must Work Together",
+      "confusabilityGroup": "hardware-software-relationships",
+      "questionVariants": [
+        "How do a microphone and recording app share the work of recording a voice?",
+        "Why must both the microphone and its recording program work for a voice recording to succeed?",
+        "What different jobs do the microphone and recording app do when you speak?",
+        "Explain how a microphone and recording program help each other capture a song.",
+        "When recording a voice, what does the microphone supply and what does the app direct?"
+      ],
+      "answerVariants": [
+        "The physical part collects sound, and the instructions guide how the system handles it.",
+        "Equipment gathers sound information, while software directs what happens to that information.",
+        "Hardware brings sound into the system; software controls how that incoming information is handled.",
+        "The equipment supplies incoming sound, and the instructions guide the work done with it.",
+        "Hardware detects sound, and software tells the system how to use what was detected."
+      ]
+    }
+  ]
+}

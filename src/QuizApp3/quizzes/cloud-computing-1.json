@@ -1,0 +1,136 @@
+{
+  "id": "cloud-computing-1",
+  "quizName": "Cloud Computing 1",
+  "quizNumber": 1,
+  "gradeLevel": 6,
+  "teacher": "Magbr",
+  "sources": [
+    {
+      "textbook": "ACert",
+      "chapters": "Chapter 1",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "legacy-1",
+      "conceptName": "What is virtualization in simple terms?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is virtualization in simple terms?"
+      ],
+      "answerVariants": [
+        "Running one or more virtual computers on a physical computer."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "legacy-2",
+      "conceptName": "What is a hypervisor's main job?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is a hypervisor's main job?"
+      ],
+      "answerVariants": [
+        "It creates and manages virtual machines and shares hardware resources."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "legacy-3",
+      "conceptName": "What is the difference between a host and a guest?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is the difference between a host and a guest?"
+      ],
+      "answerVariants": [
+        "The host is the physical machine; the guest is the virtual machine running on it."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "legacy-4",
+      "conceptName": "What is a snapshot used for in a virtual machine?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is a snapshot used for in a virtual machine?"
+      ],
+      "answerVariants": [
+        "To save a point-in-time state so you can roll back after changes."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "legacy-5",
+      "conceptName": "What is elasticity in cloud computing?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is elasticity in cloud computing?"
+      ],
+      "answerVariants": [
+        "The ability to quickly scale resources up or down based on demand."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "legacy-6",
+      "conceptName": "What does IaaS mainly provide?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does IaaS mainly provide?"
+      ],
+      "answerVariants": [
+        "Virtualized hardware resources like servers, storage, and networking."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "legacy-7",
+      "conceptName": "What does PaaS mainly provide?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does PaaS mainly provide?"
+      ],
+      "answerVariants": [
+        "A platform to build and run apps without managing the underlying servers."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "legacy-8",
+      "conceptName": "What does SaaS mainly provide?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does SaaS mainly provide?"
+      ],
+      "answerVariants": [
+        "Fully managed software accessed over the internet."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "legacy-9",
+      "conceptName": "What is the function of a cloud region?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is the function of a cloud region?"
+      ],
+      "answerVariants": [
+        "A geographic area containing multiple data centers for cloud services."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "legacy-10",
+      "conceptName": "What is the function of a cloud availability zone?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is the function of a cloud availability zone?"
+      ],
+      "answerVariants": [
+        "A separate data center location within a region for redundancy."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "id": "chromebook-care",
+  "quizName": "Chromebook Care",
+  "quizNumber": 5,
+  "gradeLevel": 6,
+  "teacher": "Magbr",
+  "sources": [
+    {
+      "textbook": "Digital Citizenship",
+      "chapters": "Chapter 2",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "legacy-1",
+      "conceptName": "How should you carry a Chromebook?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "How should you carry a Chromebook?"
+      ],
+      "answerVariants": [
+        "Carry it closed with two hands or in a protective case."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "legacy-2",
+      "conceptName": "Why should food and drinks stay away from a Chromebook?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why should food and drinks stay away from a Chromebook?"
+      ],
+      "answerVariants": [
+        "Spills and crumbs can damage the keyboard and internal parts."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "legacy-3",
+      "conceptName": "What should you do before closing a Chromebook?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What should you do before closing a Chromebook?"
+      ],
+      "answerVariants": [
+        "Make sure nothing is on the keyboard or screen."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "legacy-4",
+      "conceptName": "Why should you not pick up a Chromebook by the screen?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why should you not pick up a Chromebook by the screen?"
+      ],
+      "answerVariants": [
+        "It can damage the hinges, display, or frame."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "legacy-5",
+      "conceptName": "How should you clean a Chromebook screen?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "How should you clean a Chromebook screen?"
+      ],
+      "answerVariants": [
+        "Use a soft, dry microfiber cloth or approved screen cleaner."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "legacy-6",
+      "conceptName": "What should you do if a Chromebook is not charging?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What should you do if a Chromebook is not charging?"
+      ],
+      "answerVariants": [
+        "Check the charger, outlet, and charging port, then report the problem."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "legacy-7",
+      "conceptName": "Why is it important to restart a Chromebook sometimes?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why is it important to restart a Chromebook sometimes?"
+      ],
+      "answerVariants": [
+        "Restarting can apply updates and fix temporary software problems."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "legacy-8",
+      "conceptName": "What should you do if a key comes loose?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What should you do if a key comes loose?"
+      ],
+      "answerVariants": [
+        "Do not pull on it; report it to the teacher or tech support."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "legacy-9",
+      "conceptName": "Why should Chromebooks be stored in the correct cart slot?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why should Chromebooks be stored in the correct cart slot?"
+      ],
+      "answerVariants": [
+        "It helps keep them charged, organized, and easy to find."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "legacy-10",
+      "conceptName": "What should you do if a Chromebook is damaged?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What should you do if a Chromebook is damaged?"
+      ],
+      "answerVariants": [
+        "Report it right away instead of hiding or continuing to use it."
+      ]
+    }
+  ]
+}

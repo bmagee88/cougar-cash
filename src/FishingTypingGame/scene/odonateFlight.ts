@@ -6,10 +6,11 @@ import { advanceFlightDepth, FlightPointer, FlightState, flightBottom, flightMov
  * jewelwings flutter in short, slower bouts close to shoreline vegetation. */
 export function stepOdonate(f:FlightState,kind:'dragonfly'|'damselfly',dt:number,width:number,height:number,random:Random,pointer?:FlightPointer,horizon=.5,obstructed?:DepthObstruction):void {
   f.age+=dt;if(f.age<0)return;
+  const wasStopped=(!!f.perch?.landed&&!f.perch.finished)||Math.hypot(f.vx,f.vy)<14;
   if(pointer)startleFlight(f,pointer,width,height);
   const leaving=f.fleeing||f.age>f.departAt;
   const evading=f.fleeing||f.age<(f.evadeUntil??0);
-  if(stepPerch(f,dt,width,height,random,horizon)){stepFlightWings(f,dt);return;}
+  if(stepPerch(f,dt,width,height,random,horizon)){f.odonateLaunchElapsed=0;stepFlightWings(f,dt);return;}
   f.motionVx??=f.vx;f.motionVy??=f.vy;
   f.turnIn-=dt;
   if(f.turnIn<=0){
@@ -44,12 +45,19 @@ export function stepOdonate(f:FlightState,kind:'dragonfly'|'damselfly',dt:number
       }
     }
   }
-  const movement=flightMovementScale(f.z,f.perspective);
+  if(wasStopped)f.odonateLaunchElapsed=0;
+  const rampStart=f.odonateLaunchElapsed??.5;
+  const rampEnd=Math.min(.5,rampStart+dt);
+  // Integrate a linear 0–100% ramp over half a second, including a frame
+  // straddling its end. Scale translation only; wings keep their normal beat.
+  const acceleration=dt>0?((rampEnd*rampEnd-rampStart*rampStart)+(Math.max(0,dt-(rampEnd-rampStart))))/dt:Math.min(1,rampStart/.5);
+  f.odonateLaunchElapsed=rampEnd;
+  const movement=flightMovementScale(f.z,f.perspective)*acceleration;
   const flutter=kind==='damselfly'&&(!leaving||evading)?(Math.sin(f.age*14+(f.phase??0))-Math.sin((f.age-dt)*14+(f.phase??0)))*2.5:0;
   const steering=1-Math.exp(-dt*(kind==='dragonfly'?12:6));
   f.motionVx+=(f.vx-f.motionVx)*steering;f.motionVy+=(f.vy-f.motionVy)*steering;
   f.x+=f.motionVx*movement*dt/Math.max(1,width);f.y+=(f.motionVy*dt+flutter)*movement/Math.max(1,height);
-  if(changeSceneDepth(f,advanceFlightDepth(f.z,f.vz,dt,f.perspective),horizon,obstructed,f.perspective)){f.vz=0;f.turnIn=0;}
+  if(changeSceneDepth(f,advanceFlightDepth(f.z,f.vz,dt*acceleration,f.perspective),horizon,obstructed,f.perspective)){f.vz=0;f.turnIn=0;}
   const bottom=flightBottom(f.z,horizon,f.perspective);
   if(f.y>bottom){f.y=bottom;f.vy=-Math.abs(f.vy);}
   f.behindForeground=f.z>=foregroundDepth(f.perspective);

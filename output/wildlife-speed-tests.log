@@ -1,0 +1,14 @@
+
+> cougar-cash@0.1.0 test
+> react-scripts test --watchAll=false --runInBand --testPathPattern=wildlifeSpeed|insectPlants|lakeVisitors|treeBirdDepth --cacheDirectory=output/wildlife-speed-jest
+
+PASS src/FishingTypingGame/__tests__/lakeVisitors.test.tsx (11.206 s)
+PASS src/FishingTypingGame/__tests__/insectPlants.test.tsx
+PASS src/FishingTypingGame/__tests__/treeBirdDepth.test.tsx (9.863 s)
+PASS src/FishingTypingGame/__tests__/wildlifeSpeed.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        25.788 s
+Ran all test suites matching /wildlifeSpeed|insectPlants|lakeVisitors|treeBirdDepth/i.

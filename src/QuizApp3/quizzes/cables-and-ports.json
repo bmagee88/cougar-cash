@@ -1,0 +1,136 @@
+{
+  "id": "cables-and-ports",
+  "quizName": "Cables and Ports",
+  "quizNumber": 3,
+  "gradeLevel": 6,
+  "teacher": "Magbr",
+  "sources": [
+    {
+      "textbook": "Digital Literacy",
+      "chapters": "Chapter 2",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "legacy-1",
+      "conceptName": "What is an HDMI cable commonly used for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is an HDMI cable commonly used for?"
+      ],
+      "answerVariants": [
+        "It carries digital video and audio to a monitor, TV, or projector."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "legacy-2",
+      "conceptName": "What is an Ethernet cable used for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is an Ethernet cable used for?"
+      ],
+      "answerVariants": [
+        "It connects a device to a wired network."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "legacy-3",
+      "conceptName": "What does USB stand for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does USB stand for?"
+      ],
+      "answerVariants": [
+        "Universal Serial Bus."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "legacy-4",
+      "conceptName": "What is USB-C known for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is USB-C known for?"
+      ],
+      "answerVariants": [
+        "It is a reversible connector used for charging, data, and sometimes video."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "legacy-5",
+      "conceptName": "What is a power cable used for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is a power cable used for?"
+      ],
+      "answerVariants": [
+        "It supplies electrical power to a device."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "legacy-6",
+      "conceptName": "What is the purpose of a charging cable?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is the purpose of a charging cable?"
+      ],
+      "answerVariants": [
+        "It delivers power to recharge a battery-powered device."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "legacy-7",
+      "conceptName": "What is DisplayPort used for?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is DisplayPort used for?"
+      ],
+      "answerVariants": [
+        "It carries video, and often audio, from a computer to a display."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "legacy-8",
+      "conceptName": "Why should you avoid forcing a cable into a port?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why should you avoid forcing a cable into a port?"
+      ],
+      "answerVariants": [
+        "Forcing it can bend pins, damage the port, or break the connector."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "legacy-9",
+      "conceptName": "What is a network port on a computer often called?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is a network port on a computer often called?"
+      ],
+      "answerVariants": [
+        "An Ethernet or RJ-45 port."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "legacy-10",
+      "conceptName": "What should you check first if a monitor shows no signal?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What should you check first if a monitor shows no signal?"
+      ],
+      "answerVariants": [
+        "Check that the video cable is connected to the correct port on both devices."
+      ]
+    }
+  ]
+}

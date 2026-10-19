@@ -1,0 +1,136 @@
+{
+  "id": "hardware-basics",
+  "quizName": "Hardware Basics",
+  "quizNumber": 2,
+  "gradeLevel": 6,
+  "teacher": "Magbr",
+  "sources": [
+    {
+      "textbook": "Digital Literacy",
+      "chapters": "Chapter 1",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "legacy-1",
+      "conceptName": "What does the CPU do?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does the CPU do?"
+      ],
+      "answerVariants": [
+        "It executes instructions and performs calculations for the computer."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "legacy-2",
+      "conceptName": "What does RAM store?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does RAM store?"
+      ],
+      "answerVariants": [
+        "It temporarily stores data and programs the computer is currently using."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "legacy-3",
+      "conceptName": "What is the main job of a motherboard?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is the main job of a motherboard?"
+      ],
+      "answerVariants": [
+        "It connects computer parts so they can communicate with each other."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "legacy-4",
+      "conceptName": "What does a storage drive do?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a storage drive do?"
+      ],
+      "answerVariants": [
+        "It saves files, programs, and the operating system for long-term use."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "legacy-5",
+      "conceptName": "What is the difference between an SSD and an HDD?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is the difference between an SSD and an HDD?"
+      ],
+      "answerVariants": [
+        "An SSD has no moving parts and is usually faster than an HDD."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "legacy-6",
+      "conceptName": "What does a power supply do?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a power supply do?"
+      ],
+      "answerVariants": [
+        "It converts wall power into power the computer parts can use."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "legacy-7",
+      "conceptName": "What does a GPU help with?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What does a GPU help with?"
+      ],
+      "answerVariants": [
+        "It processes graphics and can speed up visual or compute-heavy tasks."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "legacy-8",
+      "conceptName": "Why do computers need cooling?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "Why do computers need cooling?"
+      ],
+      "answerVariants": [
+        "Cooling removes heat so parts do not overheat or slow down."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "legacy-9",
+      "conceptName": "What is a peripheral?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is a peripheral?"
+      ],
+      "answerVariants": [
+        "A device connected to a computer, such as a keyboard, mouse, monitor, or printer."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "legacy-10",
+      "conceptName": "What is an input device?",
+      "confusabilityGroup": "general",
+      "questionVariants": [
+        "What is an input device?"
+      ],
+      "answerVariants": [
+        "A device used to send information into a computer."
+      ]
+    }
+  ]
+}
