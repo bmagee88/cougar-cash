@@ -3,6 +3,14 @@ import { Link as RouterLink } from "react-router-dom";
 
 const tiles = [
   {
+    path: "/cricket-climb",
+    title: "Cricket Climb",
+    subtitle: "Listen, think, and hop through a garden of letters, numbers, and discoveries.",
+    emoji: "🦗",
+    gradient: "linear-gradient(135deg, #b9d799, #f2edcf, #e9bb62)",
+    category: "game",
+  },
+  {
     path: "/typing/fishing",
     title: "Stillwater Fishing",
     subtitle: "Cast a line, type to reel, and discover your next catch.",
