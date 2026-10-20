@@ -64,7 +64,18 @@ export function cancelSpeech() {
   if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
 }
 
-export function speak(text: string, signal?: AbortSignal): Promise<boolean> {
+// A period alone is often ignored after a numeral by browser voices. Speak
+// numbered choice labels separately so the pause is consistent across voices.
+export async function speak(text: string, signal?: AbortSignal): Promise<boolean> {
+  const numbered = text.match(/^(\d+)\.\s+([\s\S]+)$/);
+  if (!numbered) return speakUtterance(text, signal);
+  if (!await speakUtterance(numbered[1], signal)) return false;
+  try { await wait(350, signal || new AbortController().signal); }
+  catch { return false; }
+  return speakUtterance(numbered[2], signal);
+}
+
+function speakUtterance(text: string, signal?: AbortSignal): Promise<boolean> {
   return new Promise(resolve => {
     if (!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window) || signal?.aborted) { resolve(false); return; }
     const synthesis = window.speechSynthesis;

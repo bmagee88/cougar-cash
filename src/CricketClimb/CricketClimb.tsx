@@ -1,25 +1,39 @@
 import { CSSProperties, useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
 import { CRICKET_CHIRP_DURATION, GardenAudio, cancelSpeech, speak, wait } from "./audio";
 import { Cricket, CricketMood, GardenBackdrop, LeafArt, Spider } from "./characters";
-import { DEFAULT_SETTINGS, Run, SCORES_KEY, SETTINGS_KEY, Settings, createRun, gradeFor, prepareRow, resolveAttempt, sanitizeSettings, scoreKey, segmentFor, spiderLaneFor } from "./engine";
+import { DEFAULT_SETTINGS, Run, SCORES_KEY, SETTINGS_KEY, Settings, createRun, gradeFor, prepareRow, resolveAttempt, sanitizeSettings, scoreKey, segmentFor, spiderLaneFor, withoutMutedListening } from "./engine";
 import { GRADE_LEVELS, Grade, SKILLS } from "./resources";
 import { PROGRESS_KEY, parseProgress, restoreProgress, snapshotProgress } from "./progress";
 import SettingsDialog from "./SettingsDialog";
 import { QuestionClues, TokenArt } from "./QuestionClues";
+import { displayReading, questionPrompt, questionReading } from "./reading";
 import "./CricketClimb.css";
 
 type Phase = "welcome" | "charging" | "superjump" | "arriving" | "reading" | "thinking" | "ready" | "jumping" | "suspense" | "reveal" | "falling" | "landing" | "celebrating";
 type Visual = { level: number; lane: number; camera: number; lift: number };
 type SpiderPosition = { level: number; lane: number; visible: boolean; laughing: boolean };
 const seed = () => `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+const ANSWER_PAUSE_MS = 1500;
+const THINKING_MS = 500;
 function readStored<T,>(key: string, fallback: T): T {
   try { return JSON.parse(localStorage.getItem(key) || "null") || fallback; } catch { return fallback; }
 }
 function storeValue(key: string, value: unknown) { try { localStorage.setItem(key, JSON.stringify(value)); return true; } catch { return false; } }
+function loadPreferences(): Settings {
+  const stored = readStored<Partial<Settings>>(SETTINGS_KEY, DEFAULT_SETTINGS);
+  // Defaults apply only to missing fields, never replace saved choices on reload.
+  const next = sanitizeSettings({ ...stored, preferences: 2 });
+  storeValue(SETTINGS_KEY, next);
+  return next;
+}
 function savedScores(): Record<string, number> {
   const raw = readStored<Record<string, number>>(SCORES_KEY, {});
   return Object.fromEntries(Object.entries(raw).filter(([, value]) => Number.isSafeInteger(value) && value >= 0));
+}
+
+// Question-bank updates must not hide an earned best for the same game rules.
+function bestForRules(scores: Record<string, number>, rules: Settings) {
+  return Math.max(...([undefined, 2, 3] as const).map(questions => scores[scoreKey({ ...rules, questions })] || 0));
 }
 
 function animate(from: Visual, to: Visual, duration: number, style: "jump" | "superjump" | "fall" | "pan", signal: AbortSignal, onFrame: (visual: Visual) => void) {
@@ -50,7 +64,7 @@ const phaseText: Record<Phase, string> = {
 };
 
 export default function CricketClimb() {
-  const [settings, setSettings] = useState<Settings>(() => sanitizeSettings(readStored(SETTINGS_KEY, DEFAULT_SETTINGS)));
+  const [settings, setSettings] = useState<Settings>(loadPreferences);
   const settingsRef = useRef(settings); settingsRef.current = settings;
   const [run, setRun] = useState(() => createRun(seed(), settings));
   const runRef = useRef(run);
@@ -86,6 +100,7 @@ export default function CricketClimb() {
   const [gardenHeight, setGardenHeight] = useState(650);
   const readyLeaf = useRef<HTMLButtonElement>(null);
   const keyboardChoice = useRef<(lane: number) => void>(() => {});
+  const readingUntil = useRef(0);
 
   function setPhase(value: Phase) { phaseRef.current = value; setPhaseState(value); }
   function commitRun(value: Run) { runRef.current = value; setRun(value); }
@@ -95,7 +110,7 @@ export default function CricketClimb() {
   function rememberSettings(value: Settings) { settingsRef.current = value; setSettings(value); storeValue(SETTINGS_KEY, value); }
   function saveBest(best: number, rules: Settings) {
     const key = scoreKey(rules);
-    if (best <= (scoresRef.current[key] || 0)) return;
+    if (best <= bestForRules(scoresRef.current, rules)) return;
     const next = { ...scoresRef.current, [key]: best }; scoresRef.current = next; setScores(next);
     if (!storeValue(SCORES_KEY, next)) setScoreUnavailable(true);
   }
@@ -107,6 +122,7 @@ export default function CricketClimb() {
 
   async function startTurn(current: Run, options: { prepare?: boolean; prefix?: string } = {}) {
     const signal = stopWork(), rules = settingsRef.current;
+    current = withoutMutedListening(current, rules);
     const next = options.prepare === false ? current : prepareRow(current, rules);
     saveProgress(next, rules);
     commitRun(next); setPresentedRow(next.rows[next.level]); setSelected(null); setNewPatch(null); setSpeechUnavailable(false);
@@ -117,26 +133,44 @@ export default function CricketClimb() {
     if (lane !== null) {
       spiderLane.current = lane; setSpider({ level: next.level, lane, visible: true, laughing: false });
     } else setSpider(currentSpider => ({ ...currentSpider, visible: false, laughing: false }));
+    const question = next.rows[next.level].question;
+    // Reading and thinking together make one 1.5-second answer pause.
+    readingUntil.current = Date.now() + ANSWER_PAUSE_MS - THINKING_MS;
+    await finishReading(signal, rules.voice ? questionReading(question, true) : undefined);
+  }
+
+  async function finishReading(signal: AbortSignal, text?: string) {
     setPhase("reading");
     try {
-      const question = next.rows[next.level].question;
-      const narration = `${options.prefix || ""} Level ${next.level}. ${gradeFor(next.level, rules).spoken}. ${question.speech} ${question.options ? "Leaf numbers" : "Choices"}, from left to right: ${next.rows[next.level].choices.map(choice => question.options ? choice.value : choice.spoken).join(". ")}. Think, then tap a leaf.`;
-      const readingStarted = Date.now();
-      if (rules.voice) {
-        const success = await speak(narration, signal);
+      if (text) {
+        const success = await speak(text, signal);
         if (signal.aborted) return;
         if (!success) {
           setSpeechUnavailable(true);
-          await wait(Math.max(0, Math.max(3000, narration.split(/\s+/).length * 360) - (Date.now() - readingStarted)), signal);
+          if (runRef.current.rows[runRef.current.level].question.listening) {
+            const visual = withoutMutedListening(runRef.current, { ...settingsRef.current, voice: false });
+            void startTurn(visual, { prepare: false });
+            return;
+          }
         }
-      } else await wait(question.options ? Math.max(3000, question.speech.split(/\s+/).length * 360) : 3000, signal);
-      setPhase("thinking"); await wait(1000, signal);
+      }
+      const remaining = readingUntil.current - Date.now();
+      if (remaining > 0) await wait(remaining, signal);
+      setPhase("thinking"); await wait(THINKING_MS, signal);
       setPhase("ready");
     } catch (error) { if ((error as Error).name !== "AbortError") { setSpeechUnavailable(true); setPhase("ready"); } }
   }
 
+  async function readText(text: string) {
+    if (["charging", "superjump", "arriving", "jumping", "suspense", "reveal", "falling", "landing", "celebrating"].includes(phaseRef.current)) return;
+    recordActivity(); audio.current.unlock();
+    const signal = stopWork();
+    if (playing.current && !menuRef.current) await finishReading(signal, text);
+    else if (!await speak(text, signal)) setSpeechUnavailable(true);
+  }
+
   async function returnToClimb(next: Run) {
-    const signal = stopWork(), rules = settingsRef.current;
+    const signal = stopWork();
     const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const destination = { level: next.standing.level, lane: next.standing.lane, camera: Math.max(1, next.level), lift: 0 };
     commitRun(next); setPresentedRow(next.rows[next.level]); setSelected(null); setNewPatch(null);
@@ -144,24 +178,21 @@ export default function CricketClimb() {
     move({ level: 0, lane: next.standing.lane, camera: 1, lift: 0 });
     setPhase("charging");
     try {
-      await Promise.all([wait(reducedMotion ? 200 : 700, signal), rules.voice ? speak("Welcome back! Ready, steady!", signal) : Promise.resolve()]);
+      await wait(reducedMotion ? 200 : 700, signal);
       if (signal.aborted) return;
       setPhase("superjump"); audio.current.superJump();
       if (reducedMotion) {
         // Keep the welcome home moment without a rapid camera scroll.
         move(destination);
-        await Promise.all([wait(180, signal), rules.voice ? speak("Wheee!", signal) : Promise.resolve()]);
+        await wait(180, signal);
       } else {
         const flightTime = Math.min(2200, 1300 + Math.log2(next.standing.level + 2) * 120);
-        await Promise.all([
-          animate(visualRef.current, { ...destination, level: destination.level + .6 }, flightTime, "superjump", signal, move),
-          rules.voice ? speak("Wheee!", signal) : Promise.resolve(),
-        ]);
+        await animate(visualRef.current, { ...destination, level: destination.level + .6 }, flightTime, "superjump", signal, move);
         await animate(visualRef.current, destination, 240, "pan", signal, move);
       }
       if (signal.aborted) return;
       setPhase("arriving"); audio.current.land();
-      await Promise.all([wait(reducedMotion ? 250 : 650, signal), rules.voice ? speak("Ta-da! Right where you left off!", signal) : Promise.resolve()]);
+      await wait(reducedMotion ? 250 : 650, signal);
       if (!signal.aborted) void startTurn(next, { prepare: false });
     } catch (error) {
       if ((error as Error).name !== "AbortError" && !signal.aborted) void startTurn(next, { prepare: false });
@@ -174,9 +205,12 @@ export default function CricketClimb() {
     let next: Run;
     if (keepHopping && savedProgress) {
       const preferences = settingsRef.current;
-      rememberSettings({ ...savedProgress.settings, voice: preferences.voice, sounds: preferences.sounds, theme: preferences.theme });
+      rememberSettings({ ...savedProgress.settings, preferences: 2, voice: preferences.voice, sounds: preferences.sounds, theme: preferences.theme });
       next = restoreProgress(savedProgress);
-    } else next = createRun(seed(), settingsRef.current);
+    } else {
+      if (settingsRef.current.questions !== 3) rememberSettings({ ...settingsRef.current, questions: 3 });
+      next = createRun(seed(), settingsRef.current);
+    }
     spiderLane.current = null; spiderPlacement.current = { key: "", lane: null };
     if (keepHopping && savedProgress) void returnToClimb(next);
     else void startTurn(next, { prepare: false, prefix: "A fresh little climb! Hello, I am Pip." });
@@ -206,10 +240,10 @@ export default function CricketClimb() {
           const patch = segmentFor(result.run.level).segment;
           const nextGrade = gradeFor(result.run.level, rules), gradeChanged = nextGrade.id !== current.rows[current.level].question.grade;
           setNewPatch({ segment: patch, grade: gradeChanged ? nextGrade.id : null }); audio.current.fanfare();
-          await Promise.all([wait(2200, signal), rules.voice ? speak(`Hooray! Patch ${patch}! ${gradeChanged ? `${nextGrade.spoken} discoveries!` : "Keep on growing!"}`, signal) : Promise.resolve()]);
+          await wait(2200, signal);
         } else {
           audio.current.correct();
-          await Promise.all([wait(950, signal), rules.voice ? speak("Lovely hop!", signal) : Promise.resolve()]);
+          await wait(950, signal);
         }
         await animate(visualRef.current, { level: result.landing, lane, camera: result.run.level, lift: 0 }, reducedMotion ? 150 : 550, "pan", signal, move);
       } else {
@@ -218,7 +252,7 @@ export default function CricketClimb() {
         await animate(visualRef.current, { level: result.landing, lane, camera: Math.max(1, result.landing + 1), lift: 0 },
           reducedMotion ? 400 : Math.min(2600, 550 + Math.sqrt(result.drop) * 230), "fall", signal, move);
         commitRun(result.run); setPhase("landing"); audio.current.land();
-        await Promise.all([wait(850, signal), rules.voice ? speak("A soft landing. Try again!", signal) : Promise.resolve()]);
+        await wait(850, signal);
       }
       if (!signal.aborted) void startTurn(nextTurn, { prepare: false });
     } catch (error) { if ((error as Error).name !== "AbortError") { void startTurn(current, { prepare: false }); } }
@@ -227,13 +261,13 @@ export default function CricketClimb() {
 
   function restart() {
     recordActivity(); audio.current.unlock();
+    if (settingsRef.current.questions !== 3) rememberSettings({ ...settingsRef.current, questions: 3 });
     const next = createRun(seed(), settingsRef.current); spiderLane.current = null;
     if (playing.current) void startTurn(next, { prepare: false, prefix: "A fresh little climb!" });
     else { stopWork(); commitRun(next); setPresentedRow(next.rows[1]); move({ level: 0, lane: next.standing.lane, camera: 1, lift: 0 }); }
   }
   function openSettings() {
     stopWork(); recordActivity(); menuRef.current = true; setMenu(true);
-    if (settingsRef.current.voice) void speak("Garden settings. Make it your own. Best levels are saved for each game setting.");
   }
   function closeSettings() {
     cancelSpeech(); menuRef.current = false; setMenu(false); recordActivity();
@@ -241,6 +275,7 @@ export default function CricketClimb() {
   }
   function applySettings(next: Settings) {
     const changedGame = scoreKey(settingsRef.current) !== scoreKey(next);
+    if (changedGame) next = { ...next, questions: 3 };
     rememberSettings(next); menuRef.current = false; setMenu(false); recordActivity();
     const current = changedGame ? createRun(seed(), next) : runRef.current;
     if (changedGame) spiderLane.current = null;
@@ -251,13 +286,10 @@ export default function CricketClimb() {
     const next = { ...settingsRef.current, voice: !settingsRef.current.voice };
     rememberSettings(next); recordActivity(); audio.current.unlock();
     if (playing.current) void startTurn(runRef.current, { prepare: false });
-    else if (next.voice) void speak("Read aloud is on. Let's hop!");
     else cancelSpeech();
   }
   function readInfo(text: string) {
-    recordActivity();
-    if (playing.current) void startTurn(runRef.current, { prepare: false, prefix: text });
-    else if (settingsRef.current.voice) void speak(text);
+    void readText(text);
   }
 
   useEffect(() => {
@@ -282,7 +314,11 @@ export default function CricketClimb() {
     const visibility = () => { if (document.visibilityState !== "visible") stopChirping(); };
     const key = (event: KeyboardEvent) => {
       if (menuRef.current || !playing.current || phaseRef.current !== "ready") return;
-      if (/^[1-5]$/.test(event.key)) { event.preventDefault(); keyboardChoice.current(Number(event.key) - 1); }
+      if (/^[1-5]$/.test(event.key)) {
+        event.preventDefault();
+        const current = runRef.current, row = current.rows[current.level];
+        keyboardChoice.current(row.question.options ? row.choices.findIndex(choice => choice.value === event.key) : Number(event.key) - 1);
+      }
     };
     window.addEventListener("pointerdown", activity); window.addEventListener("keydown", activity); window.addEventListener("keydown", key);
     document.addEventListener("visibilitychange", visibility);
@@ -308,8 +344,9 @@ export default function CricketClimb() {
 
   const returning = phase === "charging" || phase === "superjump" || phase === "arriving";
   const busy = returning || ["jumping", "suspense", "reveal", "falling", "landing", "celebrating"].includes(phase);
-  const best = scores[scoreKey(settings)] || 0;
+  const best = bestForRules(scores, settings);
   const patch = segmentFor(presentedRow.level);
+  const checkpointLevel = patch.start + patch.length - 1;
   const grade = GRADE_LEVELS.find(item => item.id === presentedRow.question.grade);
   const milestoneGrade = newPatch && newPatch.grade !== null ? GRADE_LEVELS.find(item => item.id === newPatch.grade) : undefined;
   const gap = Math.min(142, Math.max(104, gardenHeight * .205));
@@ -322,13 +359,14 @@ export default function CricketClimb() {
   const mood: CricketMood = phase === "charging" ? "charging" : phase === "superjump" ? "superjump" : phase === "arriving" ? "landing"
     : phase === "jumping" ? "jumping" : phase === "falling" ? "falling" : phase === "suspense" ? "suspense" : phase === "celebrating" ? "celebrating" : phase === "landing" ? "landing" : chirping && phase === "ready" ? "chirping" : "waiting";
   const skill = SKILLS.find(item => item.id === presentedRow.question.skill);
+  const prompt = questionPrompt(presentedRow.question, settings.voice);
   const showAnswers = phase !== "welcome" && !returning;
   const status = phase === "reading" && !settings.voice ? "Look closely at the question…" : phaseText[phase];
 
   return <main className={`cc-app cc-theme--${settings.theme}`}>
     <div className="cc-shell">
       <header className="cc-header">
-        <Link to="/" className="cc-brand" aria-label="Cricket Climb. Back to Cougar Tech Lab"><span className="cc-brand-mark"><Cricket decorative /></span><span>cricket<span>climb</span><small>LITTLE HOPS. BIG DISCOVERIES.</small></span></Link>
+        <div className="cc-brand" aria-label="Cricket Climb"><span className="cc-brand-mark"><Cricket decorative /></span><span>cricket<span>climb</span><small>LITTLE HOPS. BIG DISCOVERIES.</small></span></div>
         <div className="cc-header-right">
           <button className="cc-best" disabled={busy} onClick={() => readInfo(`Your best is level ${best}. Your current level is ${Math.floor(visual.level)}.`)} aria-label={`Best level ${best}. Read score aloud`}><span className="cc-trophy" aria-hidden="true">♛</span><span><small>PERSONAL BEST</small><strong>{best}<span>{best === 1 ? "level" : "levels"}</span></strong></span></button>
           <button className={`cc-icon-button cc-voice-button ${settings.voice ? "is-on" : ""}`} disabled={busy} aria-label={`Read aloud ${settings.voice ? "on. Turn off" : "off. Turn on"}`} aria-pressed={settings.voice} onClick={toggleVoice}>{settings.voice ? "♪" : "♩"}<span className="cc-sr-only">Read aloud</span>{!settings.voice && <i aria-hidden="true" />}</button>
@@ -338,7 +376,7 @@ export default function CricketClimb() {
       <section className={`cc-garden ${returning ? "cc-garden--returning" : ""} ${phase === "welcome" && savedProgress ? "cc-garden--welcome-back" : ""}`} ref={garden} aria-label="Cricket Climb garden">
         <GardenBackdrop />
         <div className="cc-garden-topline">
-          <button className="cc-patch" disabled={busy} onClick={() => readInfo(`Patch ${patch.segment}. ${patch.length} questions in this patch. ${grade.spoken} discoveries.`)} aria-label={`Patch ${patch.segment}, ${patch.progress} of ${patch.length} completed. ${grade.label}`}>
+          <button className="cc-patch" disabled={busy} onClick={() => readInfo(`Patch ${patch.segment}. ${grade.spoken} discoveries.`)} aria-label={`Patch ${patch.segment}, ${patch.progress} of ${patch.length} completed. ${grade.label}`}>
             <span className="cc-patch-icon" aria-hidden="true">✿</span><span><strong>Patch {patch.segment}</strong><small>{grade.label} discoveries</small></span>
             <span className="cc-patch-progress" aria-hidden="true">{Array.from({ length: Math.min(patch.length, 15) }, (_, i) => <i key={i} className={i / Math.min(patch.length, 15) < patch.progress / patch.length ? "is-filled" : ""} />)}</span>
             <span className="cc-patch-fraction">{patch.progress}/{patch.length}</span>
@@ -346,14 +384,14 @@ export default function CricketClimb() {
           <button className="cc-restart" disabled={busy} onClick={restart} aria-label="Restart with new questions"><span aria-hidden="true">↻</span><span>New climb</span></button>
         </div>
         <div className={`cc-question ${presentedRow.question.curriculum ? "cc-question--curriculum" : ""} ${presentedRow.question.options ? "cc-question--scenario" : ""} ${presentedRow.question.grade === 2 ? "cc-question--second-grade" : ""} ${presentedRow.question.sequence ? "cc-question--instructions" : ""} ${!showAnswers ? "cc-question--hidden" : ""}`} aria-hidden={!showAnswers} aria-busy={phase === "reading"}>
-          <div className="cc-question-top"><span className="cc-eyebrow">{skill?.label}<small className="cc-question-grade">{grade.label}</small></span><button className={`cc-listen ${phase === "reading" && settings.voice ? "is-reading" : ""}`} disabled={busy || !settings.voice || phase === "welcome"} aria-label="Read the question and answers again" onClick={() => { recordActivity(); void startTurn(runRef.current, { prepare: false }); }}>
+          <div className="cc-question-top"><span className="cc-eyebrow">{skill?.label}<small className="cc-question-grade">{grade.label}</small></span><button className={`cc-listen ${phase === "reading" && settings.voice ? "is-reading" : ""}`} disabled={busy || !showAnswers} aria-label="Read the question" onClick={() => void readText(questionReading(presentedRow.question, settings.voice))}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Zm13-1q5 4 0 8M16 10q2 2 0 4" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg><span>Listen</span></button></div>
-          <h1>{presentedRow.question.prompt}</h1>
+          <h1><button type="button" className="cc-read-text" disabled={busy || !showAnswers} aria-label={`Read question text: ${prompt}`} onClick={() => void readText(questionReading(presentedRow.question, settings.voice))}>{prompt}</button></h1>
           {(presentedRow.question.display || presentedRow.question.picture) && <div className={`cc-question-clue ${presentedRow.question.skill === "counting" && !/^\d/.test(presentedRow.question.display || "") ? "cc-question-clue--count" : ""}`}>
-            {presentedRow.question.picture && <span className="cc-picture-clue" role="img" aria-label={presentedRow.question.pictureLabel}>{presentedRow.question.picture}</span>}
-            {presentedRow.question.display && <span className={presentedRow.question.skill === "spelling" || presentedRow.question.skill === "sightWords" ? "cc-word-clue" : ""}>{presentedRow.question.display}</span>}
+            {presentedRow.question.picture && <button type="button" className="cc-read-text cc-picture-clue" disabled={busy || !showAnswers} aria-label="Hear the picture name" onClick={() => void readText(presentedRow.question.pictureLabel)}>{presentedRow.question.picture}</button>}
+            {presentedRow.question.display && <button type="button" disabled={busy || !showAnswers} aria-label="Read the clue" onClick={() => void readText(displayReading(presentedRow.question.display))} className={`cc-read-text ${presentedRow.question.skill === "spelling" || presentedRow.question.skill === "sightWords" ? "cc-word-clue" : ""}`}>{presentedRow.question.display}</button>}
           </div>}
-          <QuestionClues question={presentedRow.question} />
+          <QuestionClues question={presentedRow.question} onRead={text => void readText(text)} disabled={busy || !showAnswers} />
           <div className={`cc-reading-line ${phase === "reading" || phase === "thinking" ? "is-active" : ""}`}><i /></div>
         </div>
         <div className="cc-ruler" aria-label={`Current level ${Math.floor(visual.level)}`}>
@@ -361,6 +399,9 @@ export default function CricketClimb() {
           {y(0) < gardenHeight && <div className="cc-ruler-tick is-major" style={{ top: y(0) }}><span>0</span></div>}
         </div>
         <div className="cc-playfield" style={{ "--lane-count": settings.platforms } as CSSProperties}>
+          {showAnswers && y(checkpointLevel) > 65 && y(checkpointLevel) < gardenHeight - 70 && <div className="cc-checkpoint" style={{ top: y(checkpointLevel) + 39 }} role="img" aria-label={`Patch ${patch.segment + 1} checkpoint at level ${checkpointLevel}. Complete this level to reach the next patch.`}>
+            <span>⚑ Patch {patch.segment + 1} <small>Finish level {checkpointLevel}</small></span>
+          </div>}
           {Array.from({ length: settings.platforms }, (_, lane) => <div key={lane} className="cc-stalk" style={{ left: x(lane), backgroundPositionY: `${visual.camera * gap}px` }}><i /><i /></div>)}
           {visibleLevels.map(level => {
             const row = run.rows[level], active = level === presentedRow.level, above = level > presentedRow.level;
@@ -372,10 +413,10 @@ export default function CricketClimb() {
                 return <button key={lane} ref={active && lane === 0 ? readyLeaf : undefined} type="button" className={`cc-leaf ${open ? "cc-leaf--open" : ""} ${safe ? "cc-leaf--safe" : ""} ${active && selected === lane ? "cc-leaf--selected" : ""}`}
                   style={{ left: x(lane) }} disabled={!active || phase !== "ready" || menu} tabIndex={active && phase === "ready" ? 0 : -1}
                   aria-hidden={!active || !showAnswers}
-                  aria-label={active && label ? `Answer ${lane + 1}: ${label.spoken}` : `Level ${level} leaf ${lane + 1}`}
+                  aria-label={active && label ? row.question.options ? `Answer ${label.spoken}` : `Answer ${lane + 1}: ${label.spoken}` : `Level ${level} leaf ${lane + 1}`}
                   onClick={() => void choose(lane)}>
                   <span className="cc-leaf-surface"><LeafArt /><span className="cc-leaf-label" aria-hidden="true">{showAnswers && (active || row?.open) && label ? <TokenArt token={label} /> : ""}</span></span>
-                  {active && phase === "ready" && <span className="cc-leaf-key" aria-hidden="true">{lane + 1}</span>}
+                  {active && phase === "ready" && !row.question.options && <span className="cc-leaf-key" aria-hidden="true">{lane + 1}</span>}
                 </button>;
               })}
             </div>;
@@ -404,11 +445,11 @@ export default function CricketClimb() {
           <div className="cc-welcome-actions">
             <button className="cc-primary cc-start cc-continue" disabled={!savedProgress} onClick={() => beginGame(true)}
               aria-label={savedProgress ? `Keep hopping! Continue at level ${savedProgress.level}` : "Keep hopping! No saved climb yet"}
-              onFocus={() => { if (settings.voice && savedProgress) void speak(`Keep hopping! Back to level ${savedProgress.level}.`); }}>
+              >
               <span className="cc-start-copy">Keep hopping!<small>{savedProgress ? `Back to level ${savedProgress.level}` : "Your first adventure is waiting"}</small></span><span aria-hidden="true">↗</span>
             </button>
             <button className={`${savedProgress ? "cc-secondary" : "cc-primary"} cc-start`} onClick={() => beginGame(false)} aria-label="A fresh little climb! Start over at level 1"
-              onFocus={() => { if (settings.voice) void speak("A fresh little climb! New questions, from the ground up."); }}>
+              >
               <span className="cc-start-copy">A fresh little climb<small>New questions, from the ground up</small></span><span aria-hidden="true">↻</span>
             </button>
           </div>
@@ -418,6 +459,6 @@ export default function CricketClimb() {
       </section>
       <footer className="cc-footer"><span><i aria-hidden="true">✿</i> Made for curious little minds.</span><span>{scoreUnavailable ? "Climb saved for this visit." : "Your best grows with you."}<span className="cc-footer-mode">{settings.platforms} leaves · {settings.fallMode === "limited" ? "Little tumbles" : "Wild tumbles"}</span></span></footer>
     </div>
-    {menu && <SettingsDialog settings={settings} playing={playing.current} onClose={closeSettings} onSave={applySettings} onSpeak={text => { void speak(text); }} />}
+    {menu && <SettingsDialog settings={settings} playing={playing.current} onClose={closeSettings} onSave={applySettings} />}
   </main>;
 }

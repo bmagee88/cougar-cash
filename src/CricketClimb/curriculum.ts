@@ -103,12 +103,12 @@ family("P3", ({ rng }) => {
   const pool = [item, { id: "opposite", value: down ? "↑" : "↓", spoken: `scroll ${down ? "up" : "down"}` }, icon("close"), icon("volume"), icon("play")];
   return tokenQuestion("Which way should Pip scroll?", item, pool, down ? "See farther down the page" : "Return toward the page top");
 });
-family("P4", ({ rng }) => {
-  const kind = Math.floor(rng() * 3);
+family("P4", ({ rng, voice }) => {
+  const kind = voice === false ? 2 : Math.floor(rng() * 3);
   if (kind === 0) { const value = pick(ALPHABET, rng).toUpperCase(); return { prompt: `Find the ${value} key.`, speech: `Find the ${LETTER_NAMES[value.toLowerCase()]} key.`, answer: value, pool: letters }; }
   if (kind === 1) { const item = pick(digits, rng); return { prompt: `Find the ${item.value} key.`, speech: `Find the number ${item.value} key.`, answer: item.value, pool: digits }; }
   const item = pick(KEY_TOKENS.slice(0, 3), rng);
-  return tokenQuestion(`Find the ${item.spoken} key.`, item, KEY_TOKENS);
+  return tokenQuestion(({ space: "Which key adds a space?", enter: "Which key starts a new line?", backspace: "Which key removes the last letter?" })[item.id], item, KEY_TOKENS);
 });
 family("P5", ({ rng }) => {
   const word = pick(["cat", "dog", "sun", "Pip", "Mia", "Sam"], rng), extra = pick(["x", "z", "q"], rng);

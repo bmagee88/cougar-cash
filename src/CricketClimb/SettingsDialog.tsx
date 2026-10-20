@@ -2,29 +2,25 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { Settings, scoreKey } from "./engine";
 import { GRADE_LEVELS, Grade, SKILL_GROUPS, SkillId } from "./resources";
 
-type Props = { settings: Settings; playing: boolean; onClose: () => void; onSave: (settings: Settings) => void; onSpeak: (text: string) => void };
+type Props = { settings: Settings; playing: boolean; onClose: () => void; onSave: (settings: Settings) => void };
 
-export default function SettingsDialog({ settings, playing, onClose, onSave, onSpeak }: Props) {
+export default function SettingsDialog({ settings, playing, onClose, onSave }: Props) {
   const [draft, setDraft] = useState<Settings>({ ...settings, skills: [...settings.skills], grades: [...settings.grades] });
   const dialog = useRef<HTMLDialogElement>(null);
   const changedGame = scoreKey(settings) !== scoreKey(draft);
+  const listeningOnly = !draft.voice && Math.min(...draft.grades) < 2 && draft.skills.length > 0 && draft.skills.every(skill => skill === "letters");
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
     return () => { element?.close(); };
   }, []);
   function update<K extends keyof Settings>(key: K, value: Settings[K]) { setDraft(current => ({ ...current, [key]: value })); }
-  function submit(event: FormEvent) { event.preventDefault(); if (draft.skills.length && draft.grades.length) onSave(draft); }
+  function submit(event: FormEvent) { event.preventDefault(); if (draft.skills.length && draft.grades.length && !listeningOnly) onSave(draft); }
   function toggleSkill(id: SkillId) {
     update("skills", draft.skills.includes(id) ? draft.skills.filter(skill => skill !== id) : [...draft.skills, id]);
   }
   function toggleGrade(id: Grade) { update("grades", draft.grades.includes(id) ? draft.grades.filter(grade => grade !== id) : [...draft.grades, id].sort()); }
-  return <dialog ref={dialog} className="cc-settings" aria-labelledby="cc-settings-title" onCancel={event => { event.preventDefault(); onClose(); }}
-    onFocusCapture={event => {
-      const target = event.target as HTMLElement;
-      const label = target.getAttribute("aria-label");
-      if (draft.voice && label) onSpeak(label);
-    }}>
+  return <dialog ref={dialog} className="cc-settings" aria-labelledby="cc-settings-title" onCancel={event => { event.preventDefault(); onClose(); }}>
     <form onSubmit={submit}>
       <div className="cc-settings-heading"><div><span className="cc-eyebrow">MAKE IT THEIR OWN</span><h2 id="cc-settings-title">Garden settings</h2></div>
         <button type="button" className="cc-icon-button" aria-label="Close settings" onClick={onClose}>✕</button></div>
@@ -52,17 +48,18 @@ export default function SettingsDialog({ settings, playing, onClose, onSave, onS
           </label>)}</div>
           {!draft.grades.length && <p className="cc-validation" role="alert">Choose at least one grade to play.</p>}
         </fieldset>
-        <fieldset><legend>What shall we practice?</legend><p className="cc-setting-note">Check any mix. The nine computer topics follow your 52-skill checklist. Higher grades include earlier practice; topics introduced later use familiar foundations in kindergarten.</p>
+        <fieldset><legend>What shall we practice?</legend><p className="cc-setting-note">Check any mix. Letter-name listening questions need Read aloud; upper/lowercase matching works silently. Higher grades include earlier practice.</p>
           <button type="button" className="cc-text-button" aria-label="Select all nine computer checklist topics" onClick={() => update("skills", SKILL_GROUPS.find(group => group.label === "Your computer literacy checklist").skills.map(skill => skill.id as SkillId))}>Practice the computer checklist</button>
           <div className="cc-skill-groups">{SKILL_GROUPS.map(group => <div key={group.label}><h3>{group.label}</h3>
             {group.skills.map(skill => <label className="cc-skill" key={skill.id}><input type="checkbox" checked={draft.skills.includes(skill.id as SkillId)}
               aria-label={skill.label} onChange={() => toggleSkill(skill.id as SkillId)} /><span className="cc-skill-icon" aria-hidden="true">{skill.icon}</span><span>{skill.label}</span></label>)}
           </div>)}</div>
           {!draft.skills.length && <p className="cc-validation" role="alert">Choose at least one skill to play.</p>}
+          {listeningOnly && <p className="cc-validation" role="alert">Turn on Read aloud for letter names, or choose another skill such as Big & little letters.</p>}
         </fieldset>
         <fieldset><legend>Sounds & a cheeky helper</legend>
           <div className="cc-toggle-list">
-            <label><span><strong>Read aloud</strong><small>Questions, choices, and spoken controls.</small></span><input type="checkbox" role="switch" aria-label="Read aloud" checked={draft.voice} onChange={() => update("voice", !draft.voice)} /></label>
+            <label><span><strong>Read aloud</strong><small>Read each question automatically. Off by default. Tap question text, clues, or a written choice to hear just that item anytime.</small></span><input type="checkbox" role="switch" aria-label="Read aloud" checked={draft.voice} onChange={() => update("voice", !draft.voice)} /></label>
             <label><span><strong>Garden sounds</strong><small>Happy hops, fanfares, and a cricket reminder after 15 quiet seconds, then every minute.</small></span><input type="checkbox" role="switch" aria-label="Garden sounds and cricket reminders" checked={draft.sounds} onChange={() => update("sounds", !draft.sounds)} /></label>
             <label><span><strong>The cheeky spider</strong><small>A sneaky face marks one wrong leaf when things get tricky.</small></span><input type="checkbox" role="switch" aria-label="Spider helper" checked={draft.spider} onChange={() => update("spider", !draft.spider)} /></label>
           </div>
@@ -77,7 +74,7 @@ export default function SettingsDialog({ settings, playing, onClose, onSave, onS
         <p className="cc-settings-footnote">Computer pictures: <a href="https://github.com/jdecked/twemoji" target="_blank" rel="noreferrer" aria-label="Twemoji picture credits">Twemoji</a>, <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer" aria-label="Picture license, Creative Commons Attribution 4.0">CC BY 4.0</a>.</p>
       </div>
       <div className="cc-settings-actions"><button type="button" className="cc-text-button" aria-label="Cancel settings" onClick={onClose}>Cancel</button>
-        <button className="cc-primary" type="submit" disabled={!draft.skills.length || !draft.grades.length} aria-label={playing && changedGame ? "Save settings and restart the climb" : "Save settings"}>{playing && changedGame ? "Save & restart" : "Save settings"}<span aria-hidden="true">↗</span></button></div>
+        <button className="cc-primary" type="submit" disabled={!draft.skills.length || !draft.grades.length || listeningOnly} aria-label={playing && changedGame ? "Save settings and restart the climb" : "Save settings"}>{playing && changedGame ? "Save & restart" : "Save settings"}<span aria-hidden="true">↗</span></button></div>
     </form>
   </dialog>;
 }

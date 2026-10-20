@@ -21,7 +21,7 @@ describe("Grade selection and progression", () => {
 
   test.each([2, 3, 4, 5])("every category supports each grade with %i distinct, short, narrated choices", platforms => {
     for (const { id: grade } of GRADE_LEVELS) for (const skill of SKILLS) {
-      const settings: Settings = { ...DEFAULT_SETTINGS, platforms, grades: [grade], skills: [skill.id as SkillId] };
+      const settings: Settings = { ...DEFAULT_SETTINGS, voice: true, platforms, grades: [grade], skills: [skill.id as SkillId] };
       for (const level of [1, 6, 19, 46, 127, 200]) {
         const question = questionFor("all-grades", level, settings);
         expect(question.grade).toBe(grade);
@@ -39,16 +39,16 @@ describe("Grade selection and progression", () => {
   });
 
   test("grades persist canonically and score keys separate mixes while preserving old K + first-grade records", () => {
-    const legacy = { ...DEFAULT_SETTINGS, grades: [0, 1] as Grade[] };
+    const legacy = { ...DEFAULT_SETTINGS, questions: undefined, grades: [0, 1] as Grade[] };
     const oldKey = JSON.stringify([legacy.platforms, legacy.fallMode, [...legacy.skills].sort(), legacy.spider, legacy.spiderMisses, legacy.spiderWindow]);
     expect(scoreKey(legacy)).toBe(oldKey);
     const { grades: omitted, ...oldSettings } = legacy;
     expect(omitted).toEqual([0, 1]);
     expect(sanitizeSettings(oldSettings).grades).toEqual([0, 1]);
-    expect(sanitizeSettings({}).grades).toEqual([0, 1, 2]);
+    expect(sanitizeSettings({}).grades).toEqual([0]);
     expect(sanitizeSettings({ grades: [2, 0, 2, 1] }).grades).toEqual([0, 1, 2]);
-    expect(sanitizeSettings({ grades: [] }).grades).toEqual([0, 1, 2]);
-    expect(scoreKey(DEFAULT_SETTINGS)).toBe(scoreKey({ ...DEFAULT_SETTINGS, grades: [2, 0, 1] }));
+    expect(sanitizeSettings({ grades: [] }).grades).toEqual([0]);
+    expect(scoreKey({ ...DEFAULT_SETTINGS, grades: [0, 1, 2] })).toBe(scoreKey({ ...DEFAULT_SETTINGS, grades: [2, 0, 1] }));
     const keys = [[0], [1], [2], [0, 1], [0, 2], [1, 2], [0, 1, 2]].map(grades => scoreKey({ ...DEFAULT_SETTINGS, grades: grades as Grade[] }));
     expect(new Set(keys).size).toBe(7);
   });
@@ -67,7 +67,7 @@ describe("Grade selection and progression", () => {
 });
 
 describe("Second-grade content", () => {
-  const rules = (skill: SkillId): Settings => ({ ...DEFAULT_SETTINGS, grades: [2], skills: [skill], platforms: 5 });
+  const rules = (skill: SkillId): Settings => ({ ...DEFAULT_SETTINGS, questions: 2, grades: [2], skills: [skill], platforms: 5 });
 
   test("two-digit addition and subtraction give the correct missing digit, including regrouping", () => {
     let carries = 0, borrows = 0;
