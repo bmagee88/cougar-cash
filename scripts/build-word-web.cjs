@@ -32,6 +32,9 @@ async function main() {
       if (content.includes("rabbit-hole-web-v1") || content.includes("freedictionaryapi.com/api/v1/entries")) {
         throw new Error("Word Web implementation leaked into the public build. Remove public imports of src/WordWeb.");
       }
+      if (file.endsWith(".js") && content.includes("/__word-web-development")) {
+        throw new Error("The local development bypass must not appear in the production browser bundle.");
+      }
     }
   }
 }

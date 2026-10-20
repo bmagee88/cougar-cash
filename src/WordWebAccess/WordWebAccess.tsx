@@ -1,4 +1,4 @@
-import React, { FormEvent, useEffect, useRef, useState } from "react";
+import React, { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import "./WordWebAccess.css";
 
 type SignInConfiguration = { clientId: string; nonce: string };
@@ -33,6 +33,8 @@ function loadGoogle(): Promise<void> {
 }
 
 export default function WordWebAccess() {
+  // CRA substitutes this at build time; the production bundle has no bypass.
+  const development = process.env.NODE_ENV === "development";
   const [configuration, setConfiguration] = useState<SignInConfiguration | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,6 +47,29 @@ export default function WordWebAccess() {
   const button = useRef<HTMLDivElement>(null);
   const cleanupPrivate = useRef<(() => void) | null>(null);
   const mounted = useRef(true);
+
+  const openBundle = useCallback(async (data: { script?: unknown; css?: unknown }) => {
+    if (!mounted.current) return;
+    if (typeof data.script !== "string" || typeof data.css !== "string") throw new Error("Word Web could not load. Please retry.");
+    const style = document.createElement("style");
+    style.textContent = data.css;
+    document.head.appendChild(style);
+    const url = URL.createObjectURL(new Blob([data.script], { type: "text/javascript" }));
+    const script = document.createElement("script");
+    script.src = url;
+    const cleanup = () => {
+      window.dispatchEvent(new Event("word-web:lock"));
+      style.remove(); script.remove(); URL.revokeObjectURL(url);
+    };
+    cleanupPrivate.current = cleanup;
+    await new Promise<void>((resolve, reject) => {
+      script.onload = () => { URL.revokeObjectURL(url); resolve(); };
+      script.onerror = () => { cleanup(); cleanupPrivate.current = null; reject(new Error("Word Web could not load. Please retry.")); };
+      document.body.appendChild(script);
+    });
+    if (!mounted.current) { cleanup(); return; }
+    setPassword(""); setCredential(""); setUnlocked(true);
+  }, []);
 
   useEffect(() => {
     mounted.current = true;
@@ -65,10 +90,18 @@ export default function WordWebAccess() {
     setLoading(true); setError(""); setCredential(""); setConfiguration(null);
     const start = async () => {
       try {
-        const response = await fetch("/api/word-web/config", { credentials: "same-origin", cache: "no-store", signal: controller.signal });
-        if (!response.headers.get("content-type")?.includes("application/json")) throw new Error("Word Web sign-in is unavailable. Start the app backend and retry.");
+        const response = await fetch(development ? "/__word-web-development" : "/api/word-web/config", {
+          credentials: "same-origin", cache: "no-store", signal: controller.signal,
+        });
+        if (!response.headers.get("content-type")?.includes("application/json")) throw new Error(development
+          ? "Restart the frontend development server, then retry."
+          : "Word Web sign-in is unavailable. Start the app backend and retry.");
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Word Web sign-in is unavailable.");
+        if (development) {
+          if (active) await openBundle(data);
+          return;
+        }
         if (typeof data.clientId !== "string" || typeof data.nonce !== "string") throw new Error("Word Web sign-in is unavailable.");
         await loadGoogle();
         if (!active) return;
@@ -79,7 +112,7 @@ export default function WordWebAccess() {
     };
     start();
     return () => { active = false; controller.abort(); };
-  }, [attempt]);
+  }, [attempt, development, openBundle]);
 
   useEffect(() => {
     if (!configuration || !button.current) return;
@@ -111,27 +144,7 @@ export default function WordWebAccess() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Access denied.");
-      if (!mounted.current) return;
-      if (typeof data.script !== "string" || typeof data.css !== "string") throw new Error("Word Web could not load. Please retry.");
-      // Only the authenticated server response can supply the private implementation.
-      const style = document.createElement("style");
-      style.textContent = data.css;
-      document.head.appendChild(style);
-      const url = URL.createObjectURL(new Blob([data.script], { type: "text/javascript" }));
-      const script = document.createElement("script");
-      script.src = url;
-      const cleanup = () => {
-        window.dispatchEvent(new Event("word-web:lock"));
-        style.remove(); script.remove(); URL.revokeObjectURL(url);
-      };
-      cleanupPrivate.current = cleanup;
-      await new Promise<void>((resolve, reject) => {
-        script.onload = () => { URL.revokeObjectURL(url); resolve(); };
-        script.onerror = () => { cleanup(); cleanupPrivate.current = null; reject(new Error("Word Web could not load. Sign in again to retry.")); };
-        document.body.appendChild(script);
-      });
-      if (!mounted.current) { cleanup(); return; }
-      setPassword(""); setCredential(""); setUnlocked(true);
+      await openBundle(data);
     } catch (caught) {
       if (mounted.current) { setPassword(""); setError(caught instanceof Error ? caught.message : "Sign-in failed. Please retry."); }
     } finally { if (mounted.current) setBusy(false); }
@@ -139,7 +152,11 @@ export default function WordWebAccess() {
 
   return <>
     {!unlocked && <main className="ww-access">
-      <form className="ww-access-card" onSubmit={unlock}>
+      {development ? <section className="ww-access-card">
+        <h1>Opening Word Web…</h1>
+        {error ? <><p className="ww-access-error" role="alert">{error}</p><button className="ww-access-submit" type="button" onClick={() => setAttempt(value => value + 1)}>Retry</button></>
+          : <p className="ww-access-status" role="status">Loading your web.</p>}
+      </section> : <form className="ww-access-card" onSubmit={unlock}>
         <div className="ww-access-mark" aria-hidden="true">✳</div>
         <p className="ww-access-eyebrow">RABBIT HOLE · PRIVATE ACCESS</p>
         <h1>A world of words awaits.</h1>
@@ -155,7 +172,7 @@ export default function WordWebAccess() {
         <button className="ww-access-submit" type="submit" disabled={busy || loading || !credential || !configuration}>{busy ? "Checking access…" : "Open Word Web"}</button>
         {!loading && <button className="ww-access-retry" type="button" disabled={busy} onClick={() => setAttempt(value => value + 1)}>Restart sign-in</button>}
         <p className="ww-access-note">Approved Google accounts only. Sign-in is required again on every visit or refresh.</p>
-      </form>
+      </form>}
     </main>}
     <div id="word-web-private-root" hidden={!unlocked} />
   </>;

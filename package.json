@@ -39,7 +39,7 @@
     "test:fishing": "react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame",
     "simulate:fishing": "node scripts/simulate-fishing.cjs",
     "postinstall": "node scripts/patch-chess-source-map.js",
-    "prestart": "node scripts/patch-chess-source-map.js",
+    "prestart": "node scripts/patch-chess-source-map.js && npm run build:word-web",
     "start": "tsc & react-scripts start",
     "prestart:frontend": "node scripts/patch-chess-source-map.js && npm run build:word-web",
     "start:frontend": "set PORT=3001&&react-scripts start",
@@ -50,7 +50,7 @@
     "build": "react-scripts build && npm run build:word-web -- --check-public",
     "build:word-web": "node scripts/build-word-web.cjs",
     "watch:word-web": "node scripts/build-word-web.cjs --watch",
-    "test:word-web-access": "node --test server/wordWebAccess.test.js",
+    "test:word-web-access": "node --test server/wordWebAccess.test.js server/wordWebDevelopment.test.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

@@ -59,7 +59,7 @@ test("only verified, allowlisted Google identity plus password releases private 
 test("wrong/missing password, email, credentials and client flags never load the bundle", async () => {
   const app = await setup();
   const valid = JSON.parse(app.request.body);
-  for (const patch of [{ password: "incorrect" }, { password: "" }, { email: "someone@example.test" }, { credential: undefined }, { credential: { sub: "fake" } }, { password: undefined, unlocked: true, isAdmin: true, authenticated: true }]) {
+  for (const patch of [{ password: "incorrect" }, { password: "" }, { email: "someone@example.test" }, { credential: undefined }, { credential: { sub: "fake" } }, { password: undefined, unlocked: true, isAdmin: true, authenticated: true }, { password: undefined, development: true, NODE_ENV: "development" }]) {
     denied(await app.handler({ ...app.request, body: JSON.stringify({ ...valid, ...patch }) }));
   }
   assert.equal(app.reads(), 0);
@@ -112,7 +112,7 @@ test("every visit gets a fresh Google nonce", async () => {
 test("direct GET, alternate paths, wrong origins and cross-site requests never release code", async () => {
   const app = await setup();
   for (const method of ["GET", "HEAD", "PUT", "OPTIONS"]) assert.equal((await app.handler({ ...app.request, method })).statusCode, 405);
-  for (const pathname of ["/api/word-web/app", "/api/word-web/unlock/", "/.netlify/functions/word-web-access"]) assert.equal((await app.handler({ ...app.request, pathname })).statusCode, 404);
+  for (const pathname of ["/api/word-web/app", "/api/word-web/unlock/", "/.netlify/functions/word-web-access", "/__word-web-development"]) assert.equal((await app.handler({ ...app.request, pathname })).statusCode, 404);
   for (const headers of [{ ...app.request.headers, origin: "https://evil.example.test" }, { ...app.request.headers, origin: `${origin}/path` }, { ...app.request.headers, origin: undefined }, { ...app.request.headers, "sec-fetch-site": "cross-site" }]) denied(await app.handler({ ...app.request, headers }));
   assert.equal(app.reads(), 0);
 });

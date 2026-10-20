@@ -86,3 +86,34 @@ test("editing email requires selecting a Google account again", async () => {
   expect(screen.getByRole("button", { name: "Open Word Web" }).hasAttribute("disabled")).toBe(true);
   expect(fetchMock).toHaveBeenCalledTimes(1);
 });
+
+test("development opens the app automatically without email, password, or Google sign-in", async () => {
+  const previous = process.env.NODE_ENV;
+  (process.env as any).NODE_ENV = "development";
+  fetchMock.mockResolvedValueOnce(response({ script: "private code", css: ".dev-only-style {}" }));
+  const app = render(<WordWebAccess />);
+  try {
+    expect(screen.queryByLabelText("Email", { exact: true })).toBeNull();
+    expect(screen.queryByLabelText("Password", { exact: true })).toBeNull();
+    await waitFor(() => expect(document.querySelector('script[src="blob:test-private-bundle"]')).toBeTruthy());
+    act(() => { document.querySelector('script[src="blob:test-private-bundle"]')!.dispatchEvent(new Event("load")); });
+    await waitFor(() => expect(document.getElementById("word-web-private-root")?.hidden).toBe(false));
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("/__word-web-development");
+    expect((window as any).google.accounts.id.initialize).not.toHaveBeenCalled();
+  } finally { app.unmount(); (process.env as any).NODE_ENV = previous; }
+});
+
+test("development loading errors offer retry without falling back to Google login", async () => {
+  const previous = process.env.NODE_ENV;
+  (process.env as any).NODE_ENV = "development";
+  fetchMock.mockResolvedValueOnce(response({ error: "Build Word Web, then retry." }, 503));
+  const app = render(<WordWebAccess />);
+  try {
+    expect((await screen.findByRole("alert")).textContent).toContain("Build Word Web, then retry.");
+    expect(screen.getByRole("button", { name: "Retry" })).toBeTruthy();
+    expect(document.getElementById("word-web-private-root")?.hidden).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect((window as any).google.accounts.id.initialize).not.toHaveBeenCalled();
+  } finally { app.unmount(); (process.env as any).NODE_ENV = previous; }
+});
