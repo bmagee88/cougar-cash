@@ -6,17 +6,6 @@
 [build.environment]
   GENERATE_SOURCEMAP = "false"
 
-[functions."word-web-access"]
-  included_files = [".word-web-private/word-web.js", ".word-web-private/word-web.css"]
-
-[[headers]]
-  for = "/word-web"
-  [headers.values]
-    Cache-Control = "no-store"
-    X-Robots-Tag = "noindex, nofollow, noarchive"
-    Referrer-Policy = "no-referrer"
-    Cross-Origin-Opener-Policy = "same-origin-allow-popups"
-
 [dev]
   command = "npm run start:frontend"
   port = 8888
