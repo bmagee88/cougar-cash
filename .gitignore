@@ -12,6 +12,7 @@
 # production
 /dist
 /build
+/.word-web-private/
 ./env
 .netlify-local/
 

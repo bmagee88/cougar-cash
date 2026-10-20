@@ -34,6 +34,7 @@ const ParentLetter = lazy(() => import("./ParentLetter/ParentLetter"));
 const SoundButton = lazy(() => import("./SoundButton/SoundButton"));
 const DndZoneCombatSimulator = lazy(() => import("./DndZoneCombatSimulator/DndZoneCombatSimulator"));
 const CuriosityApp = lazy(() => import("./Curiosity App/CuriosityApp"));
+const WordWebAccess = lazy(() => import("./WordWebAccess/WordWebAccess"));
 const IrregularShapeGenerator = lazy(() => import("./IrregularShapeGenerator/IrregularShapeGenerator"));
 const PadletSessionApp = lazy(() => import("./PadletSessions/PadletSessionApp"));
 const TypingBossApp = lazy(() => import("./TypingBoss/TypingBossApp"));
@@ -114,6 +115,7 @@ function App() {
             <Route path="/sound" element={<SoundButton />} />
             <Route path="/combat-sim" element={<DndZoneCombatSimulator />} />
             <Route path="/curiosity" element={<CuriosityApp />} />
+            <Route path="/word-web" element={<WordWebAccess />} />
             <Route
               path="/shape-gen"
               element={<IrregularShapeGenerator />}
