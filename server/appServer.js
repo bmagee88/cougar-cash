@@ -8,6 +8,7 @@ const {
   refreshAllPatternSessionStatuses,
 } = require("./patternGame");
 const { closePawPassPool, handlePawPassRequest } = require("./pawPass");
+const { handleWordWebRequest } = require("./wordWebAccess");
 
 const PORT = Number(
   process.env.APP_SERVER_PORT ||
@@ -2839,6 +2840,11 @@ function handleExportCsv(res, session, url) {
 }
 
 async function requestHandler(req, res) {
+  const wordWebUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+  if (wordWebUrl.pathname.startsWith("/api/word-web/")) {
+    await handleWordWebRequest(req, res, wordWebUrl);
+    return;
+  }
   setCors(res);
 
   if (req.method === "OPTIONS") {
