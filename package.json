@@ -39,18 +39,15 @@
     "test:fishing": "react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame",
     "simulate:fishing": "node scripts/simulate-fishing.cjs",
     "postinstall": "node scripts/patch-chess-source-map.js",
-    "prestart": "node scripts/patch-chess-source-map.js && npm run build:word-web",
+    "prestart": "node scripts/patch-chess-source-map.js",
     "start": "tsc & react-scripts start",
-    "prestart:frontend": "node scripts/patch-chess-source-map.js && npm run build:word-web",
+    "prestart:frontend": "node scripts/patch-chess-source-map.js",
     "start:frontend": "set PORT=3001&&react-scripts start",
     "start:backend": "node server/appServer.js",
     "start:app-server": "node server/appServer.js",
     "dev:netlify": "set APPDATA=%CD%\\.netlify-local\\appdata&&set LOCALAPPDATA=%CD%\\.netlify-local\\localappdata&&set XDG_CONFIG_HOME=%CD%\\.netlify-local\\xdg-config&&netlify dev",
     "prebuild": "node scripts/patch-chess-source-map.js",
-    "build": "react-scripts build && npm run build:word-web -- --check-public",
-    "build:word-web": "node scripts/build-word-web.cjs",
-    "watch:word-web": "node scripts/build-word-web.cjs --watch",
-    "test:word-web-access": "node --test server/wordWebAccess.test.js server/wordWebDevelopment.test.js",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -74,7 +71,6 @@
   },
   "devDependencies": {
     "netlify-cli": "^26.2.0",
-    "typescript": "^4.9.5",
-    "esbuild": "^0.28.0"
+    "typescript": "^4.9.5"
   }
 }
