@@ -2,7 +2,7 @@
 
 Aligned to the supplied 52-requirement cumulative checklist. Each requirement has one modular question family. Kindergarten introduces 18 requirements, grade 1 adds 16 (34 cumulative), and grade 2 adds 18 (52 cumulative).
 
-The nine topics have separate checkboxes in Garden settings. **Practice the computer checklist** selects just these nine topics. Existing literacy/math choices and the three classic computer categories remain available separately. New installations enable literacy/math plus the nine checklist topics; existing saved selections and climbs stay intact.
+The nine topics have separate checkboxes in Garden settings. **Practice the computer checklist** selects just these nine topics. Existing literacy/math choices and the three classic computer categories remain available separately. Defaults are kindergarten only, all subjects checked (including classic practice), and automatic reading off. Existing preferences adopt these defaults once; saved climbs stay intact.
 
 Higher grades draw about 60% from that grade's new requirements and 40% from earlier requirements, when both exist in the topic. Browser & web borrows teacher-link foundations in K; Creation & files borrows basic keyboard foundations in K; Troubleshooting borrows asking-for-help foundations before grade 2. These do not relabel later requirements as kindergarten content.
 
@@ -10,7 +10,7 @@ Higher grades draw about 60% from that grade's new requirements and 40% from ear
 
 52 families are not a fixed 52-question quiz. Authored facts and classroom scenarios feed seeded generators: names, actions, subjects, text-editing examples, letter/digit keys, icon functions, search phrases and addresses, account ownership, picture patterns, robot paths, and loop counts vary. Numbered scenario choices and leaf order shuffle independently. Question content stays fixed during a climb and on Continue; retries only rearrange leaves.
 
-Written question prompts use at most six words. Longer context and numbered choices are displayed and narrated. Leaves remain a single letter, digit, symbol, or picture. With narration off, word scenarios get reading time based on their length, followed by a thinking second. Examples below show one seeded example per family, not every generated variation.
+Written question prompts use at most six words. Longer context and numbered choices are displayed; tap any item to hear only that item, even with automatic reading off. Leaves remain a single letter, digit, symbol, or picture. Every question has a 1.5-second total answer pause; active reading must finish before the final half-second of thinking. For numbered scenarios, number keys select the number printed on a leaf, with the same number in its spoken label. Examples below show one seeded example per family, not every generated variation.
 
 ## Coverage and examples
 
@@ -47,7 +47,7 @@ Written question prompts use at most six words. Longer context and numbered choi
 | P1 · K | Move pointer and single-click or tap | What moves the pointer? / Pip wants the arrow on a button. | 3: Move the mouse or trackpad. |
 | P2 · K | Drag an object | How can Pip drag it? / Move a picture into a box. | 3: Hold it, move, then let go. |
 | P3 · K | Scroll up and down | Which way should Pip scroll? / Return toward the page top | scroll up |
-| P4 · K | Letters, numbers, Space, Enter, Backspace | Find the O key. | oh |
+| P4 · K | Letters, numbers, Space, Enter, Backspace | Listen. Find the key. / Spoken: Find the O key. | oh |
 | P5 · K | Type and correct a word | Which key removes the last letter? / Wanted: cat. Typed: catq. Cursor at end | Backspace |
 | P6 · 1 | Double-click and context menu | How can Pip open its menu? / This item has a context menu. | 1: Right-click, or touch and hold. |
 | P7 · 1 | Shift, Caps Lock, Tab, arrows | Which key locks capital letters? | Caps Lock |

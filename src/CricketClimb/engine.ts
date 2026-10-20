@@ -3,6 +3,7 @@ import {
   GRADE_LEVELS, Grade, LETTER_NAMES, NAVIGATION_SYMBOLS, SIGHT_WORDS, SKILLS, SkillId, THREE_LETTER_WORDS,
 } from "./resources";
 import { algorithmQuestion, computerQuestion } from "./discovery";
+import { MATH_GENERATORS } from "./math";
 import { SECOND_GRADE_GENERATORS } from "./secondGrade";
 import { CURRICULUM_GENERATORS } from "./curriculum";
 import type { ComputerTopic } from "./curriculumResources";
@@ -11,11 +12,13 @@ export type Settings = {
   platforms: number; fallMode: "limited" | "random"; skills: SkillId[]; grades: Grade[];
   voice: boolean; sounds: boolean; theme: "sunny" | "moonlit";
   spider: boolean; spiderMisses: number; spiderWindow: number;
+  questions?: 2 | 3;
+  preferences?: 2;
 };
 export const DEFAULT_SETTINGS: Settings = {
-  platforms: 3, fallMode: "limited", skills: SKILLS.map(({ id }) => id as SkillId).filter(id => !["symbols", "computers", "algorithms"].includes(id)),
-  grades: [0, 1, 2],
-  voice: true, sounds: true, theme: "sunny", spider: true, spiderMisses: 3, spiderWindow: 5,
+  platforms: 3, fallMode: "limited", skills: SKILLS.map(({ id }) => id as SkillId),
+  grades: [0], questions: 3, preferences: 2,
+  voice: false, sounds: true, theme: "sunny", spider: true, spiderMisses: 3, spiderWindow: 5,
 };
 export const SETTINGS_KEY = "cricket-climb.settings.v1";
 export const SCORES_KEY = "cricket-climb.scores.v1";
@@ -26,10 +29,12 @@ export type Question = {
   sequence?: { caption: string; steps: { token: Answer; label: string; missing?: boolean; incorrect?: boolean }[]; reference?: number; repeat?: number };
   robot?: { start: number; goal: number };
   context?: string;
-  options?: { value: string; text: string }[];
+  options?: { value: string; text: string; spoken?: string }[];
   curriculum?: { requirement: string; introduced: Grade; family: string };
+  listening?: boolean;
 };
-export type Row = { level: number; question: Question; choices: Answer[]; correctLane: number; open: boolean; visits: number };
+export type QuestionSource = { questions: 2 | 3; voice: boolean };
+export type Row = { level: number; question: Question; choices: Answer[]; correctLane: number; open: boolean; visits: number; source?: QuestionSource };
 export type Run = {
   seed: string; level: number; standing: { level: number; lane: number }; rows: Record<number, Row>;
   history: boolean[]; best: number; celebrated: number[];
@@ -46,7 +51,9 @@ export function sanitizeSettings(raw: Partial<Settings> = {}): Settings {
     fallMode: raw.fallMode === "random" ? "random" : "limited",
     skills: skills.length ? skills : [...DEFAULT_SETTINGS.skills],
     grades: grades.length ? [...grades] : [...DEFAULT_SETTINGS.grades],
-    voice: typeof raw.voice === "boolean" ? raw.voice : true,
+    voice: typeof raw.voice === "boolean" ? raw.voice : DEFAULT_SETTINGS.voice,
+    ...(raw.questions === 3 ? { questions: 3 as const } : raw.questions === 2 ? { questions: 2 as const } : !Array.isArray(raw.skills) ? { questions: 3 as const } : {}),
+    ...(raw.preferences === 2 ? { preferences: 2 as const } : {}),
     sounds: typeof raw.sounds === "boolean" ? raw.sounds : true,
     theme: raw.theme === "moonlit" ? "moonlit" : "sunny",
     spider: typeof raw.spider === "boolean" ? raw.spider : true,
@@ -60,7 +67,8 @@ export function scoreKey(settings: Settings) {
   // Preserve the existing score key for the original K + first-grade game.
   return JSON.stringify([settings.platforms, settings.fallMode, [...settings.skills].sort(), settings.spider,
     ...(settings.spider ? [settings.spiderMisses, settings.spiderWindow] : []),
-    ...(grades.length === 2 && grades[0] === 0 && grades[1] === 1 ? [] : [grades])]);
+    ...(grades.length === 2 && grades[0] === 0 && grades[1] === 1 ? [] : [grades]),
+    ...(settings.questions === 3 ? ["math-language-v3"] : settings.questions === 2 ? ["tap-reading-v2"] : [])]);
 }
 
 export function createRng(seed: string) {
@@ -101,7 +109,7 @@ export function gradeFor(level: number, settings: Settings) {
 }
 
 export type Draft = Omit<Question, "id" | "skill" | "choices" | "firstGrade" | "grade"> & { pool: Answer[] };
-export type GeneratorContext = { rng: () => number; tier: number; firstGrade: boolean; grade: Grade; level: number; platforms?: number };
+export type GeneratorContext = { rng: () => number; tier: number; firstGrade: boolean; grade: Grade; level: number; platforms?: number; voice?: boolean };
 const letterPool = ALPHABET.map(letter);
 const digitPool = Array.from({ length: 10 }, (_, n) => digit(n));
 
@@ -179,17 +187,24 @@ export const GENERATORS: Partial<Record<SkillId, (context: GeneratorContext) => 
 
 export function questionFor(seed: string, level: number, settings: Settings): Question {
   const rng = createRng(`${seed}:question:${level}`), grade = gradeFor(level, settings);
+  const eligible = settings.questions !== undefined && !settings.voice && grade.id < 2 ? settings.skills.filter(skill => skill !== "letters") : settings.skills;
+  // A defensive visual fallback also lets an older, letter-only save continue muted.
+  const skills: SkillId[] = eligible.length ? eligible : ["letterPairs"];
   // Balanced shuffled rounds give each checked skill a turn, without a predictable skill order.
-  const cycle = Math.floor((level - 1) / settings.skills.length);
-  const order = shuffle([...settings.skills].sort(), createRng(`${seed}:skills:${cycle}`));
+  const cycle = Math.floor((level - 1) / skills.length);
+  const order = shuffle([...skills].sort(), createRng(`${seed}:skills:${cycle}`));
   const skill = order[(level - 1) % order.length];
   // New curriculum IDs leave all earlier IDs and seeded saves unchanged.
-  const generator = CURRICULUM_GENERATORS[skill as ComputerTopic] || (grade.id === 2 ? SECOND_GRADE_GENERATORS[skill] : GENERATORS[skill]);
-  const draft = generator({ rng, tier: grade.tier, firstGrade: grade.id >= 1, grade: grade.id, level, platforms: settings.platforms });
+  const math = settings.questions === 3 && (skill !== "counting" || rng() < .6) ? MATH_GENERATORS[skill] : undefined;
+  const generator = math || CURRICULUM_GENERATORS[skill as ComputerTopic] || (grade.id === 2 ? SECOND_GRADE_GENERATORS[skill] : GENERATORS[skill]);
+  const draft = generator({ rng, tier: grade.tier, firstGrade: grade.id >= 1, grade: grade.id, level, platforms: settings.platforms,
+    ...(settings.questions !== undefined ? { voice: settings.voice } : {}) });
   const correct = draft.pool.find(({ value }) => value === draft.answer);
   const other = shuffle(draft.pool.filter(({ value }) => value !== draft.answer), rng).slice(0, settings.platforms - 1);
   const { pool, ...content } = draft;
-  return { ...content, skill, id: `${seed}:${level}`, firstGrade: grade.id >= 1, grade: grade.id, choices: [correct, ...other] };
+  const listening = (skill === "letters" && grade.id < 2) || /^Find the [A-Z0-9] key\.$/.test(content.prompt);
+  return { ...content, ...(listening ? { prompt: skill === "letters" ? "Listen. Find the letter." : "Listen. Find the key.", listening: true } : {}),
+    skill, id: `${seed}:${level}`, firstGrade: grade.id >= 1, grade: grade.id, choices: [correct, ...other] };
 }
 
 export function createRun(seed: string, settings: Settings): Run {
@@ -216,7 +231,19 @@ export function prepareRow(run: Run, settings: Settings): Run {
   }
   const choices = Array.from({ length: settings.platforms }, (_, lane) => lane === correctLane
     ? question.choices.find(({ value }) => value === question.answer) : distractors.shift());
-  return { ...run, rows: { ...run.rows, [level]: { level, question, choices, correctLane, open: false, visits: (previous?.visits || 0) + 1 } } };
+  const source = previous ? previous.source : settings.questions !== undefined ? { questions: settings.questions, voice: settings.voice } : undefined;
+  return { ...run, rows: { ...run.rows, [level]: { level, question, choices, correctLane, open: false, visits: (previous?.visits || 0) + 1, ...(source ? { source } : {}) } } };
+}
+
+// Audio can be changed without losing the climb. Retain other questions and safe
+// lanes; replace only an unanswered listening question that is no longer enabled.
+export function withoutMutedListening(run: Run, settings: Settings): Run {
+  const row = run.rows[run.level];
+  if (settings.voice || !row.question.listening) return run;
+  const question = questionFor(run.seed, run.level, { ...settings, questions: settings.questions || 2, voice: false });
+  const other = shuffle(question.choices.filter(choice => choice.value !== question.answer), createRng(`${run.seed}:silent:${run.level}:${row.visits}`));
+  const choices = row.choices.map((_, lane) => lane === row.correctLane ? question.choices[0] : other.shift());
+  return { ...run, rows: { ...run.rows, [run.level]: { ...row, question, choices, source: { questions: settings.questions || 2, voice: false } } } };
 }
 
 export function resolveAttempt(run: Run, lane: number, settings: Settings) {

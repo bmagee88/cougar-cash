@@ -7,6 +7,7 @@ import { SKILLS } from "./resources";
 import { PROGRESS_KEY, snapshotProgress } from "./progress";
 import { TokenArt } from "./QuestionClues";
 import { COMPUTER_TOOLS } from "./discoveryResources";
+import { displayReading, questionReading } from "./reading";
 
 jest.mock("react-router-dom", () => ({ Link: ({ to, children, ...props }) => <a href={to} {...props}>{children}</a> }), { virtual: true });
 jest.mock("./audio", () => ({
@@ -22,7 +23,7 @@ beforeEach(() => {
   jest.useFakeTimers(); jest.setSystemTime(new Date("2026-10-19T00:00:00Z"));
   localStorage.clear();
   // Keep the original game-rule/timing fixtures stable as new topics are added.
-  settings = { ...engine.DEFAULT_SETTINGS, skills: SKILLS.filter(skill => !["devices", "keyboard", "navigation", "web", "files", "safety", "thinking", "troubleshooting", "accessibility"].includes(skill.id)).map(skill => skill.id), voice: false };
+  settings = { ...engine.DEFAULT_SETTINGS, grades: [0, 1, 2], skills: SKILLS.filter(skill => !["devices", "keyboard", "navigation", "web", "files", "safety", "thinking", "troubleshooting", "accessibility"].includes(skill.id)).map(skill => skill.id), voice: false };
   localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(settings));
   window.matchMedia = jest.fn(() => ({ matches: false }));
   global.ResizeObserver = class { observe() {} disconnect() {} };
@@ -51,10 +52,12 @@ test("answer taps stay locked during reading and thinking, then lock immediately
   answers().forEach(button => expect(button).toBeDisabled());
   fireEvent.click(answers()[0]);
   expect(screen.getByText("Look closely at the question…")).toBeInTheDocument();
-  await advance(3000);
+  await advance(999); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(1);
   expect(screen.getByText("Take a little thinking time…")).toBeInTheDocument();
   answers().forEach(button => expect(button).toBeDisabled());
-  await advance(1000);
+  await advance(499); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(1);
   answers().forEach(button => expect(button).toBeEnabled());
   fireEvent.click(answers()[0]); fireEvent.click(answers()[1]);
   answers().forEach(button => expect(button).toBeDisabled());
@@ -104,9 +107,9 @@ test("voice narration must finish before the thinking gate opens", async () => {
   fireEvent.click(screen.getByRole("button", { name: /A fresh little climb! Start over/ }));
   await advance(30000);
   answers().forEach(button => expect(button).toBeDisabled());
-  expect(audio.speak.mock.calls[0][0]).toContain("Choices, from left to right");
+  expect(audio.speak.mock.calls[0][0]).toBe(questionReading(engine.questionFor("ui-test", 1, { ...settings, voice: true })));
   await act(async () => { finishSpeech(true); });
-  await advance(999); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(499); answers().forEach(button => expect(button).toBeDisabled());
   await advance(1); answers().forEach(button => expect(button).toBeEnabled());
 });
 
@@ -179,12 +182,12 @@ test("settings prevent an empty skill selection and changing game rules starts a
   SKILLS.forEach(skill => { const checkbox = screen.getByRole("checkbox", { name: skill.label }); if (checkbox.checked) fireEvent.click(checkbox); });
   expect(screen.getByRole("button", { name: /Save settings and restart/ })).toBeDisabled();
   expect(screen.getByRole("alert")).toHaveTextContent("Choose at least one skill");
-  fireEvent.click(screen.getByRole("checkbox", { name: "Letter names" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Big & little letters" }));
   fireEvent.click(screen.getByRole("button", { name: "5 answer leaves" }));
   fireEvent.click(screen.getByRole("button", { name: /Save settings and restart/ }));
   expect(answers()).toHaveLength(5);
-  expect(JSON.parse(localStorage.getItem(engine.SETTINGS_KEY)).skills).toEqual(["letters"]);
-  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(engine.questionFor("ui-test", 1, { ...settings, platforms: 5, skills: ["letters"] }).prompt);
+  expect(JSON.parse(localStorage.getItem(engine.SETTINGS_KEY)).skills).toEqual(["letterPairs"]);
+  expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(engine.questionFor("ui-test", 1, { ...settings, platforms: 5, skills: ["letterPairs"] }).prompt);
 });
 
 test("grade checkboxes prevent an empty selection and second grade alone starts immediately", async () => {
@@ -201,7 +204,7 @@ test("grade checkboxes prevent an empty selection and second grade alone starts 
   expect(JSON.parse(localStorage.getItem(engine.SETTINGS_KEY)).grades).toEqual([2]);
   expect(JSON.parse(localStorage.getItem(PROGRESS_KEY)).settings.grades).toEqual([2]);
   expect(document.querySelector(".cc-question--second-grade")).toBeInTheDocument();
-  expect(screen.getByText("2nd grade discoveries")).toBeInTheDocument();
+  expect(document.querySelector(".cc-question-grade")).toHaveTextContent("2nd grade");
   expect(screen.getByLabelText("Current level 0")).toBeInTheDocument();
   answers().forEach(button => expect(button).toBeDisabled());
   await advance(3000); await advance(1000); answers().forEach(button => expect(button).toBeEnabled());
@@ -226,7 +229,7 @@ test("entering second grade celebrates the actual grade transition and saves lev
   expect(JSON.parse(localStorage.getItem(PROGRESS_KEY))).toMatchObject({ level: 127, settings: { grades: [0, 1, 2] } });
   await advance(2300); await advance(600);
   expect(document.querySelector(".cc-question--second-grade")).toBeInTheDocument();
-  expect(screen.getByText("2nd grade discoveries")).toBeInTheDocument();
+  expect(document.querySelector(".cc-question-grade")).toHaveTextContent("2nd grade");
 });
 
 test("the opening has two friendly choices and continue is disabled without a saved climb", () => {
@@ -257,7 +260,7 @@ test("continue resumes the exact question, answer order, and level after a reloa
   expect(screen.getByRole("img", { name: "Pip the cricket, landing" })).toBeInTheDocument();
   await advance(700);
   expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(run.rows[12].question.prompt);
-  expect(answers().map(button => button.getAttribute("aria-label"))).toEqual(run.rows[12].choices.map((choice, i) => `Answer ${i + 1}: ${choice.spoken}`));
+  expect(answers().map(button => button.getAttribute("aria-label"))).toEqual(run.rows[12].choices.map((choice, i) => run.rows[12].question.options ? `Answer ${choice.spoken}` : `Answer ${i + 1}: ${choice.spoken}`));
   expect(screen.getByLabelText("Current level 11")).toBeInTheDocument();
   answers().forEach(button => expect(button).toBeDisabled());
   await advance(3000); await advance(1000);
@@ -324,7 +327,7 @@ test("reduced motion skips the speedy camera scroll and still waits for reading 
   expect(screen.getByLabelText("Current level 39")).toBeInTheDocument();
   await advance(180); await advance(250);
   answers().forEach(button => expect(button).toBeDisabled());
-  await advance(3000); await advance(999);
+  await advance(1000); await advance(499);
   answers().forEach(button => expect(button).toBeDisabled());
   await advance(1);
   answers().forEach(button => expect(button).toBeEnabled());
@@ -341,29 +344,19 @@ test("leaving during the return jump cancels it and preserves the original saved
   expect(JSON.parse(localStorage.getItem(PROGRESS_KEY))).toEqual(save);
 });
 
-test("the return greeting and landing finish before the saved question is narrated", async () => {
+test("the return jump is quiet and finishes before just the saved question is narrated", async () => {
   savedClimb(12);
   localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify({ ...settings, voice: true }));
-  let finishGreeting, finishQuestion;
-  audio.speak.mockImplementation(text => {
-    if (text.startsWith("Welcome back!")) return new Promise(resolve => { finishGreeting = resolve; });
-    if (text.includes("Choices, from left to right")) return new Promise(resolve => { finishQuestion = resolve; });
-    return Promise.resolve(true);
-  });
+  let finishQuestion;
+  audio.speak.mockImplementation(() => new Promise(resolve => { finishQuestion = resolve; }));
   render(<CricketClimb />);
   fireEvent.click(screen.getByRole("button", { name: "Keep hopping! Continue at level 12" }));
-  await advance(10000);
-  expect(screen.getByRole("img", { name: "Pip the cricket, charging" })).toBeInTheDocument();
-  expect(audio.speak).toHaveBeenCalledTimes(1);
-  await act(async () => { finishGreeting(true); });
+  await advance(750); expect(audio.speak).not.toHaveBeenCalled();
   await advance(2300); await advance(300); await advance(700);
-  expect(audio.speak.mock.calls.map(([text]) => text).slice(0, 3)).toEqual([
-    "Welcome back! Ready, steady!", "Wheee!", "Ta-da! Right where you left off!",
-  ]);
-  expect(audio.speak.mock.calls[3][0]).toContain("Level 12.");
+  expect(audio.speak).toHaveBeenCalledTimes(1);
   await advance(10000); answers().forEach(button => expect(button).toBeDisabled());
   await act(async () => { finishQuestion(true); });
-  await advance(999); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(499); answers().forEach(button => expect(button).toBeDisabled());
   await advance(1); answers().forEach(button => expect(button).toBeEnabled());
 });
 
@@ -398,7 +391,7 @@ test("the checklist shortcut selects all nine teacher topics without losing grad
   expect(JSON.parse(localStorage.getItem(engine.SETTINGS_KEY)).skills).toHaveLength(9);
 });
 
-test("word scenarios show every numbered choice and allow enough voice-off reading time", async () => {
+test("word scenarios show every numbered choice and use the same 1.5-second answer pause", async () => {
   const rules = { ...settings, grades: [2], platforms: 5, skills: ["troubleshooting"] };
   localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(rules));
   render(<CricketClimb />);
@@ -407,8 +400,181 @@ test("word scenarios show every numbered choice and allow enough voice-off readi
   const list = screen.getByRole("list", { name: "Choose a number on a leaf" });
   expect(list.children).toHaveLength(5);
   question.options.forEach(option => expect(list).toHaveTextContent(option.text));
-  const duration = Math.max(3000, question.speech.split(/\s+/).length * 360);
-  await advance(4000); answers().forEach(button => expect(button).toBeDisabled());
-  await advance(duration - 4000); answers().forEach(button => expect(button).toBeDisabled());
-  await advance(1000); answers().forEach(button => expect(button).toBeEnabled());
+  await advance(1000); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(499); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(1); answers().forEach(button => expect(button).toBeEnabled());
+  expect(document.querySelectorAll(".cc-leaf-key")).toHaveLength(0);
+  const run = actualCreateRun("ui-test", rules), row = run.rows[1];
+  answers().forEach((button, lane) => expect(button).toHaveAccessibleName(`Answer ${row.choices[lane].spoken}`));
+  const targetLane = row.choices.findIndex((choice, lane) => Number(choice.value) !== lane + 1);
+  expect(targetLane).toBeGreaterThanOrEqual(0);
+  fireEvent.keyDown(window, { key: row.choices[targetLane].value });
+  expect(answers()[targetLane]).toHaveClass("cc-leaf--selected");
+});
+
+test("a new player's defaults check kindergarten and every subject with reading off", () => {
+  localStorage.removeItem(engine.SETTINGS_KEY);
+  render(<CricketClimb />);
+  fireEvent.click(screen.getByRole("button", { name: "Open garden settings" }));
+  expect(screen.getByRole("checkbox", { name: "Kindergarten", exact: true })).toBeChecked();
+  for (const name of ["1st grade", "2nd grade"]) expect(screen.getByRole("checkbox", { name, exact: true })).not.toBeChecked();
+  SKILLS.forEach(skill => expect(screen.getByRole("checkbox", { name: skill.label })).toBeChecked());
+  expect(screen.getByRole("switch", { name: "Read aloud", exact: true })).not.toBeChecked();
+  expect(audio.speak).not.toHaveBeenCalled();
+});
+
+test("written choices read independently with automatic reading off and never choose a leaf", async () => {
+  const rules = { ...settings, skills: ["troubleshooting"], grades: [2], platforms: 5 };
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(rules));
+  render(<CricketClimb />);
+  fireEvent.click(screen.getByRole("button", { name: /A fresh little climb! Start over/ }));
+  const question = engine.questionFor("ui-test", 1, rules);
+  await advance(question.speech.split(/\s+/).length * 360); await advance(1000);
+  expect(audio.speak).not.toHaveBeenCalled();
+  const saved = JSON.parse(localStorage.getItem(PROGRESS_KEY));
+  for (const option of question.options) {
+    fireEvent.click(screen.getByRole("button", { name: `Read choice ${option.value}`, exact: true }));
+    await advance(0);
+    expect(audio.speak.mock.calls.at(-1)[0]).toBe(`${option.value}. ${option.text}`);
+    expect(document.querySelector(".cc-leaf--selected")).toBeNull();
+    expect(JSON.parse(localStorage.getItem(PROGRESS_KEY))).toEqual(saved);
+    await advance(1000);
+  }
+  expect(audio.speak).toHaveBeenCalledTimes(5);
+});
+
+test("question text reads only the question, and a later text tap cancels the earlier reading", async () => {
+  const rules = { ...settings, skills: ["troubleshooting"], grades: [2] };
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(rules));
+  render(<CricketClimb />);
+  fireEvent.click(screen.getByRole("button", { name: /A fresh little climb! Start over/ }));
+  const question = engine.questionFor("ui-test", 1, rules);
+  const requests = [];
+  audio.speak.mockImplementation((text, signal) => new Promise(resolve => requests.push({ text, signal, resolve })));
+  fireEvent.click(screen.getByRole("button", { name: `Read question text: ${question.prompt}`, exact: true }));
+  expect(requests[0].text).toBe(question.prompt);
+  fireEvent.click(screen.getByRole("button", { name: "Read choice 2", exact: true }));
+  expect(requests[0].signal.aborted).toBe(true);
+  expect(requests[1].text).toBe(`2. ${question.options[1].text}`);
+  await act(async () => { requests[0].resolve(false); requests[1].resolve(true); });
+  await advance(1000); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(499); answers().forEach(button => expect(button).toBeDisabled());
+  await advance(1); answers().forEach(button => expect(button).toBeEnabled());
+});
+
+test("tapping a spelling clue reads visible letters and blank instead of the completed word", async () => {
+  const rules = { ...settings, skills: ["spelling"] };
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(rules));
+  render(<CricketClimb />); await start();
+  const question = engine.questionFor("ui-test", 1, rules);
+  fireEvent.click(screen.getByRole("button", { name: "Read the clue", exact: true }));
+  await advance(0);
+  expect(audio.speak.mock.calls.at(-1)[0]).toBe(displayReading(question.display));
+  expect(audio.speak.mock.calls.at(-1)[0]).toContain("blank");
+  expect(audio.speak.mock.calls.at(-1)[0]).not.toContain(question.pictureLabel);
+});
+
+test("a listening question says the letter but keeps it out of the written prompt and never reads choices", async () => {
+  const rules = { ...settings, skills: ["letters"], grades: [0], voice: true };
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(rules));
+  render(<CricketClimb />); await start();
+  const question = engine.questionFor("ui-test", 1, rules);
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Listen. Find the letter.");
+  expect(audio.speak.mock.calls.map(([text]) => text)).toEqual([question.speech]);
+  expect(screen.queryByRole("button", { name: /^Read choice/ })).not.toBeInTheDocument();
+});
+
+test("an unavailable voice replaces a listening-only question with a visual challenge at the same level", async () => {
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify({ ...settings, skills: ["letters"], grades: [0], voice: true }));
+  audio.speak.mockImplementation(() => Promise.resolve(false));
+  render(<CricketClimb />); await start();
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Find its little letter.");
+  expect(JSON.parse(localStorage.getItem(PROGRESS_KEY))).toMatchObject({ level: 1, best: 0 });
+  await advance(3000); await advance(1000);
+  answers().forEach(button => expect(button).toBeEnabled());
+});
+
+test("older preferences retain their selections while their saved climb stays available", async () => {
+  const { save } = savedClimb(12);
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify({ ...settings, preferences: undefined, questions: undefined, grades: [2], skills: ["computers"], voice: true }));
+  render(<CricketClimb />);
+  expect(screen.getByRole("button", { name: "Keep hopping! Continue at level 12" })).toBeEnabled();
+  expect(JSON.parse(localStorage.getItem(PROGRESS_KEY))).toEqual(save);
+  const defaults = JSON.parse(localStorage.getItem(engine.SETTINGS_KEY));
+  expect(defaults).toMatchObject({ grades: [2], skills: ["computers"], voice: true, preferences: 2 });
+});
+
+test("bed is written in silent mode, hidden with voice on, and restored without changing the question or leaves", async () => {
+  const rules = { ...settings, grades: [0], skills: ["sounds"] };
+  let seed = "";
+  for (let i = 0; i < 300; i++) {
+    const candidate = `bed-example-${i}`;
+    if (engine.questionFor(candidate, 1, rules).pictureLabel === "bed") { seed = candidate; break; }
+  }
+  expect(seed).toBeTruthy();
+  engine.createRun.mockImplementation((unused, selected) => actualCreateRun(seed, selected));
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(rules));
+  render(<CricketClimb />); await start();
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("First letter in bed?");
+  const before = answers().map(button => button.getAttribute("aria-label"));
+  fireEvent.click(screen.getByRole("button", { name: "Read aloud off. Turn on", exact: true }));
+  await advance(0);
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("First letter?");
+  expect(document.querySelector(".cc-question").textContent).not.toContain("bed");
+  expect(screen.getByRole("button", { name: "Read question text: First letter?", exact: true })).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Hear the picture name", exact: true })).toBeInTheDocument();
+  expect(audio.speak.mock.calls.at(-1)[0]).toBe("What is the first letter in bed?");
+  fireEvent.click(screen.getByRole("button", { name: "Read aloud on. Turn off", exact: true }));
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("First letter in bed?");
+  expect(answers().map(button => button.getAttribute("aria-label"))).toEqual(before);
+  expect(JSON.parse(localStorage.getItem(PROGRESS_KEY)).level).toBe(1);
+});
+
+
+test("the next patch checkpoint marks its final level and updates after fanfare", async () => {
+  jest.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(650);
+  const { run } = savedClimb(5);
+  render(<CricketClimb />);
+  fireEvent.click(screen.getByRole("button", { name: "Keep hopping! Continue at level 5" }));
+  await finishReturnJump(); await advance(3000); await advance(1000);
+  expect(document.querySelector(".cc-checkpoint-summary")).not.toBeInTheDocument();
+  expect(screen.getByRole("img", { name: /Patch 2 checkpoint at level 5/ })).toBeInTheDocument();
+  fireEvent.click(answers()[run.rows[5].correctLane]); await advance(700);
+  for (let i = 0; i < 3; i++) await advance(1000);
+  await advance(2300); await advance(600);
+  expect(screen.getByRole("button", { name: /^Patch 2, 0 of 6 completed/ })).toBeInTheDocument();
+});
+
+
+test("every saved setting and personal best survive unmount and reload", () => {
+  const stored = { ...settings, questions: 2, preferences: 2, platforms: 5, fallMode: "random", grades: [1, 2], skills: ["addition", "devices"], voice: true, sounds: false, theme: "moonlit", spider: true, spiderMisses: 4, spiderWindow: 9 };
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(stored));
+  localStorage.setItem(engine.SCORES_KEY, JSON.stringify({ [engine.scoreKey(stored)]: 42 }));
+  for (let reload = 0; reload < 2; reload++) {
+    const view = render(<CricketClimb />);
+    expect(screen.getByRole("button", { name: "Best level 42. Read score aloud" })).toBeInTheDocument();
+    expect(JSON.parse(localStorage.getItem(engine.SETTINGS_KEY))).toEqual(stored);
+    fireEvent.click(screen.getByRole("button", { name: "Open garden settings" }));
+    expect(screen.getByRole("button", { name: "5 answer leaves" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("checkbox", { name: "1st grade", exact: true })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "2nd grade", exact: true })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Kindergarten", exact: true })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Moonlit Meadow theme" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("combobox", { name: "Wrong answers needed for the spider" })).toHaveValue("4");
+    expect(screen.getByRole("combobox", { name: "Number of recent attempts" })).toHaveValue("9");
+    view.unmount();
+  }
+});
+
+test("fresh question versions keep the best for the same rules after reload", async () => {
+  const old = { ...settings, questions: 2 };
+  localStorage.setItem(engine.SETTINGS_KEY, JSON.stringify(old));
+  localStorage.setItem(engine.SCORES_KEY, JSON.stringify({ [engine.scoreKey(old)]: 37 }));
+  let view = render(<CricketClimb />);
+  expect(screen.getByRole("button", { name: "Best level 37. Read score aloud" })).toBeInTheDocument();
+  await start();
+  expect(JSON.parse(localStorage.getItem(engine.SETTINGS_KEY)).questions).toBe(3);
+  expect(screen.getByRole("button", { name: "Best level 37. Read score aloud" })).toBeInTheDocument();
+  view.unmount(); view = render(<CricketClimb />);
+  expect(screen.getByRole("button", { name: "Best level 37. Read score aloud" })).toBeInTheDocument();
 });

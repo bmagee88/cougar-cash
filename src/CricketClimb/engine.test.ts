@@ -1,6 +1,7 @@
-import { DEFAULT_SETTINGS, Run, Settings, createRng, createRun, prepareRow, questionFor, resolveAttempt, sanitizeSettings, scoreKey, segmentFor, spiderIsActive, spiderLaneFor } from "./engine";
+import { DEFAULT_SETTINGS as CURRENT_DEFAULTS, Run, Settings, createRng, createRun, prepareRow, questionFor, resolveAttempt, sanitizeSettings, scoreKey, segmentFor, spiderIsActive, spiderLaneFor } from "./engine";
 import { FIVE_LETTER_WORDS, FOUR_LETTER_WORDS, SKILLS, THREE_LETTER_WORDS, SkillId } from "./resources";
 import { COMPUTER_ACTIONS, COMPUTER_JOBS, COMPUTER_KEYS, COMPUTER_TOOLS, SEQUENCE_PLANS } from "./discoveryResources";
+const DEFAULT_SETTINGS: Settings = { ...CURRENT_DEFAULTS, questions: undefined, grades: [0, 1], voice: true };
 
 describe("Cricket Climb question resources and generators", () => {
   test("word banks have the advertised lengths and concrete picture cues", () => {
