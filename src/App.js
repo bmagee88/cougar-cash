@@ -46,6 +46,7 @@ const ShadowBoxingGame = lazy(() => import("./shadow-boxing/ShadowBoxingGame"));
 const SoccerTypingGame = lazy(() => import("./SoccerTypingGame/SoccerTypingGame"));
 const FishingTypingGame = lazy(() => import("./FishingTypingGame/FishingGame"));
 const ArticlesDirectory = lazy(() => import("./articles/ArticlesDirectory"));
+const WordWeb = lazy(() => import("./WordWeb/WordWeb"));
 const SimpleMachinesArticle = lazy(() =>
   import("./articles/simple-machines/SimpleMachinesArticle")
 );
@@ -125,6 +126,7 @@ function App() {
             <Route path="/crossy-road" element={<CrossyRoad />} />
             <Route path="/captive-chess" element={<CaptiveChess />} />
             <Route path="/cricket-climb" element={<CricketClimb />} />
+            <Route path="/word-web" element={<WordWeb />} />
             <Route
               path="/games/vocab/shadow-boxing"
               element={<ShadowBoxingGame />}

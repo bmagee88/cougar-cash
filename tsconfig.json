@@ -3,6 +3,7 @@
     "jsx": "react-jsx",
     "baseUrl": "src",
     "esModuleInterop": true,
+    "downlevelIteration": true,
     "outDir": "dist",
     "rootDir": "src",
     "noEmit": false,

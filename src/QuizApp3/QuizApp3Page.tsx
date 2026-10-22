@@ -90,6 +90,40 @@ const Proficiency: React.FC<{ percent: number | null; perfect: number; total: nu
   </Typography>
 );
 
+const courseIds = new Set(["computers-ch1-s3-s4", "computers-ch1-s5"]);
+const courseQuizzes = quizzes.filter((quiz) => courseIds.has(quiz.id));
+const additionalQuizzes = quizzes.filter((quiz) => !courseIds.has(quiz.id));
+
+const useQuizSearch = (rows: QuizRow[], quizzes: QuizDefinition[], scope = "") => {
+  const [filters, setFilters] = useState<QuizFilters>(() => {
+    const saved = readFilters(scope);
+    fields.forEach(({ key }) => {
+      if (!quizzes.some((quiz) => filterValues(quiz, key).includes(saved[key]))) saved[key] = "";
+    });
+    return saved;
+  });
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("quizNumber");
+  const [direction, setDirection] = useState<"asc" | "desc">("asc");
+  useEffect(() => { saveFilters(filters, scope); }, [filters, scope]);
+  const visibleRows = useMemo(() => {
+    const matchingIds = new Set(filterQuizzes(quizzes, filters).map((quiz) => quiz.id));
+    const query = search.trim().toLocaleLowerCase();
+    const filtered = rows.filter((row) => matchingIds.has(row.id) && (!query ||
+      [row.quizName, row.teacher, ...row.sources.flatMap((source) => [source.textbook, source.chapters, source.sections]), row.quizNumber, row.gradeLevel, row.sourceName]
+        .join(" ").toLocaleLowerCase().includes(query)));
+    return filtered.sort((a, b) => {
+      const left = sortKey === "textbook" || sortKey === "chapters" || sortKey === "sections" ? filterValue(a, sortKey) : a[sortKey];
+      const right = sortKey === "textbook" || sortKey === "chapters" || sortKey === "sections" ? filterValue(b, sortKey) : b[sortKey];
+      const comparison = typeof left === "number" || typeof right === "number"
+        ? Number(left ?? -1) - Number(right ?? -1)
+        : String(left || "").localeCompare(String(right || ""), undefined, { numeric: true, sensitivity: "base" });
+      return comparison * (direction === "asc" ? 1 : -1) || a.quizName.localeCompare(b.quizName);
+    });
+  }, [rows, quizzes, filters, search, sortKey, direction]);
+  return { quizzes, filters, setFilters, search, setSearch, sortKey, setSortKey, direction, setDirection, visibleRows };
+};
+
 const QuizApp3Page: React.FC = () => {
   const [initial] = useState(() => {
     try { return { progress: readProgress(), error: "" }; } catch {
@@ -99,16 +133,7 @@ const QuizApp3Page: React.FC = () => {
   const [progress, setProgress] = useState<LocalProgress>(initial.progress);
   const [storageError, setStorageError] = useState(initial.error);
   const [today, setToday] = useState(() => localDayKey());
-  const [filters, setFilters] = useState<QuizFilters>(() => {
-    const saved = readFilters();
-    fields.forEach(({ key }) => {
-      if (!quizzes.some((quiz) => filterValues(quiz, key).includes(saved[key]))) saved[key] = "";
-    });
-    return saved;
-  });
-  const [search, setSearch] = useState("");
-  const [sortKey, setSortKey] = useState<SortKey>("quizNumber");
-  const [direction, setDirection] = useState<"asc" | "desc">("asc");
+  const [additionalOpen, setAdditionalOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<QuizDefinition | null>(null);
   const [promptOpen, setPromptOpen] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
@@ -118,7 +143,6 @@ const QuizApp3Page: React.FC = () => {
     document.title = "Quiz App 3";
     return () => { document.title = previousTitle; };
   }, []);
-  useEffect(() => { saveFilters(filters); }, [filters]);
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
     const refreshDay = () => {
@@ -154,21 +178,8 @@ const QuizApp3Page: React.FC = () => {
   }), [progress, today]);
   const recent = useMemo(() => [...rows].filter((row) => row.total > 0)
     .sort((a, b) => b.lastTaken.localeCompare(a.lastTaken)).slice(0, 3), [rows]);
-  const visibleRows = useMemo(() => {
-    const matchingIds = new Set(filterQuizzes(quizzes, filters).map((quiz) => quiz.id));
-    const query = search.trim().toLocaleLowerCase();
-    const filtered = rows.filter((row) => matchingIds.has(row.id) && (!query ||
-      [row.quizName, row.teacher, ...row.sources.flatMap((source) => [source.textbook, source.chapters, source.sections]), row.quizNumber, row.gradeLevel, row.sourceName]
-        .join(" ").toLocaleLowerCase().includes(query)));
-    return filtered.sort((a, b) => {
-      const left = sortKey === "textbook" || sortKey === "chapters" || sortKey === "sections" ? filterValue(a, sortKey) : a[sortKey];
-      const right = sortKey === "textbook" || sortKey === "chapters" || sortKey === "sections" ? filterValue(b, sortKey) : b[sortKey];
-      const comparison = typeof left === "number" || typeof right === "number"
-        ? Number(left ?? -1) - Number(right ?? -1)
-        : String(left || "").localeCompare(String(right || ""), undefined, { numeric: true, sensitivity: "base" });
-      return comparison * (direction === "asc" ? 1 : -1) || a.quizName.localeCompare(b.quizName);
-    });
-  }, [rows, filters, search, sortKey, direction]);
+  const courseSearch = useQuizSearch(rows, courseQuizzes);
+  const extraSearch = useQuizSearch(rows, additionalQuizzes, "additional");
 
   const record = (attempt: LocalAttempt, state: ConceptState, sessionState: QuizSessionState) => {
     const quiz = quizzes.find((item) => item.id === attempt.quizId)!;
@@ -262,23 +273,28 @@ const QuizApp3Page: React.FC = () => {
                 )}
               </Box>
 
-              <Paper component="section" aria-labelledby="library-heading" elevation={0} sx={{ overflow: "hidden" }}>
+              {[courseSearch, extraSearch].map((section, index) => {
+                const additional = index === 1;
+                const sectionId = additional ? "additional-quizzes" : "course-quizzes";
+                const { quizzes, filters, setFilters, search, setSearch, sortKey, setSortKey, direction, setDirection, visibleRows } = section;
+                const panel = (
+              <Paper component="section" aria-labelledby={`${sectionId}-heading`} elevation={0} sx={{ overflow: "hidden" }}>
                 <Box sx={{ p: { xs: 2, md: 3 } }}>
                   <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="space-between" alignItems={{ sm: "center" }}>
                     <Box>
-                      <Typography id="library-heading" component="h2" variant="h5">Quiz search</Typography>
+                      <Typography id={`${sectionId}-heading`} component="h2" variant="h5">{additional ? "Quiz search" : "Course work"}</Typography>
                       <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>{visibleRows.length} of {quizzes.length} quizzes</Typography>
                     </Box>
-                    <TextField label="Search quizzes" size="small" value={search} onChange={(event) => setSearch(event.target.value)} sx={{ width: { xs: "100%", sm: 320 } }} />
+                    <TextField label={additional ? "Search additional quizzes" : "Search quizzes"} size="small" value={search} onChange={(event) => setSearch(event.target.value)} sx={{ width: { xs: "100%", sm: 320 } }} />
                   </Stack>
                   <Accordion disableGutters elevation={0} sx={{ mt: 2, border: 0, bgcolor: "transparent", "&::before": { display: "none" } }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls="quiz-filter-fields" id="quiz-filter-heading" sx={{ px: 0 }}>
+                  <AccordionSummary expandIcon={<ExpandMoreIcon />} aria-controls={`${sectionId}-filter-fields`} id={`${sectionId}-filter-heading`} sx={{ px: 0 }}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <FilterListIcon fontSize="small" sx={{ color: "text.secondary" }} />
                     <Typography variant="body2" color="text.secondary">Filter by{Object.values(filters).filter(Boolean).length > 0 ? ` (${Object.values(filters).filter(Boolean).length})` : ""}</Typography>
                   </Stack>
                   </AccordionSummary>
-                  <AccordionDetails id="quiz-filter-fields" sx={{ px: 0, pb: 0 }}>
+                  <AccordionDetails id={`${sectionId}-filter-fields`} sx={{ px: 0, pb: 0 }}>
                   <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1.5 }}>
                     <Button size="small" onClick={() => { setFilters(emptyFilters()); setSearch(""); }}
                       disabled={!search && !Object.values(filters).some(Boolean)}>Clear filters</Button>
@@ -297,7 +313,7 @@ const QuizApp3Page: React.FC = () => {
                   </Accordion>
                 </Box>
                 <TableContainer>
-                  <Table size="small" aria-label="Quiz search results" sx={{
+                  <Table size="small" aria-label={additional ? "Additional quiz search results" : "Quiz search results"} sx={{
                     width: "100%", minWidth: 1400, tableLayout: "fixed",
                     "& th, & td": { px: 1, overflowWrap: "anywhere", fontSize: 13 },
                     "& th": { whiteSpace: "nowrap", overflowWrap: "normal", wordBreak: "normal", fontSize: 12 },
@@ -370,6 +386,17 @@ const QuizApp3Page: React.FC = () => {
                   Proficiency = quizzes completed with 100% ÷ total completed quizzes. A quiz is completed after its regular rounds and any earned bonus round. — means no completed quizzes yet. Daily progress counts today’s submissions; +1 marks the single earned bonus round included in the allowance.
                 </Typography>
               </Paper>
+                );
+                return additional ? (
+                  <Accordion key={sectionId} expanded={additionalOpen} onChange={(_, expanded) => setAdditionalOpen(expanded)}
+                    disableGutters elevation={0} sx={{ mt: 3, "&::before": { display: "none" } }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />} id="additional-quizzes-summary" aria-controls="additional-quizzes-content">
+                      <Typography component="span" variant="h6">Additional quizzes</Typography>
+                    </AccordionSummary>
+                    <AccordionDetails id="additional-quizzes-content" sx={{ p: { xs: 1, sm: 2 } }}>{panel}</AccordionDetails>
+                  </Accordion>
+                ) : <React.Fragment key={sectionId}>{panel}</React.Fragment>;
+              })}
             </>
           )}
         </Box>

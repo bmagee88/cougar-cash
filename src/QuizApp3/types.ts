@@ -37,6 +37,13 @@ export type LocalRound = {
   pairs: { questionId: string; answerId: string; conceptKey: string }[];
 };
 
+export type SavedRound = {
+  date: string;
+  round: LocalRound;
+  answers: MatchingItem[];
+  checkedAnswers: Record<string, boolean>;
+};
+
 export type LocalAttempt = {
   id: string;
   quizId: string;

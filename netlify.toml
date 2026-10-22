@@ -14,6 +14,12 @@
   framework = "#custom"
 
 [[redirects]]
+  from = "/api/word-web/dictionary"
+  to = "/.netlify/functions/word-web-dictionary"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200

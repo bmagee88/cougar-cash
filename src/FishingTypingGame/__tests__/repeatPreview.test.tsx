@@ -42,7 +42,7 @@ test('eligibility changes stop and reset an active toggle, with no automatic res
 test('every entity spawn control and lightning preview repeats independently',()=>{
   const wildlife=jest.fn(),lightning=jest.fn(),butterfly=jest.fn();
   const view=render(<DebugPanel season="spring" period="late-night" weather="thunderstorm" overrides={{}} worldOverrides={{}}
-    onChange={jest.fn()} biteNow={jest.fn()} canBite={false} onAnimation={jest.fn()} onWeather={jest.fn()}
+    onChange={jest.fn()} onWorldChange={jest.fn()} biteNow={jest.fn()} canBite={false} onAnimation={jest.fn()} onWeather={jest.fn()}
     onWildlifePreview={wildlife} onLightningPreview={lightning} onButterflyPreview={butterfly}/>);
   const buttons=view.getAllByRole('button').filter(button=>button.hasAttribute('aria-pressed'));
   expect(buttons).toHaveLength(10);buttons.forEach(button=>fireEvent.click(button));

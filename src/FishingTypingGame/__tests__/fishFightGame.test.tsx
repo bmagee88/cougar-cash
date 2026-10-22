@@ -24,7 +24,7 @@ test('Fish Fight selector exposes checkpoint setting, line choices save, and sho
   fireEvent.click(screen.getByRole('checkbox',{name:/Word checkpoints/}));
   expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).settings).toMatchObject({fishingMode:'fish-fight',wordCheckpoint:true});
   fireEvent.click(screen.getByRole('button',{name:'Close Make yourself at home'}));act(()=>jest.advanceTimersByTime(300));
-  fireEvent.click(screen.getByRole('button',{name:'Tackle',exact:true}));
+  fireEvent.click(screen.getByRole('button',{name:'Tackle'}));
   fireEvent.mouseDown(screen.getByRole('combobox',{name:/Fishing line/}));fireEvent.click(screen.getByRole('option',{name:'6 lb · 300 m remaining'}));
   expect(JSON.parse(localStorage.getItem(SAVE_KEY)!).lineGear.equipped).toBe(6);
   fireEvent.click(screen.getByRole('button',{name:'Close Your tackle box'}));act(()=>jest.advanceTimersByTime(300));

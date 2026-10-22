@@ -1,8 +1,9 @@
-import { LocalAttempt, LocalProgress, QuizFilters, QuizSessionState } from "./types";
+import { LocalAttempt, LocalProgress, QuizDefinition, QuizFilters, QuizSessionState, SavedRound } from "./types";
 import { localDayKey } from "./quizStats";
 
 export const PROGRESS_KEY = "quiz-app-3.progress.v1";
 const FILTERS_KEY = "quiz-app-3.filters.v1";
+const roundKey = (quizId: string) => `quiz-app-3.round.v1:${quizId}`;
 export const emptyProgress = (): LocalProgress => ({ version: 1, attempts: [], conceptStates: {} });
 export const emptyFilters = (): QuizFilters => ({
   quizNumber: "", quizName: "", teacher: "", gradeLevel: "", textbook: "", chapters: "", sections: "",
@@ -60,9 +61,42 @@ export const saveAttempt = (attempt: LocalAttempt, conceptState: Record<string, 
   return next;
 };
 
-export const readFilters = (): QuizFilters => {
+// Keep the displayed round separately from graded progress. Restoring a round
+// never records an attempt; only Submit writes to the attempt history.
+export const readRound = (quiz: QuizDefinition): SavedRound | undefined => {
+  const raw = window.localStorage.getItem(roundKey(quiz.id));
+  if (!raw) return undefined;
+  const saved: SavedRound = JSON.parse(raw);
+  const round = saved?.round;
+  const validItems = (items: any) => Array.isArray(items) && items.every((item) =>
+    item && typeof item.id === "string" && typeof item.text === "string",
+  );
+  if (typeof saved?.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(saved.date) ||
+      !round || typeof round.id !== "string" || !["practice", "required", "bonus"].includes(round.mode) ||
+      !validItems(round.questions) || !validItems(round.answers) || !validItems(saved.answers) ||
+      !round.questions.length || round.questions.length > 4 ||
+      !Array.isArray(round.pairs) || round.pairs.length !== round.questions.length ||
+      round.answers.length !== round.questions.length || saved.answers.length !== round.questions.length ||
+      new Set(saved.answers.map((answer) => answer.id)).size !== saved.answers.length ||
+      new Set(round.pairs.map((pair) => pair?.conceptKey)).size !== round.pairs.length ||
+      round.pairs.some((pair, index) => !pair || pair.questionId !== round.questions[index].id ||
+        !quiz.concepts.some((concept) => concept.conceptKey === pair.conceptKey) ||
+        !round.answers.some((answer) => answer.id === pair.answerId) ||
+        !saved.answers.some((answer) => answer.id === pair.answerId)) ||
+      !saved.checkedAnswers || typeof saved.checkedAnswers !== "object" ||
+      Object.values(saved.checkedAnswers).some((value) => typeof value !== "boolean")) {
+    throw new Error("The unfinished round could not be restored.");
+  }
+  return saved;
+};
+
+export const saveRound = (quizId: string, saved: SavedRound) => {
+  window.localStorage.setItem(roundKey(quizId), JSON.stringify(saved));
+};
+
+export const readFilters = (scope = ""): QuizFilters => {
   try {
-    const saved = JSON.parse(window.localStorage.getItem(FILTERS_KEY) || "{}");
+    const saved = JSON.parse(window.localStorage.getItem(scope ? `${FILTERS_KEY}:${scope}` : FILTERS_KEY) || "{}");
     return Object.fromEntries(Object.keys(emptyFilters()).map((key) => [
       key, typeof saved?.[key] === "string" ? saved[key] : key === "textbook" && typeof saved?.unit === "string" ? saved.unit : "",
     ])) as QuizFilters;
@@ -71,8 +105,8 @@ export const readFilters = (): QuizFilters => {
   }
 };
 
-export const saveFilters = (filters: QuizFilters) => {
-  try { window.localStorage.setItem(FILTERS_KEY, JSON.stringify(filters)); } catch {
+export const saveFilters = (filters: QuizFilters, scope = "") => {
+  try { window.localStorage.setItem(scope ? `${FILTERS_KEY}:${scope}` : FILTERS_KEY, JSON.stringify(filters)); } catch {
     // Search still works when saving filter preferences is unavailable.
   }
 };

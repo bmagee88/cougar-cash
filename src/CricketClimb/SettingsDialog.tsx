@@ -4,6 +4,15 @@ import { GRADE_LEVELS, Grade, SKILL_GROUPS, SkillId } from "./resources";
 
 type Props = { settings: Settings; playing: boolean; onClose: () => void; onSave: (settings: Settings) => void };
 
+function SelectAllCheckbox({ ids, selected, label, children, onChange }: {
+  ids: SkillId[]; selected: SkillId[]; label: string; children: string; onChange: (ids: SkillId[], checked: boolean) => void;
+}) {
+  const input = useRef<HTMLInputElement>(null);
+  const count = ids.filter(id => selected.includes(id)).length;
+  useEffect(() => { if (input.current) input.current.indeterminate = count > 0 && count < ids.length; }, [count, ids.length]);
+  return <label className="cc-select-all"><input ref={input} type="checkbox" aria-label={label} checked={count === ids.length} onChange={() => onChange(ids, count === 0)} /><span>{children}</span></label>;
+}
+
 export default function SettingsDialog({ settings, playing, onClose, onSave }: Props) {
   const [draft, setDraft] = useState<Settings>({ ...settings, skills: [...settings.skills], grades: [...settings.grades] });
   const dialog = useRef<HTMLDialogElement>(null);
@@ -20,6 +29,9 @@ export default function SettingsDialog({ settings, playing, onClose, onSave }: P
     update("skills", draft.skills.includes(id) ? draft.skills.filter(skill => skill !== id) : [...draft.skills, id]);
   }
   function toggleGrade(id: Grade) { update("grades", draft.grades.includes(id) ? draft.grades.filter(grade => grade !== id) : [...draft.grades, id].sort()); }
+  function selectSkills(ids: SkillId[], checked: boolean) {
+    setDraft(current => ({ ...current, skills: checked ? Array.from(new Set([...current.skills, ...ids])) : current.skills.filter(id => !ids.includes(id)) }));
+  }
   return <dialog ref={dialog} className="cc-settings" aria-labelledby="cc-settings-title" onCancel={event => { event.preventDefault(); onClose(); }}>
     <form onSubmit={submit}>
       <div className="cc-settings-heading"><div><span className="cc-eyebrow">MAKE IT THEIR OWN</span><h2 id="cc-settings-title">Garden settings</h2></div>
@@ -49,8 +61,10 @@ export default function SettingsDialog({ settings, playing, onClose, onSave }: P
           {!draft.grades.length && <p className="cc-validation" role="alert">Choose at least one grade to play.</p>}
         </fieldset>
         <fieldset><legend>What shall we practice?</legend><p className="cc-setting-note">Check any mix. Letter-name listening questions need Read aloud; upper/lowercase matching works silently. Higher grades include earlier practice.</p>
+          <SelectAllCheckbox ids={SKILL_GROUPS.flatMap(group => group.skills.map(skill => skill.id as SkillId))} selected={draft.skills} label="Select all categories" onChange={selectSkills}>Select all categories</SelectAllCheckbox>
           <button type="button" className="cc-text-button" aria-label="Select all nine computer checklist topics" onClick={() => update("skills", SKILL_GROUPS.find(group => group.label === "Your computer literacy checklist").skills.map(skill => skill.id as SkillId))}>Practice the computer checklist</button>
           <div className="cc-skill-groups">{SKILL_GROUPS.map(group => <div key={group.label}><h3>{group.label}</h3>
+            <SelectAllCheckbox ids={group.skills.map(skill => skill.id as SkillId)} selected={draft.skills} label={`Select all in ${group.label}`} onChange={selectSkills}>Select all</SelectAllCheckbox>
             {group.skills.map(skill => <label className="cc-skill" key={skill.id}><input type="checkbox" checked={draft.skills.includes(skill.id as SkillId)}
               aria-label={skill.label} onChange={() => toggleSkill(skill.id as SkillId)} /><span className="cc-skill-icon" aria-hidden="true">{skill.icon}</span><span>{skill.label}</span></label>)}
           </div>)}</div>

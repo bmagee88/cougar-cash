@@ -1,7 +1,7 @@
 import React from "react";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render as renderUI, screen, within } from "@testing-library/react";
 import QuizApp3Page from "./QuizApp3Page";
-import { PROGRESS_KEY } from "./storage";
+import { PROGRESS_KEY, readProgress, readRound, saveRound } from "./storage";
 import QuizSources from "./QuizSources";
 
 declare const test: any, expect: any, jest: any, beforeEach: any, afterEach: any;
@@ -9,6 +9,8 @@ declare const test: any, expect: any, jest: any, beforeEach: any, afterEach: any
 jest.mock("./catalog", () => ({
   catalogErrors: [],
   quizzes: [
+    require("./quizzes/computers-ch1-s3-s4.json"),
+    require("./quizzes/computers-ch1-s5.json"),
     require("./quizzes/hardware-basics.json"),
     require("./quizzes/cloud-computing-1.json"),
     require("./quizzes/cables-and-ports.json"),
@@ -16,6 +18,14 @@ jest.mock("./catalog", () => ({
   ],
   ...require("./catalogUtils"),
 }));
+
+// Existing runner tests exercise the supplemental hardware quiz.
+const render = (ui: React.ReactElement, expandAdditional = true) => {
+  const view = renderUI(ui);
+  const additional = screen.queryByRole("button", { name: "Additional quizzes" });
+  if (expandAdditional && additional) fireEvent.click(additional);
+  return view;
+};
 
 beforeEach(() => {
   localStorage.clear();
@@ -39,7 +49,7 @@ test("multiple textbooks render as aligned lines inside one quiz entry with blan
 test("taking four questions updates the table, recent quiz, and next lifetime attempt number", () => {
   const view = render(<QuizApp3Page />);
   expect(screen.queryByText("Sign in")).not.toBeInTheDocument();
-  expect(screen.getByRole("heading", { name: "Quiz search" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Course work" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
   expect(screen.getAllByTestId("matching-row")).toHaveLength(4);
   expect(screen.getByText("Attempt 1")).toBeInTheDocument();
@@ -49,7 +59,7 @@ test("taking four questions updates the table, recent quiz, and next lifetime at
   fireEvent.click(screen.getByRole("button", { name: "Keep Going" }));
   expect(screen.getByText("Attempt 2")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "All quizzes" }));
-  const table = screen.getByRole("table", { name: "Quiz search results" });
+  const table = screen.getByRole("table", { name: "Additional quiz search results" });
   const row = within(table).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
   expect(within(row).getByText("—")).toBeInTheDocument();
   expect(within(row).getByText("1 / 3")).toBeInTheDocument();
@@ -64,7 +74,7 @@ test("taking four questions updates the table, recent quiz, and next lifetime at
 
 test("search and filters show a recoverable empty state; prompt begins with editable variables", () => {
   render(<QuizApp3Page />);
-  fireEvent.change(screen.getByRole("textbox", { name: "Search quizzes" }), { target: { value: "no matching subject" } });
+  fireEvent.change(screen.getByRole("textbox", { name: "Search additional quizzes" }), { target: { value: "no matching subject" } });
   expect(screen.getByText("No quizzes match your search.")).toBeInTheDocument();
   fireEvent.click(screen.getAllByRole("button", { name: "Clear filters" })[0]);
   expect(screen.getByRole("button", { name: "Hardware Basics" })).toBeInTheDocument();
@@ -97,7 +107,7 @@ test("cards and table share lifetime proficiency while daily counters reset at m
   }));
   localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, conceptStates: {}, attempts }));
   const view = render(<QuizApp3Page />);
-  const table = screen.getByRole("table", { name: "Quiz search results" });
+  const table = screen.getByRole("table", { name: "Additional quiz search results" });
   const row = within(table).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
   const recent = screen.getByRole("region", { name: "3 most recent quizzes" });
   expect(within(row).getByText("90%")).toHaveStyle({ color: "#58c98c", fontSize: "28px" });
@@ -148,4 +158,142 @@ test("a daily allowance permits exactly one missed-question bonus and survives r
   expect(screen.getByText(/completed today's allowed attempts/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
   jest.useRealTimers();
+});
+
+test("an unfinished answer arrangement and reminders survive reload and midnight without recording an attempt", () => {
+  jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 23, 59, 59));
+  const quiz = require("./quizzes/hardware-basics.json");
+  const view = render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  expect(screen.getByRole("button", { name: "Directions" })).toHaveAttribute("aria-expanded", "false");
+  const draft = readRound(quiz)!;
+  view.unmount();
+  const swapped = [...draft.answers];
+  [swapped[0], swapped[1]] = [swapped[1], swapped[0]];
+  saveRound(quiz.id, { ...draft, answers: swapped, checkedAnswers: { [swapped[0].id]: true } });
+  render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  const rowText = screen.getAllByTestId("matching-row").map((row) => row.textContent);
+  expect(screen.getAllByRole("checkbox", { name: "Mark answer" })[0]).toBeChecked();
+  expect(within(screen.getAllByTestId("matching-row")[0]).getByText(swapped[0].text)).toBeInTheDocument();
+  expect(readProgress().attempts).toHaveLength(0);
+  act(() => { jest.advanceTimersByTime(2000); });
+  expect(screen.getAllByTestId("matching-row").map((row) => row.textContent)).toEqual(rowText);
+  expect(screen.getAllByRole("checkbox", { name: "Mark answer" })[0]).toBeChecked();
+  expect(screen.getByText(/Your unsubmitted round has been restored from 2026-10-18/)).toBeInTheDocument();
+  expect(screen.getByText("Today 0 / 3")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(readProgress().attempts).toHaveLength(1);
+  expect(new Date(readProgress().attempts[0].createdAt).getDate()).toBe(19);
+  expect(screen.getByRole("heading", { name: "Saved attempts (1)" })).toBeInTheDocument();
+});
+
+test("saved results survive refresh and a new day, and a completed quiz remains in lifetime proficiency", () => {
+  jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 12));
+  let view = render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  for (let index = 0; index < 3; index += 1) {
+    if (index) {
+      act(() => { jest.advanceTimersByTime(1); });
+      fireEvent.click(screen.getByRole("button", { name: "Keep Going" }));
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  }
+  expect(readProgress().attempts.map((attempt) => attempt.completedQuiz)).toEqual([false, false, true]);
+  expect(screen.getByText("Score 100%")).toBeInTheDocument();
+  view.unmount();
+  view = render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  expect(screen.getByText("Score 100%")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
+  expect(screen.getByText("Today 3 / 3")).toBeInTheDocument();
+  view.unmount();
+  jest.setSystemTime(new Date(2026, 9, 19, 12));
+  render(<QuizApp3Page />);
+  const table = screen.getByRole("table", { name: "Additional quiz search results" });
+  const row = within(table).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
+  expect(within(row).getByText("100%")).toBeInTheDocument();
+  expect(within(row).getByText("0 / 3")).toBeInTheDocument();
+  fireEvent.click(within(row).getByRole("button", { name: "Hardware Basics" }));
+  expect(screen.getByText("Score 100%")).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Saved attempts (3)" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
+  expect(readProgress().attempts).toHaveLength(3);
+  fireEvent.click(screen.getByRole("button", { name: "Start today's quiz" }));
+  expect(screen.getByText("Attempt 4")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(readProgress().attempts).toHaveLength(4);
+  expect(screen.getByText("Today 1 / 3")).toBeInTheDocument();
+});
+
+test("a failed attempt write stays retryable and never claims the attempt was saved", () => {
+  render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  const original = Storage.prototype.setItem;
+  const spy = jest.spyOn(Storage.prototype, "setItem").mockImplementation(function (key: string, value: string) {
+    if (key === PROGRESS_KEY) throw new Error("Quota exceeded");
+    original.call(this, key, value);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(screen.getByText(/Your result could not be saved/)).toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Saved attempts (0)" })).toBeInTheDocument();
+  expect(readProgress().attempts).toHaveLength(0);
+  spy.mockRestore();
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(readProgress().attempts).toHaveLength(1);
+  expect(screen.getByRole("heading", { name: "Saved attempts (1)" })).toBeInTheDocument();
+});
+
+test("an unfinished bonus round survives midnight without carrying yesterday's bonus into today", () => {
+  jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 23, 59, 59));
+  const quiz = require("./quizzes/hardware-basics.json");
+  const { createSession } = require("./quizEngine");
+  const state = createSession(quiz, Object.fromEntries(quiz.concepts.map((concept: any, index: number) => [concept.conceptKey, index >= 4])));
+  state.seenConceptIds = quiz.concepts.map((concept: any) => concept.conceptKey);
+  state.firstPassWrongConceptIds = state.seenConceptIds.slice(0, 4);
+  state.bonusRoundsEarned = 1;
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+    version: 1, conceptStates: { [quiz.id]: state.conceptState },
+    quizSessions: { [quiz.id]: { date: "2026-10-18", state } },
+    attempts: Array.from({ length: 3 }, (_, index) => ({
+      id: String(index), quizId: quiz.id, score: 60, correctCount: 6, totalCount: 10,
+      createdAt: new Date().toISOString(), bonusRoundsEarned: 1, completedQuiz: false,
+    })),
+  }));
+  render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  expect(screen.getByText("Daily bonus round")).toBeInTheDocument();
+  const questions = screen.getAllByTestId("matching-question").map((question) => question.textContent);
+  act(() => { jest.advanceTimersByTime(2000); });
+  expect(screen.queryByText("Daily bonus round")).not.toBeInTheDocument();
+  expect(screen.getByText("Today 0 / 3")).toBeInTheDocument();
+  expect(screen.getAllByTestId("matching-question").map((question) => question.textContent)).toEqual(questions);
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  const saved = readProgress();
+  expect(saved.attempts).toHaveLength(4);
+  expect(saved.attempts[3].bonusRoundsEarned).toBe(0);
+  expect(saved.quizSessions![quiz.id].date).toBe("2026-10-19");
+  expect(saved.quizSessions![quiz.id].state.seenConceptIds).toHaveLength(4);
+  expect(screen.getByText("Today 1 / 3")).toBeInTheDocument();
+});
+
+
+test("course work keeps the two assigned quizzes while additional quizzes have an independent search", () => {
+  render(<QuizApp3Page />, false);
+  const course = screen.getByRole("table", { name: "Quiz search results" });
+  expect(within(course).getByRole("button", { name: "Computing Systems, Hardware, Software, and Data" })).toBeInTheDocument();
+  expect(within(course).getByRole("button", { name: "Input, Processing, Memory, Storage, and Output" })).toBeInTheDocument();
+  expect(within(course).queryByRole("button", { name: "Hardware Basics" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Additional quizzes" })).toHaveAttribute("aria-expanded", "false");
+  expect(screen.queryByRole("table", { name: "Additional quiz search results" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Additional quizzes" }));
+  const additional = screen.getByRole("table", { name: "Additional quiz search results" });
+  expect(within(additional).getByRole("button", { name: "Hardware Basics" })).toBeInTheDocument();
+  expect(within(additional).queryByRole("button", { name: "Computing Systems, Hardware, Software, and Data" })).not.toBeInTheDocument();
+  fireEvent.change(screen.getByRole("textbox", { name: "Search additional quizzes" }), { target: { value: "Hardware Basics" } });
+  expect(within(additional).queryByRole("button", { name: "Cloud Computing 1" })).not.toBeInTheDocument();
+  expect(within(course).getByRole("button", { name: "Computing Systems, Hardware, Software, and Data" })).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("textbox", { name: "Search quizzes" }), { target: { value: "Input" } });
+  expect(within(course).queryByRole("button", { name: "Computing Systems, Hardware, Software, and Data" })).not.toBeInTheDocument();
+  expect(within(additional).getByRole("button", { name: "Hardware Basics" })).toBeInTheDocument();
 });

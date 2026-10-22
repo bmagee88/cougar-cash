@@ -1,6 +1,5 @@
 import { describe, expect, test } from "@jest/globals";
 import { DEFAULT_SETTINGS, Settings, createRun, prepareRow, questionFor, resolveAttempt, sanitizeSettings, withoutMutedListening } from "./engine";
-import { SKILLS } from "./resources";
 import { displayReading, instructionReading, questionPrompt, questionReading } from "./reading";
 import { parseProgress, restoreProgress, snapshotProgress } from "./progress";
 
@@ -43,10 +42,10 @@ describe("Quiet defaults and selective reading", () => {
     }
   });
 
-  test("new defaults are kindergarten, every subject checked, and automatic reading off", () => {
+  test("new defaults are kindergarten, short-sentence subjects, and automatic reading off", () => {
     expect(DEFAULT_SETTINGS.grades).toEqual([0]);
     expect(DEFAULT_SETTINGS.voice).toBe(false);
-    expect(new Set(DEFAULT_SETTINGS.skills)).toEqual(new Set(SKILLS.map(skill => skill.id)));
+    expect(DEFAULT_SETTINGS.skills).toEqual(["letters", "sounds", "sightWords"]);
     expect(sanitizeSettings({}).grades).toEqual([0]);
     expect(sanitizeSettings({}).voice).toBe(false);
   });
@@ -121,4 +120,13 @@ describe("Quiet defaults and selective reading", () => {
     const parsed = parseProgress(snapshotProgress(run, muted));
     expect(parsed).not.toBeNull(); expect(restoreProgress(parsed).rows[6]).toEqual(run.rows[6]);
   });
+});
+
+
+test("default categories keep every written sentence within four words across grades", () => {
+  for (const grade of [0, 1, 2] as const) for (const skill of DEFAULT_SETTINGS.skills) for (let i = 0; i < 180; i++) {
+    const q = questionFor('short-default-' + i, 1 + i % 200, { ...DEFAULT_SETTINGS, grades: [grade], skills: [skill], voice: true });
+    const sentences = [q.prompt, q.context, ...(q.options || []).map(option => option.text), q.sequence?.caption, ...(q.sequence?.steps || []).map(step => step.token.spoken)];
+    sentences.filter(Boolean).forEach(text => expect(text.trim().split(/\s+/).length).toBeLessThanOrEqual(4));
+  }
 });

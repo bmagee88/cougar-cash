@@ -1,5 +1,5 @@
 import {
-  ALPHABET, COMMON_NOUNS, COMMON_VERBS, EMOJIS, FIVE_LETTER_WORDS, FOUR_LETTER_WORDS,
+  ALPHABET, COMMON_NOUNS, COMMON_VERBS, DEFAULT_SHORT_SKILLS, EMOJIS, FIVE_LETTER_WORDS, FOUR_LETTER_WORDS,
   GRADE_LEVELS, Grade, LETTER_NAMES, NAVIGATION_SYMBOLS, SIGHT_WORDS, SKILLS, SkillId, THREE_LETTER_WORDS,
 } from "./resources";
 import { algorithmQuestion, computerQuestion } from "./discovery";
@@ -16,7 +16,7 @@ export type Settings = {
   preferences?: 2;
 };
 export const DEFAULT_SETTINGS: Settings = {
-  platforms: 3, fallMode: "limited", skills: SKILLS.map(({ id }) => id as SkillId),
+  platforms: 3, fallMode: "limited", skills: [...DEFAULT_SHORT_SKILLS],
   grades: [0], questions: 3, preferences: 2,
   voice: false, sounds: true, theme: "sunny", spider: true, spiderMisses: 3, spiderWindow: 5,
 };

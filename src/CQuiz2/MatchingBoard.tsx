@@ -1,5 +1,7 @@
-import React from "react";
-import { Box, Paper, Stack, Typography, alpha, useTheme } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Alert, Box, Button, IconButton, Paper, Stack, Tooltip, Typography, alpha, useTheme } from "@mui/material";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import StopIcon from "@mui/icons-material/Stop";
 import {
   DndContext, DragEndEvent, KeyboardSensor, PointerSensor, TouchSensor,
   useSensor, useSensors,
@@ -9,13 +11,37 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { RoundAnswer, RoundQuestion } from "./types";
+import { useReadAloud } from "./useReadAloud";
+
+const ReadButton: React.FC<{
+  label: string;
+  reading: boolean;
+  supported: boolean;
+  onRead: () => void;
+}> = ({ label, reading, supported, onRead }) => (
+  <Tooltip title={supported ? reading ? `Stop reading ${label}` : `Read ${label} aloud` : "Read aloud is unavailable in this browser"}>
+    <Box component="span" sx={{
+      opacity: reading ? 1 : 0,
+      transition: "opacity 120ms ease",
+      ".MuiPaper-root:hover > &, .MuiPaper-root:focus-within > &, &:focus-within": { opacity: 1 },
+      "@media (hover: none)": { opacity: 1 },
+    }} onPointerDown={(event) => event.stopPropagation()} onTouchStart={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()} onClick={(event) => event.stopPropagation()}>
+      <IconButton size="small" color={reading ? "primary" : "default"} disabled={!supported}
+        aria-label={reading ? `Stop reading ${label}` : `Read ${label} aloud`} onClick={onRead}>
+        {reading ? <StopIcon fontSize="small" /> : <VolumeUpIcon fontSize="small" />}
+      </IconButton>
+    </Box>
+  </Tooltip>
+);
 
 const SortableAnswer: React.FC<{
   item: RoundAnswer;
   checked: boolean;
   disabled: boolean;
   onCheckedChange: (id: string, checked: boolean) => void;
-}> = ({ item, checked, disabled, onCheckedChange }) => {
+  readButton?: React.ReactNode;
+}> = ({ item, checked, disabled, onCheckedChange, readButton }) => {
   const theme = useTheme();
   const { attributes, isDragging, listeners, setNodeRef, transform } = useSortable({
     id: item.id, disabled,
@@ -47,7 +73,8 @@ const SortableAnswer: React.FC<{
         aria-label="Mark answer"
         style={{ accentColor: theme.palette.primary.main, flexShrink: 0, width: 16, height: 16 }}
       />
-      <Typography variant="body2">{item.text}</Typography>
+      <Typography variant="body2" sx={{ flex: 1, overflowWrap: "anywhere" }}>{item.text}</Typography>
+      {readButton}
     </Paper>
   );
 };
@@ -61,7 +88,13 @@ const MatchingBoard: React.FC<{
   checkedAnswers: Record<string, boolean>;
   setCheckedAnswers: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
   disabled?: boolean;
-}> = ({ questions, answers, setAnswers, checkedAnswers, setCheckedAnswers, disabled = false }) => {
+  studyTools?: boolean;
+}> = ({ questions, answers, setAnswers, checkedAnswers, setCheckedAnswers, disabled = false, studyTools = false }) => {
+  const theme = useTheme();
+  const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const roundId = questions[0]?.id || "";
+  const { supported, readingId, speechError, read } = useReadAloud(roundId, studyTools);
+  useEffect(() => { setSelectedQuestion(null); }, [roundId]);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 5 } }),
@@ -85,6 +118,10 @@ const MatchingBoard: React.FC<{
   };
   return (
     <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, userSelect: "none" }}>
+      {studyTools && (!supported || speechError) && <Alert severity="info" sx={{ mb: 2 }}>
+        {supported ? speechError : "Read aloud is unavailable in this browser. Try a browser with text-to-speech support."}
+      </Alert>}
+      {studyTools && selectedQuestion && <Button size="small" onClick={() => setSelectedQuestion(null)} sx={{ mb: 1 }}>Show all questions</Button>}
       <Box sx={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 2, mb: 1 }}>
         <Typography variant="h6">Questions</Typography>
         <Typography variant="h6">Answers</Typography>
@@ -96,12 +133,32 @@ const MatchingBoard: React.FC<{
               <Box key={question.id} data-testid="matching-row" sx={{
                 display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 2, alignItems: "center",
               }}>
-                <Paper elevation={0} sx={{ p: 1.25, bgcolor: "background.paper" }}>
-                  <Typography variant="body2">{question.text}</Typography>
+                <Paper elevation={0} data-testid="matching-question" sx={{
+                  p: studyTools ? 0.5 : 1.25, display: "flex", alignItems: "center", minWidth: 0,
+                  bgcolor: selectedQuestion === question.id ? alpha(theme.palette.primary.main, 0.15) : "background.paper",
+                  borderColor: selectedQuestion === question.id ? "primary.main" : "divider",
+                  opacity: selectedQuestion && selectedQuestion !== question.id ? 0.4 : 1,
+                }}>
+                  {studyTools ? <>
+                    <Box component="button" type="button" aria-label={`Focus question ${index + 1}`}
+                      aria-pressed={selectedQuestion === question.id}
+                      onClick={() => setSelectedQuestion((previous) => previous === question.id ? null : question.id)}
+                      onKeyDown={(event) => { if (event.key === "Escape") setSelectedQuestion(null); }}
+                      sx={{ flex: 1, minWidth: 0, p: 0.75, border: 0, borderRadius: 1, bgcolor: "transparent", color: "inherit",
+                        textAlign: "left", cursor: "pointer", display: "flex", gap: 1,
+                        "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 } }}>
+                      <Typography component="span" variant="body2" sx={{ fontWeight: 800 }}>{index + 1}.</Typography>
+                      <Typography component="span" variant="body2" sx={{ overflowWrap: "anywhere" }}>{question.text}</Typography>
+                    </Box>
+                    <ReadButton label={`question ${index + 1}`} reading={readingId === question.id} supported={supported}
+                      onRead={() => read(question.id, `Question ${index + 1}. ${question.text}`)} />
+                  </> : <Typography variant="body2">{question.text}</Typography>}
                 </Paper>
                 {answers[index] && (
                   <SortableAnswer item={answers[index]} checked={!!checkedAnswers[answers[index].id]}
                     disabled={disabled}
+                    readButton={studyTools ? <ReadButton label={`answer in row ${index + 1}`} reading={readingId === answers[index].id}
+                      supported={supported} onRead={() => read(answers[index].id, answers[index].text)} /> : undefined}
                     onCheckedChange={(id, checked) => setCheckedAnswers((previous) => ({ ...previous, [id]: checked }))} />
                 )}
               </Box>
