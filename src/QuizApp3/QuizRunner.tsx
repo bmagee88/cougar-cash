@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
+import { Accordion, AccordionDetails, AccordionSummary, Alert, Box, Button, Chip, LinearProgress, Paper, Snackbar, Stack, Typography } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
@@ -46,10 +46,13 @@ const QuizRunner: React.FC<{
   const [checkedAnswers, setCheckedAnswers] = useState<Record<string, boolean>>(restored.saved?.checkedAnswers || {});
   const [result, setResult] = useState<LocalAttempt | null>(() => quizAttempts.find((attempt) => attempt.id === round.id) || null);
   const [error, setError] = useState("");
+  const [savedNotice, setSavedNotice] = useState("");
   const [draftError, setDraftError] = useState(restored.error);
   const submittedRound = useRef("");
   const resultNumber = result ? quizAttempts.findIndex((attempt) => attempt.id === result.id) + 1 : 0;
   const resultFromEarlierDay = !!result && localDayKey(new Date(result.createdAt)) !== today;
+  const displayedScore = result?.score ?? Math.round(quiz.concepts.filter((concept) =>
+    session.conceptState[concept.conceptKey]).length / Math.max(1, quiz.concepts.length) * 100);
 
   useEffect(() => {
     try {
@@ -84,6 +87,7 @@ const QuizRunner: React.FC<{
       sessionDate.current = currentDay;
       setSession(next.state);
       setResult(attempt);
+      setSavedNotice(`Attempt ${quizAttempts.length + 1} saved on this device.`);
     } catch (err) {
       submittedRound.current = "";
       setError(err instanceof DailyLimitError ? err.message : "Your result could not be saved to this device. Keep this page open, enable browser storage or free some space, and try Submit again.");
@@ -119,6 +123,15 @@ const QuizRunner: React.FC<{
         </Stack>
       </Paper>
 
+      <Box sx={{ position: "relative", pt: 3.5, mb: 2 }}>
+        <Typography variant="body2" aria-live="polite" sx={{
+          position: "absolute", top: 0, left: `clamp(80px, ${displayedScore}%, 100%)`,
+          transform: "translateX(-100%)", color: "primary.main", fontWeight: 800, whiteSpace: "nowrap",
+        }}>Score {displayedScore}%</Typography>
+        <LinearProgress aria-label="Quiz concept score" variant="determinate" value={displayedScore}
+          sx={{ height: 12, borderRadius: 6, "& .MuiLinearProgress-bar": { borderRadius: 6 } }} />
+      </Box>
+
       {dailyDone && (
         <Alert severity="success">You have completed today's allowed attempts for this quiz. Come back tomorrow to continue.</Alert>
       )}
@@ -133,7 +146,7 @@ const QuizRunner: React.FC<{
         </AccordionSummary>
         <AccordionDetails id="quiz-directions-content">
         <Box component="ol" sx={{ pl: 3, my: 1, "& li": { mb: 0.5 } }}>
-          <Typography component="li" variant="body2">Read each numbered question. Select a question to highlight it and dim the other questions. Select it again or choose Show all questions to clear the highlight.</Typography>
+          <Typography component="li" variant="body2">Read each numbered question. Select a question to highlight it and dim the other questions. Click away from the question or reorder answers to show all questions again.</Typography>
           <Typography component="li" variant="body2">Hover over a question or answer to reveal its speaker button, then select the speaker to hear the text. Speaker buttons also appear when using Tab to focus the controls and stay visible on touchscreens. Press the stop button to stop reading.</Typography>
           <Typography component="li" variant="body2">Drag each answer beside its matching question. Dropping an answer swaps the two answers. Checkboxes are reminders and do not affect your score.</Typography>
           <Typography component="li" variant="body2">Choose Submit to save and score this attempt. Then choose Keep Going or Take bonus round until today's allowance is complete.</Typography>
@@ -143,26 +156,13 @@ const QuizRunner: React.FC<{
         </Typography>
         </AccordionDetails>
       </Accordion>
-      {(round.mode === "bonus" || result) && <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-        {round.mode === "bonus" && <Chip size="small" color="secondary" label="Daily bonus round" />}
-        {result && <Chip color={result.score === 100 ? "success" : "warning"} label={`Score ${result.score}%`} />}
-      </Stack>}
-      {result && <LinearProgress aria-label="Quiz concept score" sx={{ mb: 2 }} variant="determinate" value={result.score} />}
+      {round.mode === "bonus" && <Chip size="small" color="secondary" label="Daily bonus round" sx={{ mb: 2 }} />}
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <MatchingBoard questions={round.questions} answers={answers} setAnswers={setAnswers}
         checkedAnswers={checkedAnswers} setCheckedAnswers={setCheckedAnswers} disabled={!!result} studyTools />
 
-      {result && (
-        <Alert severity={result.score === 100 ? "success" : "info"} icon={<CheckCircleOutlineIcon />} sx={{ mt: 2 }}>
-          Attempt {resultNumber} saved on this device on {new Date(result.createdAt).toLocaleString()}.
-          {resultFromEarlierDay ? " A new day's allowance is available. Your previous results are still saved." : dailyDone && " Today's allowance is complete."}
-        </Alert>
-      )}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ sm: "center" }} justifyContent="space-between" sx={{ mt: 2 }}>
-        <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 650 }}>
-          Each submission counts as an attempt. Your score covers all {quiz.concepts.length} concepts, using your latest match for each, just like C-Quiz-2.
-        </Typography>
+      <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
         {!result ? (
           <Button variant="contained" size="large" onClick={handleSubmit} startIcon={<CheckCircleOutlineIcon />} sx={{ flexShrink: 0 }}>Submit</Button>
         ) : (
@@ -172,11 +172,14 @@ const QuizRunner: React.FC<{
         )}
       </Stack>
       </>}
-      <Paper component="section" aria-labelledby="saved-attempts-heading" elevation={0} sx={{ p: 2, mt: 3 }}>
-        <Typography id="saved-attempts-heading" component="h2" variant="h6">Saved attempts ({quizAttempts.length})</Typography>
+      <Accordion disableGutters elevation={0} sx={{ mt: 3, "&::before": { display: "none" } }}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />} id="saved-attempts-heading" aria-controls="saved-attempts-content">
+          <Typography component="span" variant="h6">Saved attempts {daily.dailyAttempts}/{daily.dailyAllowed}</Typography>
+        </AccordionSummary>
+        <AccordionDetails id="saved-attempts-content">
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Daily counts reset at midnight. Submitted attempts and concept progress stay saved on this browser.
-          Proficiency counts completed quizzes after all daily rounds, including any earned bonus.
+          Proficiency averages final scores of completed quizzes after all daily rounds, including any earned bonus.
         </Typography>
         {quizAttempts.length ? <Box component="ol" sx={{ pl: 3, mb: 0 }}>
           {quizAttempts.slice(-5).reverse().map((attempt, index) => <Typography component="li" variant="body2" key={attempt.id} sx={{ mt: 1 }}>
@@ -185,7 +188,12 @@ const QuizRunner: React.FC<{
           </Typography>)}
         </Box> : <Typography variant="body2" sx={{ mt: 1 }}>No submitted attempts yet. Choose Submit to record your first attempt.</Typography>}
         {quizAttempts.length > 5 && <Typography variant="caption" color="text.secondary">Showing the five most recent saved attempts.</Typography>}
-      </Paper>
+        </AccordionDetails>
+      </Accordion>
+      <Snackbar open={!!savedNotice} autoHideDuration={4500} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+        onClose={(_, reason) => { if (reason !== "clickaway") setSavedNotice(""); }}>
+        <Alert severity="success" variant="filled" onClose={() => setSavedNotice("")} sx={{ width: "100%" }}>{savedNotice}</Alert>
+      </Snackbar>
     </Box>
   );
 };
