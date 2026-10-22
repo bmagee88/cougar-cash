@@ -412,13 +412,13 @@ test("word scenarios show every numbered choice and use the same 1.5-second answ
   expect(answers()[targetLane]).toHaveClass("cc-leaf--selected");
 });
 
-test("a new player's defaults check kindergarten and every subject with reading off", () => {
+test("a new player's defaults check kindergarten and short-sentence subjects with reading off", () => {
   localStorage.removeItem(engine.SETTINGS_KEY);
   render(<CricketClimb />);
   fireEvent.click(screen.getByRole("button", { name: "Open garden settings" }));
   expect(screen.getByRole("checkbox", { name: "Kindergarten", exact: true })).toBeChecked();
   for (const name of ["1st grade", "2nd grade"]) expect(screen.getByRole("checkbox", { name, exact: true })).not.toBeChecked();
-  SKILLS.forEach(skill => expect(screen.getByRole("checkbox", { name: skill.label })).toBeChecked());
+  SKILLS.forEach(skill => expect(screen.getByRole("checkbox", { name: skill.label })).toHaveProperty("checked", engine.DEFAULT_SETTINGS.skills.includes(skill.id)));
   expect(screen.getByRole("switch", { name: "Read aloud", exact: true })).not.toBeChecked();
   expect(audio.speak).not.toHaveBeenCalled();
 });

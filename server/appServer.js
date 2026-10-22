@@ -8,6 +8,7 @@ const {
   refreshAllPatternSessionStatuses,
 } = require("./patternGame");
 const { closePawPassPool, handlePawPassRequest } = require("./pawPass");
+const { handleDictionaryLookup } = require("./wordWeb");
 
 const PORT = Number(
   process.env.APP_SERVER_PORT ||
@@ -2851,6 +2852,13 @@ async function requestHandler(req, res) {
   const parts = url.pathname.split("/").filter(Boolean);
 
   try {
+    if (url.pathname === "/api/word-web/dictionary") {
+      const result = await handleDictionaryLookup({ httpMethod: req.method, queryStringParameters: Object.fromEntries(url.searchParams) });
+      res.writeHead(result.statusCode, result.headers);
+      res.end(result.body);
+      return;
+    }
+
     if (req.method === "GET" && url.pathname === "/api/time") {
       await handleTimeRequest(res);
       return;

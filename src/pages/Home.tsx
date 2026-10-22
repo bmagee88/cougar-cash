@@ -3,6 +3,14 @@ import { Link as RouterLink } from "react-router-dom";
 
 const tiles = [
   {
+    path: "/word-web",
+    title: "Word Web",
+    subtitle: "Follow your curiosity through a student dictionary of connected words.",
+    emoji: "WW",
+    gradient: "linear-gradient(135deg, #101715, #44775a, #c4e6b0)",
+    category: "game",
+  },
+  {
     path: "/cricket-climb",
     title: "Cricket Climb",
     subtitle: "Listen, think, and hop through a garden of letters, numbers, and discoveries.",

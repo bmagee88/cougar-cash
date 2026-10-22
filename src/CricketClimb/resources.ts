@@ -102,3 +102,7 @@ export const GRADE_LEVELS: { id: Grade; label: string; spoken: string; icon: str
   { id: 2, label: "2nd grade", spoken: "Second grade", icon: "2" },
 ];
 export type SkillId = "letters" | "letterPairs" | "sounds" | "spelling" | "sightWords" | "counting" | "addition" | "subtraction" | "pictures" | "symbols" | "computers" | "algorithms" | typeof COMPUTER_TOPICS[number]["id"];
+
+// Conservative across every supported grade: other categories contain written
+// prompts, clues, or answer sentences longer than four words. Keep them opt-in.
+export const DEFAULT_SHORT_SKILLS: SkillId[] = ["letters", "sounds", "sightWords"];
