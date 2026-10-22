@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Alert, Box, Button, IconButton, Paper, Stack, Tooltip, Typography, alpha, useTheme } from "@mui/material";
+import React, { useEffect, useRef, useState } from "react";
+import { Alert, Box, IconButton, Paper, Stack, Tooltip, Typography, alpha, useTheme } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import StopIcon from "@mui/icons-material/Stop";
 import {
@@ -54,24 +54,32 @@ const SortableAnswer: React.FC<{
       {...attributes}
       {...listeners}
       aria-label={`Move answer: ${item.text}`}
+      data-matching-answer="true"
       style={{ transform: CSS.Transform.toString(transform), transition: undefined }}
       sx={{
         p: 1, display: "flex", gap: 1, alignItems: "center",
         cursor: disabled ? "default" : "grab", userSelect: "none", touchAction: "none",
         position: "relative", zIndex: isDragging ? 1 : "auto",
+        "&:focus": { outline: "none", boxShadow: "none" },
+        "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
         bgcolor: checked ? alpha(theme.palette.success.main, 0.12)
           : isDragging ? alpha(theme.palette.primary.main, 0.12) : "background.paper",
       }}
     >
-      <input
+      <Box component="input"
         type="checkbox"
         checked={checked}
         disabled={disabled}
         onChange={(event) => onCheckedChange(item.id, event.target.checked)}
         onPointerDown={(event) => event.stopPropagation()}
+        onTouchStart={(event) => event.stopPropagation()}
+        onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
         aria-label="Mark answer"
-        style={{ accentColor: theme.palette.primary.main, flexShrink: 0, width: 16, height: 16 }}
+        sx={{ accentColor: theme.palette.primary.main, flexShrink: 0, width: 16, height: 16,
+          "&:focus": { outline: "none", boxShadow: "none" },
+          "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 },
+        }}
       />
       <Typography variant="body2" sx={{ flex: 1, overflowWrap: "anywhere" }}>{item.text}</Typography>
       {readButton}
@@ -92,15 +100,43 @@ const MatchingBoard: React.FC<{
 }> = ({ questions, answers, setAnswers, checkedAnswers, setCheckedAnswers, disabled = false, studyTools = false }) => {
   const theme = useTheme();
   const [selectedQuestion, setSelectedQuestion] = useState<string | null>(null);
+  const draggingAnswer = useRef(false);
   const roundId = questions[0]?.id || "";
   const { supported, readingId, speechError, read } = useReadAloud(roundId, studyTools);
-  useEffect(() => { setSelectedQuestion(null); }, [roundId]);
+  useEffect(() => { setSelectedQuestion(null); }, [roundId, answers]);
+  useEffect(() => {
+    if (!studyTools || !selectedQuestion) return;
+    const clearOutsideQuestion = (event: Event) => {
+      const target = event.target;
+      // Let the checkbox toggle before clearing selection in its React handler.
+      // A capture-phase render can otherwise reset the native checked value.
+      if (target instanceof HTMLInputElement && target.type === "checkbox" && target.closest("[data-matching-answer]")) return;
+      // Answer presses and focus happen before the drag sensor activates.
+      // Keep the question selected through that interaction until the drop.
+      if (draggingAnswer.current || (event.type !== "click" && target instanceof Element && target.closest("[data-matching-answer]"))) return;
+      if (!(target instanceof Element) ||
+          target.closest("[data-matching-question-id]")?.getAttribute("data-matching-question-id") !== selectedQuestion) {
+        setSelectedQuestion(null);
+      }
+    };
+    // Capture also catches answer controls that stop propagation for dragging.
+    document.addEventListener("pointerdown", clearOutsideQuestion, true);
+    document.addEventListener("click", clearOutsideQuestion, true);
+    document.addEventListener("focusin", clearOutsideQuestion, true);
+    return () => {
+      document.removeEventListener("pointerdown", clearOutsideQuestion, true);
+      document.removeEventListener("click", clearOutsideQuestion, true);
+      document.removeEventListener("focusin", clearOutsideQuestion, true);
+    };
+  }, [studyTools, selectedQuestion]);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
   const handleDragEnd = (event: DragEndEvent) => {
+    draggingAnswer.current = false;
+    setSelectedQuestion(null);
     if (disabled) return;
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -121,19 +157,19 @@ const MatchingBoard: React.FC<{
       {studyTools && (!supported || speechError) && <Alert severity="info" sx={{ mb: 2 }}>
         {supported ? speechError : "Read aloud is unavailable in this browser. Try a browser with text-to-speech support."}
       </Alert>}
-      {studyTools && selectedQuestion && <Button size="small" onClick={() => setSelectedQuestion(null)} sx={{ mb: 1 }}>Show all questions</Button>}
       <Box sx={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 2, mb: 1 }}>
         <Typography variant="h6">Questions</Typography>
         <Typography variant="h6">Answers</Typography>
       </Box>
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} onDragStart={() => { draggingAnswer.current = true; }}
+        onDragCancel={() => { draggingAnswer.current = false; }} onDragEnd={handleDragEnd}>
         <SortableContext items={answers.map((answer) => answer.id)} strategy={verticalListSortingStrategy}>
           <Stack spacing={1.25}>
             {questions.map((question, index) => (
               <Box key={question.id} data-testid="matching-row" sx={{
                 display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr)", gap: 2, alignItems: "center",
               }}>
-                <Paper elevation={0} data-testid="matching-question" sx={{
+                <Paper elevation={0} data-testid="matching-question" data-matching-question-id={question.id} sx={{
                   p: studyTools ? 0.5 : 1.25, display: "flex", alignItems: "center", minWidth: 0,
                   bgcolor: selectedQuestion === question.id ? alpha(theme.palette.primary.main, 0.15) : "background.paper",
                   borderColor: selectedQuestion === question.id ? "primary.main" : "divider",
@@ -146,6 +182,7 @@ const MatchingBoard: React.FC<{
                       onKeyDown={(event) => { if (event.key === "Escape") setSelectedQuestion(null); }}
                       sx={{ flex: 1, minWidth: 0, p: 0.75, border: 0, borderRadius: 1, bgcolor: "transparent", color: "inherit",
                         textAlign: "left", cursor: "pointer", display: "flex", gap: 1,
+                        "&:focus": { outline: "none", boxShadow: "none" },
                         "&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: 2 } }}>
                       <Typography component="span" variant="body2" sx={{ fontWeight: 800 }}>{index + 1}.</Typography>
                       <Typography component="span" variant="body2" sx={{ overflowWrap: "anywhere" }}>{question.text}</Typography>
@@ -159,7 +196,10 @@ const MatchingBoard: React.FC<{
                     disabled={disabled}
                     readButton={studyTools ? <ReadButton label={`answer in row ${index + 1}`} reading={readingId === answers[index].id}
                       supported={supported} onRead={() => read(answers[index].id, answers[index].text)} /> : undefined}
-                    onCheckedChange={(id, checked) => setCheckedAnswers((previous) => ({ ...previous, [id]: checked }))} />
+                    onCheckedChange={(id, checked) => {
+                      setSelectedQuestion(null);
+                      setCheckedAnswers((previous) => ({ ...previous, [id]: checked }));
+                    }} />
                 )}
               </Box>
             ))}

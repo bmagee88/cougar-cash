@@ -14,7 +14,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import { catalogErrors, filterQuizzes, filterValue, filterValues, quizzes, UNSPECIFIED_SOURCE_VALUE } from "./catalog";
-import { attemptStats, formatPercent } from "./quizEngine";
+import { formatPercent } from "./quizEngine";
 import { completedQuizStats, DailyLimitError, dailyProgress, localDayKey, proficiencyColor } from "./quizStats";
 import { quizPrompt } from "./quizPrompt";
 import { emptyFilters, emptyProgress, PROGRESS_KEY, readFilters, readProgress, saveAttempt, saveFilters } from "./storage";
@@ -59,16 +59,15 @@ const fields: { key: keyof QuizFilters; label: string }[] = [
 ];
 
 type QuizRow = QuizDefinition & {
-  total: number; perfect: number; below: number;
-  completedTotal: number; completedPerfect: number;
-  perfectPercent: number | null; belowPercent: number | null;
+  total: number;
+  completedTotal: number; averageScore: number | null;
   dailyAttempts: number; dailyAllowed: number; dailyBonus: number;
   lastTaken: string;
 };
-type SortKey = keyof QuizFilters | "completedTotal" | "perfectPercent" | "dailyAttempts" | "lastTaken";
+type SortKey = keyof QuizFilters | "completedTotal" | "averageScore" | "dailyAttempts" | "lastTaken";
 const columns: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "quizName", label: "Quiz name" },
-  { key: "perfectPercent", label: "Proficiency", align: "right" },
+  { key: "averageScore", label: "Proficiency", align: "right" },
   { key: "dailyAttempts", label: "Daily progress", align: "right" },
   { key: "completedTotal", label: "Total complete", align: "right" },
   { key: "lastTaken", label: "Last taken" },
@@ -81,9 +80,9 @@ const formatDate = (value: string) => value ? new Date(value).toLocaleString([],
 const optionLabel = (key: keyof QuizFilters, value: string) => key === "gradeLevel"
   ? value === "unassigned" ? "Unassigned" : `Grade ${value}` : value === UNSPECIFIED_SOURCE_VALUE ? "Unspecified" : value;
 
-const Proficiency: React.FC<{ percent: number | null; perfect: number; total: number }> = ({ percent, perfect, total }) => (
+const Proficiency: React.FC<{ percent: number | null; total: number }> = ({ percent, total }) => (
   <Typography component="span"
-    aria-label={`Proficiency ${formatPercent(percent)}: ${perfect} perfect out of ${total} completed quizzes`}
+    aria-label={`Proficiency ${formatPercent(percent)}: average score across ${total} completed quizzes`}
     sx={{ color: proficiencyColor(percent), fontSize: 28, lineHeight: 1.15, fontWeight: 800,
       whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
     {formatPercent(percent)}
@@ -174,7 +173,7 @@ const QuizApp3Page: React.FC = () => {
 
   const rows = useMemo<QuizRow[]>(() => quizzes.map((quiz) => {
     const attempts = progress.attempts.filter((attempt) => attempt.quizId === quiz.id);
-    return { ...quiz, ...attemptStats(attempts), ...completedQuizStats(attempts), ...dailyProgress(quiz, attempts, today), lastTaken: attempts[attempts.length - 1]?.createdAt || "" };
+    return { ...quiz, total: attempts.length, ...completedQuizStats(attempts), ...dailyProgress(quiz, attempts, today), lastTaken: attempts[attempts.length - 1]?.createdAt || "" };
   }), [progress, today]);
   const recent = useMemo(() => [...rows].filter((row) => row.total > 0)
     .sort((a, b) => b.lastTaken.localeCompare(a.lastTaken)).slice(0, 3), [rows]);
@@ -247,7 +246,7 @@ const QuizApp3Page: React.FC = () => {
                           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
                             <Typography variant="h6" component="h3" sx={{ flex: 1, minWidth: 0, fontSize: { xs: 14, md: "1.05rem" },
                               whiteSpace: "normal", overflowWrap: "anywhere" }} title={quiz.quizName}>{quiz.quizName}</Typography>
-                            <Proficiency percent={quiz.perfectPercent} perfect={quiz.completedPerfect} total={quiz.completedTotal} />
+                            <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />
                           </Stack>
                           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{formatDate(quiz.lastTaken)}</Typography>
                           <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mt: "auto", pt: 2 }}>
@@ -355,7 +354,7 @@ const QuizApp3Page: React.FC = () => {
                               ))}
                             </Box>
                           </TableCell>
-                          <TableCell align="right"><Proficiency percent={quiz.perfectPercent} perfect={quiz.completedPerfect} total={quiz.completedTotal} /></TableCell>
+                          <TableCell align="right"><Proficiency percent={quiz.averageScore} total={quiz.completedTotal} /></TableCell>
                           <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", "&&": { fontSize: 22, fontWeight: 700 } }}>
                             {quiz.dailyAttempts} / {quiz.dailyAllowed}
                             {quiz.dailyBonus > 0 && (
@@ -383,7 +382,7 @@ const QuizApp3Page: React.FC = () => {
                   </Table>
                 </TableContainer>
                 <Typography variant="caption" component="p" color="text.secondary" sx={{ px: 3, py: 2, borderTop: 1, borderColor: "divider" }}>
-                  Proficiency = quizzes completed with 100% ÷ total completed quizzes. A quiz is completed after its regular rounds and any earned bonus round. — means no completed quizzes yet. Daily progress counts today’s submissions; +1 marks the single earned bonus round included in the allowance.
+                  Proficiency = average final score of completed quizzes. A quiz is completed after its regular rounds and any earned bonus round. — means no completed quizzes yet. Daily progress counts today’s submissions; +1 marks the single earned bonus round included in the allowance.
                 </Typography>
               </Paper>
                 );

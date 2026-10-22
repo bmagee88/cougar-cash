@@ -3,7 +3,7 @@ import { LocalAttempt, QuizDefinition } from "./types";
 
 declare const test: any, expect: any;
 
-test("proficiency counts finished quizzes, never their intermediate submissions", () => {
+test("proficiency averages final scores of finished quizzes, excluding intermediate submissions", () => {
   const base = { quizId: "quiz", totalCount: 10, bonusRoundsEarned: 0 };
   const attempt = (id: string, day: number, score: number, completedQuiz?: boolean): LocalAttempt => ({
     ...base, id, score, correctCount: score / 10, createdAt: new Date(2026, 9, day, 12, Number(id)).toISOString(),
@@ -11,13 +11,13 @@ test("proficiency counts finished quizzes, never their intermediate submissions"
   });
   const history = [attempt("1", 17, 40, false), attempt("2", 17, 80, false), attempt("3", 17, 100, true),
     attempt("4", 18, 40, false), attempt("5", 18, 100, false)];
-  expect(completedQuizStats(history)).toEqual({ completedTotal: 1, completedPerfect: 1, perfectPercent: 100 });
+  expect(completedQuizStats(history)).toEqual({ completedTotal: 1, averageScore: 100 });
   expect(completedQuizStats([...history, attempt("6", 18, 80, true)]))
-    .toEqual({ completedTotal: 2, completedPerfect: 1, perfectPercent: 50 });
-  expect(completedQuizStats([attempt("1", 18, 100, false)]).perfectPercent).toBeNull();
+    .toEqual({ completedTotal: 2, averageScore: 90 });
+  expect(completedQuizStats([attempt("1", 18, 100, false)]).averageScore).toBeNull();
   // Legacy progress is reconstructed from the final submission of a full run.
   expect(completedQuizStats([attempt("1", 17, 40), attempt("2", 17, 80), attempt("3", 17, 100), attempt("4", 18, 40)]))
-    .toEqual({ completedTotal: 1, completedPerfect: 1, perfectPercent: 100 });
+    .toEqual({ completedTotal: 1, averageScore: 100 });
 });
 
 test("proficiency colors honor the exact 80, 90, and strictly-greater-than-95 boundaries", () => {

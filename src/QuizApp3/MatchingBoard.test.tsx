@@ -32,7 +32,7 @@ const Board = ({ studyTools = true, disabled = false, nextRound = false }) => {
     studyTools={studyTools} disabled={disabled} />;
 };
 
-test("numbered questions highlight and dim only questions, with a clear-highlight control", () => {
+test("numbered questions highlight and clear when clicking away, including answer controls", () => {
   render(<Board />);
   const cards = screen.getAllByTestId("matching-question");
   expect(within(cards[0]).getByText("1.")).toBeInTheDocument();
@@ -42,7 +42,20 @@ test("numbered questions highlight and dim only questions, with a clear-highligh
   expect(cards[0]).toHaveStyle({ opacity: 1 });
   expect(cards[1]).toHaveStyle({ opacity: 0.4 });
   expect(screen.getByRole("button", { name: "Move answer: Second answer" })).not.toHaveStyle({ opacity: 0.4 });
-  fireEvent.click(screen.getByRole("button", { name: "Show all questions" }));
+  expect(screen.queryByRole("button", { name: "Show all questions" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Read question 1 aloud" }));
+  expect(cards[1]).toHaveStyle({ opacity: 0.4 });
+  fireEvent.pointerDown(screen.getByRole("button", { name: "Move answer: First answer" }));
+  expect(cards[1]).toHaveStyle({ opacity: 0.4 });
+  fireEvent.click(screen.getAllByRole("checkbox", { name: "Mark answer" })[0]);
+  expect(screen.getAllByRole("checkbox", { name: "Mark answer" })[0]).toBeChecked();
+  expect(cards[1]).toHaveStyle({ opacity: 1 });
+  fireEvent.click(screen.getByRole("button", { name: "Focus question 2" }));
+  fireEvent.click(screen.getAllByRole("checkbox", { name: "Mark answer" })[0]);
+  expect(screen.getAllByRole("checkbox", { name: "Mark answer" })[0]).not.toBeChecked();
+  expect(cards[0]).toHaveStyle({ opacity: 1 });
+  fireEvent.click(screen.getByRole("button", { name: "Focus question 1" }));
+  fireEvent.click(document.body);
   expect(cards[1]).toHaveStyle({ opacity: 1 });
   fireEvent.click(screen.getByRole("button", { name: "Focus question 2" }));
   fireEvent.click(screen.getByRole("button", { name: "Focus question 2" }));

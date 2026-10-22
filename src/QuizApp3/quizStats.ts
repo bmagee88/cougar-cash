@@ -44,10 +44,9 @@ export const completedQuizStats = (attempts: LocalAttempt[]) => {
     if (ordered.length >= allowance) completed.push(ordered[allowance - 1]);
   });
   const completedTotal = completed.length;
-  const completedPerfect = completed.filter((attempt) => attempt.score === 100).length;
   return {
-    completedTotal, completedPerfect,
-    perfectPercent: completedTotal ? completedPerfect / completedTotal * 100 : null,
+    completedTotal,
+    averageScore: completedTotal ? completed.reduce((sum, attempt) => sum + attempt.score, 0) / completedTotal : null,
   };
 };
 
