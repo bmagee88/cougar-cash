@@ -6,6 +6,7 @@ export const validateQuiz = (value: unknown): value is QuizDefinition => {
     [quiz.id, quiz.quizName, quiz.teacher].every((text) =>
       typeof text === "string" && text.trim(),
     ) &&
+    (quiz.description === undefined || (typeof quiz.description === "string" && Boolean(quiz.description.trim()))) &&
     Array.isArray(quiz.sources) && quiz.sources.length > 0 && quiz.sources.every((source) =>
       source && typeof source.textbook === "string" && source.textbook.trim() &&
       typeof source.chapters === "string" && typeof source.sections === "string",

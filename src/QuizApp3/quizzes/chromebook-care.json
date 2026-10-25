@@ -1,6 +1,7 @@
 {
   "id": "chromebook-care",
   "quizName": "Chromebook Care",
+  "description": "Practice taking care of your Chromebook at school. Review safe carrying, cleaning, charging, storage, and what to do when something goes wrong.",
   "quizNumber": 5,
   "gradeLevel": 6,
   "teacher": "Magbr",

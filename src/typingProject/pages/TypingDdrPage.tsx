@@ -30,6 +30,9 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import { keyframes } from "@emotion/react";
+import DdrRoundTransition, { FINISH_RESTART_MS, FINISH_SEQUENCE, FinishPhase, RecordSaveStatus } from "./DdrRoundTransition";
+import VerticalTypingLanes from "./VerticalTypingLanes";
+import { isVerticalHomeKey, loadVerticalHomeKey, VERTICAL_COLUMNS, VERTICAL_KEY_STORAGE, VerticalHomeKey } from "./verticalMode";
 
 type HomeKey = {
   key: string;
@@ -41,6 +44,9 @@ type HomeKey = {
 
 type Note = {
   id: number;
+  key: string;
+  rowIndex?: number;
+  repeatGroupId: number;
   laneIndex: number;
   targetTime: number;
   createdAt: number;
@@ -75,8 +81,8 @@ type ResponsiveSize = {
 
 type RhythmMode = "whole" | "half" | "quarter" | "backbeat" | "syncopated" | "burst";
 type LeagueMode = "bronze" | "silver" | "gold" | "platinum" | "titanium";
-type GameMode = "balanced" | "balancedPlus" | "progressive" | "custom" | LeagueMode;
-type BalancedPlusOutcome = "hit" | "missed" | "wrong";
+type AdaptivePracticeMode = "balanced" | "balancedPlus" | "vertical";
+type GameMode = AdaptivePracticeMode | "progressive" | "custom" | LeagueMode;
 type BalancedTimeMode = "unlimited" | "climb" | "double";
 type LeaderboardView = "leaderboard" | "recent";
 type RoundResult = "lost" | "complete" | null;
@@ -106,6 +112,8 @@ const HOME_KEYS: HomeKey[] = [
   { key: "s", label: "S", targetLabel: "S", color: "#facc15" },
   { key: "d", label: "D", targetLabel: "D", color: "#f97316" },
   { key: "f", label: "F", targetLabel: "F", color: "#22c55e" },
+  { key: "g", label: "G", targetLabel: "G", color: "#14b8a6" },
+  { key: "h", label: "H", targetLabel: "H", color: "#14b8a6" },
   { key: " ", label: "Space", targetLabel: "Space", color: "#3b82f6", widthUnits: 2 },
   { key: "j", label: "J", targetLabel: "J", color: "#22c55e" },
   { key: "k", label: "K", targetLabel: "K", color: "#f97316" },
@@ -115,7 +123,7 @@ const HOME_KEYS: HomeKey[] = [
 
 const DEFAULT_ACTIVE_KEYS = ["d", "f", "j", "k"];
 const MIN_ACTIVE_KEYS = 2;
-const MAX_RANDOM_ACTIVE_KEYS = HOME_KEYS.length;
+const MAX_RANDOM_ACTIVE_KEYS = HOME_KEYS.length - 1; // All ten letters, with Space off.
 const ALL_HOME_KEY_VALUES = HOME_KEYS.map((homeKey) => homeKey.key);
 const TEMPO_MIN = 48;
 const TEMPO_MAX = 300;
@@ -132,6 +140,7 @@ const SLOW_TEMPO_HIT_WINDOW_MS = 540;
 const FAST_TEMPO_HIT_WINDOW_MS = 190;
 const HIT_LINE_PERCENT = 74;
 const BALANCED_START_TEMPO = 80;
+const BALANCED_TEMPO_FLOOR = 40;
 const BALANCED_CLIMB_DURATION_MS = 88000;
 const PROGRESSIVE_START_TEMPO = 65;
 const PROGRESSIVE_TEMPO_STEP = 5;
@@ -139,14 +148,14 @@ const LEVEL_DURATION_MS = 15000;
 const WRONG_KEY_TEMPO_FLOOR = 60;
 const BALANCED_HIT_TEMPO_REWARD = 1;
 const BALANCED_MISS_TEMPO_PENALTY = 1;
-const BALANCED_WRONG_TEMPO_PENALTY = 3;
-const BALANCED_PLUS_WINDOW_SIZE = 30;
-const BALANCED_PLUS_MIN_SAMPLE = 8;
-const BALANCED_PLUS_RECENT_WINDOW = 6;
+const DEFAULT_KEY_REPEATS = 2;
+const MIN_KEY_REPEATS = 1;
+const MAX_KEY_REPEATS = 4;
 const HEART_REGEN_COMBO_TARGET = 5;
 const FRACTIONAL_MISSED_HEART_LOSS = 0.2;
 const DDR_LEADERBOARD_KEY = "typingDdrLeaderboard";
 const DDR_ACTIVE_KEYS_KEY = "typingDdrActiveKeys";
+const DDR_LAST_TEMPOS_KEY = "typingDdrLastTempos";
 
 const BALANCED_TIME_MODES: { value: BalancedTimeMode; label: string }[] = [
   { value: "unlimited", label: "Unlimited" },
@@ -235,9 +244,16 @@ const BALANCED_PLUS_PRESET: LeaguePreset = {
   color: "#7dd3fc",
 };
 
+const VERTICAL_PRESET: LeaguePreset = {
+  ...BALANCED_PRESET,
+  label: "Vertical",
+  color: "#a78bfa",
+};
+
 const MODE_LABELS: Record<GameMode, string> = {
   balanced: "Balanced",
   balancedPlus: "Balanced+",
+  vertical: "Vertical",
   progressive: "Progressive",
   custom: "Custom",
   bronze: LEAGUE_PRESETS.bronze.label,
@@ -250,6 +266,7 @@ const MODE_LABELS: Record<GameMode, string> = {
 const LEADERBOARD_MODE_LABELS = [
   MODE_LABELS.balancedPlus,
   MODE_LABELS.balanced,
+  MODE_LABELS.vertical,
   MODE_LABELS.progressive,
   ...LEAGUE_ORDER.map((leagueMode) => MODE_LABELS[leagueMode]),
   MODE_LABELS.custom,
@@ -340,21 +357,30 @@ const noteFall = keyframes`
 `;
 
 const noteColumns = {
-  xs: "repeat(4, minmax(26px, 1fr)) minmax(52px, 2fr) repeat(4, minmax(26px, 1fr))",
-  sm: "repeat(4, minmax(42px, 1fr)) minmax(84px, 2fr) repeat(4, minmax(42px, 1fr))",
-  md: "repeat(4, minmax(54px, 1fr)) minmax(108px, 2fr) repeat(4, minmax(54px, 1fr))",
+  xs: "repeat(10, minmax(20px, 1fr))",
+  sm: "repeat(10, minmax(36px, 1fr))",
+  md: "repeat(10, minmax(48px, 1fr))",
 };
 
+function getLaneGridStart(laneIndex: number) {
+  if (HOME_KEYS[laneIndex].key === " ") return 5;
+  return laneIndex < 6 ? laneIndex + 1 : laneIndex;
+}
+
+function getLaneGridEnd(laneIndex: number) {
+  return getLaneGridStart(laneIndex) + (HOME_KEYS[laneIndex].widthUnits ?? 1);
+}
+
 function getLaneGridColumn(laneIndex: number) {
-  return laneIndex + 1;
+  return `${getLaneGridStart(laneIndex)} / ${getLaneGridEnd(laneIndex)}`;
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
-function isBalancedPracticeMode(gameMode: GameMode) {
-  return gameMode === "balanced" || gameMode === "balancedPlus";
+function isAdaptivePracticeMode(gameMode: GameMode): gameMode is AdaptivePracticeMode {
+  return gameMode === "balanced" || gameMode === "balancedPlus" || gameMode === "vertical";
 }
 
 function scaleSize(size: ResponsiveSize, multiplier: number): ResponsiveSize {
@@ -433,14 +459,55 @@ function getBasePresetForMode(gameMode: GameMode) {
   if (gameMode === "custom") return null;
   if (gameMode === "balanced") return BALANCED_PRESET;
   if (gameMode === "balancedPlus") return BALANCED_PLUS_PRESET;
+  if (gameMode === "vertical") return VERTICAL_PRESET;
   if (gameMode === "progressive") return PROGRESSIVE_PRESET;
   return LEAGUE_PRESETS[gameMode];
+}
+
+function loadDdrLastTempos(): Partial<Record<AdaptivePracticeMode, number>> {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(DDR_LAST_TEMPOS_KEY) ?? "{}");
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+
+    const tempos: Partial<Record<AdaptivePracticeMode, number>> = {};
+    (["balanced", "balancedPlus", "vertical"] as const).forEach((mode) => {
+      const value = (parsed as Record<string, unknown>)[mode];
+      if (typeof value === "number" && Number.isFinite(value) && value >= BALANCED_TEMPO_FLOOR && value <= TEMPO_MAX) {
+        tempos[mode] = value;
+      }
+    });
+    return tempos;
+  } catch {
+    return {};
+  }
+}
+
+function getStartingTempoForMode(gameMode: GameMode) {
+  const defaultTempo = getBasePresetForMode(gameMode)?.tempo ?? BALANCED_PLUS_PRESET.tempo;
+  if (!isAdaptivePracticeMode(gameMode)) return defaultTempo;
+
+  const lastTempo = loadDdrLastTempos()[gameMode];
+  if (lastTempo === undefined) return defaultTempo;
+  return lastTempo <= defaultTempo ? lastTempo : Math.floor(defaultTempo + (lastTempo - defaultTempo) / 2);
+}
+
+function saveDdrEndingTempo(gameMode: GameMode, tempo: number) {
+  if (typeof window === "undefined" || !isAdaptivePracticeMode(gameMode)) return;
+
+  try {
+    window.localStorage.setItem(DDR_LAST_TEMPOS_KEY, JSON.stringify({ ...loadDdrLastTempos(), [gameMode]: tempo }));
+  } catch {
+    // A storage failure must not prevent a round from ending.
+  }
 }
 
 function getDisplayPresetForMode(gameMode: GameMode, progressiveTempo: number) {
   if (gameMode === "custom") return null;
   if (gameMode === "balanced") return BALANCED_PRESET;
   if (gameMode === "balancedPlus") return BALANCED_PLUS_PRESET;
+  if (gameMode === "vertical") return VERTICAL_PRESET;
   if (gameMode === "progressive") return LEAGUE_PRESETS[getLeagueModeForTempo(progressiveTempo)];
   return LEAGUE_PRESETS[gameMode];
 }
@@ -451,8 +518,14 @@ function formatKeyList(keys: string[]) {
     .join(" ");
 }
 
-function getOrderedHomeKeys(keys: string[]) {
+function getOrderedHomeKeys(keys: string[], enabledKey?: string) {
   const selectedKeys = new Set(keys);
+  if (enabledKey === " ") {
+    selectedKeys.delete("g");
+    selectedKeys.delete("h");
+  } else if (selectedKeys.has("g") || selectedKeys.has("h")) {
+    selectedKeys.delete(" ");
+  }
   return HOME_KEYS.map((homeKey) => homeKey.key).filter((key) => selectedKeys.has(key));
 }
 
@@ -505,13 +578,21 @@ function getRandomLane(activeLaneIndexes: number[], lastLane: number | null) {
 }
 
 function getRandomHomeKeys(count: number) {
-  const keys = [...ALL_HOME_KEY_VALUES];
+  const keyCount = clamp(count, MIN_ACTIVE_KEYS, MAX_RANDOM_ACTIVE_KEYS);
+  // Space replaces two letters, so a ten-key set must use G/H.
+  const keys = ALL_HOME_KEY_VALUES.filter((key) => keyCount < MAX_RANDOM_ACTIVE_KEYS || key !== " ");
   for (let index = keys.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(Math.random() * (index + 1));
     [keys[index], keys[swapIndex]] = [keys[swapIndex], keys[index]];
   }
 
-  const selectedKeys = new Set(keys.slice(0, clamp(count, MIN_ACTIVE_KEYS, MAX_RANDOM_ACTIVE_KEYS)));
+  const selectedKeys = new Set<string>();
+  for (const key of keys) {
+    if (key === " " && (selectedKeys.has("g") || selectedKeys.has("h"))) continue;
+    if ((key === "g" || key === "h") && selectedKeys.has(" ")) continue;
+    selectedKeys.add(key);
+    if (selectedKeys.size === keyCount) break;
+  }
   return HOME_KEYS.map((homeKey) => homeKey.key).filter((key) => selectedKeys.has(key));
 }
 
@@ -566,6 +647,7 @@ function saveDdrLeaderboardEntry(entry: LeaderboardEntry) {
 
 function useBeatSound(enabled: boolean) {
   const audioContextRef = useRef<AudioContext | null>(null);
+  const voicesRef = useRef(new Set<OscillatorNode>());
 
   const ensureAudioContext = useCallback(() => {
     const AudioContextConstructor =
@@ -590,6 +672,8 @@ function useBeatSound(enabled: boolean) {
       if (!context) return;
 
       const oscillator = context.createOscillator();
+      voicesRef.current.add(oscillator);
+      oscillator.onended = () => { voicesRef.current.delete(oscillator); oscillator.disconnect(); gain.disconnect(); };
       const gain = context.createGain();
       oscillator.type = "triangle";
       oscillator.frequency.value = accent ? 880 : 660;
@@ -602,15 +686,45 @@ function useBeatSound(enabled: boolean) {
     [enabled, ensureAudioContext]
   );
 
-  return { prime: ensureAudioContext, playBeat };
+  const playFanfare = useCallback(() => {
+    if (!enabled) return;
+    const context = ensureAudioContext();
+    if (!context) return;
+    [523.25, 659.25, 783.99, 1046.5].forEach((frequency, index) => {
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const start = context.currentTime + index * 0.12;
+      const duration = index === 3 ? 0.5 : 0.22;
+      oscillator.type = "triangle";
+      oscillator.frequency.value = frequency;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.065, start + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain).connect(context.destination);
+      voicesRef.current.add(oscillator);
+      oscillator.onended = () => { voicesRef.current.delete(oscillator); oscillator.disconnect(); gain.disconnect(); };
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.02);
+    });
+  }, [enabled, ensureAudioContext]);
+
+  useEffect(() => {
+    const voices = voicesRef.current;
+    if (!enabled) voices.forEach((voice) => voice.stop());
+    return () => { voices.forEach((voice) => voice.stop()); };
+  }, [enabled]);
+
+  return { prime: ensureAudioContext, playBeat, playFanfare };
 }
 
 export default function TypingDdrPage() {
   const [gameMode, setGameMode] = useState<GameMode>("balancedPlus");
-  const [tempo, setTempo] = useState(BALANCED_PLUS_PRESET.tempo);
+  const [tempo, setTempo] = useState(() => getStartingTempoForMode("balancedPlus"));
   const [progressiveTempo, setProgressiveTempo] = useState(PROGRESSIVE_START_TEMPO);
   const [rhythmMode, setRhythmMode] = useState<RhythmMode>("quarter");
+  const [keyRepeats, setKeyRepeats] = useState(DEFAULT_KEY_REPEATS);
   const [activeKeys, setActiveKeys] = useState<string[]>(loadDdrActiveKeys);
+  const [verticalHomeKey, setVerticalHomeKey] = useState<VerticalHomeKey>(loadVerticalHomeKey);
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [keysLocked, setKeysLocked] = useState(false);
@@ -625,7 +739,7 @@ export default function TypingDdrPage() {
   const [healComboTarget, setHealComboTarget] = useState(LEAGUE_PRESETS.bronze.healComboTarget);
   const [notes, setNotes] = useState<Note[]>([]);
   const [tempoMarkers, setTempoMarkers] = useState<TempoMarker[]>([]);
-  const [pulseLane, setPulseLane] = useState<{ laneIndex: number; token: number } | null>(null);
+  const [pulseLane, setPulseLane] = useState<{ laneIndex: number; token: number; key?: string } | null>(null);
   const [levelUpToken, setLevelUpToken] = useState(0);
   const [mistakeToken, setMistakeToken] = useState(0);
   const [soundOn, setSoundOn] = useState(false);
@@ -635,11 +749,13 @@ export default function TypingDdrPage() {
   const [randomKeyCount, setRandomKeyCount] = useState(DEFAULT_ACTIVE_KEYS.length);
   const [modeShortcutActive, setModeShortcutActive] = useState(false);
   const [keyEditActive, setKeyEditActive] = useState(false);
-  const [maxTempo, setMaxTempo] = useState(BALANCED_PLUS_PRESET.tempo);
-  const [averageTempo, setAverageTempo] = useState(BALANCED_PLUS_PRESET.tempo);
+  const [maxTempo, setMaxTempo] = useState(tempo);
+  const [averageTempo, setAverageTempo] = useState(tempo);
   const [balancedTimeMode, setBalancedTimeMode] = useState<BalancedTimeMode>("climb");
   const [balancedElapsedMs, setBalancedElapsedMs] = useState(0);
   const [roundResult, setRoundResult] = useState<RoundResult>(null);
+  const [finishPhase, setFinishPhase] = useState<FinishPhase | null>(null);
+  const [recordSaveStatus, setRecordSaveStatus] = useState<RecordSaveStatus>("saving");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [leaderboardOpen, setLeaderboardOpen] = useState(false);
   const [leaderboardView, setLeaderboardView] = useState<LeaderboardView>("leaderboard");
@@ -659,6 +775,11 @@ export default function TypingDdrPage() {
   const nextNoteIdRef = useRef(1);
   const nextTempoMarkerIdRef = useRef(1);
   const lastLaneRef = useRef<number | null>(null);
+  const lastVerticalRowRef = useRef<number | null>(null);
+  const keyRepeatsRef = useRef(keyRepeats);
+  const repeatsRemainingRef = useRef(0);
+  const repeatGroupIdRef = useRef(0);
+  const repeatGroupsRef = useRef(new Map<number, { remaining: number; hits: number }>());
   const timingEventsRef = useRef<Record<string, ScheduledTimingEvent>>({});
   const tempoMarkersRef = useRef(tempoMarkers);
   const pauseStartedAtRef = useRef<number | null>(null);
@@ -675,15 +796,15 @@ export default function TypingDdrPage() {
   const randomKeysEnabledRef = useRef(randomKeysEnabled);
   const randomKeyCountRef = useRef(randomKeyCount);
   const keyEditActiveRef = useRef(keyEditActive);
-  const balancedPlusOutcomesRef = useRef<BalancedPlusOutcome[]>([]);
   const runSavedRef = useRef(false);
   const soundOnRef = useRef(soundOn);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const leaderboardScrollRef = useRef<HTMLDivElement | null>(null);
   const [stageHeight, setStageHeight] = useState(560);
 
-  const { prime, playBeat } = useBeatSound(soundOn);
+  const { prime, playBeat, playFanfare } = useBeatSound(soundOn);
   const playBeatRef = useRef(playBeat);
+  const playFanfareRef = useRef(playFanfare);
   const beatMs = useMemo(() => 60000 / tempo, [tempo]);
   const beatMsRef = useRef(beatMs);
   const tempoRef = useRef(tempo);
@@ -727,15 +848,21 @@ export default function TypingDdrPage() {
     },
     [challengeIntensity, compactMode, stageSizeScale]
   );
+  const isVerticalMode = gameMode === "vertical";
+  const selectedVerticalColumn = VERTICAL_COLUMNS[verticalHomeKey];
+  const effectiveActiveKeys = useMemo(() => isVerticalMode ? [verticalHomeKey] : activeKeys, [activeKeys, isVerticalMode, verticalHomeKey]);
+  const randomKeySetActive = randomKeysEnabled && !isVerticalMode;
+  const playableKeyCount = isVerticalMode ? 3 : activeKeys.length;
   const activeLaneIndexes = useMemo(
     () =>
-      HOME_KEYS.map((homeKey, index) => (activeKeys.includes(homeKey.key) ? index : -1)).filter(
+      HOME_KEYS.map((homeKey, index) => (effectiveActiveKeys.includes(homeKey.key) ? index : -1)).filter(
         (index) => index !== -1
       ),
-    [activeKeys]
+    [effectiveActiveKeys]
   );
   const activeLaneIndexesRef = useRef(activeLaneIndexes);
-  const activeKeySet = useMemo(() => new Set(activeKeys), [activeKeys]);
+  const activeKeySet = useMemo(() => new Set(effectiveActiveKeys), [effectiveActiveKeys]);
+  const showSpaceLane = activeKeySet.has(" ") && !(!keysLocked && randomKeySetActive);
   const notesByLane = useMemo(() => {
     const lanes = HOME_KEYS.map(() => [] as Note[]);
     notes.forEach((note) => {
@@ -744,7 +871,7 @@ export default function TypingDdrPage() {
     return lanes;
   }, [notes]);
   const modeOptions = useMemo<GameMode[]>(
-    () => ["balancedPlus", "balanced", "progressive", ...LEAGUE_ORDER, "custom"],
+    () => ["balancedPlus", "balanced", "vertical", "progressive", ...LEAGUE_ORDER, "custom"],
     []
   );
   const randomKeyFlashDelays = useMemo(() => {
@@ -775,6 +902,10 @@ export default function TypingDdrPage() {
   }, []);
 
   useEffect(() => {
+    try { window.localStorage.setItem(VERTICAL_KEY_STORAGE, verticalHomeKey); } catch { /* Keep selection usable without storage. */ }
+  }, [verticalHomeKey]);
+
+  useEffect(() => {
     soundOnRef.current = soundOn;
   }, [soundOn]);
 
@@ -788,7 +919,8 @@ export default function TypingDdrPage() {
 
   useEffect(() => {
     playBeatRef.current = playBeat;
-  }, [playBeat]);
+    playFanfareRef.current = playFanfare;
+  }, [playBeat, playFanfare]);
 
   useEffect(() => {
     tempoRef.current = tempo;
@@ -798,6 +930,10 @@ export default function TypingDdrPage() {
   useEffect(() => {
     rhythmModeRef.current = rhythmMode;
   }, [rhythmMode]);
+
+  useEffect(() => {
+    keyRepeatsRef.current = keyRepeats;
+  }, [keyRepeats]);
 
   useEffect(() => {
     hitWindowMsRef.current = hitWindowMs;
@@ -889,7 +1025,7 @@ export default function TypingDdrPage() {
   useEffect(() => {
     if (!currentPreset) return;
 
-    const nextTempo = gameMode === "progressive" ? progressiveTempo : currentPreset.tempo;
+    const nextTempo = gameMode === "progressive" ? progressiveTempo : getStartingTempoForMode(gameMode);
     tempoRef.current = nextTempo;
     beatMsRef.current = 60000 / nextTempo;
     setTempo(nextTempo);
@@ -1006,7 +1142,7 @@ export default function TypingDdrPage() {
 
   const commitTempoAverage = useCallback((nowMs = performance.now()) => {
     const averageStartedAt = tempoAverageStartedAtRef.current;
-    if (averageStartedAt === null || !isBalancedPracticeMode(gameModeRef.current)) return;
+    if (averageStartedAt === null || !isAdaptivePracticeMode(gameModeRef.current)) return;
 
     const elapsedMs = Math.max(0, nowMs - averageStartedAt);
     if (elapsedMs === 0) return;
@@ -1018,7 +1154,7 @@ export default function TypingDdrPage() {
   }, []);
 
   const startBalancedRunClock = useCallback((nowMs = performance.now()) => {
-    if (!isBalancedPracticeMode(gameModeRef.current)) return;
+    if (!isAdaptivePracticeMode(gameModeRef.current)) return;
     if (balancedRunStartedAtRef.current === null) {
       balancedRunStartedAtRef.current = nowMs;
     }
@@ -1040,6 +1176,7 @@ export default function TypingDdrPage() {
   const completeTimedRound = useCallback(() => {
     const nowMs = performance.now();
     stopBalancedRunClock(nowMs);
+    saveDdrEndingTempo(gameModeRef.current, tempoRef.current);
     runningRef.current = false;
     gameOverRef.current = true;
     roundResultRef.current = "complete";
@@ -1050,7 +1187,7 @@ export default function TypingDdrPage() {
   }, [stopBalancedRunClock]);
 
   useEffect(() => {
-    if (!running || gameOver || !keysLocked || !isBalancedPracticeMode(gameMode)) return undefined;
+    if (!running || gameOver || !keysLocked || !isAdaptivePracticeMode(gameMode)) return undefined;
 
     const intervalId = window.setInterval(() => {
       const nowMs = performance.now();
@@ -1078,64 +1215,32 @@ export default function TypingDdrPage() {
   const applyTempoDelta = useCallback((delta: number) => {
     if (delta === 0) return;
     commitTempoAverage();
-    setTempo((previous) => {
-      const nextTempo = clamp(previous + delta, WRONG_KEY_TEMPO_FLOOR, TEMPO_MAX);
-      tempoRef.current = nextTempo;
-      beatMsRef.current = 60000 / nextTempo;
-      maxTempoRef.current = Math.max(maxTempoRef.current, nextTempo);
-      setMaxTempo(maxTempoRef.current);
-      return nextTempo;
-    });
+    const floor = isAdaptivePracticeMode(gameModeRef.current) ? BALANCED_TEMPO_FLOOR : WRONG_KEY_TEMPO_FLOOR;
+    const nextTempo = clamp(tempoRef.current + delta, floor, TEMPO_MAX);
+    tempoRef.current = nextTempo;
+    beatMsRef.current = 60000 / nextTempo;
+    maxTempoRef.current = Math.max(maxTempoRef.current, nextTempo);
+    setTempo(nextTempo);
+    setMaxTempo(maxTempoRef.current);
   }, [commitTempoAverage]);
 
-  const adjustBalancedTempo = useCallback(
-    (delta: number) => {
-      if (gameModeRef.current !== "balanced") return;
-      applyTempoDelta(delta);
-    },
-    [applyTempoDelta]
-  );
+  const recordRepeatOutcome = useCallback(
+    (note: Note, hit: boolean) => {
+      const group = repeatGroupsRef.current.get(note.repeatGroupId);
+      if (!group) return;
 
-  const recordBalancedPlusOutcome = useCallback(
-    (outcome: BalancedPlusOutcome, comboCount = comboRef.current) => {
-      if (gameModeRef.current !== "balancedPlus") return;
+      group.remaining -= 1;
+      if (hit) group.hits += 1;
+      if (group.remaining > 0) return;
 
-      const nextOutcomes = [...balancedPlusOutcomesRef.current, outcome].slice(-BALANCED_PLUS_WINDOW_SIZE);
-      balancedPlusOutcomesRef.current = nextOutcomes;
+      repeatGroupsRef.current.delete(note.repeatGroupId);
+      if (!isAdaptivePracticeMode(gameModeRef.current)) return;
 
-      if (nextOutcomes.length < BALANCED_PLUS_MIN_SAMPLE) {
-        if (outcome !== "hit") {
-          applyTempoDelta(-BALANCED_MISS_TEMPO_PENALTY);
-        }
-        return;
-      }
-
-      const hitCount = nextOutcomes.filter((value) => value === "hit").length;
-      const accuracy = hitCount / nextOutcomes.length;
-      const recentMissCount = nextOutcomes
-        .slice(-BALANCED_PLUS_RECENT_WINDOW)
-        .filter((value) => value !== "hit").length;
-
-      if (outcome === "hit") {
-        if (accuracy >= 0.92 && recentMissCount === 0 && comboCount >= 8) {
-          applyTempoDelta(BALANCED_HIT_TEMPO_REWARD);
-        }
-        return;
-      }
-
-      if (accuracy < 0.72 || recentMissCount >= 3) {
-        applyTempoDelta(outcome === "wrong" ? -3 : -2);
-        return;
-      }
-
-      if (accuracy < 0.84 || recentMissCount >= 2) {
-        applyTempoDelta(outcome === "wrong" ? -2 : -1);
-        return;
-      }
-
-      if (outcome === "wrong") {
-        applyTempoDelta(-1);
-      }
+      // Each scheduled note counts once, whether hit or missed. Extra presses
+      // must not finish a group early or trigger separate speed adjustments.
+      applyTempoDelta(
+        group.hits > keyRepeatsRef.current / 2 ? BALANCED_HIT_TEMPO_REWARD : -BALANCED_MISS_TEMPO_PENALTY
+      );
     },
     [applyTempoDelta]
   );
@@ -1154,6 +1259,7 @@ export default function TypingDdrPage() {
 
     if (nextHearts === 0) {
       stopBalancedRunClock();
+      saveDdrEndingTempo(gameModeRef.current, tempoRef.current);
       runningRef.current = false;
       gameOverRef.current = true;
       roundResultRef.current = "lost";
@@ -1183,14 +1289,14 @@ export default function TypingDdrPage() {
       if (!runningRef.current || gameOverRef.current) return;
 
       if (currentEvent.options.missNoteId !== undefined) {
+        const missedNote = notesRef.current.find((note) => note.id === currentEvent.options.missNoteId);
         const nextNotes = notesRef.current.filter((note) => note.id !== currentEvent.options.missNoteId);
-        if (nextNotes.length !== notesRef.current.length) {
+        if (missedNote) {
           notesRef.current = nextNotes;
           setNotes(nextNotes);
           setMissedNotes((previous) => previous + 1);
-          adjustBalancedTempo(-BALANCED_MISS_TEMPO_PENALTY);
-          recordBalancedPlusOutcome("missed");
-          if (gameModeRef.current === "progressive" || isBalancedPracticeMode(gameModeRef.current)) {
+          recordRepeatOutcome(missedNote, false);
+          if (gameModeRef.current === "progressive" || isAdaptivePracticeMode(gameModeRef.current)) {
             loseHearts(FRACTIONAL_MISSED_HEART_LOSS);
           }
           resetStreak();
@@ -1202,7 +1308,7 @@ export default function TypingDdrPage() {
         playBeatRef.current(currentEvent.options.accent);
       }
     }, Math.max(0, timingEvent.targetTime - performance.now()));
-  }, [adjustBalancedTempo, loseHearts, recordBalancedPlusOutcome, resetStreak]);
+  }, [loseHearts, recordRepeatOutcome, resetStreak]);
 
   const pauseTimingEvents = useCallback(() => {
     Object.values(timingEventsRef.current).forEach((timingEvent) => {
@@ -1242,6 +1348,9 @@ export default function TypingDdrPage() {
     const startAt = performance.now() + FALL_DURATION_MS + beatMsRef.current;
     nextBarStartRef.current = startAt;
     lastLaneRef.current = null;
+    lastVerticalRowRef.current = null;
+    repeatsRemainingRef.current = 0;
+    repeatGroupsRef.current.clear();
     notesRef.current = [];
     tempoMarkersRef.current = [];
     setNotes([]);
@@ -1249,6 +1358,8 @@ export default function TypingDdrPage() {
   }, [clearTimingEvents]);
 
   const resetGame = useCallback(() => {
+    setFinishPhase(null);
+    setRecordSaveStatus("saving");
     runningRef.current = false;
     gameOverRef.current = false;
     roundResultRef.current = null;
@@ -1271,13 +1382,12 @@ export default function TypingDdrPage() {
         ? nextProgressiveTempo
         : currentMode === "custom"
           ? tempoRef.current
-          : (getBasePresetForMode(currentMode)?.tempo ?? BALANCED_PLUS_PRESET.tempo);
+          : getStartingTempoForMode(currentMode);
     const nextMaxTempo = nextTempo;
     progressiveTempoRef.current = nextProgressiveTempo;
     tempoRef.current = nextTempo;
     beatMsRef.current = 60000 / nextTempo;
     maxTempoRef.current = nextMaxTempo;
-    balancedPlusOutcomesRef.current = [];
     runSavedRef.current = false;
     clearNotesAndReseed();
     setTempo(nextTempo);
@@ -1363,7 +1473,7 @@ export default function TypingDdrPage() {
         nextBarStartRef.current = nowMs + FALL_DURATION_MS + currentBeatMs;
       }
     }
-    if (!keysLockedRef.current && randomKeysEnabledRef.current) {
+    if (!keysLockedRef.current && randomKeysEnabledRef.current && gameModeRef.current !== "vertical") {
       const nextRandomKeys = getRandomHomeKeys(randomKeyCountRef.current);
       setActiveKeys(nextRandomKeys);
       activeLaneIndexesRef.current = HOME_KEYS.map((homeKey, index) =>
@@ -1395,9 +1505,27 @@ export default function TypingDdrPage() {
     startGame();
   }, [resetGame, startGame]);
 
+  useEffect(() => {
+    if (!gameOver || !keysLocked) return undefined;
+
+    setFinishPhase("celebrate");
+    playFanfareRef.current();
+    const timers = FINISH_SEQUENCE.map(({ at, phase }) => window.setTimeout(() => {
+      setFinishPhase(phase);
+      if (phase === "3" || phase === "2" || phase === "1") playBeatRef.current(phase === "1");
+    }, at));
+    timers.push(window.setTimeout(() => {
+      playBeatRef.current(true);
+      restartAndStart();
+      // The count-in has already prepared the player: show moving notes at once.
+      nextBarStartRef.current = performance.now() + FALL_DURATION_MS;
+    }, FINISH_RESTART_MS));
+
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [gameOver, keysLocked, restartAndStart]);
+
   const applyGameMode = useCallback((nextMode: GameMode) => {
     setGameMode(nextMode);
-    balancedPlusOutcomesRef.current = [];
     balancedRunStartedAtRef.current = null;
     balancedElapsedMsRef.current = 0;
     tempoAverageStartedAtRef.current = null;
@@ -1426,7 +1554,7 @@ export default function TypingDdrPage() {
       return;
     }
 
-    const nextTempo = nextMode === "custom" ? tempoRef.current : (getBasePresetForMode(nextMode)?.tempo ?? BALANCED_PLUS_PRESET.tempo);
+    const nextTempo = nextMode === "custom" ? tempoRef.current : getStartingTempoForMode(nextMode);
     tempoRef.current = nextTempo;
     beatMsRef.current = 60000 / nextTempo;
     setTempo(nextTempo);
@@ -1438,12 +1566,18 @@ export default function TypingDdrPage() {
   const toggleActiveKey = useCallback((key: string) => {
     if (keysLockedRef.current) return;
 
+    if (gameModeRef.current === "vertical") {
+      if (isVerticalHomeKey(key)) setVerticalHomeKey(key);
+      return;
+    }
+
     setActiveKeys((previousKeys) => {
       const includesKey = previousKeys.includes(key);
       if (includesKey && previousKeys.length <= MIN_ACTIVE_KEYS) return previousKeys;
 
       const nextKeys = includesKey ? previousKeys.filter((activeKey) => activeKey !== key) : [...previousKeys, key];
-      const orderedKeys = getOrderedHomeKeys(nextKeys);
+      const orderedKeys = getOrderedHomeKeys(nextKeys, includesKey ? undefined : key);
+      if (orderedKeys.length < MIN_ACTIVE_KEYS) return previousKeys;
       saveDdrActiveKeys(orderedKeys);
       return orderedKeys;
     });
@@ -1503,9 +1637,11 @@ export default function TypingDdrPage() {
       if (key === "k") {
         event.preventDefault();
         setModeShortcutActive(false);
-        randomKeysEnabledRef.current = false;
+        if (gameModeRef.current !== "vertical") {
+          randomKeysEnabledRef.current = false;
+          setRandomKeysEnabled(false);
+        }
         keyEditActiveRef.current = true;
-        setRandomKeysEnabled(false);
         setKeyEditActive(true);
         return true;
       }
@@ -1524,7 +1660,7 @@ export default function TypingDdrPage() {
 
       if (key === "r") {
         event.preventDefault();
-        setRandomKeysEnabled((previous) => !previous);
+        if (gameModeRef.current !== "vertical") setRandomKeysEnabled((previous) => !previous);
         return true;
       }
 
@@ -1535,13 +1671,13 @@ export default function TypingDdrPage() {
         return true;
       }
 
-      if (randomKeysEnabledRef.current && key === "j") {
+      if (randomKeysEnabledRef.current && gameModeRef.current !== "vertical" && key === "j") {
         event.preventDefault();
         setRandomKeyCount((previous) => clamp(previous - 1, MIN_ACTIVE_KEYS, MAX_RANDOM_ACTIVE_KEYS));
         return true;
       }
 
-      if (isBalancedPracticeMode(gameModeRef.current) && (key === "s" || key === "f")) {
+      if (isAdaptivePracticeMode(gameModeRef.current) && (key === "s" || key === "f")) {
         event.preventDefault();
         stepBalancedTimeMode(key === "f" ? 1 : -1);
         return true;
@@ -1554,6 +1690,8 @@ export default function TypingDdrPage() {
 
   const recordHit = useCallback(
     (noteId: number, laneIndex: number) => {
+      const hitNote = notesRef.current.find((note) => note.id === noteId);
+      if (!hitNote) return;
       const remainingNotes = notesRef.current.filter((note) => note.id !== noteId);
       notesRef.current = remainingNotes;
       setNotes(remainingNotes);
@@ -1563,11 +1701,10 @@ export default function TypingDdrPage() {
       comboRef.current = nextCombo;
       setCombo(nextCombo);
       setPointScore(
-        (previous) => previous + calculateHitScore(activeKeys.length, tempoIntensity, rhythmIntensity, nextCombo)
+        (previous) => previous + calculateHitScore(playableKeyCount, tempoIntensity, rhythmIntensity, nextCombo)
       );
 
-      adjustBalancedTempo(BALANCED_HIT_TEMPO_REWARD);
-      recordBalancedPlusOutcome("hit", nextCombo);
+      recordRepeatOutcome(hitNote, true);
 
       let nextHealProgress = healProgressRef.current + 1;
       if (nextHealProgress >= healComboTarget) {
@@ -1579,13 +1716,12 @@ export default function TypingDdrPage() {
 
       healProgressRef.current = nextHealProgress;
       setHealProgress(nextHealProgress);
-      setPulseLane({ laneIndex, token: noteId });
+      setPulseLane({ laneIndex, token: noteId, key: hitNote.key });
     },
     [
-      activeKeys.length,
-      adjustBalancedTempo,
+      playableKeyCount,
       healComboTarget,
-      recordBalancedPlusOutcome,
+      recordRepeatOutcome,
       rhythmIntensity,
       startingHearts,
       tempoIntensity,
@@ -1598,11 +1734,8 @@ export default function TypingDdrPage() {
     setCombo(0);
     setMistakeToken((previous) => previous + 1);
 
-    adjustBalancedTempo(-BALANCED_WRONG_TEMPO_PENALTY);
-    recordBalancedPlusOutcome("wrong");
-
     loseHearts(1);
-  }, [adjustBalancedTempo, loseHearts, recordBalancedPlusOutcome]);
+  }, [loseHearts]);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -1734,9 +1867,14 @@ export default function TypingDdrPage() {
       event.preventDefault();
 
       const pressedKey = event.key.toLowerCase();
-      const homeKeyIndex = HOME_KEYS.findIndex((homeKey) => homeKey.key === pressedKey);
+      const homeKeyIndex = isVerticalMode
+        ? activeLaneIndexesRef.current[0] ?? -1
+        : HOME_KEYS.findIndex((homeKey) => homeKey.key === pressedKey);
+      const playableKey = isVerticalMode
+        ? (selectedVerticalColumn.keys as readonly string[]).includes(pressedKey)
+        : activeKeySet.has(pressedKey);
 
-      if (homeKeyIndex === -1 || !activeKeySet.has(pressedKey)) {
+      if (homeKeyIndex === -1 || !playableKey) {
         registerMistake();
         return;
       }
@@ -1746,7 +1884,7 @@ export default function TypingDdrPage() {
       let candidateDistance = Number.POSITIVE_INFINITY;
 
       notesRef.current.forEach((note) => {
-        if (note.laneIndex !== homeKeyIndex) return;
+        if (note.laneIndex !== homeKeyIndex || note.key !== pressedKey) return;
 
         const distance = Math.abs(note.targetTime - pressTime);
         if (distance <= hitWindowMs && distance < candidateDistance) {
@@ -1764,6 +1902,8 @@ export default function TypingDdrPage() {
     },
     [
       activeKeySet,
+      isVerticalMode,
+      selectedVerticalColumn,
       handleMenuShortcut,
       hitWindowMs,
       pauseGame,
@@ -1793,6 +1933,8 @@ export default function TypingDdrPage() {
       const currentHitWindowMs = hitWindowMsRef.current;
       const activeLanes = activeLaneIndexesRef.current;
       const pattern = RHYTHM_PATTERNS[rhythmModeRef.current];
+      const verticalKey = HOME_KEYS[activeLanes[0]]?.key;
+      const verticalColumn = gameModeRef.current === "vertical" && isVerticalHomeKey(verticalKey) ? VERTICAL_COLUMNS[verticalKey] : null;
       const newNotes: Note[] = [];
 
       if (activeLanes.length === 0) return;
@@ -1814,12 +1956,22 @@ export default function TypingDdrPage() {
         });
 
         pattern.offsets.forEach((offset) => {
-          const laneIndex = getRandomLane(activeLanes, lastLaneRef.current);
-          lastLaneRef.current = laneIndex;
+          if (repeatsRemainingRef.current === 0) {
+            lastLaneRef.current = getRandomLane(activeLanes, lastLaneRef.current);
+            if (verticalColumn) lastVerticalRowRef.current = getRandomLane([0, 1, 2], lastVerticalRowRef.current);
+            repeatsRemainingRef.current = keyRepeatsRef.current;
+            repeatGroupIdRef.current = nextNoteIdRef.current;
+            repeatGroupsRef.current.set(repeatGroupIdRef.current, { remaining: keyRepeatsRef.current, hits: 0 });
+          }
+          const laneIndex = lastLaneRef.current!;
+          repeatsRemainingRef.current -= 1;
           const targetTime = barStart + offset * currentBeatMs;
           const noteId = nextNoteIdRef.current;
           newNotes.push({
             id: noteId,
+            key: verticalColumn ? verticalColumn.keys[lastVerticalRowRef.current!] : HOME_KEYS[laneIndex].key,
+            rowIndex: verticalColumn ? lastVerticalRowRef.current! : undefined,
+            repeatGroupId: repeatGroupIdRef.current,
             laneIndex,
             targetTime,
             createdAt: targetTime - FALL_DURATION_MS,
@@ -1864,19 +2016,26 @@ export default function TypingDdrPage() {
     if (runningRef.current) {
       clearNotesAndReseed();
     }
-  }, [activeKeys, clearNotesAndReseed, rhythmMode]);
+  }, [effectiveActiveKeys, clearNotesAndReseed, keyRepeats, rhythmMode]);
 
   const handleActiveKeysChange = (_: React.MouseEvent<HTMLElement>, nextKeys: string[]) => {
     if (keysLockedRef.current) return;
+    if (isVerticalMode) {
+      const key = nextKeys.find((value) => value !== verticalHomeKey);
+      if (key && isVerticalHomeKey(key)) setVerticalHomeKey(key);
+      return;
+    }
     if (nextKeys.length < MIN_ACTIVE_KEYS) return;
-    const orderedKeys = getOrderedHomeKeys(nextKeys);
+    const enabledKey = nextKeys.find((key) => !activeKeySet.has(key));
+    const orderedKeys = getOrderedHomeKeys(nextKeys, enabledKey);
+    if (orderedKeys.length < MIN_ACTIVE_KEYS) return;
     saveDdrActiveKeys(orderedKeys);
     setActiveKeys(orderedKeys);
   };
 
   const handleLaneClick = (key: string) => {
     if (keysLocked || gameOver) return;
-    if (randomKeysEnabled) return;
+    if (randomKeySetActive) return;
     toggleActiveKey(key);
   };
 
@@ -1931,8 +2090,9 @@ export default function TypingDdrPage() {
   const playAreaWidth = compactMode ? "min(760px, 100%)" : "min(1100px, 100%)";
   const modeDisplayLabel = gameMode === "progressive" ? "Progressive" : MODE_LABELS[gameMode];
   const modeColor = displayPreset?.color ?? "#38d9a9";
-  const keyListLabel = formatKeyList(activeKeys);
+  const keyListLabel = isVerticalMode ? selectedVerticalColumn.keys.map((key) => key.toUpperCase()).join(" ") : formatKeyList(activeKeys);
   const paused = keysLocked && !running && !gameOver;
+  const gameFaded = finishPhase !== null && finishPhase !== "celebrate";
   const balancedTimeDisplay =
     balancedTimeLimitMs === null
       ? formatDuration(balancedElapsedMs)
@@ -1956,8 +2116,6 @@ export default function TypingDdrPage() {
 
   useEffect(() => {
     if (!gameOver || !keysLocked || runSavedRef.current) return;
-    if (pointScore === 0 && hits === 0 && missedNotes === 0 && mistakes === 0) return;
-
     runSavedRef.current = true;
     const entry: LeaderboardEntry = {
       id: `${Date.now()}-${Math.round(Math.random() * 100000)}`,
@@ -1970,7 +2128,12 @@ export default function TypingDdrPage() {
       wrong: mistakes,
       date: new Date().toISOString(),
     };
-    setLeaderboard(saveDdrLeaderboardEntry(entry));
+    try {
+      setLeaderboard(saveDdrLeaderboardEntry(entry));
+      setRecordSaveStatus("saved");
+    } catch {
+      setRecordSaveStatus("failed");
+    }
   }, [gameOver, hits, keyListLabel, keysLocked, maxTempo, missedNotes, mistakes, modeDisplayLabel, pointScore]);
 
   return (
@@ -2004,6 +2167,9 @@ export default function TypingDdrPage() {
         position="sticky"
         elevation={0}
         sx={{
+          opacity: gameFaded ? 0 : 1,
+          transition: "opacity 500ms ease",
+          pointerEvents: gameFaded ? "none" : "auto",
           bgcolor: "rgba(5, 7, 13, 0.92)",
           color: "#f8fafc",
           borderBottom: "1px solid rgba(255,255,255,0.12)",
@@ -2119,7 +2285,7 @@ export default function TypingDdrPage() {
               label={`Max BPM ${maxTempo}`}
               sx={{ bgcolor: "rgba(125,211,252,0.1)", color: "rgba(186,230,253,0.74)", borderRadius: 1, fontWeight: 900 }}
             />
-            {isBalancedPracticeMode(gameMode) && (
+            {isAdaptivePracticeMode(gameMode) && (
               <Chip
                 size="small"
                 label={`Avg BPM ${averageTempo}`}
@@ -2387,10 +2553,12 @@ export default function TypingDdrPage() {
             mt: compactMode ? { xs: 1, md: 2 } : { xs: 3, md: 5 },
           }}
         >
-          {isBalancedPracticeMode(gameMode) && (
+          {isAdaptivePracticeMode(gameMode) && (
             <Typography
               aria-label="Run time"
               sx={{
+                opacity: gameFaded ? 0 : 1,
+                transition: "opacity 500ms ease",
                 position: "absolute",
                 top: { xs: 4, sm: 6, md: 8 },
                 right: { xs: 0, sm: 2 },
@@ -2493,6 +2661,7 @@ export default function TypingDdrPage() {
                     >
                       <MenuItem value="balancedPlus">Balanced+</MenuItem>
                       <MenuItem value="balanced">Balanced</MenuItem>
+                      <MenuItem value="vertical">Vertical</MenuItem>
                       <MenuItem value="progressive">Progressive</MenuItem>
                       {LEAGUE_ORDER.map((leagueMode) => (
                         <MenuItem key={leagueMode} value={leagueMode}>
@@ -2536,7 +2705,8 @@ export default function TypingDdrPage() {
                     <Stack direction="row" spacing={0.75} alignItems="center">
                       <Typography sx={{ color: "#cbd5e1", fontSize: "0.82rem", fontWeight: 800 }}>(r)andom</Typography>
                       <Switch
-                        checked={randomKeysEnabled}
+                        checked={randomKeySetActive}
+                        disabled={isVerticalMode}
                         onChange={(event) => setRandomKeysEnabled(event.target.checked)}
                         size="small"
                         inputProps={{ "aria-label": "Random key set" }}
@@ -2549,7 +2719,30 @@ export default function TypingDdrPage() {
                   </Stack>
                 </Stack>
 
-                {randomKeysEnabled && (
+                <Box sx={{ maxWidth: 460 }}>
+                  <Stack direction="row" spacing={1.25} alignItems="center">
+                    <Typography sx={{ color: "#cbd5e1", fontSize: "0.78rem", fontWeight: 900, minWidth: 116 }}>
+                      Key repeats {keyRepeats}
+                    </Typography>
+                    <Slider
+                      min={MIN_KEY_REPEATS}
+                      max={MAX_KEY_REPEATS}
+                      step={1}
+                      marks
+                      valueLabelDisplay="auto"
+                      value={keyRepeats}
+                      onChange={(_, value) => {
+                        if (keysLockedRef.current) return;
+                        setKeyRepeats(clamp(Array.isArray(value) ? value[0] : value, MIN_KEY_REPEATS, MAX_KEY_REPEATS));
+                      }}
+                      size="small"
+                      sx={{ color: "#7dd3fc" }}
+                      aria-label="Key repeats"
+                    />
+                  </Stack>
+                </Box>
+
+                {randomKeySetActive && (
                   <Box sx={{ maxWidth: 460 }}>
                     <Stack direction="row" spacing={1.25} alignItems="center">
                       <Typography sx={{ color: "#cbd5e1", fontSize: "0.78rem", fontWeight: 900, minWidth: 116 }}>
@@ -2575,7 +2768,7 @@ export default function TypingDdrPage() {
                   </Box>
                 )}
 
-                {isBalancedPracticeMode(gameMode) && (
+                {isAdaptivePracticeMode(gameMode) && (
                   <Box sx={{ width: "100%", maxWidth: 690 }}>
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={1.25} alignItems={{ xs: "stretch", sm: "center" }}>
                       <Typography sx={{ color: "#cbd5e1", fontSize: "0.78rem", fontWeight: 900, minWidth: 132 }}>
@@ -2603,7 +2796,7 @@ export default function TypingDdrPage() {
                             fontWeight: 800,
                           },
                         }}
-                        aria-label="Balanced time mode"
+                        aria-label={isVerticalMode ? "Vertical time mode" : "Balanced time mode"}
                       />
                     </Stack>
                     <Typography sx={{ color: "rgba(148,163,184,0.68)", fontSize: "0.68rem", fontWeight: 800 }}>
@@ -2634,12 +2827,14 @@ export default function TypingDdrPage() {
                     )}
                   </Stack>
                   <ToggleButtonGroup
-                    value={randomKeysEnabled ? ALL_HOME_KEY_VALUES : activeKeys}
-                    onChange={randomKeysEnabled ? undefined : handleActiveKeysChange}
+                    value={isVerticalMode ? [verticalHomeKey] : randomKeySetActive ? ALL_HOME_KEY_VALUES : activeKeys}
+                    onChange={randomKeySetActive ? undefined : handleActiveKeysChange}
                     size="small"
                     aria-label="Active home row keys"
+                    aria-describedby="ddr-center-keys-help"
                     sx={{
-                      flexWrap: "wrap",
+                      display: "grid",
+                      gridTemplateColumns: noteColumns,
                       gap: 0.6,
                       "& .MuiToggleButtonGroup-grouped": {
                         border: "1px solid rgba(255,255,255,0.22) !important",
@@ -2651,14 +2846,17 @@ export default function TypingDdrPage() {
                       <ToggleButton
                         key={homeKey.key}
                         value={homeKey.key}
+                        disabled={isVerticalMode && homeKey.key === " "}
                         aria-label={`${homeKey.label} key`}
                         sx={{
                           color: "#e2e8f0",
-                          minWidth: homeKey.widthUnits === 2 ? 92 : 42,
-                          px: homeKey.widthUnits === 2 ? 1.75 : 1,
+                          gridColumn: homeKey.key === " " ? "4 / span 4" : getLaneGridColumn(keyIndex),
+                          gridRow: homeKey.key === " " ? 2 : 1,
+                          minWidth: 0,
+                          px: 0.5,
                           fontWeight: 900,
-                          animation: randomKeysEnabled ? `${randomKeyFade} 1350ms ease-in-out infinite` : "none",
-                          animationDelay: randomKeysEnabled ? `${randomKeyFlashDelays[keyIndex]}ms` : "0ms",
+                          animation: randomKeySetActive ? `${randomKeyFade} 1350ms ease-in-out infinite` : "none",
+                          animationDelay: randomKeySetActive ? `${randomKeyFlashDelays[keyIndex]}ms` : "0ms",
                           "&.Mui-selected": {
                             color: "#05070d",
                             bgcolor: homeKey.color,
@@ -2670,6 +2868,11 @@ export default function TypingDdrPage() {
                       </ToggleButton>
                     ))}
                   </ToggleButtonGroup>
+                  <Typography id="ddr-center-keys-help" sx={{ mt: 0.75, color: "#94a3b8", fontSize: "0.68rem", fontWeight: 800 }}>
+                    {isVerticalMode
+                      ? `Choose one column: ${selectedVerticalColumn.keys.map((key) => key.toUpperCase()).join(" / ")}. Blocks arrive from the ${selectedVerticalColumn.hand === "left" ? "right" : "left"}.`
+                      : "G/H and Space share the center. Choosing Space turns G/H off; choosing G or H turns Space off."}
+                  </Typography>
                 </Box>
 
                 {isCustomMode && (
@@ -2791,47 +2994,13 @@ export default function TypingDdrPage() {
           )}
 
           {gameOver && keysLocked && (
-            <Box
-              role="dialog"
-              aria-label="Round finished"
-              sx={{
-                position: "absolute",
-                left: "50%",
-                top: "48%",
-                transform: "translate(-50%, -50%)",
-                zIndex: 5,
-                width: "min(560px, calc(100vw - 32px))",
-                px: { xs: 2.5, sm: 3.5 },
-                py: { xs: 2.5, sm: 3.25 },
-                borderRadius: 1,
-                border: "1px solid rgba(255,255,255,0.14)",
-                bgcolor: "rgba(5,7,13,0.9)",
-                boxShadow: "0 24px 80px rgba(0,0,0,0.48)",
-                backdropFilter: "blur(12px)",
-                textAlign: "center",
-              }}
-            >
-              <Typography sx={{ color: "rgba(248,250,252,0.94)", fontWeight: 950, fontSize: { xs: 34, sm: 46 } }}>
-                finished!
-              </Typography>
-              <Typography sx={{ color: "rgba(148,163,184,0.78)", fontWeight: 850, fontSize: "0.86rem" }}>
-                {roundResult === "complete" ? "time complete" : "hearts empty"}
-              </Typography>
-              <Typography sx={{ mt: 2, color: "rgba(248,250,252,0.9)", fontWeight: 950, fontSize: { xs: 36, sm: 52 }, lineHeight: 1 }}>
-                {pointScore.toLocaleString()}
-              </Typography>
-              <Typography sx={{ color: "rgba(148,163,184,0.66)", fontWeight: 850, fontSize: "0.78rem" }}>
-                score
-              </Typography>
-              <Box
-                sx={{
-                  mt: 2,
-                  display: "grid",
-                  gridTemplateColumns: { xs: "1fr 1fr", sm: "repeat(4, 1fr)" },
-                  gap: 1,
-                }}
-              >
-                {[
+            <DdrRoundTransition
+              phase={finishPhase}
+              saveStatus={recordSaveStatus}
+              result={roundResult}
+              score={pointScore}
+              onMenu={resetGame}
+              stats={[
                   ["Best", bestScoreForCurrentMode.toLocaleString()],
                   ["Rank", currentModeRank === null ? "-" : `#${currentModeRank}`],
                   ["Correct", hits.toLocaleString()],
@@ -2840,32 +3009,34 @@ export default function TypingDdrPage() {
                   ["Max BPM", maxTempo.toLocaleString()],
                   ["Mode", modeDisplayLabel],
                   ["Keys", keyListLabel],
-                ].map(([label, value]) => (
-                  <Box
-                    key={label}
-                    sx={{
-                      p: 1,
-                      borderRadius: 1,
-                      bgcolor: "rgba(255,255,255,0.045)",
-                      border: "1px solid rgba(255,255,255,0.07)",
-                      minWidth: 0,
-                    }}
-                  >
-                    <Typography sx={{ color: "rgba(148,163,184,0.66)", fontSize: "0.68rem", fontWeight: 850 }}>
-                      {label}
-                    </Typography>
-                    <Typography sx={{ color: "rgba(248,250,252,0.88)", fontSize: "0.82rem", fontWeight: 950, overflowWrap: "anywhere" }}>
-                      {value}
-                    </Typography>
-                  </Box>
-                ))}
-              </Box>
-              <Typography sx={{ mt: 2, color: "rgba(226,232,240,0.62)", fontWeight: 800, fontSize: "0.78rem" }}>
-                press (r) to restart - press (m) for menu
-              </Typography>
-            </Box>
+              ]}
+            />
           )}
 
+          <Box aria-label="Game lanes" sx={{
+            position: "absolute", inset: 0, display: "grid", gridTemplateColumns: noteColumns,
+            gap: compactMode ? { xs: 0.45, sm: 0.65, md: 0.8 } : { xs: 0.7, sm: 1, md: 1.25 },
+            opacity: gameFaded ? 0 : 1, transition: "opacity 500ms ease",
+            pointerEvents: gameFaded ? "none" : "auto",
+          }}>
+          {isVerticalMode ? (
+            <VerticalTypingLanes
+              homeKey={verticalHomeKey}
+              homeKeys={HOME_KEYS}
+              columns={noteColumns}
+              getColumn={(key) => getLaneGridColumn(HOME_KEYS.findIndex((homeKey) => homeKey.key === key))}
+              notes={notes}
+              running={running}
+              showKeyLetters={showKeyLetters}
+              targetSize={targetSize}
+              noteWidth={noteWidth}
+              noteHeight={noteHeight}
+              durationMs={NOTE_ANIMATION_DURATION_MS}
+              travelMs={FALL_DURATION_MS}
+              pulse={pulseLane}
+            />
+          ) : (
+          <>
           {tempoMarkers.length > 0 && (
             <Box
               aria-hidden
@@ -2883,7 +3054,7 @@ export default function TypingDdrPage() {
                 <Box
                   key={marker.id}
                   sx={{
-                    gridColumn: `${marker.leftLaneIndex + 1} / ${marker.rightLaneIndex + 2}`,
+                    gridColumn: `${getLaneGridStart(marker.leftLaneIndex)} / ${getLaneGridEnd(marker.rightLaneIndex)}`,
                     position: "relative",
                     minHeight: 0,
                   }}
@@ -2911,6 +3082,8 @@ export default function TypingDdrPage() {
           )}
 
           {HOME_KEYS.map((homeKey, laneIndex) => {
+            if (homeKey.key === " " && !showSpaceLane) return null;
+            if ((homeKey.key === "g" || homeKey.key === "h") && showSpaceLane) return null;
             const active = (!keysLocked && randomKeysEnabled) || activeKeySet.has(homeKey.key);
             const laneNotes = notesByLane[laneIndex];
             const shouldPulse = pulseLane?.laneIndex === laneIndex;
@@ -2967,6 +3140,7 @@ export default function TypingDdrPage() {
 
                 <Box
                   key={`${homeKey.key}-${shouldPulse ? pulseLane?.token : "idle"}`}
+                  data-testid="ddr-hit-target"
                   sx={{
                     position: "absolute",
                     top: `${HIT_LINE_PERCENT}%`,
@@ -3012,6 +3186,32 @@ export default function TypingDdrPage() {
             );
           })}
 
+          {!showSpaceLane && (
+            <Box
+              component="button"
+              type="button"
+              aria-label="Toggle Space key"
+              title="Space sits below G/H. Enable it to use a wide center lane on the same hit line."
+              disabled={keysLocked || gameOver || randomKeysEnabled}
+              onClick={() => handleLaneClick(" ")}
+              sx={{
+                gridColumn: "5 / span 2", position: "absolute", left: 4, right: 4,
+                top: {
+                  xs: `calc(${HIT_LINE_PERCENT}% + ${targetSize.xs / 2 + 16}px)`,
+                  sm: `calc(${HIT_LINE_PERCENT}% + ${targetSize.sm / 2 + 16}px)`,
+                  md: `calc(${HIT_LINE_PERCENT}% + ${targetSize.md / 2 + 16}px)`,
+                },
+                height: { xs: 21, sm: 25 }, border: "1px solid #3b82f655", borderRadius: 1,
+                color: "#93c5fd99", bgcolor: "#3b82f60a", fontFamily: "inherit", fontWeight: 800,
+                fontSize: { xs: 9, sm: 10 }, cursor: keysLocked ? "default" : "pointer", zIndex: 2,
+                "&:hover:not(:disabled)": { borderColor: "#60a5fa", bgcolor: "#3b82f622", color: "#bfdbfe" },
+                "&:focus-visible": { outline: "2px solid #60a5fa", outlineOffset: 3 },
+              }}
+            >
+              Space · off
+            </Box>
+          )}
+
           <Box
             sx={{
               position: "absolute",
@@ -3025,6 +3225,9 @@ export default function TypingDdrPage() {
               zIndex: 0,
             }}
           />
+          </>
+          )}
+          </Box>
         </Box>
 
         <Stack
@@ -3033,13 +3236,15 @@ export default function TypingDdrPage() {
             width: playAreaWidth,
             mx: "auto",
             minHeight: 96,
+            opacity: gameFaded ? 0 : 1,
+            transition: "opacity 500ms ease",
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1.25} sx={{ minHeight: 44 }}>
             <Box sx={{ minWidth: { xs: 86, sm: 150 } }}>
               {gameOver && (
                 <Typography sx={{ color: "rgba(254,202,202,0.72)", fontWeight: 950, fontSize: { xs: 13, sm: 15 } }}>
-                  {roundResult === "complete" ? "Run complete" : "You lose"} - press r
+                  Next round coming up…
                 </Typography>
               )}
             </Box>

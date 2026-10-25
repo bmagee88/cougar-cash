@@ -82,14 +82,14 @@ const optionLabel = (key: keyof QuizFilters, value: string) => key === "gradeLev
 
 const Proficiency: React.FC<{ percent: number | null; total: number }> = ({ percent, total }) => (
   <Typography component="span"
-    aria-label={`Proficiency ${formatPercent(percent)}: average score across ${total} completed quizzes`}
+    aria-label={`Proficiency ${formatPercent(percent)}: average score across the ${Math.min(total, 3)} most recent completed takes`}
     sx={{ color: proficiencyColor(percent), fontSize: 28, lineHeight: 1.15, fontWeight: 800,
       whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
     {formatPercent(percent)}
   </Typography>
 );
 
-const courseIds = new Set(["computers-ch1-s3-s4", "computers-ch1-s5"]);
+const courseIds = new Set(["computers-ch1-s3-s4", "computers-ch1-s5", "computers-ch1-s5-grade3"]);
 const courseQuizzes = quizzes.filter((quiz) => courseIds.has(quiz.id));
 const additionalQuizzes = quizzes.filter((quiz) => !courseIds.has(quiz.id));
 
@@ -134,6 +134,7 @@ const QuizApp3Page: React.FC = () => {
   const [today, setToday] = useState(() => localDayKey());
   const [additionalOpen, setAdditionalOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<QuizDefinition | null>(null);
+  const [quizStarted, setQuizStarted] = useState(false);
   const [promptOpen, setPromptOpen] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
 
@@ -190,6 +191,7 @@ const QuizApp3Page: React.FC = () => {
     setStorageError("");
   };
   const openQuiz = (quiz: QuizDefinition) => {
+    setQuizStarted(false);
     setActiveQuiz(quiz);
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
   };
@@ -224,7 +226,8 @@ const QuizApp3Page: React.FC = () => {
               initialSession={progress.quizSessions?.[activeQuiz.id]?.date === today ? progress.quizSessions[activeQuiz.id].state : undefined}
               attempts={progress.attempts}
               attemptCount={progress.attempts.filter((attempt) => attempt.quizId === activeQuiz.id).length}
-              onRecord={record} onBack={() => setActiveQuiz(null)} />
+              started={quizStarted} onBegin={() => setQuizStarted(true)}
+              onRecord={record} onBack={() => { setActiveQuiz(null); setQuizStarted(false); }} />
           ) : (
             <>
               <Box sx={{ mb: 3.5 }}>
@@ -246,7 +249,7 @@ const QuizApp3Page: React.FC = () => {
                           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
                             <Typography variant="h6" component="h3" sx={{ flex: 1, minWidth: 0, fontSize: { xs: 14, md: "1.05rem" },
                               whiteSpace: "normal", overflowWrap: "anywhere" }} title={quiz.quizName}>{quiz.quizName}</Typography>
-                            <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />
+                            {quiz.dailyAttempts > 0 && <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />}
                           </Stack>
                           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{formatDate(quiz.lastTaken)}</Typography>
                           <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mt: "auto", pt: 2 }}>
@@ -354,7 +357,7 @@ const QuizApp3Page: React.FC = () => {
                               ))}
                             </Box>
                           </TableCell>
-                          <TableCell align="right"><Proficiency percent={quiz.averageScore} total={quiz.completedTotal} /></TableCell>
+                          <TableCell align="right">{quiz.dailyAttempts > 0 && <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />}</TableCell>
                           <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", "&&": { fontSize: 22, fontWeight: 700 } }}>
                             {quiz.dailyAttempts} / {quiz.dailyAllowed}
                             {quiz.dailyBonus > 0 && (
@@ -382,7 +385,7 @@ const QuizApp3Page: React.FC = () => {
                   </Table>
                 </TableContainer>
                 <Typography variant="caption" component="p" color="text.secondary" sx={{ px: 3, py: 2, borderTop: 1, borderColor: "divider" }}>
-                  Proficiency = average final score of completed quizzes. A quiz is completed after its regular rounds and any earned bonus round. — means no completed quizzes yet. Daily progress counts today’s submissions; +1 marks the single earned bonus round included in the allowance.
+                  Proficiency = average final score of the three most recent completed takes (or all completed takes if fewer than three), shown only after a saved attempt today. A take is completed after its regular rounds and any earned bonus round. — means no completed takes yet. Daily progress counts today’s submissions; +1 marks the single earned bonus round included in the allowance.
                 </Typography>
               </Paper>
                 );

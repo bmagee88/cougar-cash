@@ -4,6 +4,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import CelebrationIcon from "@mui/icons-material/Celebration";
 import MatchingBoard from "../CQuiz2/MatchingBoard";
 import QuizSources from "./QuizSources";
 import { createDailyRound, createSession, submitRound } from "./quizEngine";
@@ -17,9 +18,11 @@ const QuizRunner: React.FC<{
   initialSession?: QuizSessionState;
   attempts: LocalAttempt[];
   attemptCount: number;
+  started: boolean;
+  onBegin: () => void;
   onRecord: (attempt: LocalAttempt, state: ConceptState, session: QuizSessionState) => void;
   onBack: () => void;
-}> = ({ quiz, initialConceptState, initialSession, attempts, attemptCount, onRecord, onBack }) => {
+}> = ({ quiz, initialConceptState, initialSession, attempts, attemptCount, started, onBegin, onRecord, onBack }) => {
   const today = localDayKey();
   const daily = dailyProgress(quiz, attempts);
   const dailyDone = daily.dailyAttempts >= daily.dailyAllowed;
@@ -47,26 +50,27 @@ const QuizRunner: React.FC<{
   const [result, setResult] = useState<LocalAttempt | null>(() => quizAttempts.find((attempt) => attempt.id === round.id) || null);
   const [error, setError] = useState("");
   const [savedNotice, setSavedNotice] = useState("");
+  const [scoreGain, setScoreGain] = useState(0);
   const [draftError, setDraftError] = useState(restored.error);
   const submittedRound = useRef("");
   const resultNumber = result ? quizAttempts.findIndex((attempt) => attempt.id === result.id) + 1 : 0;
   const resultFromEarlierDay = !!result && localDayKey(new Date(result.createdAt)) !== today;
-  const displayedScore = result?.score ?? Math.round(quiz.concepts.filter((concept) =>
-    session.conceptState[concept.conceptKey]).length / Math.max(1, quiz.concepts.length) * 100);
+  const showQuestions = started && !resultFromEarlierDay;
 
   useEffect(() => {
+    if (!started) return;
     try {
       saveRound(quiz.id, { date: roundDate, round, answers, checkedAnswers });
       setDraftError(restored.error);
     } catch {
       setDraftError("This unfinished round could not be saved. Keep this page open to avoid losing your answer arrangement.");
     }
-  }, [quiz.id, roundDate, round, answers, checkedAnswers, restored.error]);
+  }, [quiz.id, roundDate, round, answers, checkedAnswers, restored.error, started]);
 
   const handleSubmit = () => {
     const currentDay = localDayKey();
     const currentDaily = dailyProgress(quiz, attempts, currentDay);
-    if (result || submittedRound.current === round.id || currentDaily.dailyAttempts >= currentDaily.dailyAllowed) return;
+    if (!showQuestions || result || submittedRound.current === round.id || currentDaily.dailyAttempts >= currentDaily.dailyAllowed) return;
     submittedRound.current = round.id;
     setError("");
     const currentSession = sessionDate.current === currentDay ? session : createSession(quiz, initialConceptState);
@@ -74,6 +78,8 @@ const QuizRunner: React.FC<{
       ...round, mode: currentSession.bonusEligible ? "required" as const : "practice" as const,
     };
     const next = submitRound(quiz, currentSession, currentRound, answers, currentDaily.dailyAttempts + 1);
+    const previousScore = Math.round(quiz.concepts.filter((concept) => currentSession.conceptState[concept.conceptKey]).length /
+      Math.max(1, quiz.concepts.length) * 100);
     next.state.bonusRoundsEarned = Math.max(currentDaily.dailyBonus, next.state.bonusRoundsEarned);
     try {
       const attempt: LocalAttempt = {
@@ -87,6 +93,7 @@ const QuizRunner: React.FC<{
       sessionDate.current = currentDay;
       setSession(next.state);
       setResult(attempt);
+      setScoreGain(Math.max(0, next.score - previousScore));
       setSavedNotice(`Attempt ${quizAttempts.length + 1} saved on this device.`);
     } catch (err) {
       submittedRound.current = "";
@@ -102,7 +109,14 @@ const QuizRunner: React.FC<{
     setAnswers(next.answers);
     setCheckedAnswers({});
     setResult(null);
+    setScoreGain(0);
     setError("");
+  };
+
+  const beginQuiz = () => {
+    if (dailyDone) return;
+    if (result) nextRound();
+    onBegin();
   };
 
   return (
@@ -118,25 +132,38 @@ const QuizRunner: React.FC<{
             </Typography>
             <Box sx={{ mt: 1 }}><QuizSources sources={quiz.sources} /></Box>
           </Box>
-          <Chip label={`Attempt ${result ? resultNumber : dailyDone ? attemptCount : attemptCount + 1}`} variant="outlined" sx={{ alignSelf: "flex-start" }} />
+          <Chip label={`Attempt ${showQuestions && result ? resultNumber : dailyDone ? attemptCount : attemptCount + 1}`} variant="outlined" sx={{ alignSelf: "flex-start" }} />
           <Chip label={`Today ${daily.dailyAttempts} / ${daily.dailyAllowed}`} variant="outlined" sx={{ alignSelf: "flex-start" }} />
         </Stack>
       </Paper>
 
-      <Box sx={{ position: "relative", pt: 3.5, mb: 2 }}>
+      {showQuestions && result && <Box sx={{ position: "relative", pt: 3.5, mb: 2 }}>
         <Typography variant="body2" aria-live="polite" sx={{
-          position: "absolute", top: 0, left: `clamp(80px, ${displayedScore}%, 100%)`,
+          position: "absolute", top: 0, left: `clamp(80px, ${result.score}%, 100%)`,
           transform: "translateX(-100%)", color: "primary.main", fontWeight: 800, whiteSpace: "nowrap",
-        }}>Score {displayedScore}%</Typography>
-        <LinearProgress aria-label="Quiz concept score" variant="determinate" value={displayedScore}
+        }}>Score {result.score}%</Typography>
+        <LinearProgress aria-label="Quiz concept score" variant="determinate" value={result.score}
           sx={{ height: 12, borderRadius: 6, "& .MuiLinearProgress-bar": { borderRadius: 6 } }} />
-      </Box>
+      </Box>}
+      {showQuestions && result && scoreGain > 0 && <Paper key={result.id} role="status" sx={{
+        p: 2, mb: 2, borderColor: "primary.main", background: "linear-gradient(120deg, rgba(99,220,199,0.18), rgba(246,211,74,0.08))",
+        animation: "score-celebration 450ms ease-out",
+        "@keyframes score-celebration": { from: { opacity: 0, transform: "scale(0.96)" }, to: { opacity: 1, transform: "scale(1)" } },
+        "@media (prefers-reduced-motion: reduce)": { animation: "none" },
+      }}>
+        <Stack direction="row" spacing={1.5} alignItems="center">
+          <CelebrationIcon sx={{ color: "#f6d34a", fontSize: 38 }} />
+          <Box>
+            <Typography variant="h5" color="primary.main">Score up! +{scoreGain} percentage points</Typography>
+            <Typography>{result.score - scoreGain}% → {result.score}% — Great work!</Typography>
+          </Box>
+        </Stack>
+      </Paper>}
 
       {dailyDone && (
         <Alert severity="success">You have completed today's allowed attempts for this quiz. Come back tomorrow to continue.</Alert>
       )}
-      {(!dailyDone || result) && <>
-      {restored.saved?.round.id === round.id && !result && <Alert severity="info" sx={{ mb: 2 }}>
+      {showQuestions && restored.saved?.round.id === round.id && !result && <Alert severity="info" sx={{ mb: 2 }}>
         Your unsubmitted round has been restored{roundDate !== today ? ` from ${roundDate}` : ""}. Submit saves it as an attempt for today.
       </Alert>}
       {draftError && <Alert severity="warning" sx={{ mb: 2 }}>{draftError}</Alert>}
@@ -156,6 +183,16 @@ const QuizRunner: React.FC<{
         </Typography>
         </AccordionDetails>
       </Accordion>
+      {!showQuestions && <>
+        <Paper component="section" aria-labelledby="quiz-description-heading" elevation={0} sx={{ p: 2, mb: 2 }}>
+          <Typography id="quiz-description-heading" component="h2" variant="h6" sx={{ mb: 1 }}>About this quiz</Typography>
+          <Typography color="text.secondary">{quiz.description || `Practice the main ideas in ${quiz.quizName}. Match each question with its answer, four questions at a time.`}</Typography>
+        </Paper>
+        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={dailyDone} onClick={beginQuiz}>
+          Begin today's quiz
+        </Button>
+      </>}
+      {showQuestions && (!dailyDone || result) && <>
       {round.mode === "bonus" && <Chip size="small" color="secondary" label="Daily bonus round" sx={{ mb: 2 }} />}
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
@@ -179,7 +216,7 @@ const QuizRunner: React.FC<{
         <AccordionDetails id="saved-attempts-content">
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Daily counts reset at midnight. Submitted attempts and concept progress stay saved on this browser.
-          Proficiency averages final scores of completed quizzes after all daily rounds, including any earned bonus.
+          Proficiency averages the three most recent completed takes, or all completed takes if fewer than three. A take includes all daily rounds and any earned bonus.
         </Typography>
         {quizAttempts.length ? <Box component="ol" sx={{ pl: 3, mb: 0 }}>
           {quizAttempts.slice(-5).reverse().map((attempt, index) => <Typography component="li" variant="body2" key={attempt.id} sx={{ mt: 1 }}>

@@ -44,9 +44,12 @@ export const completedQuizStats = (attempts: LocalAttempt[]) => {
     if (ordered.length >= allowance) completed.push(ordered[allowance - 1]);
   });
   const completedTotal = completed.length;
+  const recentCompleted = [...completed]
+    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
+    .slice(0, 3);
   return {
     completedTotal,
-    averageScore: completedTotal ? completed.reduce((sum, attempt) => sum + attempt.score, 0) / completedTotal : null,
+    averageScore: recentCompleted.length ? recentCompleted.reduce((sum, attempt) => sum + attempt.score, 0) / recentCompleted.length : null,
   };
 };
 
