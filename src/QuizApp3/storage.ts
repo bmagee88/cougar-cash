@@ -30,6 +30,7 @@ export const readProgress = (): LocalProgress => {
         !Object.values(parsed.quizSessions).every(validSession))) ||
       parsed.attempts.some((attempt: LocalAttempt) =>
         !attempt || typeof attempt.id !== "string" || typeof attempt.quizId !== "string" ||
+        (attempt.takeId !== undefined && (typeof attempt.takeId !== "string" || !attempt.takeId.trim())) ||
         !Number.isInteger(attempt.correctCount) || !Number.isInteger(attempt.totalCount) ||
         attempt.totalCount <= 0 || attempt.correctCount < 0 || attempt.correctCount > attempt.totalCount ||
         attempt.score !== Math.round(attempt.correctCount / attempt.totalCount * 100) ||
@@ -72,6 +73,7 @@ export const readRound = (quiz: QuizDefinition): SavedRound | undefined => {
     item && typeof item.id === "string" && typeof item.text === "string",
   );
   if (typeof saved?.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(saved.date) ||
+      (saved.takeId !== undefined && (typeof saved.takeId !== "string" || !saved.takeId.trim())) ||
       !round || typeof round.id !== "string" || !["practice", "required", "bonus"].includes(round.mode) ||
       !validItems(round.questions) || !validItems(round.answers) || !validItems(saved.answers) ||
       !round.questions.length || round.questions.length > 4 ||

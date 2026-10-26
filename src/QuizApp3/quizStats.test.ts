@@ -42,6 +42,8 @@ test("proficiency uses the three newest completed takes by date and keeps the li
     .toEqual({ completedTotal: 4, averageScore: 80 });
   expect(completedQuizStats([take(18, 20), take(19, 100), take(20, 100), take(21, 100)]))
     .toEqual({ completedTotal: 4, averageScore: 100 });
+  const sameDay = [20, 100, 100, 100].map((score, index) => ({ ...take(21, score), id: String(index), takeId: `take-${index}` }));
+  expect(completedQuizStats(sameDay)).toEqual({ completedTotal: 4, averageScore: 100 });
 });
 
 test("daily progress counts only this quiz's submissions on the device's calendar day", () => {
@@ -62,4 +64,18 @@ test("daily progress counts only this quiz's submissions on the device's calenda
   expect(dailyProgress(quiz, attempts, "2026-10-19")).toEqual({
     dailyAttempts: 0, dailyBase: 3, dailyBonus: 0, dailyAllowed: 3,
   });
+});
+
+test("replays have separate round counts and bonus eligibility on the same day", () => {
+  const quiz: QuizDefinition = require("./quizzes/hardware-basics.json");
+  const attempt = (id: string, takeId?: string, bonusRoundsEarned = 0): LocalAttempt => ({
+    id, quizId: quiz.id, takeId, score: 100, correctCount: 10, totalCount: 10,
+    createdAt: new Date(2026, 9, 18, 12).toISOString(), bonusRoundsEarned,
+  });
+  const history = [attempt("old-1", undefined, 1), attempt("old-2", undefined, 1),
+    attempt("old-3", undefined, 1), attempt("old-4", undefined, 1)];
+  expect(dailyProgress(quiz, history, "2026-10-18", "replay"))
+    .toEqual({ dailyAttempts: 0, dailyBase: 3, dailyBonus: 0, dailyAllowed: 3 });
+  expect(dailyProgress(quiz, [...history, attempt("new-1", "replay")], "2026-10-18"))
+    .toEqual({ dailyAttempts: 1, dailyBase: 3, dailyBonus: 0, dailyAllowed: 3 });
 });

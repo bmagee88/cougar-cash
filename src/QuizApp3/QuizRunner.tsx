@@ -5,6 +5,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import CelebrationIcon from "@mui/icons-material/Celebration";
+import ReplayIcon from "@mui/icons-material/Replay";
 import MatchingBoard from "../CQuiz2/MatchingBoard";
 import QuizSources from "./QuizSources";
 import { createDailyRound, createSession, submitRound } from "./quizEngine";
@@ -20,19 +21,24 @@ const QuizRunner: React.FC<{
   attemptCount: number;
   started: boolean;
   onBegin: () => void;
+  replayTakeId?: string;
+  onReplay: () => void;
   onRecord: (attempt: LocalAttempt, state: ConceptState, session: QuizSessionState) => void;
   onBack: () => void;
-}> = ({ quiz, initialConceptState, initialSession, attempts, attemptCount, started, onBegin, onRecord, onBack }) => {
+}> = ({ quiz, initialConceptState, initialSession, attempts, started, onBegin, replayTakeId, onReplay, onRecord, onBack }) => {
   const today = localDayKey();
-  const daily = dailyProgress(quiz, attempts);
-  const dailyDone = daily.dailyAttempts >= daily.dailyAllowed;
   const quizAttempts = attempts.filter((attempt) => attempt.quizId === quiz.id);
+  const latestToday = quizAttempts.filter((attempt) => localDayKey(new Date(attempt.createdAt)) === today).slice(-1)[0];
   const [restored] = useState(() => {
-    try { return { saved: readRound(quiz), error: "" }; } catch {
+    try { return { saved: replayTakeId ? undefined : readRound(quiz), error: "" }; } catch {
       return { saved: undefined, error: "The previous round could not be restored. Your submitted attempts are still saved." };
     }
   });
-  const [session, setSession] = useState(() => initialSession || createSession(quiz, initialConceptState));
+  const [takeId] = useState(() => replayTakeId ?? restored.saved?.takeId ?? latestToday?.takeId);
+  const daily = dailyProgress(quiz, attempts, today, takeId);
+  const dailyDone = daily.dailyAttempts >= daily.dailyAllowed;
+  const [session, setSession] = useState(() => !replayTakeId && takeId === latestToday?.takeId && initialSession
+    ? initialSession : createSession(quiz, initialConceptState));
   const sessionDate = useRef(today);
   const [round, setRound] = useState(() => {
     const saved = restored.saved;
@@ -53,23 +59,22 @@ const QuizRunner: React.FC<{
   const [scoreGain, setScoreGain] = useState(0);
   const [draftError, setDraftError] = useState(restored.error);
   const submittedRound = useRef("");
-  const resultNumber = result ? quizAttempts.findIndex((attempt) => attempt.id === result.id) + 1 : 0;
   const resultFromEarlierDay = !!result && localDayKey(new Date(result.createdAt)) !== today;
   const showQuestions = started && !resultFromEarlierDay;
 
   useEffect(() => {
     if (!started) return;
     try {
-      saveRound(quiz.id, { date: roundDate, round, answers, checkedAnswers });
+      saveRound(quiz.id, { date: roundDate, takeId, round, answers, checkedAnswers });
       setDraftError(restored.error);
     } catch {
       setDraftError("This unfinished round could not be saved. Keep this page open to avoid losing your answer arrangement.");
     }
-  }, [quiz.id, roundDate, round, answers, checkedAnswers, restored.error, started]);
+  }, [quiz.id, takeId, roundDate, round, answers, checkedAnswers, restored.error, started]);
 
   const handleSubmit = () => {
     const currentDay = localDayKey();
-    const currentDaily = dailyProgress(quiz, attempts, currentDay);
+    const currentDaily = dailyProgress(quiz, attempts, currentDay, takeId);
     if (!showQuestions || result || submittedRound.current === round.id || currentDaily.dailyAttempts >= currentDaily.dailyAllowed) return;
     submittedRound.current = round.id;
     setError("");
@@ -83,7 +88,7 @@ const QuizRunner: React.FC<{
     next.state.bonusRoundsEarned = Math.max(currentDaily.dailyBonus, next.state.bonusRoundsEarned);
     try {
       const attempt: LocalAttempt = {
-        id: round.id, quizId: quiz.id, score: next.score,
+        id: round.id, takeId, quizId: quiz.id, score: next.score,
         correctCount: next.correctCount, totalCount: next.totalCount,
         createdAt: new Date().toISOString(),
         bonusRoundsEarned: next.state.bonusRoundsEarned,
@@ -94,7 +99,7 @@ const QuizRunner: React.FC<{
       setSession(next.state);
       setResult(attempt);
       setScoreGain(Math.max(0, next.score - previousScore));
-      setSavedNotice(`Attempt ${quizAttempts.length + 1} saved on this device.`);
+      setSavedNotice("Saved on this device.");
     } catch (err) {
       submittedRound.current = "";
       setError(err instanceof DailyLimitError ? err.message : "Your result could not be saved to this device. Keep this page open, enable browser storage or free some space, and try Submit again.");
@@ -132,8 +137,7 @@ const QuizRunner: React.FC<{
             </Typography>
             <Box sx={{ mt: 1 }}><QuizSources sources={quiz.sources} /></Box>
           </Box>
-          <Chip label={`Attempt ${showQuestions && result ? resultNumber : dailyDone ? attemptCount : attemptCount + 1}`} variant="outlined" sx={{ alignSelf: "flex-start" }} />
-          <Chip label={`Today ${daily.dailyAttempts} / ${daily.dailyAllowed}`} variant="outlined" sx={{ alignSelf: "flex-start" }} />
+          <Chip label={`Attempt ${daily.dailyAttempts} / ${daily.dailyAllowed}`} variant="outlined" sx={{ alignSelf: "flex-start" }} />
         </Stack>
       </Paper>
 
@@ -161,7 +165,7 @@ const QuizRunner: React.FC<{
       </Paper>}
 
       {dailyDone && (
-        <Alert severity="success">You have completed today's allowed attempts for this quiz. Come back tomorrow to continue.</Alert>
+        <Alert severity="success">This take is complete. Replay this quiz to practice again.</Alert>
       )}
       {showQuestions && restored.saved?.round.id === round.id && !result && <Alert severity="info" sx={{ mb: 2 }}>
         Your unsubmitted round has been restored{roundDate !== today ? ` from ${roundDate}` : ""}. Submit saves it as an attempt for today.
@@ -176,7 +180,7 @@ const QuizRunner: React.FC<{
           <Typography component="li" variant="body2">Read each numbered question. Select a question to highlight it and dim the other questions. Click away from the question or reorder answers to show all questions again.</Typography>
           <Typography component="li" variant="body2">Hover over a question or answer to reveal its speaker button, then select the speaker to hear the text. Speaker buttons also appear when using Tab to focus the controls and stay visible on touchscreens. Press the stop button to stop reading.</Typography>
           <Typography component="li" variant="body2">Drag each answer beside its matching question. Dropping an answer swaps the two answers. Checkboxes are reminders and do not affect your score.</Typography>
-          <Typography component="li" variant="body2">Choose Submit to save and score this attempt. Then choose Keep Going or Take bonus round until today's allowance is complete.</Typography>
+          <Typography component="li" variant="body2">Choose Submit to save and score this set. Choose Keep Going or Take bonus round to finish this take. Then choose Replay quiz to practice again, even on the same day.</Typography>
         </Box>
         <Typography variant="caption" color="text.secondary">
           Keyboard: Tab to a question and press Enter to highlight it. Tab to an answer, press Space, use the arrow keys, then press Space to place it. Tab to a speaker and press Enter to read aloud.
@@ -188,8 +192,8 @@ const QuizRunner: React.FC<{
           <Typography id="quiz-description-heading" component="h2" variant="h6" sx={{ mb: 1 }}>About this quiz</Typography>
           <Typography color="text.secondary">{quiz.description || `Practice the main ideas in ${quiz.quizName}. Match each question with its answer, four questions at a time.`}</Typography>
         </Paper>
-        <Button variant="contained" size="large" startIcon={<PlayArrowIcon />} disabled={dailyDone} onClick={beginQuiz}>
-          Begin today's quiz
+        <Button variant="contained" size="large" startIcon={dailyDone ? <ReplayIcon /> : <PlayArrowIcon />} onClick={dailyDone ? onReplay : beginQuiz}>
+          {dailyDone ? "Replay quiz" : "Begin today's quiz"}
         </Button>
       </>}
       {showQuestions && (!dailyDone || result) && <>
@@ -203,8 +207,8 @@ const QuizRunner: React.FC<{
         {!result ? (
           <Button variant="contained" size="large" onClick={handleSubmit} startIcon={<CheckCircleOutlineIcon />} sx={{ flexShrink: 0 }}>Submit</Button>
         ) : (
-          <Button variant="contained" size="large" onClick={dailyDone ? onBack : nextRound} startIcon={<PlayArrowIcon />} sx={{ flexShrink: 0 }}>
-            {dailyDone ? "All quizzes" : resultFromEarlierDay ? "Start today's quiz" : daily.dailyAttempts >= daily.dailyBase ? "Take bonus round" : "Keep Going"}
+          <Button variant="contained" size="large" onClick={dailyDone ? onReplay : nextRound} startIcon={dailyDone ? <ReplayIcon /> : <PlayArrowIcon />} sx={{ flexShrink: 0 }}>
+            {dailyDone ? "Replay quiz" : daily.dailyAttempts >= daily.dailyBase ? "Take bonus round" : "Keep Going"}
           </Button>
         )}
       </Stack>
@@ -215,12 +219,12 @@ const QuizRunner: React.FC<{
         </AccordionSummary>
         <AccordionDetails id="saved-attempts-content">
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Daily counts reset at midnight. Submitted attempts and concept progress stay saved on this browser.
-          Proficiency averages the three most recent completed takes, or all completed takes if fewer than three. A take includes all daily rounds and any earned bonus.
+          Replay starts a fresh take while saved results and concept progress stay on this browser.
+          Proficiency averages the three most recent completed takes, or all completed takes if fewer than three. A take includes all regular rounds and any earned bonus.
         </Typography>
-        {quizAttempts.length ? <Box component="ol" sx={{ pl: 3, mb: 0 }}>
-          {quizAttempts.slice(-5).reverse().map((attempt, index) => <Typography component="li" variant="body2" key={attempt.id} sx={{ mt: 1 }}>
-            Attempt {quizAttempts.length - index} · {new Date(attempt.createdAt).toLocaleString()} · {attempt.score}%
+        {quizAttempts.length ? <Box component="ul" sx={{ pl: 3, mb: 0 }}>
+          {quizAttempts.slice(-5).reverse().map((attempt) => <Typography component="li" variant="body2" key={attempt.id} sx={{ mt: 1 }}>
+            {new Date(attempt.createdAt).toLocaleString()} · {attempt.score}%
             {attempt.completedQuiz ? " · Quiz complete" : " · Round saved"}
           </Typography>)}
         </Box> : <Typography variant="body2" sx={{ mt: 1 }}>No submitted attempts yet. Choose Submit to record your first attempt.</Typography>}
