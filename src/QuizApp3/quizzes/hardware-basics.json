@@ -1,6 +1,7 @@
 {
   "id": "hardware-basics",
   "quizName": "Hardware Basics",
+  "description": "Get to know the parts inside and around a computer. Practice matching questions about chips, memory, drives, power, cooling, and connected devices.",
   "quizNumber": 2,
   "gradeLevel": 6,
   "teacher": "Magbr",

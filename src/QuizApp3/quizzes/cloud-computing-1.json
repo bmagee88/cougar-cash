@@ -1,6 +1,7 @@
 {
   "id": "cloud-computing-1",
   "quizName": "Cloud Computing 1",
+  "description": "Review virtual machines and the main types of cloud services. Match ideas about hosts, snapshots, scaling, regions, and availability zones.",
   "quizNumber": 1,
   "gradeLevel": 6,
   "teacher": "Magbr",

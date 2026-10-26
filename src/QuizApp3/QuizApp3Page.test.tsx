@@ -11,6 +11,7 @@ jest.mock("./catalog", () => ({
   quizzes: [
     require("./quizzes/computers-ch1-s3-s4.json"),
     require("./quizzes/computers-ch1-s5.json"),
+    require("./quizzes/computers-ch1-s5-grade3.json"),
     require("./quizzes/hardware-basics.json"),
     require("./quizzes/cloud-computing-1.json"),
     require("./quizzes/cables-and-ports.json"),
@@ -25,6 +26,11 @@ const render = (ui: React.ReactElement, expandAdditional = true) => {
   const additional = screen.queryByRole("button", { name: "Additional quizzes" });
   if (expandAdditional && additional) fireEvent.click(additional);
   return view;
+};
+
+const beginTodaysQuiz = () => {
+  const begin = screen.queryByRole("button", { name: "Begin today's quiz" }) as HTMLButtonElement | null;
+  if (begin && !begin.disabled) fireEvent.click(begin);
 };
 
 beforeEach(() => {
@@ -51,6 +57,7 @@ test("taking four questions updates the table, recent quiz, and next lifetime at
   expect(screen.queryByText("Sign in")).not.toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Course work" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   expect(screen.getAllByTestId("matching-row")).toHaveLength(4);
   expect(screen.getByText("Attempt 1")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
@@ -69,6 +76,7 @@ test("taking four questions updates the table, recent quiz, and next lifetime at
   view.unmount();
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Take quiz" }));
+  beginTodaysQuiz();
   expect(screen.getByText("Attempt 2")).toBeInTheDocument();
 });
 
@@ -97,7 +105,7 @@ test("recent section contains only three distinct quizzes in most-recent order",
     .toEqual(["Hardware Basics", "Chromebook Care", "Cables and Ports"]);
 });
 
-test("cards and table share lifetime proficiency while daily counters reset at midnight", () => {
+test("cards and table hide rolling proficiency at midnight until the quiz is taken again", () => {
   jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 23, 59, 59));
   const attempts = Array.from({ length: 10 }, (_, index) => ({
     id: String(index), quizId: "hardware-basics", score: index === 9 ? 80 : 100,
@@ -110,8 +118,8 @@ test("cards and table share lifetime proficiency while daily counters reset at m
   const table = screen.getByRole("table", { name: "Additional quiz search results" });
   const row = within(table).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
   const recent = screen.getByRole("region", { name: "3 most recent quizzes" });
-  expect(within(row).getByText("98%")).toHaveStyle({ color: "#62ff79", fontSize: "28px" });
-  expect(within(recent).getByText("98%")).toBeInTheDocument();
+  expect(within(row).getByText("93.3%")).toHaveStyle({ color: "#58c98c", fontSize: "28px" });
+  expect(within(recent).getByText("93.3%")).toBeInTheDocument();
   expect(within(row).getByText("2 / 4")).toBeInTheDocument();
   expect(within(row).getByText("+1")).toBeInTheDocument();
   expect(within(recent).getByText("Attempt 2 / 4")).toBeInTheDocument();
@@ -120,7 +128,8 @@ test("cards and table share lifetime proficiency while daily counters reset at m
   // The open page resets automatically at midnight, with no refocus or reload.
   act(() => { jest.advanceTimersByTime(2000); });
   expect(within(row).getByText("0 / 3")).toBeInTheDocument();
-  expect(within(row).getByText("98%")).toBeInTheDocument();
+  expect(within(row).queryByText("93.3%")).not.toBeInTheDocument();
+  expect(within(recent).queryByText("93.3%")).not.toBeInTheDocument();
   expect(within(row).queryByText("+1")).not.toBeInTheDocument();
   expect(within(recent).getByText("Attempt 0 / 3")).toBeInTheDocument();
   view.unmount();
@@ -146,6 +155,7 @@ test("a daily allowance permits exactly one missed-question bonus and survives r
   }));
   const view = render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   expect(screen.getByText("Daily bonus round")).toBeInTheDocument();
   expect(screen.getAllByTestId("matching-row")).toHaveLength(4);
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
@@ -155,6 +165,7 @@ test("a daily allowance permits exactly one missed-question bonus and survives r
   view.unmount();
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   expect(screen.getByText(/completed today's allowed attempts/)).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
   jest.useRealTimers();
@@ -165,6 +176,7 @@ test("an unfinished answer arrangement and reminders survive reload and midnight
   const quiz = require("./quizzes/hardware-basics.json");
   const view = render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   expect(screen.getByRole("button", { name: "Directions" })).toHaveAttribute("aria-expanded", "false");
   const draft = readRound(quiz)!;
   view.unmount();
@@ -173,6 +185,7 @@ test("an unfinished answer arrangement and reminders survive reload and midnight
   saveRound(quiz.id, { ...draft, answers: swapped, checkedAnswers: { [swapped[0].id]: true } });
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   const rowText = screen.getAllByTestId("matching-row").map((row) => row.textContent);
   expect(screen.getAllByRole("checkbox", { name: "Mark answer" })[0]).toBeChecked();
   expect(within(screen.getAllByTestId("matching-row")[0]).getByText(swapped[0].text)).toBeInTheDocument();
@@ -188,10 +201,11 @@ test("an unfinished answer arrangement and reminders survive reload and midnight
   expect(screen.getByRole("button", { name: "Saved attempts 1/4" })).toBeInTheDocument();
 });
 
-test("saved results survive refresh and a new day, and a completed quiz remains in lifetime proficiency", () => {
+test("saved results remain in history while reopening a quiz returns to the introduction", () => {
   jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 12));
   let view = render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   for (let index = 0; index < 3; index += 1) {
     if (index) {
       act(() => { jest.advanceTimersByTime(1); });
@@ -204,7 +218,10 @@ test("saved results survive refresh and a new day, and a completed quiz remains 
   view.unmount();
   view = render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
-  expect(screen.getByText("Score 100%")).toBeInTheDocument();
+  beginTodaysQuiz();
+  expect(screen.queryByText("Score 100%")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("matching-row")).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Begin today's quiz" })).toBeDisabled();
   expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
   expect(screen.getByText("Today 3 / 3")).toBeInTheDocument();
   view.unmount();
@@ -212,23 +229,30 @@ test("saved results survive refresh and a new day, and a completed quiz remains 
   render(<QuizApp3Page />);
   const table = screen.getByRole("table", { name: "Additional quiz search results" });
   const row = within(table).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
-  expect(within(row).getByText("100%")).toBeInTheDocument();
+  expect(within(row).queryByText("100%")).not.toBeInTheDocument();
   expect(within(row).getByText("0 / 3")).toBeInTheDocument();
   fireEvent.click(within(row).getByRole("button", { name: "Hardware Basics" }));
-  expect(screen.getByText("Score 100%")).toBeInTheDocument();
+  expect(screen.queryByText("Score 100%")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("matching-row")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Saved attempts 0/3" })).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
   expect(readProgress().attempts).toHaveLength(3);
-  fireEvent.click(screen.getByRole("button", { name: "Start today's quiz" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin today's quiz" }));
   expect(screen.getByText("Attempt 4")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
   expect(readProgress().attempts).toHaveLength(4);
   expect(screen.getByText("Today 1 / 3")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "All quizzes" }));
+  const updatedTable = screen.getByRole("table", { name: "Additional quiz search results" });
+  const updatedRow = within(updatedTable).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
+  expect(within(updatedRow).getByText("100%")).toBeInTheDocument();
+  expect(within(screen.getByRole("region", { name: "3 most recent quizzes" })).getByText("100%")).toBeInTheDocument();
 });
 
 test("a failed attempt write stays retryable and never claims the attempt was saved", () => {
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   const original = Storage.prototype.setItem;
   const spy = jest.spyOn(Storage.prototype, "setItem").mockImplementation(function (key: string, value: string) {
     if (key === PROGRESS_KEY) throw new Error("Quota exceeded");
@@ -262,6 +286,7 @@ test("an unfinished bonus round survives midnight without carrying yesterday's b
   }));
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
   expect(screen.getByText("Daily bonus round")).toBeInTheDocument();
   const questions = screen.getAllByTestId("matching-question").map((question) => question.textContent);
   act(() => { jest.advanceTimersByTime(2000); });
@@ -278,11 +303,12 @@ test("an unfinished bonus round survives midnight without carrying yesterday's b
 });
 
 
-test("course work keeps the two assigned quizzes while additional quizzes have an independent search", () => {
+test("course work includes the Grade 3 section 1.5 quiz while additional quizzes have an independent search", () => {
   render(<QuizApp3Page />, false);
   const course = screen.getByRole("table", { name: "Quiz search results" });
   expect(within(course).getByRole("button", { name: "Computing Systems, Hardware, Software, and Data" })).toBeInTheDocument();
   expect(within(course).getByRole("button", { name: "Input, Processing, Memory, Storage, and Output" })).toBeInTheDocument();
+  expect(within(course).getByRole("button", { name: "How Computers Work" })).toBeInTheDocument();
   expect(within(course).queryByRole("button", { name: "Hardware Basics" })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Additional quizzes" })).toHaveAttribute("aria-expanded", "false");
   expect(screen.queryByRole("table", { name: "Additional quiz search results" })).not.toBeInTheDocument();
@@ -290,6 +316,7 @@ test("course work keeps the two assigned quizzes while additional quizzes have a
   const additional = screen.getByRole("table", { name: "Additional quiz search results" });
   expect(within(additional).getByRole("button", { name: "Hardware Basics" })).toBeInTheDocument();
   expect(within(additional).queryByRole("button", { name: "Computing Systems, Hardware, Software, and Data" })).not.toBeInTheDocument();
+  expect(within(additional).queryByRole("button", { name: "How Computers Work" })).not.toBeInTheDocument();
   fireEvent.change(screen.getByRole("textbox", { name: "Search additional quizzes" }), { target: { value: "Hardware Basics" } });
   expect(within(additional).queryByRole("button", { name: "Cloud Computing 1" })).not.toBeInTheDocument();
   expect(within(course).getByRole("button", { name: "Computing Systems, Hardware, Software, and Data" })).toBeInTheDocument();
@@ -298,20 +325,62 @@ test("course work keeps the two assigned quizzes while additional quizzes have a
   expect(within(additional).getByRole("button", { name: "Hardware Basics" })).toBeInTheDocument();
 });
 
-test("saved confirmation expires while the score stays visible between rounds", () => {
+test("saved confirmation expires and score improvements appear only after submission", () => {
   jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 12));
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
-  expect(screen.getByRole("progressbar", { name: "Quiz concept score" })).toHaveAttribute("aria-valuenow", "0");
+  beginTodaysQuiz();
+  expect(screen.queryByRole("progressbar", { name: "Quiz concept score" })).not.toBeInTheDocument();
   expect(screen.queryByText(/Each submission counts/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
   expect(screen.getByText("Attempt 1 saved on this device.")).toBeInTheDocument();
+  expect(screen.getByText("Score up! +40 percentage points")).toBeInTheDocument();
   expect(screen.getByText("Score 40%")).toBeInTheDocument();
   act(() => { jest.advanceTimersByTime(4500); });
   act(() => { jest.advanceTimersByTime(500); });
   expect(screen.queryByText("Attempt 1 saved on this device.")).not.toBeInTheDocument();
   expect(screen.getByText("Score 40%")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Keep Going" }));
-  expect(screen.getByRole("progressbar", { name: "Quiz concept score" })).toHaveAttribute("aria-valuenow", "40");
-  expect(screen.getByText("Score 40%")).toBeInTheDocument();
+  expect(screen.queryByRole("progressbar", { name: "Quiz concept score" })).not.toBeInTheDocument();
+  expect(screen.queryByText("Score 40%")).not.toBeInTheDocument();
+  expect(screen.queryByText(/Score up!/)).not.toBeInTheDocument();
+});
+
+
+test("opening a quiz shows directions and a description without previewing or saving questions", () => {
+  render(<QuizApp3Page />, false);
+  fireEvent.click(screen.getByRole("button", { name: "How Computers Work" }));
+  expect(screen.getByRole("button", { name: "Directions" })).toHaveAttribute("aria-expanded", "false");
+  const description = screen.getByRole("region", { name: "About this quiz" });
+  expect(within(description).getByText(/Learn about the jobs a computer does/)).toBeVisible();
+  expect(description.closest("#quiz-directions-content")).toBeNull();
+  expect(screen.queryByTestId("matching-row")).not.toBeInTheDocument();
+  expect(screen.queryByRole("heading", { name: "Answers" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("progressbar", { name: "Quiz concept score" })).not.toBeInTheDocument();
+  const quiz = require("./quizzes/computers-ch1-s5-grade3.json");
+  expect(readRound(quiz)).toBeUndefined();
+  expect(readProgress().attempts).toHaveLength(0);
+  fireEvent.click(screen.getByRole("button", { name: "Begin today's quiz" }));
+  expect(screen.getAllByTestId("matching-row")).toHaveLength(4);
+  expect(screen.queryByRole("progressbar", { name: "Quiz concept score" })).not.toBeInTheDocument();
+  expect(readRound(quiz)).toBeDefined();
+  expect(readProgress().attempts).toHaveLength(0);
+});
+
+test("a lower submitted score does not trigger the improvement fanfare", () => {
+  jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 12));
+  const quiz = require("./quizzes/hardware-basics.json");
+  const { createSession, createDailyRound } = require("./quizEngine");
+  const state = createSession(quiz, Object.fromEntries(quiz.concepts.map((concept: any) => [concept.conceptKey, true])));
+  const round = createDailyRound(quiz, state, { dailyAttempts: 0, dailyBase: 3, dailyBonus: 0 });
+  const answers = round.pairs.map((pair: any) => round.answers.find((answer: any) => answer.id === pair.answerId));
+  [answers[0], answers[1]] = [answers[1], answers[0]];
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify({ version: 1, attempts: [], conceptStates: { [quiz.id]: state.conceptState } }));
+  saveRound(quiz.id, { date: "2026-10-18", round, answers, checkedAnswers: {} });
+  render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(screen.getByText("Score 80%")).toBeInTheDocument();
+  expect(screen.queryByText(/Score up!/)).not.toBeInTheDocument();
 });

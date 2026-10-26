@@ -5,6 +5,7 @@ export type QuizSource = { textbook: string; chapters: string; sections: string 
 export type QuizDefinition = {
   id: string;
   quizName: string;
+  description?: string;
   quizNumber: number;
   gradeLevel: number | null;
   teacher: string;

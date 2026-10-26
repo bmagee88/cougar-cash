@@ -1,0 +1,225 @@
+{
+  "id": "computers-ch1-s5-grade3",
+  "quizName": "How Computers Work",
+  "description": "Learn about the jobs a computer does with information. Practice matching simple questions about computer parts, saved work, and devices that do more than one job.",
+  "quizNumber": 3,
+  "gradeLevel": 3,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 1",
+      "sections": "1.5"
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "input-role",
+      "conceptName": "Input Brings Information In",
+      "confusabilityGroup": "information-jobs",
+      "questionVariants": [
+        "What does input mean for a computer?",
+        "Which way does information go during input?",
+        "What happens when a computer gets input?"
+      ],
+      "answerVariants": [
+        "Information or directions go into the computer.",
+        "The computer takes in information or directions.",
+        "Information comes in for the computer to use."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "sensor-collects-readings",
+      "conceptName": "Sensors Measure the World",
+      "confusabilityGroup": "input-sources",
+      "questionVariants": [
+        "How can a sensor tell how warm a room is?",
+        "What does a sensor do to learn about the air?",
+        "How can a sensor check a room without someone typing?"
+      ],
+      "answerVariants": [
+        "It measures the air and sends the reading to a computer.",
+        "It checks how warm the air is and sends that number.",
+        "It checks how warm the air is and tells a computer."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "processing-role",
+      "conceptName": "Processing Works with Information",
+      "confusabilityGroup": "information-jobs",
+      "questionVariants": [
+        "What does processing mean?",
+        "What happens during processing?",
+        "How does processing use the information a computer gets?"
+      ],
+      "answerVariants": [
+        "The computer follows steps to work with the information.",
+        "The computer uses directions to do work with information.",
+        "The computer works with information by following steps."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "cpu-full-name",
+      "conceptName": "What CPU Stands For",
+      "confusabilityGroup": "processing-parts",
+      "questionVariants": [
+        "What do the letters CPU stand for?",
+        "What is the full name of the chip called the CPU?",
+        "How do you say CPU without using the three letters?"
+      ],
+      "answerVariants": [
+        "Central processing unit.",
+        "The central processing unit.",
+        "Its full name is central processing unit."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "special-processors",
+      "conceptName": "Extra Chips Have Special Jobs",
+      "confusabilityGroup": "processing-parts",
+      "questionVariants": [
+        "Why might a computer have extra chips besides its CPU?",
+        "How can extra chips help the main chip?",
+        "What kind of work can other chips do to help the CPU?"
+      ],
+      "answerVariants": [
+        "They can do one special kind of job.",
+        "They can help by doing a certain kind of task.",
+        "They can take on a special task they were made to do."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "ram-working-memory",
+      "conceptName": "RAM Holds Work Being Used Now",
+      "confusabilityGroup": "keeping-information",
+      "questionVariants": [
+        "What does RAM hold while you use a computer?",
+        "How does RAM help with the work you are doing now?",
+        "What is RAM used for during a task?"
+      ],
+      "answerVariants": [
+        "It holds the information and steps being used right now.",
+        "It keeps the current information and steps ready to use.",
+        "It is a fast work space for information and steps in use now."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "storage-for-later",
+      "conceptName": "Storage Keeps Saved Work",
+      "confusabilityGroup": "keeping-information",
+      "questionVariants": [
+        "What does storage keep when a computer is turned off?",
+        "How does storage keep your saved work when the power is off?",
+        "What stays in storage after you shut down a computer?"
+      ],
+      "answerVariants": [
+        "It keeps saved files and programs for later.",
+        "Saved files and programs stay there for another day.",
+        "It holds saved work and programs, even with the power off."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "output-role",
+      "conceptName": "Output Gives Results",
+      "confusabilityGroup": "information-jobs",
+      "questionVariants": [
+        "What does output mean for a computer?",
+        "Which way do results go during output?",
+        "What happens when a computer gives output?"
+      ],
+      "answerVariants": [
+        "The computer sends out a result, like a picture, sound, or movement.",
+        "A result comes out as information or an action.",
+        "The computer gives a result that can be seen, heard, or used."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "touch-feedback",
+      "conceptName": "A Buzz Can Be a Message",
+      "confusabilityGroup": "kinds-of-feedback",
+      "questionVariants": [
+        "How can a device send you a message you feel?",
+        "How does a device give a signal through touch?",
+        "How can a device let you feel a signal instead of seeing or hearing it?"
+      ],
+      "answerVariants": [
+        "A small motor makes a buzz you can feel.",
+        "A tiny motor makes the device shake a little.",
+        "A little motor makes a shaking signal you feel."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "touchscreen-two-roles",
+      "conceptName": "A Touchscreen Does Two Jobs",
+      "confusabilityGroup": "devices-with-two-roles",
+      "questionVariants": [
+        "What two jobs does a touchscreen do?",
+        "How does a touchscreen both take in and give out information?",
+        "Why does a touchscreen count as both input and output?"
+      ],
+      "answerVariants": [
+        "It senses your finger taps and shows words or pictures.",
+        "It notices where you touch and shows things you can see.",
+        "It takes in your taps and gives you words and pictures to look at."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "network-two-directions",
+      "conceptName": "A Network Part Sends and Gets Messages",
+      "confusabilityGroup": "devices-with-two-roles",
+      "questionVariants": [
+        "What two jobs does a network part do with messages?",
+        "How does a network part move messages both ways?",
+        "Why can a network part be both input and output?"
+      ],
+      "answerVariants": [
+        "It gets messages from other computers and sends messages to them.",
+        "It sends messages out to other computers and gets messages back.",
+        "It takes in messages from other computers and sends messages out."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "storage-read-write",
+      "conceptName": "Saving Puts In and Opening Takes Out",
+      "confusabilityGroup": "devices-with-two-roles",
+      "questionVariants": [
+        "What happens to information when you save a file and open it later?",
+        "How does information move when you save your work and then open it?",
+        "What two things happen in a drive when you save and later open a file?"
+      ],
+      "answerVariants": [
+        "Saving puts information in the drive. Opening gets it back out.",
+        "The information goes into the drive when saved and comes back out when opened.",
+        "The drive takes in the file when you save it and gives it back when you open it."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "roles-follow-the-task",
+      "conceptName": "A Job Depends on the Task",
+      "confusabilityGroup": "information-flow-rules",
+      "questionVariants": [
+        "How do you tell which job a device is doing?",
+        "What should you check before calling a device input or output?",
+        "Why can a device have a different job in a new task?"
+      ],
+      "answerVariants": [
+        "Look at what it does with information in that task.",
+        "Follow the information and check what the device is doing now.",
+        "Its job depends on how it uses information in the task."
+      ]
+    }
+  ]
+}

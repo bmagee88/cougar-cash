@@ -39,6 +39,7 @@ Source and coverage rules:
 How the quiz works:
 - A concept is one specific idea, fact, definition, skill, or relationship.
 - The app shows up to four concepts at a time, choosing one question variant and one answer variant per concept independently.
+- Include a short, grade-appropriate description of what the quiz covers. This appears below the Directions accordion before students begin; summarize the topics without showing quiz questions or answer pairs.
 - Students rearrange answers to match the questions. Matches are graded by concept, not exact wording.
 - EVERY question variant for a concept must correctly match EVERY answer variant of that same concept, in any combination.
 - Keep concepts clearly distinct. No answer from one concept may reasonably answer a question from another concept, and no question may reasonably accept an answer from another concept.
@@ -56,6 +57,7 @@ Return only one valid JSON object, with no Markdown fences or explanation, ready
 {
   "id": "[QUIZ_ID]",
   "quizName": "[QUIZ_NAME]",
+  "description": "[short grade-appropriate overview of the quiz topics]",
   "quizNumber": 1,
   "gradeLevel": 6,
   "teacher": "[TEACHER]",

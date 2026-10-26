@@ -32,6 +32,18 @@ test("proficiency colors honor the exact 80, 90, and strictly-greater-than-95 bo
   expect(proficiencyColor(null)).toBe("#a3b2c4");
 });
 
+test("proficiency uses the three newest completed takes by date and keeps the lifetime completion count", () => {
+  const take = (day: number, score: number, completedQuiz = true): LocalAttempt => ({
+    id: String(day), quizId: "quiz", score, correctCount: score / 10, totalCount: 10,
+    createdAt: new Date(2026, 9, day, 12).toISOString(), completedQuiz,
+  });
+  // Unsorted history and a later unfinished round must not change the window.
+  expect(completedQuizStats([take(20, 80), take(18, 20), take(22, 0, false), take(21, 100), take(19, 60)]))
+    .toEqual({ completedTotal: 4, averageScore: 80 });
+  expect(completedQuizStats([take(18, 20), take(19, 100), take(20, 100), take(21, 100)]))
+    .toEqual({ completedTotal: 4, averageScore: 100 });
+});
+
 test("daily progress counts only this quiz's submissions on the device's calendar day", () => {
   const quiz: QuizDefinition = require("./quizzes/hardware-basics.json");
   const now = new Date(2026, 9, 18, 0, 5);
