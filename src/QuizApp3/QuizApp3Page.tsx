@@ -3,7 +3,7 @@ import {
   Accordion, AccordionDetails, AccordionSummary, Alert, Autocomplete, Box, Button, CssBaseline, Dialog, DialogActions,
   DialogContent, DialogTitle, IconButton, Paper, Stack, Table, TableBody,
   TableCell, TableContainer, TableHead, TableRow, TableSortLabel, TextField,
-  ThemeProvider, Tooltip, Typography, createTheme,
+  ThemeProvider, Typography, createTheme,
 } from "@mui/material";
 import AutoAwesomeOutlinedIcon from "@mui/icons-material/AutoAwesomeOutlined";
 import CloseIcon from "@mui/icons-material/Close";
@@ -14,10 +14,12 @@ import HistoryIcon from "@mui/icons-material/History";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 import { catalogErrors, filterQuizzes, filterValue, filterValues, quizzes, UNSPECIFIED_SOURCE_VALUE } from "./catalog";
-import { formatPercent } from "./quizEngine";
+import { createQuizId, formatPercent } from "./quizEngine";
+import ReplayIcon from "@mui/icons-material/Replay";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { completedQuizStats, DailyLimitError, dailyProgress, localDayKey, proficiencyColor } from "./quizStats";
 import { quizPrompt } from "./quizPrompt";
-import { emptyFilters, emptyProgress, PROGRESS_KEY, readFilters, readProgress, saveAttempt, saveFilters } from "./storage";
+import { emptyFilters, emptyProgress, PROGRESS_KEY, readFilters, readProgress, readRound, saveAttempt, saveFilters } from "./storage";
 import { ConceptState, LocalAttempt, LocalProgress, QuizDefinition, QuizFilters, QuizSessionState } from "./types";
 import QuizRunner from "./QuizRunner";
 import QuizSources from "./QuizSources";
@@ -62,14 +64,14 @@ type QuizRow = QuizDefinition & {
   total: number;
   completedTotal: number; averageScore: number | null;
   dailyAttempts: number; dailyAllowed: number; dailyBonus: number;
+  takenToday: boolean;
   lastTaken: string;
 };
 type SortKey = keyof QuizFilters | "completedTotal" | "averageScore" | "dailyAttempts" | "lastTaken";
 const columns: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "quizName", label: "Quiz name" },
   { key: "averageScore", label: "Proficiency", align: "right" },
-  { key: "dailyAttempts", label: "Daily progress", align: "right" },
-  { key: "completedTotal", label: "Total complete", align: "right" },
+  { key: "dailyAttempts", label: "Attempt", align: "right" },
   { key: "lastTaken", label: "Last taken" },
   { key: "quizNumber", label: "Quiz #" },
   ...fields.filter((field) => field.key !== "quizName" && field.key !== "quizNumber"),
@@ -135,6 +137,7 @@ const QuizApp3Page: React.FC = () => {
   const [additionalOpen, setAdditionalOpen] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<QuizDefinition | null>(null);
   const [quizStarted, setQuizStarted] = useState(false);
+  const [replayTakeId, setReplayTakeId] = useState<string | undefined>();
   const [promptOpen, setPromptOpen] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
 
@@ -172,10 +175,14 @@ const QuizApp3Page: React.FC = () => {
     return () => window.removeEventListener("storage", refresh);
   }, []);
 
-  const rows = useMemo<QuizRow[]>(() => quizzes.map((quiz) => {
+  const rows: QuizRow[] = quizzes.map((quiz) => {
     const attempts = progress.attempts.filter((attempt) => attempt.quizId === quiz.id);
-    return { ...quiz, total: attempts.length, ...completedQuizStats(attempts), ...dailyProgress(quiz, attempts, today), lastTaken: attempts[attempts.length - 1]?.createdAt || "" };
-  }), [progress, today]);
+    let takeId: string | undefined;
+    try { const draft = readRound(quiz); if (draft?.date === today) takeId = draft.takeId; } catch { /* Graded history still works without a readable draft. */ }
+    return { ...quiz, total: attempts.length, ...completedQuizStats(attempts), ...dailyProgress(quiz, attempts, today, takeId),
+      takenToday: attempts.some((attempt) => localDayKey(new Date(attempt.createdAt)) === today),
+      lastTaken: attempts[attempts.length - 1]?.createdAt || "" };
+  });
   const recent = useMemo(() => [...rows].filter((row) => row.total > 0)
     .sort((a, b) => b.lastTaken.localeCompare(a.lastTaken)).slice(0, 3), [rows]);
   const courseSearch = useQuizSearch(rows, courseQuizzes);
@@ -184,13 +191,14 @@ const QuizApp3Page: React.FC = () => {
   const record = (attempt: LocalAttempt, state: ConceptState, sessionState: QuizSessionState) => {
     const quiz = quizzes.find((item) => item.id === attempt.quizId)!;
     const latest = readProgress();
-    const daily = dailyProgress(quiz, latest.attempts);
+    const daily = dailyProgress(quiz, latest.attempts, localDayKey(), attempt.takeId);
     if (daily.dailyAttempts >= daily.dailyAllowed) { setProgress(latest); throw new DailyLimitError(); }
     const next = saveAttempt(attempt, state, sessionState);
     setProgress(next);
     setStorageError("");
   };
-  const openQuiz = (quiz: QuizDefinition) => {
+  const openQuiz = (quiz: QuizDefinition, replay = false) => {
+    setReplayTakeId(replay ? createQuizId() : undefined);
     setQuizStarted(false);
     setActiveQuiz(quiz);
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
@@ -221,12 +229,13 @@ const QuizApp3Page: React.FC = () => {
           {storageError && <Alert severity="warning" sx={{ mb: 2 }}>{storageError}</Alert>}
           {catalogErrors.length > 0 && <Alert severity="error" sx={{ mb: 2 }}>Some quiz files could not be loaded: {catalogErrors.join(" ")}</Alert>}
           {activeQuiz ? (
-            <QuizRunner key={`${activeQuiz.id}:${today}`} quiz={activeQuiz}
+            <QuizRunner key={`${activeQuiz.id}:${today}:${replayTakeId || "saved"}`} quiz={activeQuiz}
               initialConceptState={progress.conceptStates[activeQuiz.id] || {}}
               initialSession={progress.quizSessions?.[activeQuiz.id]?.date === today ? progress.quizSessions[activeQuiz.id].state : undefined}
               attempts={progress.attempts}
               attemptCount={progress.attempts.filter((attempt) => attempt.quizId === activeQuiz.id).length}
               started={quizStarted} onBegin={() => setQuizStarted(true)}
+              replayTakeId={replayTakeId} onReplay={() => openQuiz(activeQuiz, true)}
               onRecord={record} onBack={() => { setActiveQuiz(null); setQuizStarted(false); }} />
           ) : (
             <>
@@ -249,21 +258,17 @@ const QuizApp3Page: React.FC = () => {
                           <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={2}>
                             <Typography variant="h6" component="h3" sx={{ flex: 1, minWidth: 0, fontSize: { xs: 14, md: "1.05rem" },
                               whiteSpace: "normal", overflowWrap: "anywhere" }} title={quiz.quizName}>{quiz.quizName}</Typography>
-                            {quiz.dailyAttempts > 0 && <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />}
+                            {quiz.takenToday && <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />}
                           </Stack>
                           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>{formatDate(quiz.lastTaken)}</Typography>
                           <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1} sx={{ mt: "auto", pt: 2 }}>
-                            <Button aria-label="Take quiz" startIcon={<PlayArrowIcon />} onClick={() => openQuiz(quiz)} sx={{ px: 0, minWidth: { xs: 28, md: 64 },
-                              "& .MuiButton-startIcon": { mr: { xs: 0, md: 1 }, ml: 0 } }}><Box component="span" sx={{ display: { xs: "none", md: "inline" } }}>Take quiz</Box></Button>
-                            <Box aria-label={`Daily attempts for ${quiz.quizName}`} sx={{
-                              border: 1, borderColor: "divider", bgcolor: "#101923", borderRadius: 1,
-                              px: { xs: 0.75, md: 1.25 }, py: { xs: 0.5, md: 0.75 }, textAlign: "right", flexShrink: 0,
-                            }}>
-                              <Typography variant="caption" color="text.secondary" sx={{ display: { xs: "none", md: "block" } }}>Daily attempts</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 700, fontVariantNumeric: "tabular-nums", fontSize: { xs: 12, md: 14 }, whiteSpace: "nowrap" }}>
-                                Attempt {quiz.dailyAttempts} / {quiz.dailyAllowed}
-                              </Typography>
-                            </Box>
+                            <Button aria-label={quiz.dailyAttempts >= quiz.dailyAllowed ? `Replay ${quiz.quizName}` : quiz.dailyAttempts > 0 ? "Continue quiz" : "Take quiz"}
+                              startIcon={quiz.dailyAttempts >= quiz.dailyAllowed ? <ReplayIcon /> : quiz.dailyAttempts > 0 ? <MoreHorizIcon /> : <PlayArrowIcon />}
+                              onClick={() => openQuiz(quiz, quiz.dailyAttempts >= quiz.dailyAllowed)} sx={{ px: 0 }}>
+                              {quiz.dailyAttempts >= quiz.dailyAllowed ? "Replay" : quiz.dailyAttempts > 0 ? "Continue quiz" : "Take quiz"}
+                            </Button>
+                            <Typography variant="body2">Attempt {quiz.dailyAttempts} / {quiz.dailyAllowed}</Typography>
+
                           </Stack>
                         </Paper>
                     ))}
@@ -346,7 +351,10 @@ const QuizApp3Page: React.FC = () => {
                       {visibleRows.map((quiz) => (
                         <TableRow key={quiz.id} hover>
                           <TableCell>
-                            <Button startIcon={<PlayArrowIcon />} onClick={() => openQuiz(quiz)} sx={{ textAlign: "left", justifyContent: "flex-start", px: 0,
+                            <Button onClick={() => openQuiz(quiz, quiz.dailyAttempts >= quiz.dailyAllowed)}
+                              aria-label={quiz.dailyAttempts >= quiz.dailyAllowed ? `Replay ${quiz.quizName}` : undefined}
+                              startIcon={quiz.dailyAttempts >= quiz.dailyAllowed ? <ReplayIcon /> : quiz.dailyAttempts > 0 ? <MoreHorizIcon /> : <PlayArrowIcon />}
+                              sx={{ textAlign: "left", justifyContent: "flex-start", px: 0,
                               minWidth: 0, maxWidth: "100%", fontSize: 13, lineHeight: 1.4, overflowWrap: "anywhere",
                               "& .MuiButton-startIcon": { mr: 0.5, ml: 0 }, "& svg": { fontSize: 16 } }}>{quiz.quizName}</Button>
                             <Box sx={{ mb: 1 }}>
@@ -357,19 +365,8 @@ const QuizApp3Page: React.FC = () => {
                               ))}
                             </Box>
                           </TableCell>
-                          <TableCell align="right">{quiz.dailyAttempts > 0 && <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />}</TableCell>
-                          <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums", "&&": { fontSize: 22, fontWeight: 700 } }}>
-                            {quiz.dailyAttempts} / {quiz.dailyAllowed}
-                            {quiz.dailyBonus > 0 && (
-                              <Tooltip title="One earned bonus round is included in today's allowance">
-                                <Box component="span" aria-label="One bonus round earned today" sx={{
-                                  display: "inline-block", ml: 1, px: 0.75, py: 0.25, borderRadius: 1,
-                                  color: "primary.main", bgcolor: "rgba(99, 220, 199, 0.12)", fontSize: 13, fontWeight: 800,
-                                }}>+1</Box>
-                              </Tooltip>
-                            )}
-                          </TableCell>
-                          <TableCell align="right" sx={{ fontVariantNumeric: "tabular-nums" }}>{quiz.completedTotal}</TableCell>
+                          <TableCell align="right">{quiz.takenToday && <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />}</TableCell>
+                          <TableCell align="right">{quiz.dailyAttempts} / {quiz.dailyAllowed}</TableCell>
                           <TableCell sx={{ color: "text.secondary", fontSize: 12 }}>{formatDate(quiz.lastTaken)}</TableCell>
                           <TableCell sx={{ color: "text.secondary", borderLeft: "2px solid", borderLeftColor: "divider" }}>{quiz.quizNumber}</TableCell>
                           <TableCell>{quiz.teacher}</TableCell>
@@ -385,7 +382,7 @@ const QuizApp3Page: React.FC = () => {
                   </Table>
                 </TableContainer>
                 <Typography variant="caption" component="p" color="text.secondary" sx={{ px: 3, py: 2, borderTop: 1, borderColor: "divider" }}>
-                  Proficiency = average final score of the three most recent completed takes (or all completed takes if fewer than three), shown only after a saved attempt today. A take is completed after its regular rounds and any earned bonus round. — means no completed takes yet. Daily progress counts today’s submissions; +1 marks the single earned bonus round included in the allowance.
+                  Proficiency = average final score of the three most recent completed takes (or all completed takes if fewer than three), shown only after a saved attempt today. A take is completed after its regular rounds and any earned bonus round. — means no completed takes yet. Use Replay after completing a take to practice again.
                 </Typography>
               </Paper>
                 );

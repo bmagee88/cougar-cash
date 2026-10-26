@@ -40,6 +40,7 @@ export type LocalRound = {
 
 export type SavedRound = {
   date: string;
+  takeId?: string;
   round: LocalRound;
   answers: MatchingItem[];
   checkedAnswers: Record<string, boolean>;
@@ -47,6 +48,7 @@ export type SavedRound = {
 
 export type LocalAttempt = {
   id: string;
+  takeId?: string;
   quizId: string;
   score: number;
   correctCount: number;

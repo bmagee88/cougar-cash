@@ -4,15 +4,17 @@ import { LocalAttempt, QuizDefinition } from "./types";
 export const localDayKey = (date = new Date()) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-export const dailyProgress = (quiz: QuizDefinition, attempts: LocalAttempt[], today = localDayKey()) => {
+export const dailyProgress = (quiz: QuizDefinition, attempts: LocalAttempt[], today = localDayKey(), takeId?: string) => {
   const completedToday = attempts.filter((attempt) =>
     attempt.quizId === quiz.id && localDayKey(new Date(attempt.createdAt)) === today,
   );
-  const bonusRounds = Math.min(1, completedToday.reduce((earned, attempt) =>
+  const activeTakeId = takeId ?? completedToday[completedToday.length - 1]?.takeId;
+  const takeAttempts = completedToday.filter((attempt) => attempt.takeId === activeTakeId);
+  const bonusRounds = Math.min(1, takeAttempts.reduce((earned, attempt) =>
     Math.max(earned, attempt.bonusRoundsEarned || 0), 0,
   ));
   return {
-    dailyAttempts: completedToday.length,
+    dailyAttempts: takeAttempts.length,
     dailyBase: Math.max(1, Math.ceil(quiz.concepts.length / QUESTION_WINDOW_SIZE)),
     dailyBonus: bonusRounds,
     dailyAllowed: Math.max(1, Math.ceil(quiz.concepts.length / QUESTION_WINDOW_SIZE)) + bonusRounds,
@@ -20,13 +22,13 @@ export const dailyProgress = (quiz: QuizDefinition, attempts: LocalAttempt[], to
 };
 
 export class DailyLimitError extends Error {
-  constructor() { super("You have completed today's allowed attempts for this quiz. Come back tomorrow to continue."); }
+  constructor() { super("This take is complete. Choose Replay to practice again."); }
 }
 
 export const completedQuizStats = (attempts: LocalAttempt[]) => {
   const days = new Map<string, LocalAttempt[]>();
   attempts.forEach((attempt) => {
-    const key = `${attempt.quizId}:${localDayKey(new Date(attempt.createdAt))}`;
+    const key = `${attempt.quizId}:${localDayKey(new Date(attempt.createdAt))}:${attempt.takeId || ""}`;
     days.set(key, [...(days.get(key) || []), attempt]);
   });
   const completed: LocalAttempt[] = [];
@@ -45,8 +47,8 @@ export const completedQuizStats = (attempts: LocalAttempt[]) => {
   });
   const completedTotal = completed.length;
   const recentCompleted = [...completed]
-    .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
-    .slice(0, 3);
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))
+    .slice(-3);
   return {
     completedTotal,
     averageScore: recentCompleted.length ? recentCompleted.reduce((sum, attempt) => sum + attempt.score, 0) / recentCompleted.length : null,

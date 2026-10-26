@@ -12,6 +12,24 @@ const correctAnswers = (round: ReturnType<typeof createRound>) =>
 beforeEach(() => { localStorage.clear(); });
 afterEach(() => { jest.restoreAllMocks(); });
 
+test("daily regular rounds never repeat concepts, including missed answers and persisted mastery", () => {
+  for (const persisted of [{}, Object.fromEntries(quiz.concepts.map((c, index) => [c.conceptKey, index % 2 === 0]))]) {
+    let state = createSession(quiz, persisted);
+    const seen: string[] = [];
+    const dailyBase = Math.ceil(quiz.concepts.length / 4);
+    for (let index = 0; index < dailyBase; index += 1) {
+      const round = createDailyRound(quiz, state, { dailyAttempts: index, dailyBase, dailyBonus: state.bonusRoundsEarned });
+      for (const pair of round.pairs) expect(seen).not.toContain(pair.conceptKey);
+      seen.push(...round.pairs.map((pair) => pair.conceptKey));
+      const answers = correctAnswers(round).reverse();
+      state = submitRound(quiz, state, round, answers, index + 1).state;
+    }
+    expect(seen).toHaveLength(quiz.concepts.length);
+    expect(new Set(seen).size).toBe(quiz.concepts.length);
+    expect(createDailyRound(quiz, state, { dailyAttempts: dailyBase, dailyBase, dailyBonus: 1 }).mode).toBe("bonus");
+  }
+});
+
 test("four-question rounds preserve cumulative mastery across the entire concept bank", () => {
   let state = createSession(quiz);
   [40, 80, 100].forEach((score, index) => {

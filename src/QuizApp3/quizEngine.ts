@@ -3,10 +3,12 @@ import {
 } from "./types";
 
 export const QUESTION_WINDOW_SIZE = 4;
+let identifierSequence = 0;
+export const createQuizId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${identifierSequence++}`;
 
 // Ported from c-quiz-2-api.js: same practice / required / bonus selection,
 // variant pairing, concept mastery, and cumulative scoring. Quiz App 3 uses
-// four questions, a daily round allowance, and at most one earned bonus round.
+// four questions, a per-take round allowance, and at most one earned bonus round.
 export const shuffle = <T,>(items: T[]): T[] => {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
@@ -79,7 +81,7 @@ export const createRound = (quiz: QuizDefinition, state: QuizSessionState): Loca
   }
 
   // IDs describe slots, never answers, so two identical strings stay distinct.
-  const id = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  const id = createQuizId();
   const pairs = selected.map((concept, index) => ({
     questionId: `${id}-q${index}`,
     answerId: `${id}-a${index}`,
@@ -138,7 +140,7 @@ export const submitRound = (
   };
 };
 
-// The day's only bonus comes after the regular allowance. Reuse the original
+// The take's only bonus comes after the regular allowance. Reuse the original
 // bonus selector: random missed concepts first, then correct concepts to fill.
 export const createDailyRound = (
   quiz: QuizDefinition,
@@ -152,7 +154,11 @@ export const createDailyRound = (
     requiredComplete: true,
     bonusRoundsEarned: 1,
     bonusRoundsUsed: 0,
-  } : {}),
+  } : {
+    // Regular rounds cover the bank once, even when earlier answers were wrong.
+    bonusEligible: true,
+    requiredComplete: false,
+  }),
 });
 
 export const attemptStats = (attempts: LocalAttempt[]) => {
