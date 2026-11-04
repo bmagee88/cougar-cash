@@ -1,7 +1,28 @@
-import { completedQuizStats, dailyProgress, localDayKey, proficiencyColor } from "./quizStats";
+import { completedQuizStats, currentAttemptNumber, dailyProgress, isBonusPending, localDayKey, proficiencyColor } from "./quizStats";
 import { LocalAttempt, QuizDefinition } from "./types";
 
 declare const test: any, expect: any;
+
+test("current attempt starts at one, stays on the result, and never counts the bonus", () => {
+  expect(currentAttemptNumber({ dailyAttempts: 0, dailyBase: 3 })).toBe(1);
+  expect(currentAttemptNumber({ dailyAttempts: 1, dailyBase: 3 }, true)).toBe(1);
+  expect(currentAttemptNumber({ dailyAttempts: 1, dailyBase: 3 })).toBe(2);
+  expect(currentAttemptNumber({ dailyAttempts: 2, dailyBase: 3 })).toBe(3);
+  expect(currentAttemptNumber({ dailyAttempts: 4, dailyBase: 3 })).toBe(3);
+  expect(isBonusPending({ dailyAttempts: 2, dailyBase: 3, dailyAllowed: 4 })).toBe(false);
+  expect(isBonusPending({ dailyAttempts: 3, dailyBase: 3, dailyAllowed: 4 })).toBe(true);
+  expect(isBonusPending({ dailyAttempts: 4, dailyBase: 3, dailyAllowed: 4 })).toBe(false);
+});
+
+test("a regular pass that ends with no wrong answers does not keep an old bonus flag", () => {
+  const quiz: QuizDefinition = require("./quizzes/hardware-basics.json");
+  const history: LocalAttempt[] = [2, 6, 10].map((correctCount, index) => ({
+    id: String(index), quizId: quiz.id, correctCount, totalCount: 10, score: correctCount * 10,
+    bonusRoundsEarned: 1, createdAt: new Date(2026, 9, 18, 12, index).toISOString(),
+  }));
+  expect(dailyProgress(quiz, history, "2026-10-18"))
+    .toEqual({ dailyAttempts: 3, dailyBase: 3, dailyBonus: 0, dailyAllowed: 3 });
+});
 
 test("proficiency averages final scores of finished quizzes, excluding intermediate submissions", () => {
   const base = { quizId: "quiz", totalCount: 10, bonusRoundsEarned: 0 };

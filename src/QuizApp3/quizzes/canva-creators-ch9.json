@@ -1,0 +1,465 @@
+{
+  "id": "canva-creators-ch9",
+  "quizName": "Sharing, Exporting and Presenting Responsibly",
+  "description": "Learn how to show or send your work. Choose a file type that fits the job. Check your facts and keep private details safe.",
+  "quizNumber": 9,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Canva Creators",
+      "chapters": "Chapter 9",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "publish-share",
+      "conceptName": "Give the Chosen Audience Access",
+      "confusabilityGroup": "delivery-actions",
+      "questionVariants": [
+        "What changes when you share or publish finished work?",
+        "What do sharing and publishing let your audience do?",
+        "How does sharing finished work differ from keeping it to yourself?"
+      ],
+      "answerVariants": [
+        "The chosen people can access the completed work.",
+        "The intended audience can see the finished design.",
+        "Other people are given access to the finished work."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "audience-first",
+      "conceptName": "Choose Who Should See the Work",
+      "confusabilityGroup": "sharing-decisions",
+      "questionVariants": [
+        "What should you decide first before sharing?",
+        "What is the first audience question before you send a design?",
+        "Before you give access, what should you know?"
+      ],
+      "answerVariants": [
+        "Who is supposed to see the work.",
+        "Which people should receive it.",
+        "The people the work is meant for."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "finished-not-public",
+      "conceptName": "Finished Does Not Mean Public",
+      "confusabilityGroup": "sharing-decisions",
+      "questionVariants": [
+        "Must a finished school project be public?",
+        "Does completing your work mean everyone should see it?",
+        "Should every completed class design go on the open web?"
+      ],
+      "answerVariants": [
+        "No. It may be just for the teacher or class.",
+        "No. Only the chosen audience may need it.",
+        "No. It can stay within the approved group."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "presentation-mode",
+      "conceptName": "Show Slides Without Editing Tools",
+      "confusabilityGroup": "delivery-actions",
+      "questionVariants": [
+        "What does presentation mode do?",
+        "Which view helps you show slides during a talk?",
+        "How can you show your slides without the editing workspace?"
+      ],
+      "answerVariants": [
+        "It shows slides to the audience with editing tools out of view.",
+        "It displays the slides and hides the editor controls.",
+        "It gives a clear slide view without the editing tools."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "print",
+      "conceptName": "Make a Paper Copy",
+      "confusabilityGroup": "delivery-actions",
+      "questionVariants": [
+        "What does printing a design do?",
+        "How can you turn a design into a sign for a door?",
+        "Which output makes a paper handout?"
+      ],
+      "answerVariants": [
+        "It puts the design on paper.",
+        "It makes a paper copy.",
+        "It creates a physical page you can hand out or display."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "download-export",
+      "conceptName": "Save a Copy in a Chosen File Type",
+      "confusabilityGroup": "delivery-actions",
+      "questionVariants": [
+        "What do download and export let you create?",
+        "What do you get when you download or export a project?",
+        "How do download and export differ from giving people access?"
+      ],
+      "answerVariants": [
+        "A saved file copy in a chosen format.",
+        "A copy saved as the type of file you choose.",
+        "An output file in a chosen type, saved to your device."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "file-format",
+      "conceptName": "The Kind of File",
+      "confusabilityGroup": "file-types",
+      "questionVariants": [
+        "What is a file format?",
+        "What do names like PNG, JPG, and PDF tell you?",
+        "What does a file's format describe?"
+      ],
+      "answerVariants": [
+        "The type of file and how its information is stored.",
+        "The kind of file used to store the work.",
+        "The way the file stores its digital information."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "png",
+      "conceptName": "An Image Format for Graphics",
+      "confusabilityGroup": "file-types",
+      "questionVariants": [
+        "What is PNG often useful for?",
+        "When is PNG a useful output choice?",
+        "What kind of work often fits a PNG file?"
+      ],
+      "answerVariants": [
+        "Graphics, screenshots, or a page saved as a picture.",
+        "A graphic or screenshot that needs to be an image.",
+        "A finished graphic, text design, or screenshot as an image."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "jpg",
+      "conceptName": "An Image Format for Photos",
+      "confusabilityGroup": "file-types",
+      "questionVariants": [
+        "What is JPG often used for?",
+        "What kind of page often suits a JPEG file?",
+        "When might JPG be a useful image format?"
+      ],
+      "answerVariants": [
+        "Photos or pages made mostly of photographs.",
+        "A photograph or a photo-heavy design.",
+        "An image that is mostly a photo."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "pdf",
+      "conceptName": "Keep a Document's Layout",
+      "confusabilityGroup": "file-types",
+      "questionVariants": [
+        "What is PDF useful for?",
+        "Which job does a PDF file often do well?",
+        "Why might a teacher ask for a handout as a PDF?"
+      ],
+      "answerVariants": [
+        "It keeps a document's layout together for reading or printing.",
+        "It preserves where things sit on a document page.",
+        "It helps a document keep its page layout across devices."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "choose-format",
+      "conceptName": "Choose a File Type for the Job",
+      "confusabilityGroup": "file-types",
+      "questionVariants": [
+        "How should you choose an output format?",
+        "Is the largest file always the best choice?",
+        "What should guide your choice of file type?"
+      ],
+      "answerVariants": [
+        "Choose the type that fits the task and teacher directions.",
+        "Use the format needed for the job, not just the largest one.",
+        "Match the file type to its use and the class directions."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "permissions",
+      "conceptName": "Control What Others May Do",
+      "confusabilityGroup": "access-rules",
+      "questionVariants": [
+        "Which three actions can permissions control?",
+        "Which three kinds of access do permission settings cover?",
+        "What three things might a project let other people do?"
+      ],
+      "answerVariants": [
+        "Whether people may view, comment, or change the work.",
+        "Whether others can look, leave notes, or make changes.",
+        "Who may see it, add feedback, or alter the project."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "view-access",
+      "conceptName": "Look Without Changing",
+      "confusabilityGroup": "access-rules",
+      "questionVariants": [
+        "What can someone do with view-only access?",
+        "What does viewing permission allow?",
+        "A partner has view-only permission. What can they do?"
+      ],
+      "answerVariants": [
+        "See the work without changing it.",
+        "Look at the design but leave it as it is.",
+        "Open and read it, but not alter the design."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "comment-access",
+      "conceptName": "Leave Feedback",
+      "confusabilityGroup": "access-rules",
+      "questionVariants": [
+        "What is comment access for?",
+        "What does commenting permission let a partner add?",
+        "How can someone give feedback with comment access?"
+      ],
+      "answerVariants": [
+        "They can leave notes about the work.",
+        "They may add feedback without changing the design itself.",
+        "They can write suggestions beside the project."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "edit-access",
+      "conceptName": "Allow Changes to the Project",
+      "confusabilityGroup": "access-rules",
+      "questionVariants": [
+        "What can someone do with edit access?",
+        "What does editing permission let a partner do?",
+        "Why does edit access need care?"
+      ],
+      "answerVariants": [
+        "They can change the project itself.",
+        "They may alter its words, pictures, or layout.",
+        "They can make changes to the design."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "least-access",
+      "conceptName": "Give Only the Access Needed",
+      "confusabilityGroup": "access-rules",
+      "questionVariants": [
+        "A partner only needs to look. Which access is enough?",
+        "Should a reader get permission to change your work?",
+        "What permission fits someone who only needs to see a poster?"
+      ],
+      "answerVariants": [
+        "View-only access is enough.",
+        "Let them view, without edit access.",
+        "Give viewing permission, following teacher directions."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "teacher-sharing",
+      "conceptName": "Follow the Approved Sharing Method",
+      "confusabilityGroup": "sharing-decisions",
+      "questionVariants": [
+        "A classmate asks you to make a public link. What comes first?",
+        "What should you do before changing who can access class work?",
+        "How should you choose a way to send school work?"
+      ],
+      "answerVariants": [
+        "Ask the teacher and follow the approved class method.",
+        "Use the teacher's directions for sharing.",
+        "Check with your teacher and use the allowed method."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "public-links",
+      "conceptName": "Links Can Travel Beyond the Class",
+      "confusabilityGroup": "sharing-decisions",
+      "questionVariants": [
+        "Why can an anyone-with-the-link setting be risky?",
+        "Why should a school link not be sent to just anyone?",
+        "What can happen when a public project link is passed around?"
+      ],
+      "answerVariants": [
+        "People outside the intended group may get access.",
+        "The work may reach people it was not meant for.",
+        "Someone may pass it to unapproved viewers."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "private-details",
+      "conceptName": "Notice Personal Information",
+      "confusabilityGroup": "publishing-checks",
+      "questionVariants": [
+        "Which details need a privacy check before sharing?",
+        "What information about students should make you stop and ask?",
+        "What personal details should you check before you publish?"
+      ],
+      "answerVariants": [
+        "Names, faces, places, and contact details.",
+        "Student names, photos, locations, and ways to contact them.",
+        "Details that identify people, such as faces or addresses."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "content-check",
+      "conceptName": "Check Facts Before Sending",
+      "confusabilityGroup": "publishing-checks",
+      "questionVariants": [
+        "What belongs in the final content check?",
+        "What should you proofread before sending an event poster?",
+        "How do you check whether a finished poster says the right things?"
+      ],
+      "answerVariants": [
+        "Check facts, dates, spelling, and required credits.",
+        "Make sure facts, labels, dates, and credits are correct.",
+        "Review facts, spelling, names, dates, and needed source credit."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "design-check",
+      "conceptName": "Check the Message and Layout",
+      "confusabilityGroup": "publishing-checks",
+      "questionVariants": [
+        "What belongs in the final design check?",
+        "Which visual parts belong in the design check?",
+        "What does the design part of the final checklist cover?"
+      ],
+      "answerVariants": [
+        "Check the main idea, readable words, useful pictures, and spacing.",
+        "Make sure the main idea is clear and the parts are well placed.",
+        "Review the clear message, text size, pictures, and arrangement."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "accessibility-check",
+      "conceptName": "Check Access for Different Readers",
+      "confusabilityGroup": "publishing-checks",
+      "questionVariants": [
+        "What belongs in the final accessibility check?",
+        "How can you check the finished work for readers with different needs?",
+        "What should you check so more people can use the output?"
+      ],
+      "answerVariants": [
+        "Check contrast, non-color clues, reading order, and image descriptions.",
+        "Review light and dark contrast, extra clues, order, and picture descriptions.",
+        "Check that meaning uses more than color and that order and image descriptions work."
+      ]
+    },
+    {
+      "position": 23,
+      "conceptKey": "privacy-permission-check",
+      "conceptName": "Check Audience and Allowed Use",
+      "confusabilityGroup": "publishing-checks",
+      "questionVariants": [
+        "What belongs in the final privacy and permission check?",
+        "What should you review about access and allowed images before sending?",
+        "What does the privacy and permission part of the final checklist cover?"
+      ],
+      "answerVariants": [
+        "Check who gets it, private details, and allowed media use.",
+        "Review the audience, personal details, and image permissions.",
+        "Check the intended viewers, private information, and media rules."
+      ]
+    },
+    {
+      "position": 24,
+      "conceptKey": "file-names",
+      "conceptName": "Give Files Clear Names",
+      "confusabilityGroup": "file-care",
+      "questionVariants": [
+        "What makes a useful school file name?",
+        "How should you name the final copy of a plant poster?",
+        "What helps a teacher identify a file without opening it?"
+      ],
+      "answerVariants": [
+        "A clear topic and stage, such as Plant_Poster_Final.",
+        "The topic and whether it is a draft or final copy.",
+        "A name that tells the project and version, without private details."
+      ]
+    },
+    {
+      "position": 25,
+      "conceptKey": "print-edges",
+      "conceptName": "Keep Important Parts Away from Edges",
+      "confusabilityGroup": "file-care",
+      "questionVariants": [
+        "The printer cuts off words at the edge. What can help?",
+        "What should you try if a printed title loses its last letters?",
+        "How can you fix important parts that disappear at the page edge?"
+      ],
+      "answerVariants": [
+        "Move them inward and check page size and margins.",
+        "Leave more edge space and review the print settings.",
+        "Keep key parts away from the edge and check the page settings."
+      ]
+    },
+    {
+      "position": 26,
+      "conceptKey": "output-preview",
+      "conceptName": "Test the Finished Output",
+      "confusabilityGroup": "file-care",
+      "questionVariants": [
+        "Why preview a print or exported file?",
+        "Why check a saved output even if the editor looked good?",
+        "Why test the actual version people will receive?"
+      ],
+      "answerVariants": [
+        "Size, colors, edges, or image clarity may look different.",
+        "The finished copy may look different from the editing view.",
+        "Things can change when work moves from screen to final output."
+      ]
+    },
+    {
+      "position": 27,
+      "conceptKey": "slide-support",
+      "conceptName": "Slides Support the Speaker",
+      "confusabilityGroup": "presenting",
+      "questionVariants": [
+        "How much writing belongs on a slide for a talk?",
+        "How can you fix a slide full of report paragraphs?",
+        "What should a slide show while you explain the details aloud?"
+      ],
+      "answerVariants": [
+        "One main idea with short phrases and useful pictures.",
+        "Keep the key idea, a few words, and helpful images.",
+        "Use a clear main point, brief words, and visuals."
+      ]
+    },
+    {
+      "position": 28,
+      "conceptKey": "speaker-habits",
+      "conceptName": "Talk to the Audience",
+      "confusabilityGroup": "presenting",
+      "questionVariants": [
+        "What should you do while showing a slide?",
+        "How should you speak about the picture on your screen?",
+        "What helps you present instead of reading every word aloud?"
+      ],
+      "answerVariants": [
+        "Face the audience and explain ideas in your own words.",
+        "Look toward the listeners and tell what the visuals mean.",
+        "Speak to the group and explain, rather than only reading the screen."
+      ]
+    }
+  ]
+}

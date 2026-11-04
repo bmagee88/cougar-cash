@@ -17,7 +17,7 @@ import { catalogErrors, filterQuizzes, filterValue, filterValues, quizzes, UNSPE
 import { createQuizId, formatPercent } from "./quizEngine";
 import ReplayIcon from "@mui/icons-material/Replay";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
-import { completedQuizStats, DailyLimitError, dailyProgress, localDayKey, proficiencyColor } from "./quizStats";
+import { completedQuizStats, currentAttemptNumber, DailyLimitError, dailyProgress, isBonusPending, localDayKey, proficiencyColor } from "./quizStats";
 import { quizPrompt } from "./quizPrompt";
 import { emptyFilters, emptyProgress, PROGRESS_KEY, readFilters, readProgress, readRound, saveAttempt, saveFilters } from "./storage";
 import { ConceptState, LocalAttempt, LocalProgress, QuizDefinition, QuizFilters, QuizSessionState } from "./types";
@@ -63,7 +63,7 @@ const fields: { key: keyof QuizFilters; label: string }[] = [
 type QuizRow = QuizDefinition & {
   total: number;
   completedTotal: number; averageScore: number | null;
-  dailyAttempts: number; dailyAllowed: number; dailyBonus: number;
+  dailyAttempts: number; dailyBase: number; dailyAllowed: number; dailyBonus: number;
   takenToday: boolean;
   lastTaken: string;
 };
@@ -71,7 +71,7 @@ type SortKey = keyof QuizFilters | "completedTotal" | "averageScore" | "dailyAtt
 const columns: { key: SortKey; label: string; align?: "right" }[] = [
   { key: "quizName", label: "Quiz name" },
   { key: "averageScore", label: "Proficiency", align: "right" },
-  { key: "dailyAttempts", label: "Attempt", align: "right" },
+  { key: "dailyAttempts", label: "Attempts Today", align: "right" },
   { key: "lastTaken", label: "Last taken" },
   { key: "quizNumber", label: "Quiz #" },
   ...fields.filter((field) => field.key !== "quizName" && field.key !== "quizNumber"),
@@ -91,7 +91,10 @@ const Proficiency: React.FC<{ percent: number | null; total: number }> = ({ perc
   </Typography>
 );
 
-const courseIds = new Set(["computers-ch1-s3-s4", "computers-ch1-s5", "computers-ch1-s5-grade3"]);
+const courseIds = new Set([
+  "computers-ch1-s3-s4", "computers-ch1-s5", "computers-ch1-s5-grade3",
+  "canva-creators-ch3", "canva-creators-ch4", "canva-creators-ch5", "canva-creators-ch9",
+]);
 const courseQuizzes = quizzes.filter((quiz) => courseIds.has(quiz.id));
 const additionalQuizzes = quizzes.filter((quiz) => !courseIds.has(quiz.id));
 
@@ -267,7 +270,8 @@ const QuizApp3Page: React.FC = () => {
                               onClick={() => openQuiz(quiz, quiz.dailyAttempts >= quiz.dailyAllowed)} sx={{ px: 0 }}>
                               {quiz.dailyAttempts >= quiz.dailyAllowed ? "Replay" : quiz.dailyAttempts > 0 ? "Continue quiz" : "Take quiz"}
                             </Button>
-                            <Typography variant="body2">Attempt {quiz.dailyAttempts} / {quiz.dailyAllowed}</Typography>
+                            <Typography variant="body2">{isBonusPending(quiz)
+                              ? "Bonus round" : `Attempt ${currentAttemptNumber(quiz)} / ${quiz.dailyBase}`}</Typography>
 
                           </Stack>
                         </Paper>
@@ -366,7 +370,8 @@ const QuizApp3Page: React.FC = () => {
                             </Box>
                           </TableCell>
                           <TableCell align="right">{quiz.takenToday && <Proficiency percent={quiz.averageScore} total={quiz.completedTotal} />}</TableCell>
-                          <TableCell align="right">{quiz.dailyAttempts} / {quiz.dailyAllowed}</TableCell>
+                          <TableCell align="right">{isBonusPending(quiz)
+                            ? "Bonus round" : `${currentAttemptNumber(quiz)} / ${quiz.dailyBase}`}</TableCell>
                           <TableCell sx={{ color: "text.secondary", fontSize: 12 }}>{formatDate(quiz.lastTaken)}</TableCell>
                           <TableCell sx={{ color: "text.secondary", borderLeft: "2px solid", borderLeftColor: "divider" }}>{quiz.quizNumber}</TableCell>
                           <TableCell>{quiz.teacher}</TableCell>

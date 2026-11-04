@@ -55,23 +55,14 @@ export const createRound = (quiz: QuizDefinition, state: QuizSessionState): Loca
     mode = "bonus";
     const bonusSeen = new Set(state.bonusSeenConceptIds);
     const missed = new Set(state.firstPassWrongConceptIds);
-    const wrong = [
-      ...shuffle(concepts.filter((concept) => missed.has(concept.conceptKey) &&
-        !state.conceptState[concept.conceptKey] && !bonusSeen.has(concept.conceptKey))),
-      ...shuffle(concepts.filter((concept) => !missed.has(concept.conceptKey) &&
-        !state.conceptState[concept.conceptKey] && !bonusSeen.has(concept.conceptKey))),
-    ].slice(0, targetCount);
-    const selectedIds = new Set(wrong.map((concept) => concept.conceptKey));
+    selected = shuffle(concepts.filter((concept) => missed.has(concept.conceptKey) &&
+      !state.conceptState[concept.conceptKey] && !bonusSeen.has(concept.conceptKey)))
+      .slice(0, targetCount);
+    const seen = new Set(state.seenConceptIds);
     const correctFill = shuffle(concepts.filter((concept) =>
-      state.conceptState[concept.conceptKey] && !selectedIds.has(concept.conceptKey),
-    )).slice(0, Math.max(0, targetCount - wrong.length));
-    selected = [...wrong, ...correctFill];
-    if (selected.length < targetCount) {
-      const fallbackIds = new Set(selected.map((concept) => concept.conceptKey));
-      selected = [...selected, ...shuffle(concepts.filter((concept) =>
-        !fallbackIds.has(concept.conceptKey),
-      )).slice(0, targetCount - selected.length)];
-    }
+      seen.has(concept.conceptKey) && state.conceptState[concept.conceptKey],
+    )).slice(0, targetCount - selected.length);
+    selected = [...selected, ...correctFill];
   } else {
     const incorrect = concepts.filter((concept) => !state.conceptState[concept.conceptKey]);
     const correct = concepts.filter((concept) => state.conceptState[concept.conceptKey]);
@@ -126,8 +117,11 @@ export const submitRound = (
   });
   if (round.mode === "bonus") state.bonusRoundsUsed += 1;
   if (!state.bonusEligible && allCorrect(quiz, state.conceptState)) state.bonusEligible = true;
+  // Finishing coverage unlocks the final correction round even if this take
+  // began without mastery saved from a previous take.
+  if (state.seenConceptIds.length >= quiz.concepts.length) state.bonusEligible = true;
   state.requiredComplete = state.bonusEligible && state.seenConceptIds.length >= quiz.concepts.length;
-  state.bonusRoundsEarned = state.firstPassWrongConceptIds.length > 0 ? 1 : 0;
+  state.bonusRoundsEarned = state.firstPassWrongConceptIds.some((key) => !state.conceptState[key]) ? 1 : 0;
   state.complete = state.bonusEligible
     ? state.requiredComplete && state.bonusRoundsUsed >= state.bonusRoundsEarned
     : roundsUsed >= Math.ceil(quiz.concepts.length / QUESTION_WINDOW_SIZE);
@@ -140,26 +134,32 @@ export const submitRound = (
   };
 };
 
-// The take's only bonus comes after the regular allowance. Reuse the original
-// bonus selector: random missed concepts first, then correct concepts to fill.
+// The single bonus follows every regular round and retries only current-take
+// mistakes first, then fills remaining slots with correct answers from this
+// take. Unattempted concepts are never used as filler.
 export const createDailyRound = (
   quiz: QuizDefinition,
   state: QuizSessionState,
   daily: { dailyAttempts: number; dailyBase: number; dailyBonus: number },
-) => createRound(quiz, {
-  ...state,
-  complete: false,
-  ...(daily.dailyAttempts >= daily.dailyBase && daily.dailyBonus > 0 ? {
-    bonusEligible: true,
-    requiredComplete: true,
-    bonusRoundsEarned: 1,
-    bonusRoundsUsed: 0,
-  } : {
-    // Regular rounds cover the bank once, even when earlier answers were wrong.
-    bonusEligible: true,
-    requiredComplete: false,
-  }),
-});
+) => {
+  if (daily.dailyAttempts >= daily.dailyBase + Math.min(1, daily.dailyBonus)) {
+    throw new Error("This take is complete. Start another run to continue.");
+  }
+  return createRound(quiz, {
+    ...state,
+    complete: false,
+    ...(daily.dailyAttempts >= daily.dailyBase && daily.dailyBonus > 0 ? {
+      bonusEligible: true,
+      requiredComplete: true,
+      bonusRoundsEarned: 1,
+      bonusRoundsUsed: 0,
+    } : {
+      // Regular rounds cover the bank once, even when earlier answers were wrong.
+      bonusEligible: true,
+      requiredComplete: false,
+    }),
+  });
+};
 
 export const attemptStats = (attempts: LocalAttempt[]) => {
   const total = attempts.length;
