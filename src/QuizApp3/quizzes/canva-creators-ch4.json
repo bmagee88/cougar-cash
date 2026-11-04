@@ -1,0 +1,321 @@
+{
+  "id": "canva-creators-ch4",
+  "quizName": "Color, Shape and Contrast",
+  "description": "Use colors and shapes to make ideas clear. Learn how to help words stand out. Give readers more than one clue.",
+  "quizNumber": 4,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Canva Creators",
+      "chapters": "Chapter 4",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "palette",
+      "conceptName": "A Planned Set of Colors",
+      "confusabilityGroup": "color-roles",
+      "questionVariants": [
+        "What is a color palette?",
+        "What do you choose when you plan a palette?",
+        "What does a palette hold for one design?"
+      ],
+      "answerVariants": [
+        "A small set of colors chosen for the page.",
+        "The group of colors picked for a design.",
+        "A planned group of colors to use together."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "background",
+      "conceptName": "The Area Behind the Design",
+      "confusabilityGroup": "color-roles",
+      "questionVariants": [
+        "Where is the background in a design?",
+        "What part of a page is called the background?",
+        "Where does a background sit compared with words and pictures?"
+      ],
+      "answerVariants": [
+        "Behind the words, pictures, and other parts.",
+        "It is the area behind the other things.",
+        "At the back, under the other parts of the page."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "foreground",
+      "conceptName": "The Parts in Front",
+      "confusabilityGroup": "color-roles",
+      "questionVariants": [
+        "Where are the foreground parts of a page?",
+        "What is in the foreground of a design?",
+        "Where do foreground objects appear?"
+      ],
+      "answerVariants": [
+        "In front of the area at the back.",
+        "On top of the background.",
+        "They sit in front of the background."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "accent",
+      "conceptName": "Use an Accent in a Few Places",
+      "confusabilityGroup": "color-roles",
+      "questionVariants": [
+        "How should you use an accent color?",
+        "Where should the special accent color go?",
+        "How can an accent color keep its power to draw your eyes?"
+      ],
+      "answerVariants": [
+        "Use it on just a few key parts.",
+        "Save it for a small number of important spots.",
+        "Put it only where extra attention is needed."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "emphasis",
+      "conceptName": "Make One Part Stand Out",
+      "confusabilityGroup": "visual-clues",
+      "questionVariants": [
+        "What does emphasis mean?",
+        "What is the job of emphasis on a page?",
+        "What happens when a design gives one part emphasis?"
+      ],
+      "answerVariants": [
+        "One part draws more attention than the rest.",
+        "A key part stands out from the others.",
+        "One part is made easier to notice first."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "contrast",
+      "conceptName": "A Strong Difference",
+      "confusabilityGroup": "visual-clues",
+      "questionVariants": [
+        "What does contrast mean?",
+        "What makes contrast between two parts?",
+        "How would you explain contrast in a design?"
+      ],
+      "answerVariants": [
+        "A clear difference, such as light and dark.",
+        "A strong difference in things like size or lightness.",
+        "A difference that helps things stand apart."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "readable-color-pair",
+      "conceptName": "Choose Clear Text and Background Colors",
+      "confusabilityGroup": "color-checks",
+      "questionVariants": [
+        "Which text colors work well on a very light page?",
+        "What is a good text choice for a white background?",
+        "Pale words fade on a light page. What color choice can help?"
+      ],
+      "answerVariants": [
+        "Black or dark gray letters.",
+        "Dark letters, such as black or deep gray.",
+        "A very dark color for the words."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "non-color-clues",
+      "conceptName": "Give More Than a Color Clue",
+      "confusabilityGroup": "visual-clues",
+      "questionVariants": [
+        "A chart uses only red and green dots. What should you add?",
+        "How can a color chart help readers who cannot tell the colors apart?",
+        "How can colored status dots still make sense without their colors?"
+      ],
+      "answerVariants": [
+        "Add words, marks, or patterns that tell the meaning.",
+        "Use labels or symbols as a second clue.",
+        "Put a clear word or symbol beside each dot."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "color-context",
+      "conceptName": "Color Meaning Depends on People and Place",
+      "confusabilityGroup": "color-checks",
+      "questionVariants": [
+        "Does a color mean the same thing to everyone?",
+        "Will every group understand a color in the same way?",
+        "Can you assume one color always has one meaning?"
+      ],
+      "answerVariants": [
+        "No. People and places can give it different meanings.",
+        "No. Its meaning can change with the people or setting.",
+        "No. Different groups may understand it in different ways."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "shape",
+      "conceptName": "A Form Such as a Circle or Box",
+      "confusabilityGroup": "shape-terms",
+      "questionVariants": [
+        "What is a shape in a design?",
+        "What do circles, triangles, and rectangles have in common?",
+        "What kind of design part can have three sides or be round?"
+      ],
+      "answerVariants": [
+        "A form with its own outline.",
+        "A form with a clear edge or outline.",
+        "A form defined by its outer edge."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "shape-containers",
+      "conceptName": "Put Related Ideas in One Box",
+      "confusabilityGroup": "shape-jobs",
+      "questionVariants": [
+        "What can a box around a fact and its picture show?",
+        "How does one shape around related words and an icon help?",
+        "What does a shared box tell a reader about the things inside?"
+      ],
+      "answerVariants": [
+        "Those parts belong together.",
+        "The things inside form one group.",
+        "They are connected parts of one idea."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "line-divider",
+      "conceptName": "Use a Line to Separate Parts",
+      "confusabilityGroup": "shape-jobs",
+      "questionVariants": [
+        "What job can a thin line do between two sections?",
+        "How can a line help divide a page?",
+        "Why might you put a line between different groups of facts?"
+      ],
+      "answerVariants": [
+        "It shows where one group ends and another starts.",
+        "It marks a break between groups.",
+        "It keeps separate parts clearly apart."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "direction-arrow",
+      "conceptName": "Use an Arrow to Point",
+      "confusabilityGroup": "shape-jobs",
+      "questionVariants": [
+        "What job can an arrow do in a design?",
+        "How can an arrow help a viewer find the next step?",
+        "Why add an arrow to a path or set of steps?"
+      ],
+      "answerVariants": [
+        "It shows which way to go or look.",
+        "It points the viewer toward a place or next step.",
+        "It guides the eyes in a chosen direction."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "symbol",
+      "conceptName": "A Mark That Stands for an Idea",
+      "confusabilityGroup": "shape-terms",
+      "questionVariants": [
+        "What is a symbol?",
+        "What does a symbol do in a design?",
+        "How can a small mark act as a symbol?"
+      ],
+      "answerVariants": [
+        "It stands for an idea, thing, or action.",
+        "It uses a visual mark to mean something.",
+        "It represents a meaning without a full sentence."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "pattern",
+      "conceptName": "An Arrangement That Repeats",
+      "confusabilityGroup": "shape-terms",
+      "questionVariants": [
+        "What is a pattern?",
+        "What makes a row of marks into a pattern?",
+        "How would you describe a visual pattern?"
+      ],
+      "answerVariants": [
+        "The same arrangement repeats.",
+        "A set of forms or marks repeats in order.",
+        "A visual arrangement is used again and again."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "repeat-styles",
+      "conceptName": "Use Matching Styles for Equal Ideas",
+      "confusabilityGroup": "shape-jobs",
+      "questionVariants": [
+        "Why put three equal rules in matching boxes?",
+        "What do matching shapes tell us about a set of equal facts?",
+        "How do the same colors and boxes help related cards?"
+      ],
+      "answerVariants": [
+        "The matching look shows they belong to the same set.",
+        "The same style shows they are related and equal.",
+        "Their shared look connects them as a group."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "reduce-clutter",
+      "conceptName": "Use Fewer Colors and Shapes",
+      "confusabilityGroup": "color-checks",
+      "questionVariants": [
+        "How can you calm a page with many random colors and boxes?",
+        "Too many bright shapes fight for attention. What can help?",
+        "How can you fix a page full of unrelated visual styles?"
+      ],
+      "answerVariants": [
+        "Remove extra styles and repeat a smaller set.",
+        "Keep fewer styles and reuse them on purpose.",
+        "Cut extra colors and shapes, then reuse the ones you keep."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "accessibility",
+      "conceptName": "Design So More People Can Use It",
+      "confusabilityGroup": "design-access",
+      "questionVariants": [
+        "What does accessibility mean in a design?",
+        "What is the goal of accessibility?",
+        "How does accessibility help an audience?"
+      ],
+      "answerVariants": [
+        "More people, including people with disabilities, can use it.",
+        "It helps people with different needs get the information.",
+        "It makes information usable for people with a range of needs."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "grayscale-test",
+      "conceptName": "Test Without Color",
+      "confusabilityGroup": "design-access",
+      "questionVariants": [
+        "Why test a design in black and white?",
+        "What can a gray print test help you find out?",
+        "Why check a color chart on a printer that uses only black ink?"
+      ],
+      "answerVariants": [
+        "To see if the meaning stays clear without color.",
+        "To check that people can still read and understand it.",
+        "To make sure the message does not depend on colors."
+      ]
+    }
+  ]
+}

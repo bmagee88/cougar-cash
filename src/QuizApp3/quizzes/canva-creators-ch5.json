@@ -1,0 +1,385 @@
+{
+  "id": "canva-creators-ch5",
+  "quizName": "Images, Elements, and Cropping",
+  "description": "Choose pictures that help tell your idea. Learn to crop and resize them. Use pictures with care and give credit when needed.",
+  "quizNumber": 5,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Canva Creators",
+      "chapters": "Chapter 5",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "image-purpose",
+      "conceptName": "Choose a Picture for Its Job",
+      "confusabilityGroup": "image-choice",
+      "questionVariants": [
+        "What should you ask before adding a picture?",
+        "How can you decide if an image belongs on your page?",
+        "What question helps you choose a useful visual?"
+      ],
+      "answerVariants": [
+        "What will this help the reader understand?",
+        "How will this help explain my idea?",
+        "What part of my message will this help show?"
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "photo",
+      "conceptName": "An Image Made with a Camera",
+      "confusabilityGroup": "image-types",
+      "questionVariants": [
+        "What is a photo?",
+        "How is a photograph made?",
+        "What makes a picture a photo?"
+      ],
+      "answerVariants": [
+        "It is an image made with a camera.",
+        "A camera captures the image.",
+        "It comes from taking a picture with a camera."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "graphic",
+      "conceptName": "A Created Visual",
+      "confusabilityGroup": "image-types",
+      "questionVariants": [
+        "What is a graphic?",
+        "What kind of visual is called a graphic?",
+        "What does the word graphic mean here?"
+      ],
+      "answerVariants": [
+        "A created visual, such as a drawing or sticker.",
+        "A designed picture, such as a drawing or decoration.",
+        "An image made as a design, like a drawing."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "icon",
+      "conceptName": "A Small Mark with a Meaning",
+      "confusabilityGroup": "image-types",
+      "questionVariants": [
+        "What is the job of an icon?",
+        "How does an icon help on a page?",
+        "Why use a small icon beside a label?"
+      ],
+      "answerVariants": [
+        "It stands for an idea, thing, or action.",
+        "It shows a meaning with a small, clear symbol.",
+        "It uses a simple symbol to represent something."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "diagram",
+      "conceptName": "Show Parts or Steps",
+      "confusabilityGroup": "image-types",
+      "questionVariants": [
+        "When might a diagram work better than a photo?",
+        "What job can a diagram do well?",
+        "Why choose a diagram to explain how something works?"
+      ],
+      "answerVariants": [
+        "It can make parts, steps, or links easy to see.",
+        "It shows parts or steps in a clear way.",
+        "It can explain how parts or steps connect."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "decoration",
+      "conceptName": "Keep Decoration in a Small Role",
+      "confusabilityGroup": "image-choice",
+      "questionVariants": [
+        "What job should decorative elements have?",
+        "How should stickers that only add style fit into a page?",
+        "How should you use images that add feeling but no facts?"
+      ],
+      "answerVariants": [
+        "They can add style without taking over the message.",
+        "They should support the mood and stay in a small role.",
+        "They may add feeling, but the main idea must come first."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "crop",
+      "conceptName": "Hide Outer Parts of an Image",
+      "confusabilityGroup": "image-edits",
+      "questionVariants": [
+        "What does cropping do to a picture?",
+        "What changes when you crop an image?",
+        "How does a crop change what we see?"
+      ],
+      "answerVariants": [
+        "It hides outer parts and keeps a chosen area in view.",
+        "It removes edges from view to show a smaller area.",
+        "It shows just the chosen part by hiding the outside."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "honest-crop",
+      "conceptName": "Keep the Meaning True",
+      "confusabilityGroup": "image-edits",
+      "questionVariants": [
+        "What should you check before cutting people out of a group photo?",
+        "A crop hides part of an event. What must you check?",
+        "What should you ask if a crop removes useful context?"
+      ],
+      "answerVariants": [
+        "Does it still tell the truth about what happened?",
+        "Will people still understand the event correctly?",
+        "Does the part left in view still give a true meaning?"
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "aspect-ratio",
+      "conceptName": "The Link Between Width and Height",
+      "confusabilityGroup": "image-size",
+      "questionVariants": [
+        "What does aspect ratio compare?",
+        "Which two measurements form an image's aspect ratio?",
+        "What does aspect ratio tell about a picture's shape?"
+      ],
+      "answerVariants": [
+        "How wide it is compared with how tall it is.",
+        "The relationship of its width to its height.",
+        "Its width compared with its height."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "distort",
+      "conceptName": "Stretching That Changes Shapes",
+      "confusabilityGroup": "image-size",
+      "questionVariants": [
+        "What does it mean to distort a picture?",
+        "What happens when an image is distorted?",
+        "How can pulling just one side distort a face?"
+      ],
+      "answerVariants": [
+        "It is stretched or squeezed out of its normal shape.",
+        "Its shapes become too wide or too tall.",
+        "It is changed so its shapes no longer look right."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "resize-proportionally",
+      "conceptName": "Keep the Shape When Resizing",
+      "confusabilityGroup": "image-size",
+      "questionVariants": [
+        "How can you change an image's size without squashing it?",
+        "What is a good way to resize a photo and keep its shape?",
+        "Which resizing method helps a face keep its normal shape?"
+      ],
+      "answerVariants": [
+        "Use a corner or the tool that keeps the proportions.",
+        "Resize with controls that keep width and height in step.",
+        "Use the corner or a setting that keeps the same proportions."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "frame",
+      "conceptName": "A Container for an Image",
+      "confusabilityGroup": "image-edits",
+      "questionVariants": [
+        "What is a frame in Canva?",
+        "What does a picture frame element do?",
+        "How does a frame hold an image?"
+      ],
+      "answerVariants": [
+        "It holds and crops a picture inside a set shape.",
+        "It keeps a picture within a chosen area or shape.",
+        "It is a shaped container that holds and crops a picture."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "reposition-in-frame",
+      "conceptName": "Keep the Subject in View",
+      "confusabilityGroup": "image-edits",
+      "questionVariants": [
+        "A frame hides the owl's head. What should you change?",
+        "How can you fix a photo placed too far to one side in a frame?",
+        "The crop cuts off the main subject. What can you do?"
+      ],
+      "answerVariants": [
+        "Move the picture inside the frame to show the subject.",
+        "Adjust the picture's position until the main part is visible.",
+        "Reposition it in the crop so the key part is in view."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "specific-search",
+      "conceptName": "Search with Clear Details",
+      "confusabilityGroup": "image-choice",
+      "questionVariants": [
+        "How can you improve a search that gives too many animal pictures?",
+        "What kind of search words help find the exact owl picture you need?",
+        "How can you narrow a picture search in the class media library?"
+      ],
+      "answerVariants": [
+        "Name the subject and add details, such as snowy owl flying.",
+        "Use a clear subject plus details about what it is doing.",
+        "Add specific details about the subject and action."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "image-quality",
+      "conceptName": "Check for a Clear Image",
+      "confusabilityGroup": "image-choice",
+      "questionVariants": [
+        "What should you check if a picture looks blocky?",
+        "How can you fix a fuzzy image on your finished page?",
+        "What helps when a photo breaks into blurry squares?"
+      ],
+      "answerVariants": [
+        "Try a clearer image or show it at a smaller size.",
+        "Choose a sharper picture or make this one smaller.",
+        "Use a better-quality picture or reduce its size."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "image-text",
+      "conceptName": "Put Words on a Quiet Area",
+      "confusabilityGroup": "image-choice",
+      "questionVariants": [
+        "Words are hard to see on a busy photo. What can help?",
+        "How can you fix text placed over a jumble of picture details?",
+        "What can help words stand out when the photo behind them is busy?"
+      ],
+      "answerVariants": [
+        "Move them to open space or add a solid area behind them.",
+        "Use a plain area of the photo or a solid text box.",
+        "Place them on a quiet area or on a plain solid box."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "copyright",
+      "conceptName": "Protection for Creative Work",
+      "confusabilityGroup": "media-rights",
+      "questionVariants": [
+        "What does copyright protect?",
+        "What kind of work has copyright protection?",
+        "What does copyright cover in this chapter?"
+      ],
+      "answerVariants": [
+        "Original work people create, such as art and photos.",
+        "Creative work, like drawings, photos, and illustrations.",
+        "People's original creative work."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "license",
+      "conceptName": "Rules for Using a Work",
+      "confusabilityGroup": "media-rights",
+      "questionVariants": [
+        "What does an image license tell you?",
+        "What can you learn from a picture's license?",
+        "What does a license explain about an image?"
+      ],
+      "answerVariants": [
+        "How you are allowed to use it.",
+        "What uses its owner permits.",
+        "The rules for using that work."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "attribution",
+      "conceptName": "Give the Creator Credit",
+      "confusabilityGroup": "media-rights",
+      "questionVariants": [
+        "What does attribution mean?",
+        "How do you give attribution for a picture?",
+        "What are you doing when you add attribution?"
+      ],
+      "answerVariants": [
+        "Giving credit to the person or source that made it.",
+        "Naming the creator or source to give credit.",
+        "Saying who made the work or where it came from."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "search-not-permission",
+      "conceptName": "Finding Is Not Permission",
+      "confusabilityGroup": "media-rights",
+      "questionVariants": [
+        "Does finding a photo online mean you may copy it?",
+        "Can you use any picture that appears in a web search?",
+        "Does a search result give you the right to use its image?"
+      ],
+      "answerVariants": [
+        "No. You must check whether that use is allowed.",
+        "No. Being able to see it does not give you permission.",
+        "No. The owner's rules still apply."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "approved-sources",
+      "conceptName": "Use Approved Picture Sources",
+      "confusabilityGroup": "media-rights",
+      "questionVariants": [
+        "Which picture sources should you use for class work?",
+        "Where should you look for media for a school project?",
+        "What is a safe class rule for choosing an image source?"
+      ],
+      "answerVariants": [
+        "Use sources your teacher has approved.",
+        "Choose the media library or sources your teacher allows.",
+        "Stay with teacher-approved places for pictures."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "student-photos",
+      "conceptName": "Ask Before Using a Classmate's Photo",
+      "confusabilityGroup": "image-privacy",
+      "questionVariants": [
+        "What should you do before using a classmate's photo?",
+        "Can you post a student's face just because you took the picture?",
+        "What is the class rule before you include another student's face?"
+      ],
+      "answerVariants": [
+        "Follow school rules and check with your teacher first.",
+        "Use it only as school and teacher rules allow.",
+        "Check the teacher's rules before including it."
+      ]
+    },
+    {
+      "position": 23,
+      "conceptKey": "source-records",
+      "conceptName": "Keep Source and Permission Notes",
+      "confusabilityGroup": "media-rights",
+      "questionVariants": [
+        "Why keep notes about where an image came from?",
+        "How do image source records help later?",
+        "Why save a picture's source and use rules?"
+      ],
+      "answerVariants": [
+        "You can check its use rules and add credit when needed.",
+        "They help you follow permissions and keep the right credit.",
+        "You can find its permissions and creator information again."
+      ]
+    }
+  ]
+}

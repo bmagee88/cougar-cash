@@ -10,16 +10,29 @@ export const dailyProgress = (quiz: QuizDefinition, attempts: LocalAttempt[], to
   );
   const activeTakeId = takeId ?? completedToday[completedToday.length - 1]?.takeId;
   const takeAttempts = completedToday.filter((attempt) => attempt.takeId === activeTakeId);
-  const bonusRounds = Math.min(1, takeAttempts.reduce((earned, attempt) =>
+  const dailyBase = Math.max(1, Math.ceil(quiz.concepts.length / QUESTION_WINDOW_SIZE));
+  const regularResult = takeAttempts[dailyBase - 1];
+  const regularPerfect = regularResult && regularResult.correctCount === regularResult.totalCount;
+  const bonusRounds = regularPerfect ? 0 : Math.min(1, takeAttempts.reduce((earned, attempt) =>
     Math.max(earned, attempt.bonusRoundsEarned || 0), 0,
   ));
   return {
     dailyAttempts: takeAttempts.length,
-    dailyBase: Math.max(1, Math.ceil(quiz.concepts.length / QUESTION_WINDOW_SIZE)),
+    dailyBase,
     dailyBonus: bonusRounds,
-    dailyAllowed: Math.max(1, Math.ceil(quiz.concepts.length / QUESTION_WINDOW_SIZE)) + bonusRounds,
+    dailyAllowed: dailyBase + bonusRounds,
   };
 };
+
+// Submitted rounds still need their own number on the result screen. Lists
+// and an unsubmitted board show the next/current round, starting at one.
+export const currentAttemptNumber = (
+  progress: { dailyAttempts: number; dailyBase: number }, submitted = false,
+) => Math.min(progress.dailyBase, Math.max(1, progress.dailyAttempts + (submitted ? 0 : 1)));
+
+export const isBonusPending = (progress: {
+  dailyAttempts: number; dailyBase: number; dailyAllowed: number;
+}) => progress.dailyAttempts >= progress.dailyBase && progress.dailyAttempts < progress.dailyAllowed;
 
 export class DailyLimitError extends Error {
   constructor() { super("This take is complete. Choose Replay to practice again."); }

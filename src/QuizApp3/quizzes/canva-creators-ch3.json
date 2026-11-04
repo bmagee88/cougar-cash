@@ -1,0 +1,369 @@
+{
+  "id": "canva-creators-ch3",
+  "quizName": "Typography",
+  "description": "Learn how words look on a page. Use clear letters, sizes, and spaces. Help people find the main idea and read the details.",
+  "quizNumber": 3,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Canva Creators",
+      "chapters": "Chapter 3",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "typography",
+      "conceptName": "Planning How Text Looks",
+      "confusabilityGroup": "text-terms",
+      "questionVariants": [
+        "What does typography mean?",
+        "What do we plan when we use typography?",
+        "What is the job of typography?"
+      ],
+      "answerVariants": [
+        "Choosing how words look and where they go.",
+        "Planning the look and place of words.",
+        "Choosing letter styles, sizes, and spaces on a page."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "font",
+      "conceptName": "The Style of Letters",
+      "confusabilityGroup": "text-terms",
+      "questionVariants": [
+        "What is a font?",
+        "What does the word typeface mean?",
+        "What changes when you choose a new font?"
+      ],
+      "answerVariants": [
+        "The style and shape of the letters.",
+        "The way the letters are drawn.",
+        "How the letters look."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "heading",
+      "conceptName": "The Job of a Heading",
+      "confusabilityGroup": "text-roles",
+      "questionVariants": [
+        "What does a heading tell the reader?",
+        "What is the job of a heading?",
+        "How does a heading help you start reading?"
+      ],
+      "answerVariants": [
+        "It names the topic of a page or part.",
+        "It tells what a page or part is about.",
+        "It gives the topic before the details."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "body-text",
+      "conceptName": "The Job of Body Text",
+      "confusabilityGroup": "text-roles",
+      "questionVariants": [
+        "What does body text give the reader?",
+        "What is the job of body text?",
+        "How does body text help after a title?"
+      ],
+      "answerVariants": [
+        "It gives more facts about the topic.",
+        "It explains the topic in more detail.",
+        "It adds the facts that explain the main idea."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "hierarchy",
+      "conceptName": "A Clear Order of Importance",
+      "confusabilityGroup": "text-order",
+      "questionVariants": [
+        "What does text hierarchy show?",
+        "How does hierarchy guide your eyes?",
+        "What does a clear hierarchy help you know?"
+      ],
+      "answerVariants": [
+        "What to notice first, next, and last.",
+        "The order in which to notice the ideas.",
+        "Which idea comes first and which details come next."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "title-emphasis",
+      "conceptName": "Make the Title Stand Out",
+      "confusabilityGroup": "text-order",
+      "questionVariants": [
+        "The title blends in. How can you help it stand out?",
+        "How can you make a title stronger than its details?",
+        "All the words look equal. How can you draw eyes to the title?"
+      ],
+      "answerVariants": [
+        "Make it bigger or bolder than the other words.",
+        "Use larger or thicker letters for it.",
+        "Give it more size or weight than the details."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "legible",
+      "conceptName": "Easy to Read",
+      "confusabilityGroup": "text-terms",
+      "questionVariants": [
+        "What does legible mean?",
+        "A teacher says the words are legible. What does that mean?",
+        "How would you describe text that is legible?"
+      ],
+      "answerVariants": [
+        "The letters are easy to see and read.",
+        "You can tell the letters apart and read them.",
+        "You can read the words without a struggle."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "paragraph-font",
+      "conceptName": "Simple Fonts for Longer Text",
+      "confusabilityGroup": "font-choices",
+      "questionVariants": [
+        "What kind of font is best for a long paragraph?",
+        "Which letter style is a good choice for many sentences?",
+        "How should the letters look in a block of details?"
+      ],
+      "answerVariants": [
+        "Use a plain style with clear letter shapes.",
+        "Choose simple letters that are easy to tell apart.",
+        "Pick a clear, plain letter style."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "decorative-font",
+      "conceptName": "A Place for Fancy Fonts",
+      "confusabilityGroup": "font-choices",
+      "questionVariants": [
+        "Where might a fancy font work well?",
+        "What is a good place for a playful letter style?",
+        "When could you use a curly font that is still clear?"
+      ],
+      "answerVariants": [
+        "In a short title that is easy to read.",
+        "For a brief, clear title.",
+        "On a few title words that people can read."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "limit-fonts",
+      "conceptName": "Use a Small Set of Fonts",
+      "confusabilityGroup": "font-choices",
+      "questionVariants": [
+        "How many font families are a good start for one page?",
+        "What is a simple plan for the number of fonts?",
+        "How can you avoid a page with too many letter styles?"
+      ],
+      "answerVariants": [
+        "Use one, or two with a clear job for each.",
+        "Start with one and add a second only for a reason.",
+        "Keep to one or two, each with its own job."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "thin-strokes",
+      "conceptName": "Avoid Very Thin Small Letters",
+      "confusabilityGroup": "font-choices",
+      "questionVariants": [
+        "Why can very thin letters be a poor choice for small text?",
+        "What can happen to fine letter lines at a small size?",
+        "Why should small letters have strokes you can see?"
+      ],
+      "answerVariants": [
+        "Their lines can be hard to see.",
+        "The fine lines may seem to fade away.",
+        "People may not see the thin lines well."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "distance-check",
+      "conceptName": "Test Text Where It Will Be Read",
+      "confusabilityGroup": "text-checks",
+      "questionVariants": [
+        "How can you check words meant to be read across a room?",
+        "How should you test the size of words on a class screen?",
+        "What should you do to test a sign meant for faraway readers?"
+      ],
+      "answerVariants": [
+        "Step back and try to read them from there.",
+        "Read them from where the viewers will be.",
+        "Move to the viewing distance and check the words."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "line-spacing",
+      "conceptName": "Space Between Lines",
+      "confusabilityGroup": "text-spacing",
+      "questionVariants": [
+        "What does line spacing control?",
+        "Which gap changes when you adjust line spacing?",
+        "What space does the line spacing setting change?"
+      ],
+      "answerVariants": [
+        "The gap from one row of words to the next.",
+        "The space between rows of words.",
+        "How far apart the rows of text sit."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "related-text-spacing",
+      "conceptName": "Keep Related Words Together",
+      "confusabilityGroup": "text-spacing",
+      "questionVariants": [
+        "Where should a heading sit compared with its own paragraph?",
+        "How can gaps show which title and details belong together?",
+        "How should you space a heading and the facts it names?"
+      ],
+      "answerVariants": [
+        "Keep them close, with more room before the next group.",
+        "Put them near each other and leave a bigger gap to other groups.",
+        "Use a small gap within the group and more space outside it."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "alignment",
+      "conceptName": "Line Up Text",
+      "confusabilityGroup": "text-position",
+      "questionVariants": [
+        "What does alignment mean in a design?",
+        "What do you do when you align text boxes?",
+        "How does alignment place things on a page?"
+      ],
+      "answerVariants": [
+        "Line things up along the same edge or center.",
+        "Put things on a shared edge or center line.",
+        "Make their edges or centers line up."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "left-aligned-paragraph",
+      "conceptName": "A Steady Start for Each Line",
+      "confusabilityGroup": "text-position",
+      "questionVariants": [
+        "Why is left alignment useful for a long paragraph?",
+        "How does left-aligned text help your eyes find the next line?",
+        "Why can a long block be easier to read along a left edge?"
+      ],
+      "answerVariants": [
+        "Each line starts in the same place.",
+        "Your eyes return to one steady starting point.",
+        "All the rows begin at a shared left edge."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "centered-text",
+      "conceptName": "Use Centering for Short Text",
+      "confusabilityGroup": "text-position",
+      "questionVariants": [
+        "When can centered text work well?",
+        "What kind of text can be a good choice to center?",
+        "Where might you use words placed around a middle line?"
+      ],
+      "answerVariants": [
+        "For a short title, label, or invitation.",
+        "On brief labels or titles.",
+        "For a few title or invitation words."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "shorten-text",
+      "conceptName": "Edit Words Before Shrinking Them",
+      "confusabilityGroup": "clear-writing",
+      "questionVariants": [
+        "A paragraph will not fit. What can you do before shrinking it?",
+        "Too many words fill the page. How can you keep them readable?",
+        "How can you fix a crowded block without making letters tiny?"
+      ],
+      "answerVariants": [
+        "Cut extra words or move details to another page.",
+        "Keep the key ideas and put extra details elsewhere.",
+        "Shorten the writing or split it across pages."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "consistent-type",
+      "conceptName": "Repeat Text Styles Across Pages",
+      "confusabilityGroup": "text-checks",
+      "questionVariants": [
+        "Why use the same title style on each page?",
+        "How do matching text styles help a book feel connected?",
+        "Why keep the same look for headings throughout a project?"
+      ],
+      "answerVariants": [
+        "Readers learn the pattern and find their way.",
+        "The familiar pattern helps readers know where to look.",
+        "The repeated pattern helps people follow the pages."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "text-background",
+      "conceptName": "Help Words Stand Out from a Picture",
+      "confusabilityGroup": "text-checks",
+      "questionVariants": [
+        "Words get lost on a busy photo. How can you fix that?",
+        "How can you help text that blends into a picture?",
+        "The photo behind the words makes them hard to see. What helps?"
+      ],
+      "answerVariants": [
+        "Move them to a plain area or add a solid box behind them.",
+        "Use a clear empty area or a plain solid area behind them.",
+        "Place them on a quiet area or on a solid text box."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "capital-letters",
+      "conceptName": "Avoid Whole Paragraphs in Capitals",
+      "confusabilityGroup": "clear-writing",
+      "questionVariants": [
+        "How should you use capital letters in a long paragraph?",
+        "What should replace a block written in ALL CAPITALS?",
+        "How can you fix a paragraph that uses only capital letters?"
+      ],
+      "answerVariants": [
+        "Use mostly lowercase, with capitals where needed.",
+        "Use normal sentence case.",
+        "Write normal sentences with both lowercase and capitals."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "honest-text",
+      "conceptName": "Keep Needed Information Readable",
+      "confusabilityGroup": "clear-writing",
+      "questionVariants": [
+        "Should a warning be hidden in tiny type?",
+        "Should needed rules be made hard to read?",
+        "How should needed conditions be shown instead of hidden?"
+      ],
+      "answerVariants": [
+        "Keep them clear and large enough to read.",
+        "Make the needed words easy to see.",
+        "Show them clearly instead of hiding them in tiny text."
+      ]
+    }
+  ]
+}

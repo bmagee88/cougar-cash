@@ -29,7 +29,7 @@ const render = (ui: React.ReactElement, expandAdditional = true) => {
 };
 
 const beginTodaysQuiz = () => {
-  const begin = screen.queryByRole("button", { name: "Begin today's quiz" }) as HTMLButtonElement | null;
+  const begin = screen.queryByRole("button", { name: /^(Begin|Resume|Retry) today's quiz$/ }) as HTMLButtonElement | null;
   if (begin && !begin.disabled) fireEvent.click(begin);
 };
 
@@ -69,7 +69,7 @@ test("taking four questions updates the table, recent quiz, and next lifetime at
   const table = screen.getByRole("table", { name: "Additional quiz search results" });
   const row = within(table).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
   expect(within(row).getByText("—")).toBeInTheDocument();
-  expect(within(row).getByText("1 / 3")).toBeInTheDocument();
+  expect(within(row).getByText("2 / 3")).toBeInTheDocument();
   expect(within(within(row).getByRole("button", { name: "Hardware Basics" })).getByTestId("MoreHorizIcon")).toBeInTheDocument();
   expect(within(row).queryByTestId("PlayArrowIcon")).not.toBeInTheDocument();
   expect(screen.queryByRole("columnheader", { name: "100% attempts" })).not.toBeInTheDocument();
@@ -78,8 +78,88 @@ test("taking four questions updates the table, recent quiz, and next lifetime at
   view.unmount();
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Continue quiz" }));
+  expect(screen.getByRole("button", { name: "Resume today's quiz" })).toBeEnabled();
   beginTodaysQuiz();
   expect(screen.queryByText("Attempt 2")).not.toBeInTheDocument();
+});
+
+test("the current attempt advances on Keep Going and the final bonus mixes two mistakes with two correct answers", () => {
+  jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 12));
+  const quiz = require("./quizzes/hardware-basics.json");
+  let view = render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
+  const saved = readRound(quiz)!;
+  view.unmount();
+  const answers = saved.round.pairs.map((pair) => saved.round.answers.find((answer) => answer.id === pair.answerId)!);
+  [answers[0], answers[1]] = [answers[1], answers[0]];
+  saveRound(quiz.id, { ...saved, answers });
+  view = render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
+  expect(screen.getByText("Attempt 1 / 3")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(screen.getByText("Attempt 1 / 3")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Take bonus round" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Keep Going" }));
+  expect(screen.getByText("Attempt 2 / 3")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(screen.queryByRole("button", { name: "Take bonus round" })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Keep Going" }));
+  expect(screen.getByText("Attempt 3 / 3")).toBeInTheDocument();
+  expect(screen.getAllByTestId("matching-row")).toHaveLength(2);
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(screen.getByText("Attempt 3 / 3")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Saved attempts 3/3" })).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Take bonus round" }));
+  expect(screen.getByText("Bonus round")).toBeInTheDocument();
+  expect(screen.queryByText(/Attempt 4/)).not.toBeInTheDocument();
+  expect(screen.getAllByTestId("matching-row")).toHaveLength(4);
+  expect(readRound(quiz)!.round.pairs.filter((pair) => !readProgress().conceptStates[quiz.id][pair.conceptKey]).map((pair) => pair.conceptKey).sort())
+    .toEqual(saved.round.pairs.slice(0, 2).map((pair) => pair.conceptKey).sort());
+  fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+  expect(screen.getByText("Score 100%")).toBeInTheDocument();
+  expect(readProgress().attempts.map((attempt) => attempt.completedQuiz)).toEqual([false, false, false, true]);
+  expect(screen.getByRole("button", { name: "Retry today's quiz" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Take bonus round" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Saved attempts 3/3" })).toBeInTheDocument();
+});
+
+test.each([[1, true], [3, true], [3, false]])("a bonus draft after %i submissions (session: %s) is restored only at the final stage", (count: number, withSession: boolean) => {
+  jest.useFakeTimers().setSystemTime(new Date(2026, 9, 18, 12));
+  const quiz = require("./quizzes/hardware-basics.json");
+  const { createSession } = require("./quizEngine");
+  const state = createSession(quiz, Object.fromEntries(quiz.concepts.map((concept: any, index: number) => [concept.conceptKey, index >= 2])));
+  state.seenConceptIds = quiz.concepts.slice(0, count * 4).map((concept: any) => concept.conceptKey);
+  state.firstPassWrongConceptIds = state.seenConceptIds.slice(0, 2);
+  state.bonusRoundsEarned = 1;
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify({
+    version: 1, conceptStates: { [quiz.id]: state.conceptState },
+    ...(withSession ? { quizSessions: { [quiz.id]: { date: "2026-10-18", state } } } : {}),
+    attempts: Array.from({ length: count }, (_, index) => ({
+      id: String(index), quizId: quiz.id, score: 80, correctCount: 8, totalCount: 10,
+      createdAt: new Date().toISOString(), bonusRoundsEarned: 1, completedQuiz: false,
+    })),
+  }));
+  const concepts = quiz.concepts.slice(0, 4);
+  const round = {
+    id: "old-padded-bonus", mode: "bonus" as const,
+    questions: concepts.map((concept: any, index: number) => ({ id: `q${index}`, text: concept.questionVariants[0] })),
+    answers: concepts.map((concept: any, index: number) => ({ id: `a${index}`, text: concept.answerVariants[0] })),
+    pairs: concepts.map((concept: any, index: number) => ({ questionId: `q${index}`, answerId: `a${index}`, conceptKey: concept.conceptKey })),
+  };
+  saveRound(quiz.id, { date: "2026-10-18", round, answers: round.answers, checkedAnswers: {} });
+  render(<QuizApp3Page />);
+  fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  beginTodaysQuiz();
+  expect(screen.getByText(count === 1 ? "Attempt 2 / 3" : "Bonus round")).toBeInTheDocument();
+  expect(screen.getAllByTestId("matching-row")).toHaveLength(4);
+  const draft = readRound(quiz)!;
+  if (count === 1) expect(draft.round.id).not.toBe(round.id);
+  else expect(draft.round.id).toBe(round.id);
+  expect(draft.round.pairs.every((pair) => count === 1
+    ? !state.seenConceptIds.includes(pair.conceptKey)
+    : state.firstPassWrongConceptIds.includes(pair.conceptKey) || state.conceptState[pair.conceptKey])).toBe(true);
 });
 
 test("search and filters show a recoverable empty state; prompt begins with editable variables", () => {
@@ -122,18 +202,18 @@ test("cards and table hide rolling proficiency at midnight until the quiz is tak
   const recent = screen.getByRole("region", { name: "3 most recent quizzes" });
   expect(within(row).getByText("93.3%")).toHaveStyle({ color: "#58c98c", fontSize: "28px" });
   expect(within(recent).getByText("93.3%")).toBeInTheDocument();
-  expect(within(row).getByText("2 / 4")).toBeInTheDocument();
+  expect(within(row).getByText("3 / 3")).toBeInTheDocument();
   expect(within(row).queryByText("+1")).not.toBeInTheDocument();
-  expect(within(recent).getByText("Attempt 2 / 4")).toBeInTheDocument();
+  expect(within(recent).getByText("Attempt 3 / 3")).toBeInTheDocument();
   expect(within(recent).queryByText(/at 100%/)).not.toBeInTheDocument();
   expect(within(recent).queryByText(/Quiz 2/)).not.toBeInTheDocument();
   // The open page resets automatically at midnight, with no refocus or reload.
   act(() => { jest.advanceTimersByTime(2000); });
-  expect(within(row).getByText("0 / 3")).toBeInTheDocument();
+  expect(within(row).getByText("1 / 3")).toBeInTheDocument();
   expect(within(row).queryByText("93.3%")).not.toBeInTheDocument();
   expect(within(recent).queryByText("93.3%")).not.toBeInTheDocument();
   expect(within(row).queryByText("+1")).not.toBeInTheDocument();
-  expect(within(recent).getByText("Attempt 0 / 3")).toBeInTheDocument();
+  expect(within(recent).getByText("Attempt 1 / 3")).toBeInTheDocument();
   view.unmount();
   jest.useRealTimers();
 });
@@ -158,7 +238,7 @@ test("a daily allowance permits exactly one missed-question bonus and survives r
   const view = render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
   beginTodaysQuiz();
-  expect(screen.getByText("Daily bonus round")).toBeInTheDocument();
+  expect(screen.getByText("Bonus round")).toBeInTheDocument();
   expect(screen.getAllByTestId("matching-row")).toHaveLength(4);
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
   expect(JSON.parse(localStorage.getItem(PROGRESS_KEY)!).attempts).toHaveLength(4);
@@ -224,7 +304,7 @@ test("saved results remain in history while reopening a quiz returns to the intr
   fireEvent.click(replayTitle);
   expect(screen.queryByText("Score 100%")).not.toBeInTheDocument();
   expect(screen.queryByTestId("matching-row")).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Begin today's quiz" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Retry today's quiz" })).toBeEnabled();
   expect(screen.queryByRole("button", { name: "Submit" })).not.toBeInTheDocument();
   expect(screen.queryByText("This take 0 / 3")).not.toBeInTheDocument();
   view.unmount();
@@ -233,7 +313,7 @@ test("saved results remain in history while reopening a quiz returns to the intr
   const table = screen.getByRole("table", { name: "Additional quiz search results" });
   const row = within(table).getByRole("button", { name: "Hardware Basics" }).closest("tr")!;
   expect(within(row).queryByText("100%")).not.toBeInTheDocument();
-  expect(within(row).getByText("0 / 3")).toBeInTheDocument();
+  expect(within(row).getByText("1 / 3")).toBeInTheDocument();
   fireEvent.click(within(row).getByRole("button", { name: "Hardware Basics" }));
   expect(screen.queryByText("Score 100%")).not.toBeInTheDocument();
   expect(screen.queryByTestId("matching-row")).not.toBeInTheDocument();
@@ -290,10 +370,10 @@ test("an unfinished bonus round survives midnight without carrying yesterday's b
   render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
   beginTodaysQuiz();
-  expect(screen.getByText("Daily bonus round")).toBeInTheDocument();
+  expect(screen.getByText("Bonus round")).toBeInTheDocument();
   const questions = screen.getAllByTestId("matching-question").map((question) => question.textContent);
   act(() => { jest.advanceTimersByTime(2000); });
-  expect(screen.queryByText("Daily bonus round")).not.toBeInTheDocument();
+  expect(screen.queryByText("Bonus round")).not.toBeInTheDocument();
   expect(screen.queryByText("This take 0 / 3")).not.toBeInTheDocument();
   expect(screen.getAllByTestId("matching-question").map((question) => question.textContent)).toEqual(questions);
   fireEvent.click(screen.getByRole("button", { name: "Submit" }));
@@ -400,10 +480,11 @@ test("a completed quiz can be replayed the same day and a replay survives refres
     fireEvent.click(screen.getByRole("button", { name: "Submit" }));
   }
   expect(readProgress().attempts).toHaveLength(3);
-  expect(screen.getByRole("button", { name: "Replay quiz" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Retry today's quiz" })).toBeEnabled();
   fireEvent.click(screen.getByRole("button", { name: "All quizzes" }));
   const table = screen.getByRole("table", { name: "Additional quiz search results" });
   fireEvent.click(within(table).getByRole("button", { name: "Replay Hardware Basics" }));
+  expect(screen.getByRole("button", { name: "Retry today's quiz" })).toBeEnabled();
   expect(screen.queryByTestId("matching-row")).not.toBeInTheDocument();
   expect(screen.queryByText("This take 0 / 3")).not.toBeInTheDocument();
   beginTodaysQuiz();
@@ -419,6 +500,7 @@ test("a completed quiz can be replayed the same day and a replay survives refres
   view.unmount();
   view = render(<QuizApp3Page />);
   fireEvent.click(screen.getByRole("button", { name: "Hardware Basics" }));
+  expect(screen.getByRole("button", { name: "Resume today's quiz" })).toBeEnabled();
   beginTodaysQuiz();
   expect(screen.queryByText("This take 1 / 3")).not.toBeInTheDocument();
   expect(screen.getAllByTestId("matching-question").map((q) => q.textContent)).toEqual(questionText);
@@ -430,5 +512,5 @@ test("a completed quiz can be replayed the same day and a replay survives refres
   expect(saved.attempts.slice(3).every((attempt) => attempt.takeId === takeId)).toBe(true);
   expect(saved.attempts.filter((attempt) => attempt.completedQuiz)).toHaveLength(2);
   expect(Object.values(saved.conceptStates[quiz.id]).every(Boolean)).toBe(true);
-  expect(screen.getByRole("button", { name: "Replay quiz" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "Retry today's quiz" })).toBeEnabled();
 });

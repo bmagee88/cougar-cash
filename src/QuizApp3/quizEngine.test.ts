@@ -105,6 +105,77 @@ test("practice mistakes earn only one daily bonus and the bonus prioritizes actu
   expect(submitRound(quiz, allWrong, bonus, correctAnswers(bonus), 4).state.bonusRoundsEarned).toBe(1);
 });
 
+test.each([1, 2, 3, 4, 7])("the final bonus retries up to four of %i mistakes and fills with correct answers", (missCount: number) => {
+  let state = createSession(quiz, Object.fromEntries(quiz.concepts.map((concept) => [concept.conceptKey, true])));
+  const base = Math.ceil(quiz.concepts.length / 4);
+  const missed: string[] = [];
+  for (let index = 0; index < base; index += 1) {
+    const round = createDailyRound(quiz, state, { dailyAttempts: index, dailyBase: base, dailyBonus: state.bonusRoundsEarned });
+    expect(round.mode).toBe("required");
+    const answers = correctAnswers(round).map((answer, slot) => {
+      if (missed.length >= missCount) return answer;
+      missed.push(round.pairs[slot].conceptKey);
+      return { ...answer, id: "incorrect" };
+    });
+    state = submitRound(quiz, state, round, answers, index + 1).state;
+    expect(state.complete).toBe(false);
+  }
+  const bonus = createDailyRound(quiz, state, { dailyAttempts: base, dailyBase: base, dailyBonus: 1 });
+  expect(bonus.mode).toBe("bonus");
+  expect(bonus.questions).toHaveLength(4);
+  expect(bonus.pairs.filter((pair) => missed.includes(pair.conceptKey))).toHaveLength(Math.min(4, missCount));
+  expect(bonus.pairs.every((pair) => missed.includes(pair.conceptKey) ||
+    (state.seenConceptIds.includes(pair.conceptKey) && state.conceptState[pair.conceptKey]))).toBe(true);
+  const result = submitRound(quiz, state, bonus, correctAnswers(bonus), base + 1);
+  expect(result.correctCount).toBe(quiz.concepts.length - missCount + Math.min(4, missCount));
+  expect(result.state.complete).toBe(true);
+  expect(() => createDailyRound(quiz, result.state, { dailyAttempts: base + 1, dailyBase: base, dailyBonus: 1 })).toThrow(/complete/);
+});
+
+test("a perfect regular pass ends without a bonus", () => {
+  let state = createSession(quiz);
+  const base = Math.ceil(quiz.concepts.length / 4);
+  for (let index = 0; index < base; index += 1) {
+    const round = createDailyRound(quiz, state, { dailyAttempts: index, dailyBase: base, dailyBonus: 0 });
+    state = submitRound(quiz, state, round, correctAnswers(round), index + 1).state;
+  }
+  expect(state.complete).toBe(true);
+  expect(state.bonusRoundsEarned).toBe(0);
+  expect(() => createDailyRound(quiz, state, { dailyAttempts: base, dailyBase: base, dailyBonus: 0 })).toThrow(/complete/);
+});
+
+test("21 concepts use six regular rounds, then one random bonus drawn from current mistakes", () => {
+  const bank: QuizDefinition = { ...quiz, concepts: Array.from({ length: 21 }, (_, index) => ({
+    ...quiz.concepts[index % quiz.concepts.length], position: index + 1, conceptKey: `concept-${index}`,
+  })) };
+  let state = createSession(bank);
+  const sizes: number[] = [];
+  const missed: string[] = [];
+  for (let index = 0; index < 6; index += 1) {
+    const round = createDailyRound(bank, state, { dailyAttempts: index, dailyBase: 6, dailyBonus: state.bonusRoundsEarned });
+    expect(round.mode).toBe("required");
+    sizes.push(round.questions.length);
+    const answers = correctAnswers(round).map((answer, slot) => {
+      if (missed.length >= 7) return answer;
+      missed.push(round.pairs[slot].conceptKey);
+      return { ...answer, id: "incorrect" };
+    });
+    state = submitRound(bank, state, round, answers, index + 1).state;
+  }
+  expect(sizes).toEqual([4, 4, 4, 4, 4, 1]);
+  expect(new Set(state.seenConceptIds).size).toBe(21);
+  const selections = [0, 0.999999].map((random) => {
+    jest.spyOn(Math, "random").mockReturnValue(random);
+    const bonus = createDailyRound(bank, state, { dailyAttempts: 6, dailyBase: 6, dailyBonus: 1 });
+    expect(bonus.mode).toBe("bonus");
+    expect(bonus.pairs).toHaveLength(4);
+    expect(bonus.pairs.every((pair) => missed.includes(pair.conceptKey))).toBe(true);
+    jest.restoreAllMocks();
+    return bonus.pairs.map((pair) => pair.conceptKey).sort();
+  });
+  expect(selections[0]).not.toEqual(selections[1]);
+});
+
 test("variant questions and answers always retain the same concept mapping", () => {
   const bank: QuizDefinition = require("./quizzes/digital-citizenship-concepts.json");
   for (let index = 0; index < 15; index += 1) {
