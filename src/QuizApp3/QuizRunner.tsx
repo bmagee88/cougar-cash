@@ -82,8 +82,8 @@ const QuizRunner: React.FC<{
   });
   const [roundDate, setRoundDate] = useState(restored.saved?.date || today);
   const [answers, setAnswers] = useState<MatchingItem[]>(restored.saved?.answers || round.answers);
-  const [checkedAnswers, setCheckedAnswers] = useState<Record<string, boolean>>(restored.saved?.checkedAnswers || {});
   const [result, setResult] = useState<LocalAttempt | null>(() => quizAttempts.find((attempt) => attempt.id === round.id) || null);
+  const [checkedAnswers, setCheckedAnswers] = useState<Record<string, boolean>>(result ? {} : restored.saved?.checkedAnswers || {});
   const [error, setError] = useState("");
   const [savedNotice, setSavedNotice] = useState("");
   const [scoreGain, setScoreGain] = useState(0);
@@ -132,6 +132,8 @@ const QuizRunner: React.FC<{
       onRecord(attempt, next.state.conceptState, next.state);
       sessionDate.current = currentDay;
       setSession(next.state);
+      // Placement reminders must not look like correctness feedback.
+      setCheckedAnswers({});
       setResult(attempt);
       setScoreGain(Math.max(0, next.score - previousScore));
       setSavedNotice("Saved on this device.");
