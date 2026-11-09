@@ -1,0 +1,697 @@
+{
+  "id": "computers-ch5-comprehension",
+  "quizName": "Inside the Computer: Comprehension",
+  "description": "Explore how computer parts work together. Compare hardware choices, follow information, investigate slowdowns, and consider safe handling, repair, and resource use.",
+  "quizNumber": 9,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 5",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "component-cooperation",
+      "conceptName": "Several Parts, One Result",
+      "confusabilityGroup": "internal-model",
+      "questionVariants": [
+        "Why can a CPU not open and show a saved photo entirely by itself?",
+        "Why does useful computing require more than one powerful processor?",
+        "Why must memory, processing, storage, power, and output work together?",
+        "Why is calling the CPU the entire computer misleading?",
+        "Why does a working computer need a team of connected components?"
+      ],
+      "answerVariants": [
+        "Different parts supply working data, saved files, processing, power, and output.",
+        "The processor depends on other components for data, energy, and usable results.",
+        "A complete task requires several specialized parts exchanging information.",
+        "No single component supplies every resource and function needed for the whole task.",
+        "Useful results depend on cooperation among parts with different jobs."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "photo-path",
+      "conceptName": "Following a Saved Photo",
+      "confusabilityGroup": "internal-model",
+      "questionVariants": [
+        "What is a simplified internal path when a saved photo is opened for viewing?",
+        "How can image data move from a saved file to a visible result?",
+        "Which broad stages connect stored picture data to a screen?",
+        "What sequence links opening a stored image to displaying it?",
+        "How do working memory and processing fit between a saved photo and its display?"
+      ],
+      "answerVariants": [
+        "Storage supplies data to RAM; processing and graphics help produce display output.",
+        "The saved file is loaded into working memory, processed, and sent toward the display.",
+        "Data moves from persistent storage through active memory and processing to visual output.",
+        "The image is read from storage, used in RAM, and processed for screen presentation.",
+        "Saved data enters working memory before processing and graphics create the visible result."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "form-factor-packaging",
+      "conceptName": "Different Shapes Inside",
+      "confusabilityGroup": "internal-model",
+      "questionVariants": [
+        "Why does a phone not contain the same large removable parts as a desktop?",
+        "Why should a desktop diagram not be treated as the exact inside of a Chromebook?",
+        "How can similar computing roles be packaged differently in a thin laptop?",
+        "Why can the same component job appear in a different physical form across devices?",
+        "Why do internal layouts differ between desktops and small portable computers?"
+      ],
+      "answerVariants": [
+        "Small portable designs often combine functions and attach parts closely to save space.",
+        "Different form factors have different limits on size, weight, energy, and cooling.",
+        "Compact systems may integrate roles that desktops provide with larger separate parts.",
+        "Packaging changes to fit the device's physical and power requirements.",
+        "The same jobs can be built into closely joined hardware for a smaller design."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "board-not-holder",
+      "conceptName": "Electrical Connections Matter",
+      "confusabilityGroup": "board-use",
+      "questionVariants": [
+        "Why is a motherboard more than a tray that holds parts?",
+        "Why would components resting on a board still need electrical pathways?",
+        "What makes the system board useful beyond physically supporting hardware?",
+        "Why must a mainboard connect components electrically?",
+        "Why does attaching parts without signal routes fail to make a useful system?"
+      ],
+      "answerVariants": [
+        "It provides organized electrical connections for exchanging signals and power.",
+        "The board must connect parts so information and energy can move between them.",
+        "Its designed pathways let the hardware communicate as a system.",
+        "Physical support alone cannot deliver the signals and power the parts need.",
+        "Components depend on the board's electrical routes to cooperate."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "placement-design",
+      "conceptName": "Why Board Layout Is Planned",
+      "confusabilityGroup": "board-use",
+      "questionVariants": [
+        "Why are motherboard connectors and chips placed carefully rather than randomly?",
+        "What must engineers consider when arranging a laptop's internal board?",
+        "Why can rearranging internal parts affect more than appearance?",
+        "What makes component placement an engineering decision?",
+        "Why do cooling, space, and connections influence board layout?"
+      ],
+      "answerVariants": [
+        "The arrangement must support communication, cooling, compatibility, and available space.",
+        "Placement affects signal paths, heat removal, physical fit, and connections.",
+        "Parts need positions that meet electrical and physical design requirements.",
+        "A useful layout balances signal quality, cooling, and access within the device's size.",
+        "Engineers position parts so the system can connect, fit, and cool reliably."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "compatibility-check",
+      "conceptName": "Fit Is Only One Requirement",
+      "confusabilityGroup": "board-use",
+      "questionVariants": [
+        "Why should a technician check support before installing a CPU that looks like it fits?",
+        "Why can two similar-looking memory modules still be incompatible?",
+        "What must be checked besides a part's shape before an upgrade?",
+        "Why does a connector fitting not prove an internal part will work?",
+        "What can prevent a physically similar replacement from working in a computer?"
+      ],
+      "answerVariants": [
+        "The system must support its electrical requirements, communication type, and firmware as well as physical fit.",
+        "Compatibility includes technical support, power needs, and connection standards.",
+        "The board and component must agree on the required electrical and system standards.",
+        "A part must match supported hardware and firmware requirements, not just dimensions.",
+        "Physical fit must be accompanied by supported signaling, power, and system compatibility."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "instructions-to-work",
+      "conceptName": "Software Needs Processing Hardware",
+      "confusabilityGroup": "cpu-use",
+      "questionVariants": [
+        "How do software directions become operations inside a computer?",
+        "What makes instructions such as calculating a formula actually happen?",
+        "Why does a program need processing hardware to do useful work?",
+        "What carries out software's detailed calculations and comparisons?",
+        "How does stored program logic produce active computing work?"
+      ],
+      "answerVariants": [
+        "The processor executes detailed instructions for calculations, comparisons, and other operations.",
+        "Physical processing hardware carries out the program's encoded directions.",
+        "Instructions are performed by a processor to produce the requested operations.",
+        "Hardware executes the software's steps, such as arithmetic and logical decisions.",
+        "The CPU turns program directions into performed processing operations."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "cores-and-work",
+      "conceptName": "Why More Cores May Not Double Speed",
+      "confusabilityGroup": "cpu-use",
+      "questionVariants": [
+        "Why do twice as many CPU cores not guarantee a program runs twice as fast?",
+        "What limits the benefit of extra processing cores?",
+        "Why can a task gain little from a processor with many cores?",
+        "What must software be able to do to benefit from extra cores?",
+        "Why should core count be judged with the kind of work being done?"
+      ],
+      "answerVariants": [
+        "The work must divide well, and data supply, power, and cooling can still limit it.",
+        "Extra cores help only when software and the rest of the system can use them effectively.",
+        "Some work cannot be split efficiently, and other resources may set the pace.",
+        "The task needs useful parallel work and enough support from the system.",
+        "Benefits depend on how the program shares work and on the resources feeding it."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "clock-comparison",
+      "conceptName": "GHz Is Not a Complete Ranking",
+      "confusabilityGroup": "cpu-use",
+      "questionVariants": [
+        "Why can a newer 3 GHz processor outperform an older 4 GHz design?",
+        "Why should buyers not compare all processors using only clock frequency?",
+        "Why does a higher GHz number not always mean a faster computer?",
+        "What makes two processors with different frequencies difficult to rank by that number alone?",
+        "Why is processor timing only one clue about performance?"
+      ],
+      "answerVariants": [
+        "Designs do different useful work per cycle, and workload and other resources also matter.",
+        "Architecture, cores, cache, power, cooling, and task needs affect real performance.",
+        "A timing count alone leaves out design efficiency and the rest of the system.",
+        "Processor design and operating conditions change how much work each cycle accomplishes.",
+        "Real speed depends on more than timing, including architecture and the work being performed."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "cache-waiting",
+      "conceptName": "Reducing Processor Waiting",
+      "confusabilityGroup": "cpu-use",
+      "questionVariants": [
+        "Why keep frequently needed information in cache near a CPU?",
+        "How can a small amount of very fast nearby memory help processing?",
+        "Why does a processor benefit when useful instructions are close at hand?",
+        "What waiting problem does cache help reduce?",
+        "Why does fast local memory help when a processor repeatedly needs the same data?"
+      ],
+      "answerVariants": [
+        "It reduces time spent waiting to retrieve likely-needed instructions and data.",
+        "Quick nearby access lets the processor spend less time waiting for information.",
+        "Frequently used information can be reached faster than from more distant memory.",
+        "Keeping useful data close shortens access delays.",
+        "Fast access to likely-needed information helps keep processing work moving."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "memory-levels",
+      "conceptName": "Different Memory Roles",
+      "confusabilityGroup": "memory-use",
+      "questionVariants": [
+        "Why does a computer use cache, RAM, and persistent storage instead of one type for everything?",
+        "Why keep both quick working memory and long-term file space?",
+        "What explains the use of several levels of memory and storage?",
+        "Why do processors need fast nearby memory even when large storage is available?",
+        "Why can different memory technologies be useful in the same system?"
+      ],
+      "answerVariants": [
+        "They balance quick access, capacity, and keeping data over time.",
+        "Different kinds meet different needs for speed, amount of data, and persistence.",
+        "One type does not provide every desired mix of fast access, large size, and lasting storage.",
+        "The system uses different levels to trade access speed against capacity and retention.",
+        "Several types provide a practical balance of immediate access and long-term capacity."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "save-persistence",
+      "conceptName": "Saving Beyond Working Memory",
+      "confusabilityGroup": "memory-use",
+      "questionVariants": [
+        "Why save an edited document before shutting down?",
+        "What must happen so a change survives loss of ordinary RAM contents?",
+        "Why can unsaved work disappear when power is lost?",
+        "How can a user keep work that currently exists only in active memory?",
+        "Why does keeping data in working memory not guarantee it will be there tomorrow?"
+      ],
+      "answerVariants": [
+        "Write the work to persistent storage because ordinary RAM needs power to retain it.",
+        "Save a lasting copy outside volatile working memory.",
+        "Move the information into storage that keeps it after power is off.",
+        "A saved file must be kept in persistent storage rather than only powered memory.",
+        "Use Save so the data is retained beyond the current powered session."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "tabs-and-memory",
+      "conceptName": "Testing Heavy Multitasking",
+      "confusabilityGroup": "memory-use",
+      "questionVariants": [
+        "A Chromebook slows after dozens of tabs open. What simple test fits?",
+        "Pages begin reloading while several apps run. What resource should students investigate?",
+        "How could closing unused tabs help test a slowdown?",
+        "What should students try when heavy multitasking uses nearly all working memory?",
+        "What evidence could link open apps to a computer's growing slowness?"
+      ],
+      "answerVariants": [
+        "Check memory use and close unused tabs or apps, then observe whether performance improves.",
+        "Reduce unused open work and compare memory use and responsiveness.",
+        "Investigate available RAM, close unneeded programs, and test the change.",
+        "Look for memory pressure and see whether reducing active apps helps.",
+        "Test a lighter workload by closing unused items and observing the result."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "more-ram-limits",
+      "conceptName": "Adding Only What Is Needed",
+      "confusabilityGroup": "memory-use",
+      "questionVariants": [
+        "Why might adding RAM fail to speed up a simple document task?",
+        "When would extra working memory make little difference?",
+        "Why should a technician check the limiting resource before a memory upgrade?",
+        "Why does more RAM not automatically make every task quicker?",
+        "What if a program already has enough active memory?"
+      ],
+      "answerVariants": [
+        "Another resource may be limiting the task, so extra workspace would not remove the delay.",
+        "If existing memory is sufficient, another stage sets the pace.",
+        "Extra capacity helps only when working-memory limits contribute to the problem.",
+        "A task with enough RAM may be waiting for processing, storage, or something else.",
+        "More unused workspace cannot fix a limit elsewhere in the system."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "cpu-gpu-complement",
+      "conceptName": "Different Processing Strengths",
+      "confusabilityGroup": "graphics-use",
+      "questionVariants": [
+        "Why does a GPU not fully replace a CPU in a typical computer?",
+        "Why can a computer benefit from both general-purpose and graphics processors?",
+        "How do CPU and GPU strengths complement each other?",
+        "Why use specialized graphics hardware alongside flexible instruction processing?",
+        "What is useful about combining CPU and GPU processing?"
+      ],
+      "answerVariants": [
+        "One handles broad general-purpose instructions; the other excels at many similar calculations in parallel.",
+        "Flexible CPU work and highly parallel GPU work suit different parts of a task.",
+        "The processors have different strengths that can work together.",
+        "A CPU supports varied program logic while a GPU accelerates suitable parallel calculations.",
+        "General processing and specialized parallel work are complementary roles."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "gpu-beyond-games",
+      "conceptName": "Parallel Work Beyond Games",
+      "confusabilityGroup": "graphics-use",
+      "questionVariants": [
+        "Why can a GPU be useful for scientific calculations as well as games?",
+        "What allows graphics hardware to help with some machine-learning work?",
+        "Why might a video editor benefit from a GPU?",
+        "How can a processor designed for images help other suitable workloads?",
+        "Why is a GPU not limited to producing game pictures?"
+      ],
+      "answerVariants": [
+        "Many non-game tasks also involve large numbers of similar parallel calculations.",
+        "Work with many data items processed in parallel can suit that hardware.",
+        "The same parallel strengths used for graphics can accelerate other compatible calculations.",
+        "Suitable scientific, video, and other tasks can benefit from simultaneous similar operations.",
+        "Its design supports other work that can be split into many similar calculations."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "integrated-choice",
+      "conceptName": "Graphics for a Portable School Device",
+      "confusabilityGroup": "graphics-use",
+      "questionVariants": [
+        "Why might integrated graphics suit a thin school laptop?",
+        "What makes built-in graphics a sensible choice for many everyday classroom tasks?",
+        "Why might engineers avoid a separate graphics card in a small portable device?",
+        "How can integrated graphics support a smaller, lower-power computer?",
+        "What tradeoff can favor built-in graphics for ordinary school use?"
+      ],
+      "answerVariants": [
+        "It can meet the task's needs while using less space, power, cooling, and cost.",
+        "A shared built-in solution can be sufficient and fit portable design limits.",
+        "The design can save energy and room when separate high-end graphics are unnecessary.",
+        "Everyday work may not justify the size and energy demands of separate hardware.",
+        "Built-in graphics can balance adequate capability with efficient compact design."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "discrete-choice",
+      "conceptName": "Graphics for Demanding Work",
+      "confusabilityGroup": "graphics-use",
+      "questionVariants": [
+        "Why might a 3D-design workstation use discrete graphics despite extra power needs?",
+        "What benefit can justify a separate graphics component for demanding visual tasks?",
+        "Why might a video-production team accept the cost of dedicated graphics hardware?",
+        "What makes separate graphics a useful tradeoff for some heavy workloads?",
+        "Why could demanding animation work justify larger graphics hardware?"
+      ],
+      "answerVariants": [
+        "It can provide dedicated graphics resources for the workload, with added space, cost, power, and cooling needs.",
+        "The task may benefit from specialized separate hardware enough to justify its resource demands.",
+        "Stronger dedicated graphics can help suitable work while requiring more system support.",
+        "The performance benefit for demanding graphics must be balanced against higher resource use.",
+        "Separate processing and graphics memory may suit the task despite added energy and size."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "chip-vs-card",
+      "conceptName": "Part Versus Assembly",
+      "confusabilityGroup": "graphics-use",
+      "questionVariants": [
+        "Why is a GPU not exactly the same thing as a graphics card?",
+        "How does the processing chip differ from its complete add-in board?",
+        "What is missing if someone calls only the GPU chip the whole graphics card?",
+        "Why distinguish a graphics processor from the hardware board around it?",
+        "How are the GPU and the assembled graphics card related?"
+      ],
+      "answerVariants": [
+        "The chip does the processing; the card includes it plus supporting electronics and cooling.",
+        "The processor is one part of a board that also carries other necessary components.",
+        "A complete card contains the graphics chip along with memory, power parts, connections, and cooling.",
+        "The chip is a component, while the card is the larger assembly supporting it.",
+        "The card includes the processor and the hardware needed to operate and connect it."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "communication-wait",
+      "conceptName": "Powerful Parts Still Need Data",
+      "confusabilityGroup": "connections-use",
+      "questionVariants": [
+        "Why can a fast processor do little useful work while waiting for data?",
+        "What would happen if internal components could not exchange information?",
+        "Why are communication links important even with powerful hardware?",
+        "How can slow information delivery limit an expensive component?",
+        "Why must data reach a component and leave it efficiently?"
+      ],
+      "answerVariants": [
+        "The part depends on communication pathways to receive needed information and deliver results.",
+        "Useful performance requires data to move between the cooperating components.",
+        "A component cannot keep working effectively without timely information exchange.",
+        "Slow or missing data transfer can make powerful hardware wait.",
+        "Processing capability helps only when the system can supply and carry away information."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "expansion-tradeoff",
+      "conceptName": "Adding Capabilities Versus Staying Small",
+      "confusabilityGroup": "connections-use",
+      "questionVariants": [
+        "Why might a desktop have several card slots while a thin laptop has few?",
+        "How can a computer gain internal features through expansion?",
+        "Why is having no card slot sometimes a deliberate portable design choice?",
+        "What tradeoff connects add-in hardware with a computer's physical size?",
+        "Why might engineers choose fewer internal expansion options in a lightweight device?"
+      ],
+      "answerVariants": [
+        "Expansion supports added capabilities, while compact integrated designs save space and weight.",
+        "Separate add-in connections make upgrades possible but use room that thin systems may not have.",
+        "Designers balance hardware expansion against portability and compact packaging.",
+        "A larger system can offer more removable options; a small one may prioritize integration.",
+        "Added internal hardware needs space, so portable designs may limit expansion to stay small."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "power-sources",
+      "conceptName": "Energy for Different Form Factors",
+      "confusabilityGroup": "power-use",
+      "questionVariants": [
+        "How do desktops and portable computers commonly obtain operating power?",
+        "What power arrangements commonly support a desktop compared with a laptop?",
+        "How can a laptop work away from an outlet while a desktop uses internal power conversion?",
+        "Which energy sources help different kinds of computers operate?",
+        "How do common desktop and portable power systems differ?"
+      ],
+      "answerVariants": [
+        "Desktops commonly use a PSU; portable systems use an adapter, battery, and power-management circuits.",
+        "A desktop supply converts incoming power, while a portable device can also run from stored battery energy.",
+        "Desktop components are fed by a power supply; laptops commonly combine battery and adapter power.",
+        "A PSU serves many desktops, while a battery and external adapter support many portable computers.",
+        "Desktop power conversion and portable battery-and-adapter systems both supply energy suited to their hardware."
+      ]
+    },
+    {
+      "position": 23,
+      "conceptKey": "heat-normal",
+      "conceptName": "Heat During Heavy Work",
+      "confusabilityGroup": "power-use",
+      "questionVariants": [
+        "Why can a working computer become warm while exporting a video?",
+        "Why does warmth during demanding processing not automatically prove failure?",
+        "What explains louder fans during a successful long rendering task?",
+        "Why can high processor activity and some heat be expected during intensive work?",
+        "Why should warmth be judged with the workload and operating conditions?"
+      ],
+      "answerVariants": [
+        "Electrical operation produces heat, and demanding work can increase power use and cooling activity.",
+        "A heavy task can make functioning parts use more energy and release more heat.",
+        "Warmth and fan activity can reflect normal cooling during intensive processing.",
+        "The system may simply be working harder and removing the heat that work produces.",
+        "Higher workload can create more heat without showing a fault by itself."
+      ]
+    },
+    {
+      "position": 24,
+      "conceptKey": "heat-transfer-team",
+      "conceptName": "Different Cooling Jobs",
+      "confusabilityGroup": "power-use",
+      "questionVariants": [
+        "How do a heatsink and a fan work together to cool a processor?",
+        "Why is spreading heat useful along with moving air?",
+        "How do cooling surfaces and airflow perform different parts of the same job?",
+        "What is the difference between a heatsink's role and a fan's role?",
+        "How can heat leave a chip and then leave the computer?"
+      ],
+      "answerVariants": [
+        "The heatsink transfers heat from the chip, and moving air carries it away.",
+        "A heat-spreading surface receives heat while fan-driven air removes warmed air.",
+        "One part moves heat away from the component; the other circulates air to remove it.",
+        "The surface spreads heat for release, and the fan helps move it out through airflow.",
+        "Heat passes into the cooling surface and then into air that the fan moves away."
+      ]
+    },
+    {
+      "position": 25,
+      "conceptKey": "passive-tradeoff",
+      "conceptName": "Cooling Without a Fan",
+      "confusabilityGroup": "power-use",
+      "questionVariants": [
+        "Why might a fanless computer be quiet but have limited sustained performance?",
+        "What tradeoff comes with relying on passive cooling?",
+        "Why can a thin, silent design require lower heat production?",
+        "Why is fanless cooling not automatically suitable for every workload?",
+        "What must engineers consider when cooling only through surfaces and natural airflow?"
+      ],
+      "answerVariants": [
+        "It avoids fan noise but can remove only a limited amount of heat.",
+        "A quiet fanless design must keep heat within what its passive surfaces can release.",
+        "Less active heat removal can limit the power and sustained work the device supports.",
+        "The design trades mechanical simplicity and silence against heat-removal capacity.",
+        "Natural cooling supports some energy levels better than very high continuous heat loads."
+      ]
+    },
+    {
+      "position": 26,
+      "conceptKey": "thermal-slowdown",
+      "conceptName": "Heat Can Reduce Speed",
+      "confusabilityGroup": "power-use",
+      "questionVariants": [
+        "Why can an overheating computer become slower even with a capable CPU?",
+        "How can heat protection change processing performance?",
+        "What may happen before a hot processor reaches unsafe operating conditions?",
+        "Why might reduced frequency be evidence of temperature control?",
+        "How can a computer reduce the heat it creates while running?"
+      ],
+      "answerVariants": [
+        "Thermal protection may reduce processor performance to lower heat production.",
+        "The system can throttle processing so it uses less power and generates less heat.",
+        "A temperature-control response can slow the processor to limit further warming.",
+        "Automatic heat management may lower processing speed instead of running at full rate.",
+        "The processor may deliberately slow down as a protective cooling response."
+      ]
+    },
+    {
+      "position": 27,
+      "conceptKey": "bottleneck-example",
+      "conceptName": "Finding the Limiting Stage",
+      "confusabilityGroup": "performance-use",
+      "questionVariants": [
+        "A fast CPU waits for slow storage. Why is the whole task still slow?",
+        "Why can one overloaded resource hold back otherwise powerful hardware?",
+        "How can too little available memory limit a task despite a good processor?",
+        "Why does improving a part that already waits fail to remove the main delay?",
+        "What explains a workflow moving only as fast as its limiting stage?"
+      ],
+      "answerVariants": [
+        "The bottleneck sets the pace because other parts must wait for it.",
+        "One limiting resource restricts the progress of the whole task.",
+        "The task cannot move faster than the stage that holds back its information or work.",
+        "A constrained part limits total throughput even when the other parts are capable.",
+        "System performance is held back by the resource that cannot keep up."
+      ]
+    },
+    {
+      "position": 28,
+      "conceptKey": "workload-choice",
+      "conceptName": "Choose for the Actual Task",
+      "confusabilityGroup": "performance-use",
+      "questionVariants": [
+        "Why might a writing laptop and a video-editing workstation need different hardware?",
+        "What should guide a school's choice between two computers with different strengths?",
+        "Why is the fastest advertised CPU not enough to choose a system?",
+        "How should users decide which component strengths matter most?",
+        "Why should computer selection begin with the work to be done?"
+      ],
+      "answerVariants": [
+        "Match the complete hardware and software requirements to the actual workload.",
+        "Choose a balanced system whose resources fit the intended tasks.",
+        "Different jobs stress different components, so evaluate the whole system for its purpose.",
+        "The right combination depends on what the user needs the computer to do.",
+        "Judge processing, graphics, memory, storage, and other needs against the planned work."
+      ]
+    },
+    {
+      "position": 29,
+      "conceptKey": "integration-repair",
+      "conceptName": "Compactness Versus Replaceability",
+      "confusabilityGroup": "performance-use",
+      "questionVariants": [
+        "Why might a very compact integrated device be harder to upgrade?",
+        "What repair tradeoff can come from combining many functions tightly?",
+        "Why can a modular desktop be easier to repair than a tightly joined design?",
+        "How can smaller, efficient packaging affect replacing one failed part?",
+        "Why should buyers consider both integration and repair options?"
+      ],
+      "answerVariants": [
+        "Combining parts can save space and energy while making individual replacement harder.",
+        "Separate modules may be changed individually, while integrated parts may not be removable.",
+        "Compact integration can reduce accessible replacement options compared with modular hardware.",
+        "Tightly joined functions trade small size for less flexibility in replacing components.",
+        "Modular parts offer repair choices that a closely integrated design may limit."
+      ]
+    },
+    {
+      "position": 30,
+      "conceptKey": "diagnostic-evidence",
+      "conceptName": "Measure Before Guessing",
+      "confusabilityGroup": "system-testing",
+      "questionVariants": [
+        "What should students gather before deciding a slow computer has a bad CPU?",
+        "How can a diagnostic tool help investigate an internal-system problem?",
+        "Why inspect resource use and temperature instead of guessing which part failed?",
+        "What evidence helps distinguish memory pressure from another slowdown cause?",
+        "How can a technician make an internal problem less of a mystery?"
+      ],
+      "answerVariants": [
+        "Describe when the symptom occurs and use diagnostic readings or tests to investigate likely causes.",
+        "Use a clear symptom description with measurements of resource use and operating conditions.",
+        "Gather usage and test evidence tied to the time and conditions of the problem.",
+        "Observe the problem carefully and compare it with diagnostic measurements.",
+        "Collect system readings and test results that can support or rule out possible causes."
+      ]
+    },
+    {
+      "position": 31,
+      "conceptKey": "safe-heat-response",
+      "conceptName": "A Safe First Response to Excess Heat",
+      "confusabilityGroup": "system-testing",
+      "questionVariants": [
+        "What should a student do if a school laptop shows unusual heat or repeated heat-related shutdowns?",
+        "How should a student respond to suspected overheating without opening equipment?",
+        "What is an appropriate classroom response to blocked cooling and unusual temperature?",
+        "How can a student help a hot school device safely before a technician investigates?",
+        "What safe action fits a device that behaves unusually hot under normal work?"
+      ],
+      "answerVariants": [
+        "Stop demanding work, use an appropriate hard surface, keep vents clear, and report the problem.",
+        "Reduce heavy use, allow unobstructed airflow on a hard surface, and tell the teacher or technician.",
+        "Pause intensive tasks, check that cooling openings are unobstructed, and seek school support.",
+        "Keep the device on a suitable surface with clear vents and report the unusual behavior.",
+        "Avoid further heavy work, preserve safe airflow, and ask the responsible adult or technician to investigate."
+      ]
+    },
+    {
+      "position": 32,
+      "conceptKey": "repair-responsibility",
+      "conceptName": "Internal Work Requires Authorization",
+      "confusabilityGroup": "responsible-hardware",
+      "questionVariants": [
+        "Why should students not open a school computer after watching a repair video?",
+        "What is a suitable way for students to study internal components?",
+        "Why should internal hardware repairs require authorized supervision?",
+        "How can a class learn about chips without handling powered internal parts?",
+        "What should guide a student curious about replacing parts inside school equipment?"
+      ],
+      "answerVariants": [
+        "Use teacher-approved demonstrations or supervised work; internal parts need authorization and trained handling.",
+        "Study diagrams or approved equipment under supervision instead of attempting unapproved repairs.",
+        "Internal work can damage hardware or expose hazards, so follow authorized, supervised learning methods.",
+        "Ask for a teacher-approved demonstration rather than opening school equipment independently.",
+        "Learn through approved models or supervised activities because safe internal handling requires training."
+      ]
+    },
+    {
+      "position": 33,
+      "conceptKey": "repair-environment",
+      "conceptName": "Longer Use and Fewer Replacements",
+      "confusabilityGroup": "responsible-hardware",
+      "questionVariants": [
+        "How can repairing one failed component reduce a computer's environmental impact?",
+        "Why consider repair and upgrade options before replacing a whole system?",
+        "How might replaceable parts help a school use computers responsibly?",
+        "Why can extending a computer's useful life conserve resources?",
+        "How can repairability affect the materials used over a device's lifetime?"
+      ],
+      "answerVariants": [
+        "A suitable repair can extend useful life and reduce the materials and energy needed for replacement.",
+        "Keeping a usable system longer can avoid the resource costs of making a whole new one.",
+        "Replacing a part instead of the whole device may reduce waste and new manufacturing demand.",
+        "Longer use can conserve resources by delaying unnecessary full-system replacement.",
+        "Repair and upgrades can preserve a working system and reduce the need for new equipment."
+      ]
+    },
+    {
+      "position": 34,
+      "conceptKey": "hardware-careers",
+      "conceptName": "Different Jobs Use System Knowledge",
+      "confusabilityGroup": "responsible-hardware",
+      "questionVariants": [
+        "Why can a video editor benefit from knowing about CPU, GPU, RAM, and storage?",
+        "Why is internal-hardware knowledge useful beyond computer repair?",
+        "How can an IT buyer use knowledge of cooperating components?",
+        "Why do designers and technicians both need to understand complete systems?",
+        "How can knowing component relationships support different technology careers?"
+      ],
+      "answerVariants": [
+        "It helps people choose, use, design, or diagnose systems that fit their work.",
+        "Understanding component relationships supports informed decisions across many kinds of technical tasks.",
+        "People in different roles need to match system capabilities to the work they do.",
+        "System knowledge helps professionals plan suitable equipment and interpret performance limits.",
+        "Knowing how the parts cooperate supports selection, effective use, and problem solving in many careers."
+      ]
+    }
+  ]
+}

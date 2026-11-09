@@ -1,0 +1,617 @@
+{
+  "id": "computers-ch3-comprehension",
+  "quizName": "Input: Comprehension",
+  "description": "Explore how computers receive information. Choose useful input tools, check measurements, protect privacy, and use evidence to solve input problems.",
+  "quizNumber": 5,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 3",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "device-data",
+      "conceptName": "Device Versus Data",
+      "confusabilityGroup": "input-model",
+      "questionVariants": [
+        "A keyboard reports that A was pressed. How are the tool and its report different?",
+        "How is a temperature probe different from the number it sends?",
+        "How is a camera different from the picture information it captures?",
+        "Why are a microphone and the voice data it sends different things?",
+        "How should you separate input hardware from the information it supplies?"
+      ],
+      "answerVariants": [
+        "The tool is physical equipment; its report is data.",
+        "One is hardware, and the information it provides is data.",
+        "The physical device collects information rather than being that information.",
+        "The equipment is an object; the reported information is its data.",
+        "Hardware is the collecting tool, while data is what it sends."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "automatic-input",
+      "conceptName": "Input Without a Person",
+      "confusabilityGroup": "input-model",
+      "questionVariants": [
+        "A weather station takes readings overnight. Why is this input?",
+        "Why can an empty room still provide computer input?",
+        "A robot detects a nearby wall without a key press. Why does that count as input?",
+        "How can a greenhouse computer receive input when nobody is there?",
+        "Why does computer input not always need a person touching a device?"
+      ],
+      "answerVariants": [
+        "A sensor can automatically send information about physical conditions.",
+        "Measurements can enter from the environment without a human action.",
+        "Hardware can detect surroundings and deliver data on its own.",
+        "Automatic devices can collect and send environmental readings.",
+        "Conditions in the physical world can supply data through sensors."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "software-meaning",
+      "conceptName": "Software Interprets Actions",
+      "confusabilityGroup": "input-model",
+      "questionVariants": [
+        "Why can A type a letter in one app but move a character in another?",
+        "Why might the same controller button do different jobs in two games?",
+        "What decides whether a pen tap draws a mark or selects an object?",
+        "Why does the same key action not always have the same result?",
+        "How can identical button signals lead to different actions in different programs?"
+      ],
+      "answerVariants": [
+        "Software interprets the signal according to its instructions and context.",
+        "Each program assigns meaning to the received action.",
+        "The application decides what the incoming action should do.",
+        "Program instructions determine the response to that signal.",
+        "The hardware reports an action, and the running software gives it meaning."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "modifier-keys",
+      "conceptName": "Changing a Key's Meaning",
+      "confusabilityGroup": "text-use",
+      "questionVariants": [
+        "Why can Shift change the character produced by a letter key?",
+        "How can Ctrl+A perform a command instead of entering just A?",
+        "Why can a shortcut use the same letter key as ordinary typing?",
+        "What makes a key combination different from a letter pressed alone?",
+        "How can holding a second key alter what the first one does?"
+      ],
+      "answerVariants": [
+        "A modifier changes how software interprets the other key.",
+        "Software treats a key differently when a modifier is held.",
+        "The combination supplies an extra instruction that changes the key's action.",
+        "A held modifier tells the program to use a different meaning.",
+        "The additional key changes the interpretation of the key press."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "keyboard-design",
+      "conceptName": "Keyboard Layout Choices",
+      "confusabilityGroup": "text-use",
+      "questionVariants": [
+        "Why might keyboards for different languages have different layouts?",
+        "Why should a keyboard designer consider which symbols users need?",
+        "Why could a different key arrangement help a different group of users?",
+        "Why are key size and spacing part of computer design?",
+        "Why should keyboard layouts reflect the people using them?"
+      ],
+      "answerVariants": [
+        "Symbol needs, language, comfort, and abilities affect a useful arrangement.",
+        "The arrangement should fit the users' language and physical needs.",
+        "Different users need suitable symbols and comfortable controls.",
+        "A good layout considers the user's language, reach, and ease of use.",
+        "The design must fit how its intended users enter information."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "input-history",
+      "conceptName": "Why Input Tools Change",
+      "confusabilityGroup": "input-design",
+      "questionVariants": [
+        "Why did engineers develop easier ways to select items on screens?",
+        "What does the change from punched cards to direct typing teach us?",
+        "Why have designers tried mice, pens, and eye tracking over time?",
+        "What need drives the invention of new input methods?",
+        "Why do computer input tools keep changing?"
+      ],
+      "answerVariants": [
+        "People seek more effective ways to communicate their intentions to computers.",
+        "New designs help users supply information more easily and directly.",
+        "Designers try to make controlling computers work better for people's tasks.",
+        "Changing needs lead to better ways of telling computers what to do.",
+        "Improving communication between people and computers motivates new designs."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "text-alternative",
+      "conceptName": "Choosing an Alternative for Writing",
+      "confusabilityGroup": "input-design",
+      "questionVariants": [
+        "A student cannot comfortably type a report but speaks clearly. Which text-entry option fits?",
+        "How could a student enter sentences when physical key presses are difficult but speaking is easy?",
+        "What could help a writer whose hands tire during typing, if voice use works well?",
+        "A student needs to write with less hand movement and can speak. Which method could help?",
+        "Which method can turn a student's spoken report into text when typing is a barrier?"
+      ],
+      "answerVariants": [
+        "Use dictation to enter the spoken words as text.",
+        "Choose speech-to-text for writing the report.",
+        "Have a dictation feature convert speech into written words.",
+        "Enter the report by speaking to a text-recognition feature.",
+        "Use voice-based text entry to reduce physical typing."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "mouse-touchpad",
+      "conceptName": "Similar Results From Different Tools",
+      "confusabilityGroup": "pointing-use",
+      "questionVariants": [
+        "How can a mouse and a touchpad do a similar job despite different movement?",
+        "What shared result can desk movement and finger sliding on a laptop pad produce?",
+        "Why can either a mouse or a touchpad help select an icon?",
+        "How can two differently built pointing tools serve the same screen task?",
+        "What can both a mouse and a touchpad let the user control?"
+      ],
+      "answerVariants": [
+        "Both can direct a pointer and send selections to software.",
+        "Either can position the cursor and choose on-screen objects.",
+        "Both provide pointing and selection input for a graphical interface.",
+        "Each can move the screen marker used for clicking and selecting.",
+        "They give the user control over cursor position and item selection."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "touch-two-roles",
+      "conceptName": "Two Directions on One Surface",
+      "confusabilityGroup": "pointing-use",
+      "questionVariants": [
+        "A tablet shows a button and detects a tap. Which part is input and which is output?",
+        "How do seeing an icon and touching it use opposite information directions?",
+        "What are the two roles when a display shows a map and senses a swipe?",
+        "Which touchscreen action sends information in, and which presents information out?",
+        "How does a touchscreen both receive a user's action and communicate a result?"
+      ],
+      "answerVariants": [
+        "Detecting contact is input; displaying pictures or text is output.",
+        "Sensing the touch sends data in, while showing the image sends information out.",
+        "The touch detection receives commands, and the visible display presents results.",
+        "Presses are received as input, while the lit image is produced as output.",
+        "The surface collects touch actions and presents visible information."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "stylus-compatibility",
+      "conceptName": "Checking a Digital Pen",
+      "confusabilityGroup": "pointing-use",
+      "questionVariants": [
+        "Why should you check support before buying a pen for a tablet?",
+        "Why might a digital pen fail on an otherwise working touchscreen?",
+        "Why does looking like a pen not prove that a tool will work with a screen?",
+        "What should you verify before choosing a stylus for a Chromebook?",
+        "Why can two devices that look suitable still fail to work together for pen input?"
+      ],
+      "answerVariants": [
+        "The pen and sensing surface must use compatible technology.",
+        "The screen must support the particular pen system.",
+        "Matching support matters because not every screen detects every digital pen.",
+        "Check that the hardware is designed to recognize that pen.",
+        "A suitable pen must be supported by the screen's input technology."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "sound-data",
+      "conceptName": "What an Audio File Holds",
+      "confusabilityGroup": "media-use",
+      "questionVariants": [
+        "Does a saved recording contain an actual sound wave inside memory?",
+        "What does a computer save when it records a voice?",
+        "How is recorded audio different from air vibrating in a room?",
+        "What represents a student's voice in a digital sound file?",
+        "What remains in storage after a microphone records speech?"
+      ],
+      "answerVariants": [
+        "Digital measurements representing the sound, rather than the physical wave.",
+        "Data describing measured changes in sound.",
+        "Numbers that represent captured audio information.",
+        "An electronic representation of sound measurements.",
+        "Stored information about the sound that was measured."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "microphone-placement",
+      "conceptName": "Improving a Noisy Recording",
+      "confusabilityGroup": "media-use",
+      "questionVariants": [
+        "A working microphone is across a noisy room. How can you capture a clearer voice?",
+        "What should students change first when a distant speaker is hard to hear in a recording?",
+        "How can an interview team improve input before trying audio-repair software?",
+        "A voice is buried in classroom noise. What recording setup change helps?",
+        "Why move a microphone nearer to a speaker in a noisy space?"
+      ],
+      "answerVariants": [
+        "Place it closer to the voice and reduce surrounding noise.",
+        "Improve placement so the wanted speech is stronger than background sounds.",
+        "Record nearer the speaker in a quieter setting.",
+        "Bring the sound collector closer and limit unwanted room noise.",
+        "Capture a stronger voice signal by improving distance and room conditions."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "camera-path",
+      "conceptName": "Following Light Into a Picture",
+      "confusabilityGroup": "media-use",
+      "questionVariants": [
+        "What is the simplified path from a scene to digital photo data?",
+        "How does a camera turn light from an object into information?",
+        "What happens between light entering a camera and image data being made?",
+        "Which camera stages bring a visible scene into a computer?",
+        "How does incoming light become a digital picture?"
+      ],
+      "answerVariants": [
+        "Light passes through the lens to the image sensor, then becomes digital image data.",
+        "A lens directs light to a sensor whose measurements form image data.",
+        "The lens receives the scene, the sensor measures light, and electronics create digital data.",
+        "Scene light reaches the sensor through a lens and is converted into picture information.",
+        "The camera focuses light onto a sensor and converts its readings into digital images."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "scan-understanding",
+      "conceptName": "Capturing Is Not Understanding",
+      "confusabilityGroup": "media-use",
+      "questionVariants": [
+        "Why does scanning a worksheet not guarantee that its text can be edited?",
+        "A paper page is captured as an image. What extra step is needed to recognize its words?",
+        "Why is a picture of printed words different from recognized text?",
+        "What must happen after a scanner captures a page if software needs to read its letters?",
+        "Why can a scanned page still be only a picture?"
+      ],
+      "answerVariants": [
+        "Additional text-recognition software must interpret the captured image.",
+        "Capturing appearance does not identify the words; further software analysis does.",
+        "The image needs extra processing to turn visible letters into usable text.",
+        "A separate recognition step must analyze the marks as written language.",
+        "Software must interpret the picture before its words become recognized text."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "code-decoding",
+      "conceptName": "Reading Coded Patterns",
+      "confusabilityGroup": "media-use",
+      "questionVariants": [
+        "How does a library system use a book's barcode?",
+        "What happens after a camera captures a QR pattern?",
+        "How does a store turn scanned marks into useful item information?",
+        "Why does optical capture alone not explain the meaning of a code?",
+        "What turns a scanned code pattern into information a program can use?"
+      ],
+      "answerVariants": [
+        "Software decodes the captured pattern to recover its represented information.",
+        "A program interprets the visual code after the reader captures it.",
+        "The recorded pattern must be decoded according to its coding rules.",
+        "Decoding software changes the captured marks into usable data.",
+        "The system reads the pattern and interprets the information encoded in it."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "variable-control",
+      "conceptName": "Gentle Versus Full Movement",
+      "confusabilityGroup": "media-use",
+      "questionVariants": [
+        "Why can pushing a game stick a little make a character walk slowly?",
+        "How can a controller tell a game how strongly a player is steering?",
+        "Why can a stick provide more movement choices than a simple on/off button?",
+        "How can a game receive both a movement direction and its amount?",
+        "What lets a controller represent a gentle push differently from a full push?"
+      ],
+      "answerVariants": [
+        "An analog stick reports the degree of movement as well as its direction.",
+        "Variable stick readings describe both where and how far the control is moved.",
+        "The stick can send amounts between its extremes, along with direction.",
+        "Its input includes movement strength instead of only pressed or not pressed.",
+        "The control reports direction plus a range of movement amounts."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "sensor-choice",
+      "conceptName": "Matching a Measurement to a Need",
+      "confusabilityGroup": "sensors-use",
+      "questionVariants": [
+        "A robot must judge how close a box is. What kind of sensor fits?",
+        "Which measurement does a wall-avoiding robot need from its surroundings?",
+        "What should a robot measure to stop before reaching an obstacle?",
+        "Which sensor input would help a moving robot avoid hitting a wall?",
+        "What reading helps software decide whether an obstacle is too near?"
+      ],
+      "answerVariants": [
+        "A distance reading from a sensor aimed at the obstacle.",
+        "Use a distance sensor to report how far away the object is.",
+        "Measure the gap between the robot and the obstacle.",
+        "Collect distance data about the object ahead.",
+        "A sensor measuring how close the object is supplies the needed data."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "sensor-location",
+      "conceptName": "Measuring the Intended Place",
+      "confusabilityGroup": "sensors-use",
+      "questionVariants": [
+        "Why could a sensor beside a heater misrepresent average room temperature?",
+        "A room probe is next to a hot vent. Why question its reading as the room average?",
+        "Why must a greenhouse team think about where a temperature probe is mounted?",
+        "How can sensor placement produce a believable number for the wrong conditions?",
+        "Why might a warm corner give an unfair picture of the whole room?"
+      ],
+      "answerVariants": [
+        "It measures local conditions, which may differ from the area being studied.",
+        "Its location may not represent the intended environment.",
+        "The reading describes that spot rather than the whole room.",
+        "Nearby heat can bias the sample away from typical room conditions.",
+        "A poorly chosen position can measure a special local condition."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "verify-readings",
+      "conceptName": "Checking a Suspicious Reading",
+      "confusabilityGroup": "sensors-use",
+      "questionVariants": [
+        "A sensor says the cool classroom is very hot. How should students check the reading?",
+        "What should a class do before accepting an unexpected measurement as true?",
+        "Two probes disagree under the same conditions. How can students investigate?",
+        "What helps determine whether a surprising sensor value is believable?",
+        "How can students evaluate data that conflicts with what they observe?"
+      ],
+      "answerVariants": [
+        "Repeat the reading and compare it with a trusted reference, checking units and setup.",
+        "Use repeated tests and a known comparison to check the measurement conditions.",
+        "Check the setup and units, then compare repeated results with a reliable value.",
+        "Gather more readings and compare against a trusted instrument under matching conditions.",
+        "Verify placement and units and test the result against a known reference."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "sample-timing",
+      "conceptName": "Choosing How Often to Measure",
+      "confusabilityGroup": "sensors-use",
+      "questionVariants": [
+        "Why should a fast-moving experiment be measured more often than a slow room-temperature study?",
+        "How should a team choose the time gap between sensor readings?",
+        "Why might a reading every five minutes miss rapid motion?",
+        "What determines how frequently a sensor should collect data?",
+        "Why should measurement timing fit the changes being studied?"
+      ],
+      "answerVariants": [
+        "Readings must be frequent enough to capture the changes that matter.",
+        "The time gaps should match how quickly the important condition changes.",
+        "Choose intervals short enough to notice the relevant changes.",
+        "Measure often enough that important events are not missed between readings.",
+        "The speed of meaningful change determines a useful measurement schedule."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "programmed-response",
+      "conceptName": "From Reading to Action",
+      "confusabilityGroup": "sensors-use",
+      "questionVariants": [
+        "A greenhouse fan starts when temperature rises above a set value. What links the reading to the action?",
+        "How does a temperature measurement lead to a fan starting automatically?",
+        "What must software do between receiving a warm reading and turning on cooling?",
+        "Why does collecting sensor data alone not decide when a fan runs?",
+        "What turns environmental measurements into a programmed response?"
+      ],
+      "answerVariants": [
+        "Software compares the reading with a condition and sends the chosen output command.",
+        "The program tests the measurement against its rule, then tells the fan to run.",
+        "Instructions evaluate the data and choose the output when the condition is met.",
+        "A decision rule checks the value and triggers the appropriate action.",
+        "The system applies a programmed comparison and issues the resulting command."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "robot-evidence",
+      "conceptName": "Separate Sensing From Deciding",
+      "confusabilityGroup": "input-testing",
+      "questionVariants": [
+        "A robot hits walls. What does moving an object while watching raw distance readings test?",
+        "How can students check whether a robot actually receives changing distance information?",
+        "What should students observe before blaming a wall-avoidance rule?",
+        "Why display a robot's distance values while moving a box closer and farther?",
+        "How can a team separate a sensing failure from an incorrect movement rule?"
+      ],
+      "answerVariants": [
+        "Check whether the readings change sensibly; if they do, examine the program's decision rule.",
+        "Test the raw measurements first, then inspect the rule if those measurements make sense.",
+        "Observe whether distance data follows the moving object before checking how software uses it.",
+        "Verify incoming measurements, then investigate the decision logic if input works.",
+        "Use changing raw values to test sensing separately from the rule that controls motion."
+      ]
+    },
+    {
+      "position": 23,
+      "conceptKey": "accessible-options",
+      "conceptName": "More Than One Control Route",
+      "confusabilityGroup": "input-design",
+      "questionVariants": [
+        "Why should a drawing app support controls besides a mouse?",
+        "Why could keyboard navigation help someone who struggles with precise hand movement?",
+        "Why offer voice, switches, or other controls alongside touch gestures?",
+        "How can several input methods help a class with different abilities?",
+        "Why should a user not be forced to make one particular physical gesture?"
+      ],
+      "answerVariants": [
+        "Different users need workable alternatives for reaching the same function.",
+        "Several control routes let people use a method suited to their abilities.",
+        "An alternative method can remove a physical barrier to the same task.",
+        "Providing choices helps users whose needs make one method difficult.",
+        "The same task should be reachable through controls that fit different users."
+      ]
+    },
+    {
+      "position": 24,
+      "conceptKey": "recording-responsibility",
+      "conceptName": "Recording Other People",
+      "confusabilityGroup": "responsible-use",
+      "questionVariants": [
+        "What should a student do before recording a classmate for a project?",
+        "Why is having a working camera not enough reason to film someone?",
+        "What should guide a student who wants to record a classroom conversation?",
+        "How should students handle permission to collect other people's voices?",
+        "What should happen before collecting a person's image for class work?"
+      ],
+      "answerVariants": [
+        "Follow teacher and school rules and obtain appropriate consent.",
+        "Check school expectations and make sure recording is appropriately agreed to.",
+        "Use the school's rules and proper consent before capturing people.",
+        "Confirm that the recording is allowed and that needed agreement is in place.",
+        "Respect the teacher's directions, school policy, and people's consent."
+      ]
+    },
+    {
+      "position": 25,
+      "conceptKey": "input-path",
+      "conceptName": "Following Missing Input",
+      "confusabilityGroup": "input-testing",
+      "questionVariants": [
+        "A device sends no usable input. What is a sensible investigation order?",
+        "What pathway should students check when a connected input tool seems unresponsive?",
+        "How can you trace where incoming information stopped?",
+        "What sequence helps investigate missing input before replacing equipment?",
+        "How should a team follow information from input hardware into an app?"
+      ],
+      "answerVariants": [
+        "Check the device and connection, system recognition, app selection, and access permission.",
+        "Follow hardware, connection, operating-system detection, selected device, and app access.",
+        "Trace the physical tool through its connection to recognition, selection, and permission.",
+        "Verify the hardware link, system detection, and the app's chosen source and allowed access.",
+        "Inspect the tool, connection, system recognition, and the application's input and permission settings."
+      ]
+    },
+    {
+      "position": 26,
+      "conceptKey": "wrong-source",
+      "conceptName": "Choosing the Intended Microphone",
+      "confusabilityGroup": "input-testing",
+      "questionVariants": [
+        "A USB microphone works, but the app uses the built-in one. What should change?",
+        "Why does connecting an external sound recorder not ensure an app uses it?",
+        "The system recognizes a new microphone, but the recording still comes from the laptop. What next?",
+        "How can a recording app be directed to use the connected microphone?",
+        "What fixes an app that listens to the wrong available microphone?"
+      ],
+      "answerVariants": [
+        "Select the intended external device as the application's input source.",
+        "Choose the correct microphone in the recording software's input settings.",
+        "Set the app to receive sound from the external microphone.",
+        "Change the selected recording source to the connected device.",
+        "Tell the software which available sound-input device it should use."
+      ]
+    },
+    {
+      "position": 27,
+      "conceptKey": "app-isolation",
+      "conceptName": "Testing Another Application",
+      "confusabilityGroup": "input-testing",
+      "questionVariants": [
+        "A camera fails in one app. Why test it in another app?",
+        "How can a second recording program help investigate missing microphone input?",
+        "What can working input in another application tell you?",
+        "Why try a known-working test program before replacing an input device?",
+        "How does comparing two apps narrow down an input problem?"
+      ],
+      "answerVariants": [
+        "It helps separate an app-specific problem from a wider device or system problem.",
+        "A successful second test suggests the fault may belong to the first program.",
+        "Comparing programs shows whether the failure is limited to one application.",
+        "It checks whether hardware can work when a different application receives the data.",
+        "The result helps locate the problem in one app or in the broader input system."
+      ]
+    },
+    {
+      "position": 28,
+      "conceptKey": "input-quality",
+      "conceptName": "Why Capture Quality Matters",
+      "confusabilityGroup": "input-design",
+      "questionVariants": [
+        "Why might powerful software fail to fully repair a badly blurred photo?",
+        "Why should a media team improve the original recording before relying on editing?",
+        "How can poor original input limit a carefully processed result?",
+        "Why does a fast computer not guarantee a clear result from unclear data?",
+        "Why does better processing not always recover information lost during capture?"
+      ],
+      "answerVariants": [
+        "Information not captured clearly may be missing and impossible to recover perfectly.",
+        "Processing cannot guarantee recovery of details the input never recorded.",
+        "The quality of the result is limited by information present in the original data.",
+        "A computer cannot reliably reconstruct every detail missing from its input.",
+        "Lost or poorly captured information can limit what later processing can achieve."
+      ]
+    },
+    {
+      "position": 29,
+      "conceptKey": "task-fit",
+      "conceptName": "Choose for the Information Needed",
+      "confusabilityGroup": "input-design",
+      "questionVariants": [
+        "Why might a keyboard fit a long report while a pen fits a detailed drawing?",
+        "Why should scientists use automatic probes for two days of temperature readings?",
+        "What should guide the choice between typing, drawing, speaking, and automatic measurement?",
+        "Why is no single input tool best for every task?",
+        "How should a class choose input hardware for a new project?"
+      ],
+      "answerVariants": [
+        "Match the information and task to the user's needs, environment, and practical constraints.",
+        "Choose a method suited to the kind of data, intended user, and working conditions.",
+        "The best choice depends on what must enter the system and how people can provide it effectively.",
+        "Consider the task, user's abilities, accuracy, comfort, and setting before choosing.",
+        "Select equipment that collects the needed information effectively for the particular situation."
+      ]
+    },
+    {
+      "position": 30,
+      "conceptKey": "controlled-test",
+      "conceptName": "One Change, Useful Evidence",
+      "confusabilityGroup": "input-testing",
+      "questionVariants": [
+        "Why change only one relevant setting before testing a microphone again?",
+        "Why can changing many input settings at once make a fault harder to understand?",
+        "How can a team tell which adjustment restored its camera input?",
+        "What makes a troubleshooting change easier to evaluate?",
+        "Why keep track of each input test rather than clicking random settings?"
+      ],
+      "answerVariants": [
+        "Test one change at a time so the result can be linked to that change.",
+        "A controlled adjustment makes it easier to identify what affected the problem.",
+        "Changing one relevant condition lets the team judge its effect.",
+        "Record each single adjustment and retest to see what it changed.",
+        "One-step tests provide clearer evidence about which cause or fix matters."
+      ]
+    }
+  ]
+}

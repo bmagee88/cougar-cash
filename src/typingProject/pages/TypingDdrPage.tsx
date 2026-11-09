@@ -32,7 +32,7 @@ import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import { keyframes } from "@emotion/react";
 import DdrRoundTransition, { FINISH_RESTART_MS, FINISH_SEQUENCE, FinishPhase, RecordSaveStatus } from "./DdrRoundTransition";
 import VerticalTypingLanes from "./VerticalTypingLanes";
-import { isVerticalHomeKey, loadVerticalHomeKey, VERTICAL_COLUMNS, VERTICAL_KEY_STORAGE, VerticalHomeKey } from "./verticalMode";
+import { getVerticalNoteMotion, isVerticalHomeKey, loadVerticalHomeKey, VERTICAL_COLUMNS, VERTICAL_KEY_STORAGE, VerticalHomeKey, VerticalNoteMotion } from "./verticalMode";
 
 type HomeKey = {
   key: string;
@@ -51,6 +51,7 @@ type Note = {
   targetTime: number;
   createdAt: number;
   animationDelayMs: number;
+  verticalMotion?: VerticalNoteMotion;
 };
 
 type TempoMarker = {
@@ -776,6 +777,11 @@ export default function TypingDdrPage() {
   const nextTempoMarkerIdRef = useRef(1);
   const lastLaneRef = useRef<number | null>(null);
   const lastVerticalRowRef = useRef<number | null>(null);
+  const verticalMotionRef = useRef(getVerticalNoteMotion(1000));
+  const handleVerticalMotionChange = useCallback((motion: VerticalNoteMotion) => {
+    verticalMotionRef.current = motion;
+  }, []);
+  const getNoteTravelMs = useCallback(() => gameModeRef.current === "vertical" ? verticalMotionRef.current.travelMs : FALL_DURATION_MS, []);
   const keyRepeatsRef = useRef(keyRepeats);
   const repeatsRemainingRef = useRef(0);
   const repeatGroupIdRef = useRef(0);
@@ -1345,7 +1351,7 @@ export default function TypingDdrPage() {
 
   const clearNotesAndReseed = useCallback(() => {
     clearTimingEvents();
-    const startAt = performance.now() + FALL_DURATION_MS + beatMsRef.current;
+    const startAt = performance.now() + getNoteTravelMs() + beatMsRef.current;
     nextBarStartRef.current = startAt;
     lastLaneRef.current = null;
     lastVerticalRowRef.current = null;
@@ -1355,7 +1361,7 @@ export default function TypingDdrPage() {
     tempoMarkersRef.current = [];
     setNotes([]);
     setTempoMarkers([]);
-  }, [clearTimingEvents]);
+  }, [clearTimingEvents, getNoteTravelMs]);
 
   const resetGame = useCallback(() => {
     setFinishPhase(null);
@@ -1470,7 +1476,7 @@ export default function TypingDdrPage() {
       const nowMs = performance.now();
       const currentBeatMs = beatMsRef.current;
       if (!resumedFromPause && nextBarStartRef.current < nowMs + currentBeatMs) {
-        nextBarStartRef.current = nowMs + FALL_DURATION_MS + currentBeatMs;
+        nextBarStartRef.current = nowMs + getNoteTravelMs() + currentBeatMs;
       }
     }
     if (!keysLockedRef.current && randomKeysEnabledRef.current && gameModeRef.current !== "vertical") {
@@ -1498,7 +1504,7 @@ export default function TypingDdrPage() {
       return nextMaxTempo;
     });
     resumeTimingEvents();
-  }, [prime, resetGame, resumePausedTimeline, resumeTimingEvents, startBalancedRunClock]);
+  }, [getNoteTravelMs, prime, resetGame, resumePausedTimeline, resumeTimingEvents, startBalancedRunClock]);
 
   const restartAndStart = useCallback(() => {
     resetGame();
@@ -1518,11 +1524,11 @@ export default function TypingDdrPage() {
       playBeatRef.current(true);
       restartAndStart();
       // The count-in has already prepared the player: show moving notes at once.
-      nextBarStartRef.current = performance.now() + FALL_DURATION_MS;
+      nextBarStartRef.current = performance.now() + getNoteTravelMs();
     }, FINISH_RESTART_MS));
 
     return () => timers.forEach((timer) => window.clearTimeout(timer));
-  }, [gameOver, keysLocked, restartAndStart]);
+  }, [gameOver, getNoteTravelMs, keysLocked, restartAndStart]);
 
   const applyGameMode = useCallback((nextMode: GameMode) => {
     setGameMode(nextMode);
@@ -1935,15 +1941,20 @@ export default function TypingDdrPage() {
       const pattern = RHYTHM_PATTERNS[rhythmModeRef.current];
       const verticalKey = HOME_KEYS[activeLanes[0]]?.key;
       const verticalColumn = gameModeRef.current === "vertical" && isVerticalHomeKey(verticalKey) ? VERTICAL_COLUMNS[verticalKey] : null;
+      const verticalMotion = verticalColumn ? verticalMotionRef.current : undefined;
+      const travelMs = verticalMotion?.travelMs ?? FALL_DURATION_MS;
       const newNotes: Note[] = [];
 
       if (activeLanes.length === 0) return;
 
-      const horizon = nowMs + FALL_DURATION_MS + currentBeatMs * SCHEDULE_LOOKAHEAD_BEATS;
+      const horizon = nowMs + travelMs + currentBeatMs * SCHEDULE_LOOKAHEAD_BEATS;
 
       if (!nextBarStartRef.current) {
-        nextBarStartRef.current = nowMs + FALL_DURATION_MS + currentBeatMs;
+        nextBarStartRef.current = nowMs + travelMs + currentBeatMs;
       }
+
+      // A wider window may need more lead time for newly scheduled notes.
+      if (verticalColumn) nextBarStartRef.current = Math.max(nextBarStartRef.current, nowMs + travelMs);
 
       while (nextBarStartRef.current < horizon) {
         const barStart = nextBarStartRef.current;
@@ -1974,8 +1985,9 @@ export default function TypingDdrPage() {
             repeatGroupId: repeatGroupIdRef.current,
             laneIndex,
             targetTime,
-            createdAt: targetTime - FALL_DURATION_MS,
-            animationDelayMs: targetTime - FALL_DURATION_MS - nowMs,
+            createdAt: targetTime - travelMs,
+            animationDelayMs: targetTime - travelMs - nowMs,
+            verticalMotion,
           });
           scheduleTimingEvent(`miss-${noteId}`, targetTime + currentHitWindowMs, {
             missNoteId: noteId,
@@ -3031,8 +3043,8 @@ export default function TypingDdrPage() {
               targetSize={targetSize}
               noteWidth={noteWidth}
               noteHeight={noteHeight}
-              durationMs={NOTE_ANIMATION_DURATION_MS}
-              travelMs={FALL_DURATION_MS}
+              postTargetMs={POST_TARGET_FALL_MS}
+              onMotionChange={handleVerticalMotionChange}
               pulse={pulseLane}
             />
           ) : (

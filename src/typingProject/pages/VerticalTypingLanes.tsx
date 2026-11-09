@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef } from "react";
 import { Box, Typography } from "@mui/material";
 import { keyframes } from "@emotion/react";
-import { VERTICAL_COLUMNS, VERTICAL_ROW_POSITIONS, VerticalHomeKey } from "./verticalMode";
+import { getVerticalNoteMotion, VERTICAL_COLUMNS, VERTICAL_ROW_POSITIONS, VerticalHomeKey, VerticalNoteMotion } from "./verticalMode";
 
 type Size = { xs: number; sm: number; md: number };
 type Props = {
@@ -9,14 +9,14 @@ type Props = {
   homeKeys: { key: string; label: string; color: string }[];
   columns: { xs: string; sm: string; md: string };
   getColumn: (key: string) => string;
-  notes: { id: number; key: string; rowIndex?: number; animationDelayMs: number }[];
+  notes: { id: number; key: string; rowIndex?: number; animationDelayMs: number; verticalMotion?: VerticalNoteMotion }[];
   running: boolean;
   showKeyLetters: boolean;
   targetSize: Size;
   noteWidth: Size;
   noteHeight: Size;
-  durationMs: number;
-  travelMs: number;
+  postTargetMs: number;
+  onMotionChange: (motion: VerticalNoteMotion) => void;
   pulse: { key?: string; token: number } | null;
 };
 
@@ -31,29 +31,27 @@ const pulse = keyframes`
 `;
 
 export default function VerticalTypingLanes(props: Props) {
-  const { homeKey, homeKeys, columns, getColumn, notes, running, showKeyLetters, targetSize, noteWidth, noteHeight, durationMs, travelMs } = props;
+  const { homeKey, homeKeys, columns, getColumn, notes, running, showKeyLetters, targetSize, noteWidth, noteHeight, postTargetMs, onMotionChange } = props;
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const anchorRef = useRef<HTMLDivElement | null>(null);
-  const [startX, setStartX] = useState(1000);
   const column = VERTICAL_COLUMNS[homeKey];
   const entrySide = column.hand === "left" ? "right" : "left";
   const selectedKey = homeKeys.find((key) => key.key === homeKey)!;
-  const endX = -startX * (durationMs - travelMs) / travelMs;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const measure = () => {
       const rect = anchorRef.current?.getBoundingClientRect();
       if (!rect) return;
       const center = rect.left + rect.width / 2;
       const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
-      setStartX(entrySide === "right" ? viewportWidth - center + 60 : -center - 60);
+      onMotionChange(getVerticalNoteMotion(entrySide === "right" ? viewportWidth - center + 60 : -center - 60));
     };
     measure();
     const observer = new ResizeObserver(measure);
     if (fieldRef.current) observer.observe(fieldRef.current);
     window.addEventListener("resize", measure);
     return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
-  }, [entrySide, homeKey]);
+  }, [entrySide, homeKey, onMotionChange]);
 
   return (
     <Box ref={fieldRef} aria-label="Vertical game lanes" data-entry-side={entrySide} sx={{
@@ -83,15 +81,22 @@ export default function VerticalTypingLanes(props: Props) {
           {showKeyLetters && <Typography component="span" sx={{ fontSize: { xs: 13, sm: 16, md: 18 }, fontWeight: 900, color: "inherit" }}>{key.toUpperCase()}</Typography>}
         </Box>
       ))}
-      {notes.map((note) => (
-        <Box key={note.id} data-testid="vertical-note" data-key={note.key} data-entry-side={entrySide} sx={{
-          "--note-start-x": `${startX}px`, "--note-end-x": `${endX}px`,
-          position: "absolute", gridColumn: getColumn(homeKey), left: "50%", top: `${VERTICAL_ROW_POSITIONS[note.rowIndex ?? 1]}%`,
-          width: noteWidth, height: noteHeight, borderRadius: 1, bgcolor: selectedKey.color, zIndex: 2,
-          transform: `translate3d(calc(-50% + ${startX}px), -50%, 0)`, willChange: "transform, opacity",
-          animation: `${slide} ${durationMs}ms linear ${note.animationDelayMs}ms both`, animationPlayState: running ? "running" : "paused",
-        }} />
-      ))}
+      {notes.map((note) => {
+        // Freeze each note's path and duration so resizing cannot change its hit time.
+        if (!note.verticalMotion) return null;
+        const { startX, travelMs } = note.verticalMotion;
+        const durationMs = travelMs + postTargetMs;
+        const endX = -startX * postTargetMs / travelMs;
+        return (
+          <Box key={note.id} data-testid="vertical-note" data-key={note.key} data-entry-side={entrySide} sx={{
+            "--note-start-x": `${startX}px`, "--note-end-x": `${endX}px`,
+            position: "absolute", gridColumn: getColumn(homeKey), left: "50%", top: `${VERTICAL_ROW_POSITIONS[note.rowIndex ?? 1]}%`,
+            width: noteWidth, height: noteHeight, borderRadius: 1, bgcolor: selectedKey.color, zIndex: 2,
+            transform: `translate3d(calc(-50% + ${startX}px), -50%, 0)`, willChange: "transform, opacity",
+            animation: `${slide} ${durationMs}ms linear ${note.animationDelayMs}ms both`, animationPlayState: running ? "running" : "paused",
+          }} />
+        );
+      })}
     </Box>
   );
 }
