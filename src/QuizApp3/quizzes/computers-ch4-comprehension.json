@@ -1,0 +1,597 @@
+{
+  "id": "computers-ch4-comprehension",
+  "quizName": "Output: Comprehension",
+  "description": "Explore how computers share results with people and the world. Choose output for different needs, protect private information, and trace display, sound, and movement problems.",
+  "quizNumber": 7,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 4",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "device-result",
+      "conceptName": "Device Versus Result",
+      "confusabilityGroup": "output-model",
+      "questionVariants": [
+        "How is a monitor different from the photograph it shows?",
+        "How is a speaker different from the music it plays?",
+        "Why are output hardware and its result different things?",
+        "How does a motor differ from the command that tells it to turn?",
+        "How should you distinguish an output tool from the information it receives?"
+      ],
+      "answerVariants": [
+        "The equipment is hardware; the image, sound, or command is information.",
+        "One is a physical device, while the other is data or a result it communicates.",
+        "The tool is physical equipment rather than the information being delivered.",
+        "The device carries out a task using information that is separate from it.",
+        "Hardware presents or acts on information; it is not that information itself."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "outputs-beyond-screens",
+      "conceptName": "Recognizing Physical Output",
+      "confusabilityGroup": "output-model",
+      "questionVariants": [
+        "Why is a robot turning its wheels an example of output?",
+        "Why can opening a greenhouse vent count as a computing result?",
+        "How can a computer produce useful output without a screen?",
+        "Why does a computer-controlled valve opening count as output?",
+        "Why is a motor's movement part of a computing system's results?"
+      ],
+      "answerVariants": [
+        "A computer-directed physical action is a result leaving the system.",
+        "Output can act on the environment instead of displaying an image.",
+        "The system can use a control signal to produce a physical effect.",
+        "A programmed result can be delivered as movement or another action.",
+        "Computer results include changes to the physical world."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "machine-recipient",
+      "conceptName": "Output to Another System",
+      "confusabilityGroup": "output-model",
+      "questionVariants": [
+        "A computer sends a warning message to another computer. Is it output from the sender?",
+        "Why can a machine be the destination of computer output?",
+        "How can a result leave a system without being shown to a person?",
+        "Why is a control signal to another machine still output?",
+        "Can information sent to a different computer count as a computing result?"
+      ],
+      "answerVariants": [
+        "Yes; a result can be sent to another system rather than directly to a person.",
+        "Output may deliver information to machines as well as human users.",
+        "A system can communicate its result to another device.",
+        "The receiving machine can use information produced by the sending computer.",
+        "Results leaving a system can be machine-readable messages."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "software-controls-output",
+      "conceptName": "Same Hardware, Different Results",
+      "confusabilityGroup": "output-model",
+      "questionVariants": [
+        "Why can the same speaker play music in one app and an alert in another?",
+        "What determines whether a display shows a map or a photograph?",
+        "Why does unchanged output hardware produce different content in different programs?",
+        "How can one monitor show many kinds of information?",
+        "What directs the result that output equipment presents?"
+      ],
+      "answerVariants": [
+        "Software and data determine what the hardware is asked to produce.",
+        "The running program chooses the content and sends the necessary signals.",
+        "Different instructions and information change what the equipment presents.",
+        "Applications direct the hardware using their own content and commands.",
+        "The physical device presents results specified by the software and its data."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "pixel-image",
+      "conceptName": "Small Elements Form a Picture",
+      "confusabilityGroup": "display-use",
+      "questionVariants": [
+        "How can millions of small picture elements create a photograph on a screen?",
+        "Why can a complete screen picture look smooth from a normal viewing distance?",
+        "How does a display build letters and images from many tiny elements?",
+        "What explains how a screen forms a complete image from a grid?",
+        "How do individual picture elements contribute to a visible screen result?"
+      ],
+      "answerVariants": [
+        "Many pixels each provide a small part that combines into the whole image.",
+        "A grid of tiny picture elements works together to form the visible picture.",
+        "The complete image is built by combining the contributions of many pixels.",
+        "Small image elements arranged together create larger shapes and details.",
+        "Each pixel contributes part of the picture the viewer sees as a whole."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "resolution-dimensions",
+      "conceptName": "Reading Pixel Dimensions",
+      "confusabilityGroup": "display-use",
+      "questionVariants": [
+        "What does a resolution of 1920 by 1080 tell you?",
+        "How should you read the two numbers in 1920 by 1080?",
+        "What directions do the numbers 1920 and 1080 describe for this display?",
+        "Which pixel dimensions are shown by 1920 by 1080?",
+        "How many pixel positions run across and down in a 1920-by-1080 image?"
+      ],
+      "answerVariants": [
+        "There are 1,920 positions across the width and 1,080 down the height.",
+        "The image is 1,920 pixels wide and 1,080 pixels tall.",
+        "Its horizontal count is 1,920 and its vertical count is 1,080.",
+        "The width has 1,920 picture elements; the height has 1,080.",
+        "It uses 1,920 columns and 1,080 rows of pixel positions."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "resolution-limits",
+      "conceptName": "Detail Is Not the Whole Experience",
+      "confusabilityGroup": "display-use",
+      "questionVariants": [
+        "Why does a higher-resolution screen not always serve every user better?",
+        "Why compare more than pixel counts when choosing a display?",
+        "Two displays differ in resolution. Why is that not enough to choose between them?",
+        "Why can a screen with more pixels still be hard to read?",
+        "What else matters when judging whether extra screen detail will help?"
+      ],
+      "answerVariants": [
+        "Screen size, viewing distance, content, settings, and the user's needs also affect usefulness.",
+        "Pixel count must be considered with how and where the person views the content.",
+        "Readability also depends on display size, setup, image quality, and the viewer.",
+        "The complete viewing situation determines whether extra detail is useful.",
+        "Other conditions, including size and user vision, help determine the quality of the experience."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "refresh-system",
+      "conceptName": "Motion Needs a Supported Path",
+      "confusabilityGroup": "display-use",
+      "questionVariants": [
+        "Why might choosing a higher refresh setting fail to improve a game's motion?",
+        "Why must the computer and connection support a display's faster updates?",
+        "What limits the benefit of a high-refresh monitor if the computer cannot supply images fast enough?",
+        "Why is a monitor's update rating only part of smooth visual output?",
+        "Why check the source and cable when planning faster display updates?"
+      ],
+      "answerVariants": [
+        "The computer and connection must deliver a supported stream of updated images.",
+        "The whole path must support the requested display mode and image rate.",
+        "A fast-updating screen still depends on image production and connection capability.",
+        "The display cannot show new content faster than the source and link can support.",
+        "Smooth updates depend on compatible output from the computer through its connection."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "readable-visuals",
+      "conceptName": "Readable Text in the Real World",
+      "confusabilityGroup": "display-use",
+      "questionVariants": [
+        "Dark gray words are hard to see on black. What design improvement helps?",
+        "Why might a working screen still be difficult to read outdoors?",
+        "How can designers help users read slides under different lighting conditions?",
+        "What should be adjusted when correctly displayed text is hard to distinguish?",
+        "How can a display show information successfully rather than merely show lit pixels?"
+      ],
+      "answerVariants": [
+        "Use readable text size, suitable brightness, and clear contrast for the viewing conditions.",
+        "Make the words stand out and adjust size and light level for the surroundings.",
+        "Improve text visibility through stronger contrast and appropriate size and brightness.",
+        "Match text size, contrast, and screen light to the viewer and environment.",
+        "Choose visual settings that make the content easy to distinguish and read."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "not-color-alone",
+      "conceptName": "Communicating Beyond Color",
+      "confusabilityGroup": "accessible-design",
+      "questionVariants": [
+        "Why should a warning use a word or symbol as well as red color?",
+        "How can a status display avoid depending only on color vision?",
+        "Why add labels to differently colored status lights?",
+        "What should a designer do if color alone communicates an important state?",
+        "How can a chart remain useful to people who do not distinguish its colors?"
+      ],
+      "answerVariants": [
+        "Add text, symbols, or another cue that carries the same meaning.",
+        "Provide a way to identify the message besides its color.",
+        "Use labels or shapes so meaning remains clear without color differences.",
+        "Include another visible cue to communicate the important information.",
+        "Make the message understandable through words or symbols as well as color."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "display-destination",
+      "conceptName": "Finding a Window on a Second Screen",
+      "confusabilityGroup": "display-use",
+      "questionVariants": [
+        "An app is running, but its window is on another monitor. What should you check?",
+        "Why might a working program seem missing when two displays are connected?",
+        "How can an extended display make content appear away from the screen you are watching?",
+        "What may explain a missing presentation when another display is active?",
+        "Which settings help find content sent to an unexpected screen?"
+      ],
+      "answerVariants": [
+        "Check the display arrangement and which screen receives the window or presentation.",
+        "Look at the second display and verify where software is sending its visual output.",
+        "The content may be in the extra workspace; check the selected display setup.",
+        "Inspect how the screens are arranged and where the application window is placed.",
+        "Verify the output destination and move the window to the intended display."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "audience-choice",
+      "conceptName": "Showing a Class",
+      "confusabilityGroup": "output-choice",
+      "questionVariants": [
+        "A teacher needs 30 students to read a graph together. What display choice fits?",
+        "Which visual setup fits a large group watching a presentation?",
+        "Why choose something larger than a student's laptop screen for a whole class?",
+        "How should a class make visual information visible to many students at once?",
+        "What output arrangement helps a classroom audience view the same material?"
+      ],
+      "answerVariants": [
+        "Use a projector or large display sized and placed for the audience.",
+        "Choose a large shared visual surface that everyone can see.",
+        "Present the image through a suitably large monitor or projection system.",
+        "Provide a group-sized display with a readable image at the viewing distance.",
+        "Use large-scale visual output suited to the room and audience."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "projector-environment",
+      "conceptName": "Faded Projection",
+      "confusabilityGroup": "output-testing",
+      "questionVariants": [
+        "A working projector looks washed out in sunlight. What should students investigate?",
+        "Why might a projector's picture be hard to see in a bright room?",
+        "What should be checked before replacing a projector with a faded image?",
+        "How can a classroom improve a dim-looking projection without assuming broken hardware?",
+        "What surroundings can interfere with an otherwise working projected image?"
+      ],
+      "answerVariants": [
+        "Check room lighting, screen placement, image size, brightness, and focus.",
+        "Reduce interfering light and adjust the projection setup for the room.",
+        "Investigate light on the surface and the projector's size and image settings.",
+        "Improve the environment and projection settings before concluding the device failed.",
+        "Check sunlight, room light, focus, and how large the image is being projected."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "personal-vs-group-audio",
+      "conceptName": "Choosing Who Hears",
+      "confusabilityGroup": "output-choice",
+      "questionVariants": [
+        "Several students edit different recordings in one room. Which listening setup fits?",
+        "How can a student review audio while reducing disturbance to classmates?",
+        "What output method fits individual listening in a quiet library?",
+        "How should a user listen to personal media without playing it to the whole room?",
+        "Which audio device fits one student working privately near others?"
+      ],
+      "answerVariants": [
+        "Use headphones for individual listening.",
+        "Choose a personal headset or earphones instead of room-wide playback.",
+        "Direct the audio to the student's own headphones.",
+        "Use ear-worn audio equipment for the one listener.",
+        "Send sound to personal listening devices at the user's ears."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "volume-quality",
+      "conceptName": "Clear Audio Is More Than Loudness",
+      "confusabilityGroup": "audio-use",
+      "questionVariants": [
+        "Why might turning up distorted audio fail to make speech easier to understand?",
+        "Why is louder playback not always better playback?",
+        "What should guide the listening level for a classroom recording?",
+        "Why should students judge clarity as well as volume?",
+        "Why is maximum volume a poor default for listening?"
+      ],
+      "answerVariants": [
+        "The goal is clear sound at a suitable, comfortable level; extra loudness may add distortion.",
+        "A useful level preserves clarity without making listening uncomfortable.",
+        "More loudness does not fix unclear source audio and may make it unpleasant.",
+        "Choose a level that lets the listener understand the sound without excessive volume.",
+        "Sound quality depends on clarity and appropriate level rather than loudness alone."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "mono-access",
+      "conceptName": "Hearing Both Channels in One",
+      "confusabilityGroup": "audio-use",
+      "questionVariants": [
+        "Why might someone who hears only one side choose mono audio?",
+        "How can a mono setting help when important sound is split between left and right?",
+        "What setting can keep one-channel listening from missing the other side's speech?",
+        "Why combine stereo information for a listener using one side?",
+        "How can audio be adapted so separate left and right content is heard together?"
+      ],
+      "answerVariants": [
+        "Combine the channels into one so important information from either side is included.",
+        "Use a single combined channel containing both sides' content.",
+        "Present both left and right information together rather than separately.",
+        "Merge the channels so one-sided listening can receive the full message.",
+        "Choose combined mono playback to retain information from both sides."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "caption-use",
+      "conceptName": "Captions in Different Situations",
+      "confusabilityGroup": "accessible-design",
+      "questionVariants": [
+        "Why can captions help someone watching a muted video?",
+        "How can a viewer understand dialogue in a noisy room?",
+        "Why might readable audio text help a person learning the spoken language?",
+        "How can important video speech remain available when sound cannot be heard clearly?",
+        "What helps viewers receive spoken information without relying on hearing the soundtrack?"
+      ],
+      "answerVariants": [
+        "Captions make the dialogue and important sounds available as visible text.",
+        "A written audio representation lets the viewer read what they cannot hear.",
+        "Readable text provides another route to the meaning of the soundtrack.",
+        "Text versions of speech and relevant sounds communicate the audio information.",
+        "The viewer can follow written captions instead of relying only on sound."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "caption-review",
+      "conceptName": "Checking Automatic Text",
+      "confusabilityGroup": "accessible-design",
+      "questionVariants": [
+        "Why review automatically generated captions before publishing an important video?",
+        "What should creators remember about computer-produced video transcripts?",
+        "Why can automatic captioning need human checking?",
+        "How can students make sure their video's generated dialogue text is dependable?",
+        "What is a necessary check after software makes captions for a project?"
+      ],
+      "answerVariants": [
+        "Check for recognition errors and correct the text so it matches the audio meaning.",
+        "Automatic text may be wrong, so review and fix the words.",
+        "Compare the generated writing with the actual speech and important sounds.",
+        "Verify the text accurately represents what listeners should understand.",
+        "Review the machine's transcription and repair mistakes before sharing."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "physical-copy",
+      "conceptName": "A Result Without an Active Screen",
+      "confusabilityGroup": "output-choice",
+      "questionVariants": [
+        "Which output fits a worksheet that must remain usable after the computer is off?",
+        "How can a teacher provide a physical handout from a digital file?",
+        "What output method leaves a readable page without needing a powered display?",
+        "How can a computer create a report someone can carry on paper?",
+        "What should students use for a lasting physical copy of a digital diagram?"
+      ],
+      "answerVariants": [
+        "Print the file to make a physical page.",
+        "Use a printer to place the information on paper.",
+        "Create a printed copy that remains available away from a screen.",
+        "Send the document to printing hardware for a paper result.",
+        "Produce a hard copy using a printer."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "simple-status",
+      "conceptName": "A Small Status Signal",
+      "confusabilityGroup": "output-choice",
+      "questionVariants": [
+        "A charger only needs to show that power is present. What simple visual output fits?",
+        "Which small output can show a robot's ready state without a full monitor?",
+        "How could a device display basic charging status using little visual hardware?",
+        "What could indicate success or failure with a small programmed light?",
+        "Which output component suits a simple lit status signal?"
+      ],
+      "answerVariants": [
+        "Use an LED indicator for the basic status.",
+        "A small light-emitting diode can signal the device's state.",
+        "Choose a status light controlled by the system.",
+        "Provide a programmed LED rather than a full image display.",
+        "A simple electronic light can communicate that condition."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "quiet-alert",
+      "conceptName": "A Notice Felt Through Touch",
+      "confusabilityGroup": "output-choice",
+      "questionVariants": [
+        "A user needs a silent alert while not looking at the screen. What method fits?",
+        "How can a phone notify someone quietly from a pocket?",
+        "Which output can signal an event through touch during a silent performance?",
+        "What alert could a user feel when sound would disturb others?",
+        "How can a device attract attention without light or audible sound?"
+      ],
+      "answerVariants": [
+        "Use a vibration or other haptic alert.",
+        "Provide touch-based feedback that the user can feel.",
+        "Signal the event with a small physical vibration.",
+        "Choose a tactile notification such as a vibration pulse.",
+        "Deliver the warning through a felt physical response."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "closed-loop",
+      "conceptName": "Measuring After Acting",
+      "confusabilityGroup": "physical-systems",
+      "questionVariants": [
+        "Why does a greenhouse measure temperature again after starting its fan?",
+        "How can the effect of cooling influence a controller's next action?",
+        "Why does an automatic system keep sensing after changing the environment?",
+        "What links an earlier fan action to later temperature data?",
+        "How does new input help a system judge its own output?"
+      ],
+      "answerVariants": [
+        "The action changes conditions, and new measurements guide the next decision.",
+        "The system checks the effect of its output and uses that evidence again.",
+        "Fresh readings show what changed so software can choose its next response.",
+        "The output's effect returns as new input in a feedback cycle.",
+        "Measuring again lets the controller respond to the result of its previous action."
+      ]
+    },
+    {
+      "position": 23,
+      "conceptKey": "multiple-warning-paths",
+      "conceptName": "Warnings for Different Users",
+      "confusabilityGroup": "accessible-design",
+      "questionVariants": [
+        "Why combine text, a light, and sound for an important cafeteria alert?",
+        "How can several warning methods help in a noisy room?",
+        "Why present an important message in more than one sensory form?",
+        "How can a warning remain useful if one output method is missed?",
+        "Why might a designer give the same alert both visibly and audibly?"
+      ],
+      "answerVariants": [
+        "Different routes make the same warning easier to notice when one route is unavailable.",
+        "More than one form helps users who cannot perceive a particular signal.",
+        "Several methods improve the chance that important information reaches everyone.",
+        "A second communication route can carry the message when another is blocked.",
+        "Multiple forms let people receive the same meaning through different senses."
+      ]
+    },
+    {
+      "position": 24,
+      "conceptKey": "projection-privacy",
+      "conceptName": "Sharing Only Intended Content",
+      "confusabilityGroup": "responsible-output",
+      "questionVariants": [
+        "What should a presenter check before showing a computer screen to a class?",
+        "Why should students review open tabs and notifications before projecting?",
+        "How can a presentation accidentally expose private information?",
+        "What should students control when sharing a public display?",
+        "Why prepare the screen before connecting it to a classroom projector?"
+      ],
+      "answerVariants": [
+        "Close or hide private content and notifications so only intended material is shown.",
+        "Check what the audience will see and remove personal or sensitive information.",
+        "Make sure shared windows and alerts do not reveal unintended data.",
+        "Prepare the visible workspace to protect messages and information meant to stay private.",
+        "Review the projected content and prevent private tabs or notifications from appearing."
+      ]
+    },
+    {
+      "position": 25,
+      "conceptKey": "output-path",
+      "conceptName": "Tracing a Missing Result",
+      "confusabilityGroup": "output-testing",
+      "questionVariants": [
+        "What pathway should students trace when an expected output is missing?",
+        "How can a team check where a computer's result stopped reaching its user?",
+        "What is a systematic route for investigating failed output?",
+        "Which parts of the output chain should be checked before replacing hardware?",
+        "How should you follow results from software to a listener or viewer?"
+      ],
+      "answerVariants": [
+        "Trace software and data through output selection, connection, device, and user conditions.",
+        "Check the produced result, its chosen destination, the link, the hardware, and the viewing or listening setup.",
+        "Follow the result from the program through routing and connection to the output equipment.",
+        "Verify content, selected output, power and connection, device operation, and environment.",
+        "Examine the program's result, where it is sent, how it travels, and how it is presented."
+      ]
+    },
+    {
+      "position": 26,
+      "conceptKey": "blank-screen",
+      "conceptName": "Simple Causes of No Picture",
+      "confusabilityGroup": "output-testing",
+      "questionVariants": [
+        "An external monitor is blank. What simple checks should come before replacing it?",
+        "What should students check first when a connected screen shows nothing?",
+        "Why should a blank display lead to power and source checks?",
+        "How can a team investigate a missing picture before blaming the whole computer?",
+        "Which basic conditions can prevent an external image from appearing?"
+      ],
+      "answerVariants": [
+        "Check power, wake state, cable connection, input source, and display selection.",
+        "Verify that the screen is on, connected, set to the right source, and selected by the computer.",
+        "Make sure the system is awake and the display has power and the correct signal route.",
+        "Inspect the cable, screen power, chosen source, and computer display configuration.",
+        "Confirm the monitor is powered, properly connected, and receiving the intended display output."
+      ]
+    },
+    {
+      "position": 27,
+      "conceptKey": "silent-video",
+      "conceptName": "Picture Works, Sound Does Not",
+      "confusabilityGroup": "output-testing",
+      "questionVariants": [
+        "A classroom video is visible but silent. What audio checks fit the evidence?",
+        "Why might a playing video send its sound to headphones instead of room speakers?",
+        "What should students inspect if slides and video appear but nobody hears audio?",
+        "How should a team investigate silent playback while visual output works?",
+        "What can be checked before replacing speakers when a video's picture is fine?"
+      ],
+      "answerVariants": [
+        "Check app and system mute, volume, and the selected audio destination.",
+        "Verify playback is not muted and that sound is sent to the intended device at a suitable level.",
+        "Inspect sound controls and output routing, then try a known-working audio sample.",
+        "Confirm volume and mute settings and choose the correct sound-output device.",
+        "Check the audio path's controls and selected destination before testing playback again."
+      ]
+    },
+    {
+      "position": 28,
+      "conceptKey": "robot-output-fault",
+      "conceptName": "Sensing Works, Wheels Do Not",
+      "confusabilityGroup": "output-testing",
+      "questionVariants": [
+        "A robot reads distance correctly and chooses to turn, but its wheels stay still. What should be checked?",
+        "Why examine the motor side when a robot's sensor data and decision are correct?",
+        "Where should a team investigate if a robot processes an obstacle correctly but never moves?",
+        "What later stage needs testing when correct sensor input leads to no wheel action?",
+        "A robot's program shows a turn command but no movement. Which path should students trace?"
+      ],
+      "answerVariants": [
+        "Check the motor command, control connection, power, and possible mechanical obstruction.",
+        "Investigate the output path from the decision to the powered motor and wheels.",
+        "Test whether the action signal reaches working, powered movement hardware.",
+        "Follow the control signal through motor power and connections to physical movement.",
+        "Examine actuator control, wiring, power, and anything blocking the wheels."
+      ]
+    },
+    {
+      "position": 29,
+      "conceptKey": "source-detail",
+      "conceptName": "Output Cannot Restore Missing Detail",
+      "confusabilityGroup": "output-quality",
+      "questionVariants": [
+        "Why might a sharp projector still show a blurry original photo?",
+        "Why will a higher-resolution screen not automatically fix a poorly captured image?",
+        "What limits final picture quality when the source file lacks detail?",
+        "Why should a video editor inspect original footage before blaming a display?",
+        "How can unclear source material limit even good output hardware?"
+      ],
+      "answerVariants": [
+        "The output cannot guarantee detail that was never present in the source.",
+        "A better display still presents the limited information supplied by the original file.",
+        "Missing original detail restricts how clear the final result can be.",
+        "The whole path matters, beginning with the quality of the captured information.",
+        "Output quality depends partly on the original data, which may already lack clarity."
+      ]
+    }
+  ]
+}

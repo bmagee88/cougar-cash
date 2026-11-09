@@ -93,6 +93,9 @@ const Proficiency: React.FC<{ percent: number | null; total: number }> = ({ perc
 
 const courseIds = new Set([
   "computers-ch1-s3-s4", "computers-ch1-s5", "computers-ch1-s5-grade3",
+  "computers-ch3-vocabulary", "computers-ch3-comprehension",
+  "computers-ch4-vocabulary", "computers-ch4-comprehension",
+  "computers-ch5-vocabulary", "computers-ch5-comprehension",
   "canva-creators-ch3", "canva-creators-ch4", "canva-creators-ch5", "canva-creators-ch9",
 ]);
 const courseQuizzes = quizzes.filter((quiz) => courseIds.has(quiz.id));

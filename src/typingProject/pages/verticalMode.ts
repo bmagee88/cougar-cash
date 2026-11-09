@@ -15,6 +15,14 @@ export type VerticalHomeKey = keyof typeof VERTICAL_COLUMNS;
 export const VERTICAL_KEY_STORAGE = "typingDdrVerticalHomeKey";
 export const VERTICAL_ROW_POSITIONS = [59, 74, 89] as const;
 
+export type VerticalNoteMotion = { startX: number; travelMs: number };
+
+// Keep sideways notes readable on small screens and cap their movement speed
+// on wider screens. Distance includes the offscreen entry margin.
+export function getVerticalNoteMotion(startX: number): VerticalNoteMotion {
+  return { startX, travelMs: Math.max(3200, Math.round(Math.abs(startX) / 240 * 1000)) };
+}
+
 export function isVerticalHomeKey(key: string): key is VerticalHomeKey {
   return Object.prototype.hasOwnProperty.call(VERTICAL_COLUMNS, key);
 }

@@ -1,0 +1,637 @@
+{
+  "id": "computers-ch5-vocabulary",
+  "quizName": "Inside the Computer: Vocabulary",
+  "description": "Learn the words for internal parts, working memory, graphics, connections, power, cooling, and system performance.",
+  "quizNumber": 8,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 5",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "motherboard",
+      "conceptName": "Motherboard and System Board",
+      "confusabilityGroup": "boards",
+      "questionVariants": [
+        "What is the motherboard?",
+        "What is meant by a computer's system board?",
+        "What main role does a motherboard perform?",
+        "Why is the motherboard called the mainboard?",
+        "What does the system board connect?"
+      ],
+      "answerVariants": [
+        "The main circuit board that physically and electrically connects major components.",
+        "A central board linking processors, memory, and other hardware.",
+        "The primary board providing connections among a computer's parts.",
+        "A main electronic board supplying connection points and pathways for components.",
+        "The central circuit board that joins major parts into a system."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "pcb",
+      "conceptName": "Printed Circuit Board",
+      "confusabilityGroup": "boards",
+      "questionVariants": [
+        "What is a printed circuit board?",
+        "What does PCB describe?",
+        "How does a printed circuit board carry electrical signals?",
+        "What kind of board has designed conductive pathways?",
+        "What feature defines a printed circuit board?"
+      ],
+      "answerVariants": [
+        "A board with designed conductive pathways for signals and electrical power.",
+        "A support board containing electrical routes connecting electronic parts.",
+        "A circuit-carrying board that directs signals and energy between components.",
+        "A board whose conductive paths link electronic parts.",
+        "A physical board with planned electrical connections among attached components."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "cpu",
+      "conceptName": "CPU and Processor",
+      "confusabilityGroup": "processing",
+      "questionVariants": [
+        "What does the CPU do?",
+        "What is the job of the central processing unit?",
+        "What role does a general-purpose processor perform?",
+        "How does the CPU help software run?",
+        "What work is handled by the CPU?"
+      ],
+      "answerVariants": [
+        "It executes general-purpose program instructions, calculations, and logical operations.",
+        "It carries out software directions and coordinates many computing tasks.",
+        "It processes instructions such as arithmetic, comparison, and data movement.",
+        "It performs the general calculations and decisions requested by programs.",
+        "It follows software instructions to carry out and coordinate operations."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "instruction",
+      "conceptName": "Instruction",
+      "confusabilityGroup": "processing",
+      "questionVariants": [
+        "What is an instruction in computing?",
+        "What does a processor instruction specify?",
+        "What information tells processing hardware which operation to perform?",
+        "What is meant by a machine instruction?",
+        "What does software supply as instructions?"
+      ],
+      "answerVariants": [
+        "A direction telling processing hardware what operation to perform.",
+        "A command specifying a calculation, comparison, movement, or other operation.",
+        "A detailed software direction carried out by a processor.",
+        "A step that tells computing hardware which action to execute.",
+        "An encoded command directing a particular processing operation."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "core",
+      "conceptName": "Processor Core",
+      "confusabilityGroup": "processing",
+      "questionVariants": [
+        "What is a processor core?",
+        "What does core mean inside a CPU?",
+        "What job can an individual core carry out?",
+        "What is one processing unit within a CPU called a core?",
+        "What is the role of each processor core?"
+      ],
+      "answerVariants": [
+        "A processing unit capable of executing instructions.",
+        "An instruction-executing unit within a processor.",
+        "A part of a processor that can carry out a stream of instructions.",
+        "A computing unit that performs program operations within the processor.",
+        "One unit inside a processor that handles instruction processing."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "clock-rate",
+      "conceptName": "Clock Rate",
+      "confusabilityGroup": "processing",
+      "questionVariants": [
+        "What does processor clock rate describe?",
+        "What does clock frequency measure for a processor?",
+        "What CPU timing feature is called clock rate?",
+        "What is counted by a processor's clock-rate specification?",
+        "What does a processor frequency value describe?"
+      ],
+      "answerVariants": [
+        "The number of clock cycles per second.",
+        "How quickly the processor's timing cycles repeat.",
+        "The frequency of the processor's timing signal.",
+        "The rate of timing cycles used by the processor.",
+        "How many processor clock ticks occur each second."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "gigahertz",
+      "conceptName": "Gigahertz",
+      "confusabilityGroup": "processing",
+      "questionVariants": [
+        "What does one gigahertz mean?",
+        "What rate is represented by 1 GHz?",
+        "How many cycles per second are in one gigahertz?",
+        "What does the unit gigahertz measure?",
+        "What timing rate does a value of 1 GHz describe?"
+      ],
+      "answerVariants": [
+        "One billion cycles per second.",
+        "A frequency of 1,000,000,000 cycles each second.",
+        "A billion repeated timing cycles during one second.",
+        "One thousand million cycles occurring every second.",
+        "A rate of one billion clock cycles in a second."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "cache",
+      "conceptName": "Cache",
+      "confusabilityGroup": "memory",
+      "questionVariants": [
+        "What is CPU cache?",
+        "Why does a processor use cache?",
+        "What kind of memory is cache near processing cores?",
+        "What does cache keep close to a processor?",
+        "What is the role of fast processor cache?"
+      ],
+      "answerVariants": [
+        "Small, very fast memory for frequently needed data and instructions.",
+        "A nearby high-speed memory holding information the processor may need soon.",
+        "Fast local memory that reduces waiting for likely-needed information.",
+        "A small memory close to processing cores for quick access to useful information.",
+        "High-speed memory that keeps commonly needed instructions and data nearby."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "ram",
+      "conceptName": "RAM and Working Memory",
+      "confusabilityGroup": "memory",
+      "questionVariants": [
+        "What is the job of RAM?",
+        "What does working memory hold?",
+        "Why do active programs use RAM?",
+        "What information is kept in random access memory during work?",
+        "What role does RAM perform while a computer runs?"
+      ],
+      "answerVariants": [
+        "Fast temporary workspace for programs and data currently in use.",
+        "Memory that holds the information active software is working with.",
+        "Working space for open applications and their current data.",
+        "Short-term active memory used while programs operate.",
+        "A fast area holding information needed by running software."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "volatile-memory",
+      "conceptName": "Volatile Memory",
+      "confusabilityGroup": "memory",
+      "questionVariants": [
+        "What does volatile memory mean?",
+        "What happens to volatile memory contents without power?",
+        "What makes a kind of memory volatile?",
+        "How does volatile memory depend on electricity?",
+        "What property does volatile describe in main memory?"
+      ],
+      "answerVariants": [
+        "It needs electrical power to keep its contents.",
+        "Its active data is lost when power is removed.",
+        "It retains information only while supplied with electricity.",
+        "It cannot maintain stored values after its electrical supply stops.",
+        "Its information does not persist through loss of power."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "persistent-storage",
+      "conceptName": "Persistent Storage",
+      "confusabilityGroup": "memory",
+      "questionVariants": [
+        "What is persistent storage used for?",
+        "What does long-term storage do?",
+        "What role lets files remain after shutdown?",
+        "What does storage keep for later use?",
+        "How is persistent storage different in purpose from active workspace?"
+      ],
+      "answerVariants": [
+        "Keeping saved programs and files for later, including after power is off.",
+        "Retaining information beyond the current working session.",
+        "Holding data over time without needing the computer to stay on.",
+        "Preserving saved information for use after shutdown.",
+        "Maintaining files and other data for future sessions."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "gpu",
+      "conceptName": "GPU",
+      "confusabilityGroup": "graphics",
+      "questionVariants": [
+        "What is the job of a GPU?",
+        "What does a graphics processing unit specialize in?",
+        "What work is a GPU especially designed for?",
+        "Why does a system use a GPU?",
+        "What kinds of calculations suit graphics-processing hardware?"
+      ],
+      "answerVariants": [
+        "Graphics and other workloads with many similar calculations done in parallel.",
+        "Specialized processing that handles large amounts of similar work at once.",
+        "Producing graphics and accelerating suitable parallel calculations.",
+        "Fast processing of many related calculations for images and other supported tasks.",
+        "Highly parallel work, including visual scenes and other suitable data processing."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "parallel-processing",
+      "conceptName": "Parallel Processing",
+      "confusabilityGroup": "graphics",
+      "questionVariants": [
+        "What does parallel processing mean?",
+        "How is work handled in parallel?",
+        "What does it mean to process many pieces of data in parallel?",
+        "What is the idea behind parallel calculations?",
+        "How does parallel work differ from doing each part one after another?"
+      ],
+      "answerVariants": [
+        "Multiple parts of a task are worked on at the same time.",
+        "Several calculations or streams of work proceed together.",
+        "Work is divided so many operations can happen simultaneously.",
+        "More than one piece of the computation is handled at once.",
+        "Separate portions of a task run alongside each other."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "integrated-graphics",
+      "conceptName": "Integrated Graphics",
+      "confusabilityGroup": "graphics",
+      "questionVariants": [
+        "What is integrated graphics?",
+        "Where does integrated graphics fit within a computer design?",
+        "How is an integrated GPU packaged?",
+        "What arrangement defines integrated graphics?",
+        "How does integrated graphics commonly use memory?"
+      ],
+      "answerVariants": [
+        "Graphics processing built into a processor or tightly joined design, often sharing system memory.",
+        "A built-in graphics processor commonly using the computer's main memory.",
+        "Graphics hardware included in the processor package or closely combined system.",
+        "A closely integrated graphics solution that often shares main system resources.",
+        "Graphics processing incorporated into the main design rather than a separate add-in card."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "discrete-graphics",
+      "conceptName": "Discrete Graphics",
+      "confusabilityGroup": "graphics",
+      "questionVariants": [
+        "What is discrete graphics?",
+        "What arrangement defines a discrete GPU?",
+        "How is discrete graphics provided in a computer?",
+        "How does discrete graphics commonly use memory?",
+        "What makes graphics hardware discrete?"
+      ],
+      "answerVariants": [
+        "A separate graphics-processing component, commonly with dedicated graphics memory.",
+        "Graphics provided by distinct hardware that often has its own memory.",
+        "A separate graphics solution rather than one built into the main processor design.",
+        "Dedicated graphics hardware, often supplied on an add-in card.",
+        "An independent graphics component commonly using its own video memory."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "graphics-card",
+      "conceptName": "Graphics Card",
+      "confusabilityGroup": "graphics",
+      "questionVariants": [
+        "What is a graphics card?",
+        "How is a graphics card more than its main processing chip?",
+        "What hardware is included on a graphics card?",
+        "What does a complete add-in graphics card contain?",
+        "What is meant by the graphics card as a whole?"
+      ],
+      "answerVariants": [
+        "A circuit board carrying a GPU and supporting memory, power, cooling, and connections.",
+        "A complete board containing a graphics processor plus the parts needed to support it.",
+        "An add-in board with a graphics chip and its supporting electronics.",
+        "The assembled board around a graphics processor, including support components.",
+        "A hardware board that includes the graphics chip rather than just the chip alone."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "interconnect",
+      "conceptName": "Interconnect and Bus",
+      "confusabilityGroup": "connections",
+      "questionVariants": [
+        "What is an internal interconnect?",
+        "What is the purpose of a computer bus?",
+        "How do interconnects link internal components?",
+        "What role do internal communication pathways perform?",
+        "What does the term bus describe in this chapter?"
+      ],
+      "answerVariants": [
+        "A communication pathway that lets components exchange information.",
+        "An internal connection system carrying data between hardware parts.",
+        "A route through which computer components send and receive information.",
+        "A set of communication links used to move data within the system.",
+        "A pathway or communication system connecting parts that need to share data."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "pcie",
+      "conceptName": "PCI Express",
+      "confusabilityGroup": "connections",
+      "questionVariants": [
+        "What is PCI Express used for?",
+        "What is PCIe in a computer?",
+        "What role does PCI Express play in internal expansion?",
+        "How does PCIe connect compatible hardware?",
+        "What kind of system is PCI Express?"
+      ],
+      "answerVariants": [
+        "A standardized high-performance internal connection for hardware such as graphics and network cards.",
+        "A communication standard used to link compatible expansion devices.",
+        "An internal connection standard for high-performance devices and add-in hardware.",
+        "A standardized interconnect for components such as graphics, networking, and storage hardware.",
+        "A common internal communication technology supporting compatible expansion connections."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "expansion-slot",
+      "conceptName": "Expansion Slot",
+      "confusabilityGroup": "connections",
+      "questionVariants": [
+        "What is an expansion slot?",
+        "What does a motherboard expansion slot provide?",
+        "How can an expansion slot add internal capabilities?",
+        "What is the purpose of a slot for an add-in card?",
+        "What hardware connection accepts compatible expansion cards?"
+      ],
+      "answerVariants": [
+        "A connection point for adding compatible internal hardware cards.",
+        "A board connector that can accept an additional device such as a graphics or network card.",
+        "A place to install a supported add-in card for a new capability.",
+        "An internal slot that joins an added hardware card to the computer.",
+        "A connector for fitting compatible expansion hardware into a system."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "psu",
+      "conceptName": "Power Supply Unit",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What does a desktop power supply unit do?",
+        "What is the job of the PSU?",
+        "How does a PSU help internal components operate?",
+        "What role does a desktop power supply perform?",
+        "What does the power supply convert for computer parts?"
+      ],
+      "answerVariants": [
+        "Incoming electrical power into forms the internal components can use.",
+        "It provides usable electrical energy to desktop components.",
+        "It converts the electrical supply to the forms needed inside the computer.",
+        "It delivers suitable operating power to internal hardware.",
+        "It supplies converted electrical power for the system's components."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "battery",
+      "conceptName": "Battery",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What role does a battery play in a portable computer?",
+        "How can a battery supply a laptop away from an outlet?",
+        "What does a computer battery store for use?",
+        "What is the power purpose of a battery?",
+        "What does a portable device draw from its battery?"
+      ],
+      "answerVariants": [
+        "Stored energy that can provide electricity for operation.",
+        "An energy source that powers the device without a continuous outlet connection.",
+        "Energy kept for supplying electrical power while portable.",
+        "A reserve of energy used to run the computer away from external power.",
+        "Electrical operating power from stored energy."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "heatsink",
+      "conceptName": "Heatsink",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What does a heatsink do?",
+        "Why is a heatsink placed near a processor?",
+        "What is the cooling job of a heatsink?",
+        "How does a heatsink help a hot component?",
+        "What is the role of a heatsink's large surface area?"
+      ],
+      "answerVariants": [
+        "It transfers heat away from a component toward surrounding air.",
+        "It spreads heat from a chip over a surface that can release it.",
+        "It helps move thermal energy out of a hot component.",
+        "It carries heat away so more can pass into the air.",
+        "It provides a larger area for releasing a component's heat."
+      ]
+    },
+    {
+      "position": 23,
+      "conceptKey": "fan",
+      "conceptName": "Fan",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What does a cooling fan do?",
+        "How does a fan help computer components stay cool?",
+        "What is the main cooling role of a fan?",
+        "What does a fan move through the computer?",
+        "How does powered fan cooling carry heat away?"
+      ],
+      "answerVariants": [
+        "It moves air to bring cooler air in and warmer air away.",
+        "It pushes air across parts and helps remove warmed air.",
+        "It circulates air so heat can leave the system.",
+        "It drives airflow that carries heat away from components.",
+        "It moves cool air toward hardware and heated air out."
+      ]
+    },
+    {
+      "position": 24,
+      "conceptKey": "airflow",
+      "conceptName": "Airflow",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What is airflow in a computer?",
+        "What does system airflow describe?",
+        "How does air travel through a cooling system?",
+        "What route is meant by a computer's airflow?",
+        "What is being described when technicians discuss case airflow?"
+      ],
+      "answerVariants": [
+        "The movement of air through and around components to carry heat away.",
+        "A flow of cooler air in and warmer air out of the computer.",
+        "The path taken by moving air as it passes over hardware.",
+        "Air circulation that transfers heat out of the system.",
+        "The movement of cooling air through the enclosure and vents."
+      ]
+    },
+    {
+      "position": 25,
+      "conceptKey": "passive-cooling",
+      "conceptName": "Passive Cooling",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What is passive cooling?",
+        "How can a computer cool itself without an active fan?",
+        "What methods define passive cooling?",
+        "What kind of cooling uses natural air movement?",
+        "How does a passively cooled device release heat?"
+      ],
+      "answerVariants": [
+        "Using surfaces, heatsinks, and natural airflow without a powered cooling fan.",
+        "Releasing heat through the enclosure and other surfaces without fan-driven air.",
+        "Cooling by heat spreading and natural air circulation.",
+        "A fanless approach using materials and exposed surfaces to shed heat.",
+        "Heat removal through passive surfaces and surrounding air rather than a running fan."
+      ]
+    },
+    {
+      "position": 26,
+      "conceptKey": "thermal-management",
+      "conceptName": "Thermal Management",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What does thermal management mean?",
+        "What is the purpose of managing computer heat?",
+        "What does a thermal-management system control?",
+        "What goal links a computer's cooling and heat-control methods?",
+        "What do engineers aim for through thermal management?"
+      ],
+      "answerVariants": [
+        "Keeping component temperatures within suitable operating limits.",
+        "Controlling heat so the hardware can operate reliably.",
+        "Managing heat production and removal to avoid excessive temperature.",
+        "Using design and controls to maintain acceptable temperatures.",
+        "Balancing heat generation and cooling for reliable operation."
+      ]
+    },
+    {
+      "position": 27,
+      "conceptKey": "thermal-throttling",
+      "conceptName": "Thermal Throttling",
+      "confusabilityGroup": "power-cooling",
+      "questionVariants": [
+        "What is thermal throttling?",
+        "Why might a hot processor automatically reduce its speed?",
+        "What happens when a processor uses thermal throttling?",
+        "What heat-protection action is called throttling?",
+        "How can a computer reduce performance to control excess heat?"
+      ],
+      "answerVariants": [
+        "The system lowers processing performance to reduce heat production.",
+        "A processor slows its work to help bring down its temperature.",
+        "Processing speed is reduced in response to excessive heat.",
+        "The computer limits performance to lower the heat it creates.",
+        "A protective reduction in processor activity helps control overheating."
+      ]
+    },
+    {
+      "position": 28,
+      "conceptKey": "bottleneck",
+      "conceptName": "Bottleneck",
+      "confusabilityGroup": "system-design",
+      "questionVariants": [
+        "What is a bottleneck in a computer system?",
+        "What does the term bottleneck describe?",
+        "How does a bottleneck affect a workflow?",
+        "What makes a component a bottleneck for a task?",
+        "What limits a system when it has a bottleneck?"
+      ],
+      "answerVariants": [
+        "A resource that limits how fast the whole workflow can proceed.",
+        "The part whose limited capacity holds back the rest of the task.",
+        "A stage that makes other parts wait and restricts total progress.",
+        "One limiting resource that slows the larger system's work.",
+        "The constraint setting the pace of the complete operation."
+      ]
+    },
+    {
+      "position": 29,
+      "conceptKey": "soc",
+      "conceptName": "System-on-Chip",
+      "confusabilityGroup": "system-design",
+      "questionVariants": [
+        "What is a system-on-chip?",
+        "What does SoC mean in hardware packaging?",
+        "How are functions combined in a system-on-chip?",
+        "What arrangement is described by system-on-chip?",
+        "What is the idea behind an SoC design?"
+      ],
+      "answerVariants": [
+        "Several computing functions combined in a highly integrated chip or package.",
+        "A compact chip design combining processor, graphics, controllers, or other capabilities.",
+        "Multiple system roles integrated into a small chip-based design.",
+        "A single highly integrated design containing several major computing functions.",
+        "A chip or package bringing together functions that could otherwise use separate parts."
+      ]
+    },
+    {
+      "position": 30,
+      "conceptKey": "modular-design",
+      "conceptName": "Modular Design",
+      "confusabilityGroup": "system-design",
+      "questionVariants": [
+        "What is a modular computer design?",
+        "What does modular hardware make easier?",
+        "How are parts arranged in a modular system?",
+        "What feature defines a modular computer?",
+        "What does modularity allow technicians to do?"
+      ],
+      "answerVariants": [
+        "Use separate components that can often be replaced or upgraded individually.",
+        "A design built from parts that can be changed independently when compatible.",
+        "An arrangement with distinct hardware pieces available for replacement or expansion.",
+        "A system whose separate modules can support repair and upgrades.",
+        "A design that lets suitable individual parts be removed and replaced."
+      ]
+    },
+    {
+      "position": 31,
+      "conceptKey": "diagnostics",
+      "conceptName": "Diagnostics",
+      "confusabilityGroup": "system-testing",
+      "questionVariants": [
+        "What are computer diagnostics used for?",
+        "What does diagnostic software help reveal?",
+        "What is the purpose of a hardware diagnostic tool?",
+        "What information do diagnostics provide for troubleshooting?",
+        "How do diagnostics help investigate internal components?"
+      ],
+      "answerVariants": [
+        "Measurements and tests that provide evidence about system operation.",
+        "Tools for observing component use, conditions, and possible faults.",
+        "Software checks that report how hardware is behaving.",
+        "Tests and readings used to investigate the computer's condition.",
+        "Evidence such as usage, temperature, or test results to guide problem solving."
+      ]
+    }
+  ]
+}

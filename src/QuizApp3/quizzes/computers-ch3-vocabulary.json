@@ -1,0 +1,617 @@
+{
+  "id": "computers-ch3-vocabulary",
+  "quizName": "Input: Vocabulary",
+  "description": "Learn the words for input tools, text entry, sound, pictures, sensors, and responsible data collection.",
+  "quizNumber": 4,
+  "gradeLevel": 5,
+  "teacher": "Magee",
+  "sources": [
+    {
+      "textbook": "Computers, Devices, and Cables (2026)",
+      "chapters": "Chapter 3",
+      "sections": ""
+    }
+  ],
+  "concepts": [
+    {
+      "position": 1,
+      "conceptKey": "input",
+      "conceptName": "Input",
+      "confusabilityGroup": "input-basics",
+      "questionVariants": [
+        "What does input mean in computing?",
+        "How is input defined?",
+        "What enters a system as input?",
+        "What is meant by computer input?",
+        "What kind of information counts as input?"
+      ],
+      "answerVariants": [
+        "Data or commands entering a computing system.",
+        "Information sent into a computer for use.",
+        "Facts or directions received by a computing system.",
+        "Information arriving so a computer can work with it.",
+        "Data coming into a system from outside it."
+      ]
+    },
+    {
+      "position": 2,
+      "conceptKey": "input-device",
+      "conceptName": "Input Device",
+      "confusabilityGroup": "input-basics",
+      "questionVariants": [
+        "What is an input device?",
+        "What makes hardware an input device?",
+        "What role defines an input device?",
+        "What is the purpose of input hardware?",
+        "What does the term input device describe?"
+      ],
+      "answerVariants": [
+        "Hardware that sends data or commands into a computer.",
+        "Equipment used to deliver information to a computing system.",
+        "A physical tool for bringing data into a computer.",
+        "Hardware through which a system receives information.",
+        "Equipment that passes outside information into a computer."
+      ]
+    },
+    {
+      "position": 3,
+      "conceptKey": "keyboard",
+      "conceptName": "Keyboard",
+      "confusabilityGroup": "text-input",
+      "questionVariants": [
+        "What is a keyboard used for?",
+        "What information can a keyboard enter?",
+        "What does a keyboard let a user send?",
+        "What is the main job of a keyboard?",
+        "How does a keyboard provide input?"
+      ],
+      "answerVariants": [
+        "Entering letters, numbers, and commands by pressing keys.",
+        "Sending text and directions through key presses.",
+        "Using keys to supply words, numbers, and instructions.",
+        "Providing text or commands through physical key actions.",
+        "Pressing keys to enter symbols and software directions."
+      ]
+    },
+    {
+      "position": 4,
+      "conceptKey": "key-event",
+      "conceptName": "Key Event",
+      "confusabilityGroup": "text-input",
+      "questionVariants": [
+        "What is a key event?",
+        "What does the term key event mean?",
+        "What information is reported in a key event?",
+        "What signal counts as a key event?",
+        "What action does a key event report?"
+      ],
+      "answerVariants": [
+        "A signal that a key was pressed, released, or held.",
+        "A report about pressing, holding, or releasing a key.",
+        "Information telling software what happened to a key.",
+        "A message about a key's press, hold, or release.",
+        "A notification of a key action for software to interpret."
+      ]
+    },
+    {
+      "position": 5,
+      "conceptKey": "pointing-device",
+      "conceptName": "Pointing Device",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "What is a pointing device?",
+        "What job defines pointing hardware?",
+        "Why is hardware called a pointing device?",
+        "What does a pointing device help users control?",
+        "What is the shared purpose of pointing devices?"
+      ],
+      "answerVariants": [
+        "Hardware for controlling an on-screen position and selecting items.",
+        "Equipment used to aim at, select, or move screen objects.",
+        "A tool that directs where on-screen actions happen.",
+        "Hardware that lets users choose positions and objects on a screen.",
+        "Equipment for indicating locations and interacting with screen items."
+      ]
+    },
+    {
+      "position": 6,
+      "conceptKey": "pointer",
+      "conceptName": "Pointer",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "What is a pointer on a screen?",
+        "What does an on-screen pointer show?",
+        "What is the role of the pointer symbol?",
+        "What does the pointer mark?",
+        "How does a pointer guide a user's actions?"
+      ],
+      "answerVariants": [
+        "A visible symbol showing where a pointing action will happen.",
+        "An on-screen marker for the location of an action.",
+        "The symbol indicating where a user can click or select.",
+        "A screen marker that tracks the position used for pointing.",
+        "A visible indicator of the current pointing position."
+      ]
+    },
+    {
+      "position": 7,
+      "conceptKey": "mouse",
+      "conceptName": "Mouse",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "How does a computer mouse work as input?",
+        "What does moving a mouse let a user do?",
+        "How does a mouse help select screen items?",
+        "What is the usual job of a mouse?",
+        "How does a mouse control on-screen actions?"
+      ],
+      "answerVariants": [
+        "Moving the handheld tool across a surface directs a pointer; buttons select items.",
+        "Sliding a handheld device moves the cursor, and clicks choose objects.",
+        "A tool moved across a desk sends movement and button actions.",
+        "Moving this handheld tool guides the cursor, while its buttons send clicks.",
+        "Desk movement changes the pointer's position; button presses send selections."
+      ]
+    },
+    {
+      "position": 8,
+      "conceptKey": "touchpad",
+      "conceptName": "Touchpad",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "How does a touchpad provide input?",
+        "What is a touchpad used for?",
+        "How does a laptop touchpad guide a pointer?",
+        "What action controls a touchpad?",
+        "How can someone use a touchpad to select items?"
+      ],
+      "answerVariants": [
+        "Sliding and tapping a finger on a fixed sensing surface controls a pointer.",
+        "A finger moves over a stationary pad to direct the cursor and select items.",
+        "A built-in sensing pad detects finger movement and taps.",
+        "Finger motion on a fixed surface sends pointing and selection actions.",
+        "A stationary laptop pad turns finger slides and taps into cursor actions."
+      ]
+    },
+    {
+      "position": 9,
+      "conceptKey": "touchscreen",
+      "conceptName": "Touchscreen",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "What two jobs define a touchscreen?",
+        "Why does a touchscreen have two computing roles?",
+        "What does a touchscreen both show and detect?",
+        "What makes a touchscreen different from a plain display?",
+        "How does a touchscreen combine receiving and showing information?"
+      ],
+      "answerVariants": [
+        "It displays visual results and detects touches as input.",
+        "It shows images and text while sensing where a user presses.",
+        "It presents pictures and receives touch actions on the same surface.",
+        "It produces visible information and accepts finger or pen contact.",
+        "It lets users see results and send commands by touching the display."
+      ]
+    },
+    {
+      "position": 10,
+      "conceptKey": "gesture",
+      "conceptName": "Gesture",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "What is a gesture in touch input?",
+        "What does gesture mean when using a tablet?",
+        "What kind of action is a touch gesture?",
+        "How is a gesture used to control software?",
+        "What does a device recognize as a gesture?"
+      ],
+      "answerVariants": [
+        "A movement such as a tap, swipe, or pinch used as a command.",
+        "A touch motion that software interprets as an action.",
+        "A recognized finger movement that sends a direction.",
+        "A motion on a sensing surface that communicates what to do.",
+        "A pattern of touch movement interpreted as user input."
+      ]
+    },
+    {
+      "position": 11,
+      "conceptKey": "stylus",
+      "conceptName": "Stylus",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "What is a stylus?",
+        "What kind of input tool is a stylus?",
+        "How is a stylus used with a compatible screen?",
+        "What does the word stylus describe?",
+        "What is the purpose of a stylus?"
+      ],
+      "answerVariants": [
+        "A pen-shaped tool for writing, drawing, or selecting on a compatible surface.",
+        "A digital pen used to make marks or choose items on supported hardware.",
+        "A tool shaped like a pen that sends precise drawing or selection input.",
+        "A handheld pen-like tool for compatible touch or drawing surfaces.",
+        "A pen-style device used to enter handwriting, art, or selections."
+      ]
+    },
+    {
+      "position": 12,
+      "conceptKey": "trackball",
+      "conceptName": "Trackball",
+      "confusabilityGroup": "pointing",
+      "questionVariants": [
+        "How does a trackball control a pointer?",
+        "What action sends input from a trackball?",
+        "How is a trackball operated?",
+        "What moves when someone uses a trackball?",
+        "How can a trackball work without sliding across a desk?"
+      ],
+      "answerVariants": [
+        "The user rotates a ball while the device stays mostly still.",
+        "Rolling its ball changes the cursor position without moving the whole tool.",
+        "A turning ball sends movement while the base remains stationary.",
+        "The ball rotates to guide on-screen pointing from a fixed base.",
+        "Finger movement turns a ball instead of sliding the entire device."
+      ]
+    },
+    {
+      "position": 13,
+      "conceptKey": "controller",
+      "conceptName": "Controller",
+      "confusabilityGroup": "media-input",
+      "questionVariants": [
+        "What is a game controller?",
+        "What does a controller use to send commands?",
+        "What input role does a game controller perform?",
+        "What kind of hardware is a controller?",
+        "How does a controller supply player actions?"
+      ],
+      "answerVariants": [
+        "A command device that uses buttons, sticks, triggers, or other controls.",
+        "Hardware that sends game actions through several physical controls.",
+        "A tool for directing software using buttons, sticks, or motion controls.",
+        "Equipment that turns player control actions into computer commands.",
+        "An input tool combining controls such as buttons and directional sticks."
+      ]
+    },
+    {
+      "position": 14,
+      "conceptKey": "analog-stick",
+      "conceptName": "Analog Stick",
+      "confusabilityGroup": "media-input",
+      "questionVariants": [
+        "What can an analog stick report?",
+        "What makes an analog stick useful beyond a simple button?",
+        "What information can an analog stick send about movement?",
+        "How does analog-stick input describe a push?",
+        "What can software learn from an analog stick?"
+      ],
+      "answerVariants": [
+        "Both the direction and the degree of movement.",
+        "Which way it is pushed and how far.",
+        "The angle of a push and its amount.",
+        "Direction plus the strength of the stick's movement.",
+        "Where the user pushes and the extent of that push."
+      ]
+    },
+    {
+      "position": 15,
+      "conceptKey": "microphone",
+      "conceptName": "Microphone",
+      "confusabilityGroup": "media-input",
+      "questionVariants": [
+        "What does a microphone do as input?",
+        "How does a microphone bring information into a computer?",
+        "What information does a microphone capture?",
+        "What is the main input job of a microphone?",
+        "What does microphone hardware convert into signals?"
+      ],
+      "answerVariants": [
+        "It captures sound and converts it into signals for recording or processing.",
+        "It changes information from sound waves into usable electrical signals.",
+        "It collects audio from the surroundings for a computer to process.",
+        "It turns variations in sound into signals the system can record.",
+        "It receives voices and other sounds as information for the computer."
+      ]
+    },
+    {
+      "position": 16,
+      "conceptKey": "camera",
+      "conceptName": "Camera",
+      "confusabilityGroup": "media-input",
+      "questionVariants": [
+        "What does a camera capture for a computer?",
+        "What is the input job of a camera?",
+        "How does a camera provide visual input?",
+        "What kind of data does a camera collect?",
+        "What information can a digital camera supply?"
+      ],
+      "answerVariants": [
+        "Photographs or video of a scene as digital data.",
+        "Still or moving images representing the visible world.",
+        "Visual information recorded as pictures or video frames.",
+        "Images of a scene that software can process or save.",
+        "Digital pictures or moving-image recordings of surroundings."
+      ]
+    },
+    {
+      "position": 17,
+      "conceptKey": "image-sensor",
+      "conceptName": "Image Sensor",
+      "confusabilityGroup": "media-input",
+      "questionVariants": [
+        "What is the job of an image sensor?",
+        "What does an image sensor detect inside a camera?",
+        "How does an image sensor begin making picture data?",
+        "What information does an image sensor measure?",
+        "What role does an image sensor play after light enters a lens?"
+      ],
+      "answerVariants": [
+        "It measures incoming light so the camera can create picture data.",
+        "A light-sensitive component converts illumination into image signals.",
+        "It detects light at many locations to build visual information.",
+        "It turns received light into measurements for digital pictures.",
+        "It collects light measurements used to form photographs or video."
+      ]
+    },
+    {
+      "position": 18,
+      "conceptKey": "scanner",
+      "conceptName": "Scanner",
+      "confusabilityGroup": "media-input",
+      "questionVariants": [
+        "What does a document scanner do?",
+        "How does a scanner turn paper into computer input?",
+        "What is the purpose of a document scanner?",
+        "What information does a scanner capture from paper?",
+        "How does scanning bring a drawing into a computer?"
+      ],
+      "answerVariants": [
+        "It captures a physical page or picture as digital image data.",
+        "It makes an electronic image of material such as a paper document.",
+        "It reads the appearance of physical material to create a digital copy.",
+        "It changes visual information on paper into data a computer can save.",
+        "It creates digital images from printed pages, photographs, or drawings."
+      ]
+    },
+    {
+      "position": 19,
+      "conceptKey": "barcode",
+      "conceptName": "Barcode and QR Code",
+      "confusabilityGroup": "media-input",
+      "questionVariants": [
+        "What are barcodes and QR codes?",
+        "What do barcode and QR patterns represent?",
+        "How do barcodes and QR codes store information for machines?",
+        "What is the purpose of barcode or QR markings?",
+        "What kind of patterns are barcodes and QR codes?"
+      ],
+      "answerVariants": [
+        "Machine-readable visual patterns that represent coded information.",
+        "Marks arranged to hold information that software can decode.",
+        "Visible codes that a camera or reader can capture and interpret.",
+        "Patterns representing data for automatic optical reading.",
+        "Coded visual arrangements used to identify or share information."
+      ]
+    },
+    {
+      "position": 20,
+      "conceptKey": "sensor",
+      "conceptName": "Sensor",
+      "confusabilityGroup": "measurement",
+      "questionVariants": [
+        "What is a sensor?",
+        "What does sensor hardware detect?",
+        "What kind of input does a sensor provide?",
+        "What is the role of a sensor in physical computing?",
+        "How does a sensor collect information from the world?"
+      ],
+      "answerVariants": [
+        "A device that detects or measures a physical condition.",
+        "Hardware that reports conditions such as temperature, light, or distance.",
+        "A tool that turns a physical condition into data for a system.",
+        "Equipment that detects changes in the surrounding environment.",
+        "A device that measures the physical world and supplies readings."
+      ]
+    },
+    {
+      "position": 21,
+      "conceptKey": "measurement",
+      "conceptName": "Measurement",
+      "confusabilityGroup": "measurement",
+      "questionVariants": [
+        "What is a measurement?",
+        "What does a measurement represent?",
+        "What kind of data is a measurement?",
+        "What is meant by a sensor measurement?",
+        "What does a measurement tell a system?"
+      ],
+      "answerVariants": [
+        "A value found by observing or measuring a quantity.",
+        "A reading that represents how much of something was detected.",
+        "A reported amount for a condition such as temperature or distance.",
+        "A value describing an observed physical quantity.",
+        "A result expressing the amount of a measured condition."
+      ]
+    },
+    {
+      "position": 22,
+      "conceptKey": "calibration",
+      "conceptName": "Calibration",
+      "confusabilityGroup": "measurement",
+      "questionVariants": [
+        "What is calibration?",
+        "Why is a device checked through calibration?",
+        "What happens during calibration?",
+        "How does calibration help a measuring device?",
+        "What does calibrating a sensor involve?"
+      ],
+      "answerVariants": [
+        "Checking or adjusting readings against a known reference.",
+        "Comparing measurements with a trusted value and adjusting if needed.",
+        "Using an accepted reference to check and correct a measuring system.",
+        "Testing readings against a known standard to improve their correctness.",
+        "Checking a device's response with a trusted comparison and making corrections."
+      ]
+    },
+    {
+      "position": 23,
+      "conceptKey": "sampling",
+      "conceptName": "Sampling",
+      "confusabilityGroup": "measurement",
+      "questionVariants": [
+        "What does sampling mean for a sensor?",
+        "What is a sampling schedule?",
+        "How does sampling collect changing data?",
+        "What is meant by sampling a condition?",
+        "What does a system do when it samples temperature?"
+      ],
+      "answerVariants": [
+        "It takes readings at particular times or intervals.",
+        "It records measurements according to a timing pattern.",
+        "It checks a changing quantity at selected moments.",
+        "It collects values at chosen points in time.",
+        "It measures a condition repeatedly using set time gaps."
+      ]
+    },
+    {
+      "position": 24,
+      "conceptKey": "accuracy",
+      "conceptName": "Accuracy",
+      "confusabilityGroup": "measurement",
+      "questionVariants": [
+        "What does accuracy describe?",
+        "How is measurement accuracy defined?",
+        "What does an accurate reading mean?",
+        "What does accuracy tell us about a result?",
+        "What quality is judged when checking accuracy?"
+      ],
+      "answerVariants": [
+        "How close a result is to the correct or accepted value.",
+        "The degree to which a reading agrees with a trusted value.",
+        "How nearly a measurement matches the value it should have.",
+        "The closeness of reported data to an accepted reference.",
+        "How well a result represents the correct amount."
+      ]
+    },
+    {
+      "position": 25,
+      "conceptKey": "accessibility",
+      "conceptName": "Accessibility",
+      "confusabilityGroup": "responsible-input",
+      "questionVariants": [
+        "What does accessibility mean in input design?",
+        "What is the goal of accessible input?",
+        "What makes input design accessible?",
+        "What user need does accessibility address?",
+        "What does accessibility aim to support?"
+      ],
+      "answerVariants": [
+        "People with different abilities and needs can use the technology effectively.",
+        "Design supports users who need different ways to control a device.",
+        "The system can be operated by people with varied abilities.",
+        "Users with different physical or other needs can successfully enter information.",
+        "Technology provides workable ways for people with differing needs to participate."
+      ]
+    },
+    {
+      "position": 26,
+      "conceptKey": "dictation",
+      "conceptName": "Dictation and Speech Input",
+      "confusabilityGroup": "text-input",
+      "questionVariants": [
+        "What does dictation do?",
+        "How does speech dictation enter text?",
+        "What is the result of using dictation in a document?",
+        "What does a speech-to-text feature produce?",
+        "How can dictation replace typing words?"
+      ],
+      "answerVariants": [
+        "It turns spoken words into written text.",
+        "It creates text from what a person says.",
+        "It changes speech into words in a document.",
+        "It writes recognized spoken language as text.",
+        "It enters written words by recognizing a user's voice."
+      ]
+    },
+    {
+      "position": 27,
+      "conceptKey": "switch-access",
+      "conceptName": "Switch Access",
+      "confusabilityGroup": "text-input",
+      "questionVariants": [
+        "What is Switch Access?",
+        "How does Switch Access let a person control a device?",
+        "What alternative control method does Switch Access provide?",
+        "What is the purpose of Switch Access?",
+        "How can Switch Access replace usual pointer controls?"
+      ],
+      "answerVariants": [
+        "It lets a user operate a device with one or more switches.",
+        "It provides navigation and selection through switch presses.",
+        "It replaces typical touch or mouse actions with switch controls.",
+        "It allows commands using a small set of physical switches.",
+        "It supports device control by detecting switch activations."
+      ]
+    },
+    {
+      "position": 28,
+      "conceptKey": "permission",
+      "conceptName": "Permission",
+      "confusabilityGroup": "responsible-input",
+      "questionVariants": [
+        "What is a device permission?",
+        "What does an app's camera permission control?",
+        "What is meant by microphone permission?",
+        "What does a permission setting decide?",
+        "What role does permission play in device access?"
+      ],
+      "answerVariants": [
+        "A setting that allows or blocks software access to hardware or information.",
+        "A rule deciding whether an application may use a feature or device.",
+        "An access control that grants or denies an app use of a resource.",
+        "A setting determining which software can receive device data.",
+        "A rule controlling whether a program may reach a device or information."
+      ]
+    },
+    {
+      "position": 29,
+      "conceptKey": "privacy",
+      "conceptName": "Privacy",
+      "confusabilityGroup": "responsible-input",
+      "questionVariants": [
+        "What does privacy concern when devices collect input?",
+        "What is protected by privacy practices for recordings?",
+        "What does input privacy involve?",
+        "What does privacy mean for camera and microphone data?",
+        "What concern is addressed by input privacy controls?"
+      ],
+      "answerVariants": [
+        "Who can collect, use, or receive personal information.",
+        "Control over access to information about people and their surroundings.",
+        "Protecting people's information from unwanted collection or sharing.",
+        "Keeping sensitive recordings and other personal data under appropriate control.",
+        "Deciding how personal data is gathered and who may access it."
+      ]
+    },
+    {
+      "position": 30,
+      "conceptKey": "troubleshooting",
+      "conceptName": "Troubleshooting",
+      "confusabilityGroup": "input-testing",
+      "questionVariants": [
+        "What is troubleshooting?",
+        "What kind of process is troubleshooting?",
+        "What does troubleshooting involve?",
+        "What is the purpose of troubleshooting steps?",
+        "How is troubleshooting different from random guessing?"
+      ],
+      "answerVariants": [
+        "A step-by-step process of testing to find and solve a problem.",
+        "An orderly investigation that uses evidence to identify a fault.",
+        "Checking possible causes in a planned way to solve a failure.",
+        "Using observations and controlled tests to locate a problem.",
+        "Following a logical sequence to discover and fix what went wrong."
+      ]
+    }
+  ]
+}
