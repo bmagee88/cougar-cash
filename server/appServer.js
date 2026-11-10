@@ -2046,6 +2046,7 @@ async function handleStartTypingBossSession(req, res, session, url) {
 
   const now = Date.now();
   if (session.mode === "proportional") {
+    proportionalBoss.applyWordFilters(session, body.gradeLevels, body.sentiments);
     proportionalBoss.applyHpMultiplier(session, body.hpMultiplier === undefined ? 1 : body.hpMultiplier);
     session.startingPlayers = session.players.size;
     session.startedAt = now;

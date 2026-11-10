@@ -1,3 +1,5 @@
+import WordFilterChips, { WordFilters, filteredWordCount } from "../typingProject/components/WordFilterChips";
+import { SENTIMENTS } from "../typingProject/resources/homeRowWordBank";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
@@ -1532,13 +1534,14 @@ function HostSessionPage() {
   );
   const [copied, setCopied] = useState(false);
   const [hpMultiplier, setHpMultiplier] = useState(1);
+  const [wordFilters, setWordFilters] = useState<WordFilters>({});
   const lobbyPreview = useMemo(() => {
     if (!session || session.mode !== "proportional" || session.status !== "setup") return session;
     const playerHp = 100 * hpMultiplier;
     const bossHp = playerHp * session.players.length;
-    return { ...session, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
+    return { ...session, typing: session.typing ? { ...session.typing, ...wordFilters } : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
       players: session.players.map(player => ({ ...player, hp: playerHp, maxHp: playerHp })) };
-  }, [session, hpMultiplier]);
+  }, [session, hpMultiplier, wordFilters]);
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
   const [codeModalOpen, setCodeModalOpen] = useState(false);
@@ -1602,6 +1605,7 @@ function HostSessionPage() {
 
   return (
     <PageFrame>
+      <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
       <ReconnectOverlay show={reconnecting} />
       <Stack spacing={2}>
         <Stack
@@ -1653,10 +1657,10 @@ function HostSessionPage() {
             <Button
               variant="contained"
               startIcon={<PlayArrowIcon />}
-              disabled={busy || session.status !== "setup"}
+              disabled={busy || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
               onClick={() =>
                 runHostAction(() =>
-                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier)
+                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)))
                 )
               }
             >
@@ -1683,6 +1687,7 @@ function HostSessionPage() {
 
         {session.mode === "proportional" ? <>
           {session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <WordFilterChips value={wordFilters} onChange={setWordFilters} disabled={busy} />
             <Typography id="hp-multiplier-label" fontWeight={900}>HP multiplier: ×{hpMultiplier}</Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
               Players start with {(100 * hpMultiplier).toLocaleString()} HP each. The dragon starts with {(100 * hpMultiplier * session.players.length).toLocaleString()} HP. Damage stays the same for both sides.
@@ -1692,7 +1697,7 @@ function HostSessionPage() {
               marks={[{ value: 1, label: "1×" }, { value: 10, label: "10×" }, { value: 30, label: "30×" }, { value: 60, label: "60×" }, { value: 100, label: "100×" }]} />
           </Paper>}
           <HostBattlefield session={lobbyPreview!} />
-          <ContinuousTyping key={session.typing!.seed} sessionId={normalizedSessionId} credentials={{ hostToken }} state={session.typing!} active={session.status === "active" && connected} divisor={session.startingPlayers || 1} />
+          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}`} sessionId={normalizedSessionId} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected} divisor={session.startingPlayers || 1} />}
           <DamageBoard session={lobbyPreview!} />
         </> : <Grid container spacing={2}>
           <Grid item xs={12} lg={8}>
@@ -2015,6 +2020,7 @@ function PlayerSessionPage() {
 
   return (
     <PageFrame>
+      <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
       <ReconnectOverlay show={reconnecting} />
       {session.mode === "proportional" ? <Stack spacing={2}>
         <PlayerBattlefield session={session} me={me} />

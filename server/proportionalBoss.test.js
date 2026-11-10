@@ -20,7 +20,7 @@ function callbacks() {
 function recordsFor(state, count = 10, correct = true) {
   return Array.from({ length: count }, (_, n) => {
     const index = state.nextWord + n;
-    const text = rules.wordAt(state.seed, index).text + (index % 10 === 9 ? "" : " ");
+    const text = rules.wordAt(state.seed, index, state.gradeMask, state.sentimentMask).text + (index % 10 === 9 ? "" : " ");
     const intervals = text.length - (index % 10 === 0 ? 1 : 0);
     return [index, correct ? text : "!".repeat(text.length - (index % 10 === 9 ? 0 : 1)) + (index % 10 === 9 ? "" : " "), intervals, intervals * 200, intervals * 40000];
   });
@@ -63,7 +63,7 @@ test("the tenth word applies its color before release, including immediate defen
 
 test("word generation uses the exact Home Row Run pool, deterministically, with 30% colors", () => {
   const byLength = require("../src/typingProject/resources/homeRowWords.json");
-  const original = Object.keys(byLength).filter(key => !isNaN(Number(key))).flatMap(key => byLength[key]);
+  const original = Object.keys(byLength).filter(key => !isNaN(Number(key))).flatMap(key => byLength[key].map(entry => entry.word));
   assert.deepEqual(rules.WORDS, original);
   const colors = { blue: 0, orange: 0, red: 0, green: 0, none: 0 };
   for (let i = 0; i < 20000; i++) {
@@ -335,4 +335,55 @@ test("word submissions without the required trailing space are rejected", () => 
   records[0][1] = records[0][1].trimEnd();
   assert.throws(() => engine.submitWords(session, {role:"player", actorCode:"0"}, records, callbacks()), /Invalid word/);
   assert.equal(session.players.get("0").typing.nextWord, 0);
+});
+
+
+test("selected grades filter every generated word and server validation uses the same pool", () => {
+  const session = sessionWithPlayers(2);
+  session.status = "setup";
+  engine.applyGradeLevels(session, [0, 2]);
+  const mask = (1 << 0) | (1 << 2);
+  assert.equal(session.typingHost.gradeMask, mask);
+  assert.ok([...session.players.values()].every(player => player.typing.gradeMask === mask));
+  const entries = Object.values(require("../src/typingProject/resources/homeRowWordBank").entriesByLength).flat();
+  const eligible = new Set(entries.filter(entry => [0,2].includes(entry.gradeLevel)).map(entry => entry.word));
+  for (let index = 0; index < 1000; index++) assert.ok(eligible.has(rules.wordAt(123, index, mask).text));
+  assert.ok(!rules.wordsForGrades(mask).includes("upn"));
+  session.status = "active";
+  engine.submitWords(session, {role:"player", actorCode:"0"}, recordsFor(session.players.get("0").typing), callbacks());
+  assert.equal(session.projectiles.length, 1);
+  assert.throws(() => engine.applyGradeLevels(session, [1]), /before/);
+});
+
+test("invalid or empty grade selections are rejected without changing the pool", () => {
+  const session = sessionWithPlayers(1); session.status = "setup";
+  for (const grades of [[], [-1], [13], [1.5], ["1"], [12], null]) {
+    assert.throws(() => engine.applyGradeLevels(session, grades));
+    assert.equal(session.typingHost.gradeMask, undefined);
+  }
+  assert.deepEqual(rules.wordsForGrades(), rules.WORDS);
+  assert.deepEqual(rules.wordsForGrades(1), rules.wordsForGrades(1));
+});
+
+
+test("sentiment selections are shared by all actors and invalid combinations are atomic", () => {
+  const session = sessionWithPlayers(2); session.status = "setup";
+  engine.applyWordFilters(session, [0,1,2], ["positive", "negative"]);
+  assert.equal(session.typingHost.gradeMask, 7);
+  assert.equal(session.typingHost.sentimentMask, 3);
+  assert.ok([...session.players.values()].every(player => player.typing.sentimentMask === 3));
+  assert.ok(!rules.wordsForGrades(7, 3).includes("cat"));
+  const old = {...session.typingHost};
+  for (const args of [[[8], ["negative"]], [[0], []], [[0], ["angry"]], [[], ["positive"]]]) {
+    assert.throws(() => engine.applyWordFilters(session, ...args));
+    assert.deepEqual(session.typingHost, old);
+  }
+  session.status = "active";
+  engine.submitWords(session, {role:"player", actorCode:"0"}, recordsFor(session.players.get("0").typing), callbacks());
+  assert.equal(session.projectiles.length, 1);
+  assert.throws(() => engine.applyWordFilters(session, undefined, undefined), /before/);
+  session.status = "setup";
+  engine.applyWordFilters(session, undefined, undefined);
+  assert.equal(session.typingHost.sentimentMask, undefined);
+  assert.equal(session.typingHost.gradeMask, undefined);
 });

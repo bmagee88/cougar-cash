@@ -28,7 +28,8 @@ interface WordsByLength {
 //   ],
 // };
 // Shared with Typing Boss so both games use the same random word pool.
-export const words: WordsByLength = require("./homeRowWords.json");
+export const words: WordsByLength = require("./homeRowWordBank").wordsByLength;
+export { entriesByLength as wordEntries } from "./homeRowWordBank";
 
 export const collectiblePairs = {
   Social: [
