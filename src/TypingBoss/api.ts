@@ -12,8 +12,8 @@ import {
 } from "./types";
 
 const API_BASE = (
-  process.env.REACT_APP_COUGAR_API_URL ||
   process.env.REACT_APP_TYPING_BOSS_API_URL ||
+  process.env.REACT_APP_COUGAR_API_URL ||
   process.env.REACT_APP_PADLET_API_URL ||
   ""
 ).replace(/\/$/, "");
@@ -42,7 +42,7 @@ function describeNetworkFailure(path: string) {
   const target = withBase(path);
 
   if (!API_BASE && !isLocalFrontend) {
-    return "The Typing Boss backend URL is missing. In Netlify, set REACT_APP_COUGAR_API_URL to your Render backend URL and redeploy.";
+    return "The Typing Boss backend URL is missing. In Netlify, set REACT_APP_TYPING_BOSS_API_URL to your Render backend URL and redeploy.";
   }
 
   if (
@@ -64,7 +64,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
     throw new Error(
       isLocalFrontend
         ? "The Typing Boss backend did not return JSON. Make sure npm run start:backend is running on port 4000."
-        : "The Typing Boss backend is not configured for this deployed site. Set REACT_APP_COUGAR_API_URL in Netlify and redeploy."
+        : "The Typing Boss backend is not configured for this deployed site. Set REACT_APP_TYPING_BOSS_API_URL in Netlify and redeploy."
     );
   }
 
@@ -122,11 +122,15 @@ export function getTypingBossEventSourceUrl(
   });
 }
 
-export function createTypingBossSession(name: string, bossId: TypingBossId, mode: TypingBossMode = "proportional") {
-  return apiFetch<CreateTypingBossSessionResponse>("/api/typing-boss/sessions", {
+export async function createTypingBossSession(name: string, bossId: TypingBossId, mode: TypingBossMode = "proportional") {
+  const response = await apiFetch<CreateTypingBossSessionResponse>("/api/typing-boss/sessions", {
     method: "POST",
     json: { name, bossId, mode },
   });
+  if ((response.session?.mode ?? "old") !== mode) {
+    throw new Error("The Typing Boss backend returned a different battle mode. Update the backend to match this version of the game, then try again.");
+  }
+  return response;
 }
 
 export function submitTypingBossWords(sessionId: string, credentials: TypingBossCredentials, words: TypingBossWordResult[]) {

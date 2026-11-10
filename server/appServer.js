@@ -2975,6 +2975,7 @@ async function requestHandler(req, res) {
         ok: true,
         service: "cougar-classroom-backend",
         features: ["padlet-sessions", "typing-boss", "the-pattern", "paw-pass"],
+        typingBossModes: ["old", "proportional"],
       });
       return;
     }

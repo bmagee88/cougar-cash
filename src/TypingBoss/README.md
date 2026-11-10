@@ -33,6 +33,55 @@ Implementation references: [Node writable-stream backpressure](https://nodejs.or
 
 ## Verification
 
+### Deploying the backend on Render
+
+Proportional mode runs on the same classroom Node web service as Old Mode. It
+does not require a separate Render service, database, or Typing Boss environment
+variable on Render.
+
+1. In the existing Render web service, use the `bmagee88/cougar-cash` repository
+   and `main` at merge commit `bac96ed` or a newer revision that includes
+   `server/proportionalBoss.js`. Use matching word-bank revisions on Netlify
+   and Render because both generate words from the same shared list.
+2. Set **Root Directory** to the repository root (leave it blank), **Build
+   Command** to `npm ci`, **Start Command** to `node server/appServer.js`, and
+   **Health Check Path** to `/api/health`. Use the Node runtime. Leave `PORT` to
+   Render; remove old custom port overrides if they conflict. Keep a single
+   instance because active rooms are stored in that instance's memory.
+   If Render reports `Missing script: "start:backend"`, check the commit in
+   the deploy log and the service's Root Directory. The merged `main` commit
+   `bac96ed` has both the npm alias and `server/appServer.js` at the repository
+   root. The direct Node command bypasses the alias, but still needs that file
+   and its dependencies in the deployed checkout.
+   If the startup banner says `cougar-classroom-backend@1.0.0 start` and
+   startup fails with `Cannot find module 'pg'`, Render is running the
+   `server/package.json` script. Install dependencies from the repository root
+   instead: clear Root Directory, run `npm ci` there, and start
+   `node server/appServer.js`. The root manifest and lockfile include `pg` and
+   `google-auth-library`, and the backend also loads shared code from `src/`.
+3. Choose **Manual Deploy → Deploy latest commit**. A service restart alone
+   will not pick up code from the branch. Existing rooms end when the old
+   process stops. With the updated diagnostics, `GET /api/health` includes
+   `"typingBossModes":["old","proportional"]`. Commit `15b15b0` already supports
+   the new mode but does not have this diagnostics field.
+4. For a separate Typing Boss service, set `REACT_APP_TYPING_BOSS_API_URL` in
+   Netlify's build environment to its public HTTPS base URL (for example,
+   `https://cougar-cash-boss-battle.onrender.com`, without `/api` or
+   `/typing-boss`). Redeploy Netlify with the updated frontend code. This
+   variable takes precedence for Typing Boss only. Leave
+   `REACT_APP_COUGAR_API_URL` unchanged for the other classroom apps. When the
+   dedicated URL is unset, Typing Boss continues to use the shared URL.
+5. Open `/typing-boss` on your Netlify site, create a fresh **Proportional · Host
+   vs players** room, and join from a second browser. The Ancient Red Dragon and
+   the host's grade and sentiment filters confirm the new setup. The frontend
+   reports an error if the backend returns a different mode than requested.
+
+Render references: [Web Services](https://render.com/docs/web-services),
+[Manual deploys](https://render.com/docs/deploys#manual-deploys),
+[Health Checks](https://render.com/docs/health-checks).
+
+### Local checks
+
 ```text
 node --test server/proportionalBoss.test.js
 npm run test:typing-boss-ui
