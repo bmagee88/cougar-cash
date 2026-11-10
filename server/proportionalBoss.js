@@ -1,10 +1,10 @@
 const crypto = require("node:crypto");
-const { createTypingState, wordAt, finishWord, releaseAttack, attackProgress, wordsForGrades } = require("../src/TypingBoss/proportionalRules");
+const { createTypingState, wordAt, finishWord, releaseAttack, attackProgress, wordsForGrades, dodgeChance } = require("../src/TypingBoss/proportionalRules");
 
 const round = value => Math.round(value * 100) / 100;
 const newState = () => createTypingState(crypto.randomBytes(4).readUInt32LE());
 
-function launchAttack(session, actor, attack, { schedule, broadcast }) {
+function launchAttack(session, actor, attack, { schedule, broadcast, random = Math.random }) {
   const now = Date.now();
   const host = actor === session.typingHost;
   const attackNumber = actor.turnsTaken || 0;
@@ -27,6 +27,11 @@ function launchAttack(session, actor, attack, { schedule, broadcast }) {
       const target = host ? session.players.get(projectile.target) : session.boss;
       let damage = target.hp > 0 ? projectile.amount : 0;
       const defense = host ? target.typing : session.typingHost;
+      const chance = dodgeChance(defense);
+      if (damage > 0 && chance > 0 && random() < chance / 100) {
+        Object.assign(projectile, { willHit: false, evadeType: "dodge", amount: 0, resolvedAt: Date.now() });
+        continue;
+      }
       if (target.hp > 0) {
         damage *= 1 - defense.shield;
         defense.shield = 0;
@@ -63,8 +68,8 @@ function submitWords(session, auth, records, callbacks) {
   let addedCharacters = 0;
   const fresh = [];
   for (const record of records) {
-    if (!Array.isArray(record) || record.length !== 5) throw new Error("Invalid word result.");
-    const [index, text, count, sum, squares] = record;
+    if (!Array.isArray(record) || (record.length !== 5 && record.length !== 6)) throw new Error("Invalid word result.");
+    const [index, text, count, sum, squares, transitionMs] = record;
     if (!Number.isInteger(index) || index < 0) throw new Error("Invalid word index.");
     if (index < state.nextWord) continue;
     const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask);
@@ -77,6 +82,17 @@ function submitWords(session, auth, records, callbacks) {
       (count > 0 && (squares + 1 < sum * sum / count || squares > sum * sum + 1))) {
       throw new Error("Invalid word order or key timing.");
     }
+    if (record.length === 6) {
+      if (index % 10 === 0 || count < 2 || count !== expectedCount ||
+          !Number.isFinite(transitionMs) || transitionMs < 0 || transitionMs > Math.min(sum, 7200000)) {
+        throw new Error("Invalid word transition timing.");
+      }
+      const remaining = sum - transitionMs;
+      const remainingSquares = squares - transitionMs ** 2;
+      if (remainingSquares + 1 < remaining ** 2 / (count - 1) || remainingSquares > remaining ** 2 + 1) {
+        throw new Error("Invalid word transition timing.");
+      }
+    }
     expected += 1;
     addedCharacters += text.length;
     fresh.push(record);
@@ -84,8 +100,8 @@ function submitWords(session, auth, records, callbacks) {
   if (state.totalCharacters + addedCharacters > (Date.now() - session.startedAt) * 0.03 + 60) {
     throw new Error("Typing arrived too quickly. Try again shortly.");
   }
-  for (const [, text, count, sum, squares] of fresh) {
-    const result = finishWord(state, text, count, sum, squares);
+  for (const [, text, count, sum, squares, transitionMs] of fresh) {
+    const result = finishWord(state, text, count, sum, squares, transitionMs);
     if (auth.role === "player") {
       actor.totalKeystrokes += text.length;
       actor.correctKeystrokes += result.correct ? text.length : 0;

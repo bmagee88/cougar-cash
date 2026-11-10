@@ -30,11 +30,12 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
     return () => clearTimeout(timer);
   }, [projectile.impactAt, projectile.resolvedAt]);
 
-  const color = projectile.kind === "boss" ? "#fda4af" : ["heal", "resurrect"].includes(projectile.kind) ? "#86efac" : "#7dd3fc";
+  const dodged = projectile.evadeType === "dodge";
+  const color = dodged ? "#86efac" : projectile.kind === "boss" ? "#fda4af" : ["heal", "resurrect"].includes(projectile.kind) ? "#86efac" : "#7dd3fc";
   const amount = Number((projectile.amount || 0).toFixed(2));
   const crit = projectile.critical && amount > 0 && !["miss", "evade"].includes(projectile.result);
   const hitAge = projectile.resolvedAt ? Math.max(0, now - projectile.resolvedAt) : 0;
-  const label = projectile.result === "evade" ? "EVADE" : projectile.result === "miss" ? "MISS" : projectile.kind === "buff" ? "BUFF" : `${["heal", "resurrect"].includes(projectile.kind) ? "+" : "−"}${amount}`;
+  const label = dodged ? "DODGED!" : projectile.result === "evade" ? "EVADE" : projectile.result === "miss" ? "MISS" : projectile.kind === "buff" ? "BUFF" : `${["heal", "resurrect"].includes(projectile.kind) ? "+" : "−"}${amount}`;
   const angle = Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
   return <>
     <div ref={flight} className="boss-projectile" style={{ visibility: flying ? "visible" : "hidden", transform: `translate(${to.x}%, ${to.y}%)` }} aria-hidden="true">
@@ -45,7 +46,7 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
     {visibleHit && crit && hitAge < 600 && <div aria-hidden="true" className="boss-crit-impact" style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}><i /><b /></div>}
     {visibleHit && <div className={`boss-impact${crit ? " boss-impact-crit" : ""}`} style={{ left: `${(hitPoint || to).x}%`, top: `${(hitPoint || to).y + labelOffset}%`, zIndex: 10, color: crit ? "#fff2a8" : color, animationDelay: `-${hitAge}ms` }}>
       {crit && <span className="boss-crit-label">CRIT!</span>}
-      {showName && projectile.kind === "damage" && `${projectile.sourceName || "Player"} `}{label}{projectile.moveId === "strong" && " ★"}
+      {showName && projectile.kind === "damage" && `${projectile.sourceName || "Player"} `}{label}{projectile.moveId === "strong" && !dodged && " ★"}
     </div>}
   </>;
 }

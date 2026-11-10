@@ -30,9 +30,9 @@ function displayedWord(input: HTMLElement) {
   return document.getElementById(input.getAttribute("aria-describedby")!).textContent;
 }
 
-test("errors remain after backspace, the word advances, and ten words send one batch", async () => {
+test("errors remain after backspace and an older backend still receives one ten-word batch", async () => {
   const seed = seedWithoutBlue();
-  render(<ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={createTypingState(seed)} active />);
+  render(<ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={{ ...createTypingState(seed), dodgeSamples: undefined }} active />);
   const input = screen.getByRole("textbox", { name: "Type the displayed word" });
   const first = wordAt(seed, 0).text;
   fireEvent.keyDown(input, { key: "!" });
@@ -118,12 +118,15 @@ test("native key timestamps drive the measured mean instead of handler execution
       timestamp += 20;
     }
   }
-  await waitFor(() => expect(submit).toHaveBeenCalledTimes(1));
-  const records = submit.mock.calls[0][2];
+  await waitFor(() => expect(submit.mock.calls.flatMap((call: any) => call[2])).toHaveLength(10));
+  const records = submit.mock.calls.flatMap((call: any) => call[2]);
   const count = records.reduce((total, record) => total + record[2], 0);
   const sum = records.reduce((total, record) => total + record[3], 0);
   expect(sum / count).toBe(20);
   expect(records[0][2]).toBe(wordAt(seed, 0).text.length);
+  expect(records[0]).toHaveLength(5);
+  expect(records[1][5]).toBe(20);
+  expect(screen.getByText("Dodge 25%")).toBeTruthy();
 });
 
 
@@ -157,6 +160,8 @@ test("a long rest between attacks is excluded from the next attack's timing", as
   const records = submit.mock.calls.flatMap((call: any) => call[2]);
   const second = records.filter((record: any) => record[0] >= 10);
   expect(second[0][2]).toBe(wordAt(seed, 10).text.length);
+  expect(second[0]).toHaveLength(5);
+  expect(second[1][5]).toBe(20);
   expect(second.reduce((sum: number, record: any) => sum + record[3], 0) /
     second.reduce((sum: number, record: any) => sum + record[2], 0)).toBe(20);
 });

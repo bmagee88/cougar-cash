@@ -1343,7 +1343,7 @@ function getTypingBossProjectileSnapshot(projectile) {
     ? "pending"
     : projectile.willHit
     ? "hit"
-    : projectile.evadeType === "special"
+    : projectile.evadeType === "special" || projectile.evadeType === "dodge"
     ? "evade"
     : "miss";
   return {

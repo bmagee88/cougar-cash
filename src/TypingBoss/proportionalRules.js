@@ -63,12 +63,24 @@ function createTypingState(seed) {
   return { seed, nextWord: 0, wordsInAttack: 0, characters: 0,
     intervalCount: 0, intervalSum: 0, intervalSquares: 0,
     orange: 0, red: 0, green: 0, growth: 0, shield: 0,
-    consistency: 1, totalTaken: 0, totalCharacters: 0 };
+    consistency: 1, totalTaken: 0, totalCharacters: 0, dodgeSamples: [] };
 }
 
-function finishWord(state, text, count, sum, squares) {
+function dodgeChance(state) {
+  const samples = state.dodgeSamples;
+  return samples?.length ? Math.round(samples.reduce((total, score) => total + score, 0) / samples.length) : 0;
+}
+
+function finishWord(state, text, count, sum, squares, transitionMs) {
   const word = wordAt(state.seed, state.nextWord, state.gradeMask, state.sentimentMask);
   const correct = text === word.text + (state.nextWord % 10 === 9 ? "" : " ");
+  if (state.dodgeSamples && state.nextWord % 10 !== 0 && count > 1 && Number.isFinite(transitionMs)) {
+    // Compare Space → first character with the rest of that word's key gaps.
+    const pace = Math.max(40, (sum - transitionMs) / (count - 1));
+    const ratio = transitionMs / pace;
+    const score = Math.round(25 * Math.max(0, Math.min(1, (2.5 - ratio) / 1.25)));
+    state.dodgeSamples = [...state.dodgeSamples.slice(-4), score];
+  }
   state.nextWord += 1;
   state.wordsInAttack += 1;
   state.characters += [...text].reduce((total, letter, index) => total + (letter === (word.text + " ")[index] ? 1 : 0), 0);
@@ -101,4 +113,4 @@ function releaseAttack(state, random = Math.random) {
   return attack;
 }
 
-module.exports = { WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress };
+module.exports = { WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress, dodgeChance };
