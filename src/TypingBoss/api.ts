@@ -178,12 +178,12 @@ export function verifyTypingBossParticipant(sessionId: string, code: string) {
   );
 }
 
-export function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1) {
+export function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[]) {
   return apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken, hpMultiplier },
+      json: { hostToken, hpMultiplier, gradeLevels, sentiments },
     }
   );
 }

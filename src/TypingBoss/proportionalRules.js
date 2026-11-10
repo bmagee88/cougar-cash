@@ -1,9 +1,26 @@
 // Shared, deterministic rules. Only the seed and word index travel over the wire.
-const wordsByLength = require("../typingProject/resources/homeRowWords.json");
+const { wordsByLength, entriesByLength, filterWordsByLength } = require("../typingProject/resources/homeRowWordBank");
 const WORDS = Object.keys(wordsByLength)
   .filter(key => !isNaN(Number(key)))
   .flatMap(key => wordsByLength[key]);
 const COLORS = ["blue", "orange", "red", "green"];
+const ENTRIES = Object.keys(entriesByLength).filter(key => !isNaN(Number(key))).flatMap(key => entriesByLength[key]);
+const GRADE_OPTIONS = Array.from({ length: 13 }, (_, grade) => ({ grade,
+  count: ENTRIES.filter(entry => entry.gradeLevel === grade).length }));
+const pools = new Map();
+function wordsForGrades(mask, sentimentMask) {
+  if (mask === undefined && sentimentMask === undefined) return WORDS;
+  if (mask !== undefined && (!Number.isInteger(mask) || mask < 1 || mask > 8191)) throw new Error("Choose at least one available grade.");
+  if (sentimentMask !== undefined && (!Number.isInteger(sentimentMask) || sentimentMask < 1 || sentimentMask > 7)) throw new Error("Choose at least one sentiment.");
+  const key = `${mask}:${sentimentMask}`;
+  if (!pools.has(key)) {
+    const bank = filterWordsByLength(mask, sentimentMask);
+    pools.set(key, Object.keys(bank).filter(key => !isNaN(Number(key))).flatMap(key => bank[key]));
+  }
+  const pool = pools.get(key);
+  if (!pool.length) throw new Error("No words match the selected grades and sentiments.");
+  return pool;
+}
 
 function randomAt(seed, index, salt) {
   let value = (seed ^ Math.imul(index + 1, 0x9e3779b1) ^ salt) >>> 0;
@@ -12,9 +29,10 @@ function randomAt(seed, index, salt) {
   return ((value ^ (value >>> 15)) >>> 0) / 4294967296;
 }
 
-function wordAt(seed, index) {
+function wordAt(seed, index, gradeMask, sentimentMask) {
+  const pool = wordsForGrades(gradeMask, sentimentMask);
   return {
-    text: WORDS[Math.floor(randomAt(seed, index, 1) * WORDS.length)],
+    text: pool[Math.floor(randomAt(seed, index, 1) * pool.length)],
     color: randomAt(seed, index, 2) < 0.3
       ? COLORS[Math.floor(randomAt(seed, index, 3) * COLORS.length)] : null,
   };
@@ -29,12 +47,12 @@ function consistencyMultiplier(count, sum, sumSquares) {
   return Math.max(0.5, Math.min(1.5, 1.5 - Math.max(0, deviation - 200) / Math.max(200, mean)));
 }
 
-function attackProgress(seed, wordIndex, characters) {
+function attackProgress(seed, wordIndex, characters, gradeMask, sentimentMask) {
   const start = Math.floor(wordIndex / 10) * 10;
   let completed = characters;
   let total = 0;
   for (let index = start; index < start + 10; index++) {
-    const length = wordAt(seed, index).text.length + (index % 10 === 9 ? 0 : 1);
+    const length = wordAt(seed, index, gradeMask, sentimentMask).text.length + (index % 10 === 9 ? 0 : 1);
     total += length;
     if (index < wordIndex) completed += length;
   }
@@ -49,7 +67,7 @@ function createTypingState(seed) {
 }
 
 function finishWord(state, text, count, sum, squares) {
-  const word = wordAt(state.seed, state.nextWord);
+  const word = wordAt(state.seed, state.nextWord, state.gradeMask, state.sentimentMask);
   const correct = text === word.text + (state.nextWord % 10 === 9 ? "" : " ");
   state.nextWord += 1;
   state.wordsInAttack += 1;
@@ -83,4 +101,4 @@ function releaseAttack(state, random = Math.random) {
   return attack;
 }
 
-module.exports = { WORDS, wordAt, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress };
+module.exports = { WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress };

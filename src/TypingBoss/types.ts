@@ -43,6 +43,8 @@ export interface TypingBossLeaderboardEntry {
   strongestAttack: TypingBossAttackStats | null;
 }
 export interface TypingBossTypingState {
+  gradeMask?: number;
+  sentimentMask?: number;
   seed: number;
   nextWord: number;
   wordsInAttack: number;

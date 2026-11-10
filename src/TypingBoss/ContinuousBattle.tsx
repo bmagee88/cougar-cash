@@ -80,7 +80,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
     }
     if (!active || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) return;
     event.preventDefault();
-    const expectedWord = wordAt(model.current.seed, model.current.nextWord);
+    const expectedWord = wordAt(model.current.seed, model.current.nextWord, model.current.gradeMask, model.current.sentimentMask);
     // All letter positions must be entered, followed by the required space.
     if (typed.current.length === expectedWord.text.length && event.key !== " ") return;
     // Native event timestamps measure the key event, not a delayed React handler.
@@ -96,7 +96,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
     currentTiming.last = now;
     typed.current += event.key;
     const current = model.current;
-    const word = wordAt(current.seed, current.nextWord);
+    const word = wordAt(current.seed, current.nextWord, current.gradeMask, current.sentimentMask);
     if (typed.current.length === word.text.length + (current.nextWord % 10 === 9 ? 0 : 1)) {
       const record: TypingBossWordResult = [current.nextWord, typed.current, currentTiming.count, currentTiming.sum, currentTiming.squares];
       const result = finishWord(current, typed.current, currentTiming.count, currentTiming.sum, currentTiming.squares);
@@ -113,16 +113,16 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
       currentTiming.count = 0; currentTiming.sum = 0; currentTiming.squares = 0;
       if (attack || (result.correct && result.color === "blue") || queue.current.length >= 20) flush();
     }
-    publishProgress(current.nextWord, typed.current.length, attackProgress(current.seed, current.nextWord, typed.current.length));
+    publishProgress(current.nextWord, typed.current.length, attackProgress(current.seed, current.nextWord, typed.current.length, current.gradeMask, current.sentimentMask));
     redraw(value => value + 1);
   }
 
   const current = model.current;
-  const word = wordAt(current.seed, current.nextWord);
+  const word = wordAt(current.seed, current.nextWord, current.gradeMask, current.sentimentMask);
   const multiplier = consistencyMultiplier(current.intervalCount + timing.current.count,
     current.intervalSum + timing.current.sum, current.intervalSquares + timing.current.squares);
   const cycleStart = Math.floor(current.nextWord / 10) * 10;
-  const rowWords = Array.from({ length: 10 }, (_, offset) => wordAt(current.seed, cycleStart + offset));
+  const rowWords = Array.from({ length: 10 }, (_, offset) => wordAt(current.seed, cycleStart + offset, current.gradeMask, current.sentimentMask));
   const cursor = rowWords.slice(0, current.wordsInAttack).reduce((total, item) => total + item.text.length + 1, 0) + typed.current.length;
 
   return <Paper className="continuous-typing" elevation={0} sx={{ p: { xs: 2, md: 2.5 }, border: "1px solid #50627a", borderRadius: 2 }}>

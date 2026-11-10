@@ -1,4 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import WordFilterChips, { WordFilters, numericWordPool } from "../components/WordFilterChips";
+import { filterWordsByLength } from "../resources/homeRowWordBank";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { words as wordsByLength } from "typingProject/resources/staticData";
 import {
   Box,
@@ -71,8 +73,8 @@ const getAllWords = () => {
     .flatMap((key) => wordsByLength[key]);
 };
 
-const generateWords = (n: number) => {
-  const sampleWords = getAllWords();
+const generateWords = (n: number, sampleWords = getAllWords()) => {
+  if (!sampleWords.length) return [];
   return Array.from(
     { length: n },
     () => sampleWords[Math.floor(Math.random() * sampleWords.length)]
@@ -106,6 +108,9 @@ function computeStats(
 }
 
 export default function TypingMarathonMode() {
+  const [wordFilters, setWordFilters] = useState<WordFilters>({});
+  const sampleWords = useMemo(() => numericWordPool(filterWordsByLength(wordFilters.gradeMask, wordFilters.sentimentMask)), [wordFilters]);
+
   const [difficulty, setDifficulty] = useState<DifficultyKey>("medium");
   const [wordList, setWordList] = useState<string[]>(generateWords(50));
   const [input, setInput] = useState("");
@@ -191,8 +196,8 @@ export default function TypingMarathonMode() {
     }
   }, []);
 
-  const resetGame = () => {
-    setWordList(generateWords(50));
+  const resetGame = useCallback(() => {
+    setWordList(generateWords(50, sampleWords));
     setElapsedTime(0);
     setInput("");
     setTypedChars(0);
@@ -205,7 +210,9 @@ export default function TypingMarathonMode() {
     setLastChar(null);
     setRepeatCharCount(0);
     setLossReason(null);
-  };
+  }, [sampleWords, difficulty]);
+
+  useEffect(() => { resetGame(); }, [resetGame]);
 
   const handlePlayAgain = () => {
     // Increment game/run number for the next run
@@ -299,6 +306,7 @@ export default function TypingMarathonMode() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!sampleWords.length) return;
     // Start timer on first key press
     const startingNow = !startTime;
     if (startingNow) {
@@ -364,7 +372,7 @@ export default function TypingMarathonMode() {
 
       setIncorrectChars(newIncorrect);
       setTypedChars(newChars);
-      setWordList((prev) => [...prev.slice(1), generateWords(1)[0]]);
+      setWordList((prev) => [...prev.slice(1), generateWords(1, sampleWords)[0]]);
       setInput("");
       setConsecutiveErrors(
         Math.min(newConsecutiveErrors, MAX_CONSECUTIVE_ERRORS)
@@ -794,6 +802,10 @@ export default function TypingMarathonMode() {
               />
             </Box>
 
+            <Box component="details" sx={{ width: "100%" }}>
+              <Box component="summary" sx={{ cursor: "pointer", color: "#facc15" }}>Word filters</Box>
+              <WordFilterChips value={wordFilters} onChange={setWordFilters} disabled={isRunning} />
+            </Box>
             <FormControl
               sx={{ minWidth: 120, alignSelf: "flex-start" }}
               size="small"
@@ -851,6 +863,7 @@ export default function TypingMarathonMode() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Start typing here..."
+              disabled={!sampleWords.length}
               sx={{
                 input: { fontSize: "1.25rem", color: "#f1f5f9" },
                 bgcolor: "#1e293b",

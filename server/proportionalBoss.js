@@ -1,5 +1,5 @@
 const crypto = require("node:crypto");
-const { createTypingState, wordAt, finishWord, releaseAttack, attackProgress } = require("../src/TypingBoss/proportionalRules");
+const { createTypingState, wordAt, finishWord, releaseAttack, attackProgress, wordsForGrades } = require("../src/TypingBoss/proportionalRules");
 
 const round = value => Math.round(value * 100) / 100;
 const newState = () => createTypingState(crypto.randomBytes(4).readUInt32LE());
@@ -67,7 +67,7 @@ function submitWords(session, auth, records, callbacks) {
     const [index, text, count, sum, squares] = record;
     if (!Number.isInteger(index) || index < 0) throw new Error("Invalid word index.");
     if (index < state.nextWord) continue;
-    const word = wordAt(state.seed, index);
+    const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask);
     const length = word.text.length + (index % 10 === 9 ? 0 : 1);
     const expectedCount = length - (index % 10 === 0 ? 1 : 0);
     if (index !== expected || typeof text !== "string" || text.length !== length || (index % 10 !== 9 && !text.endsWith(" ")) ||
@@ -109,7 +109,7 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
   const state = auth.role === "host" ? actor : actor?.typing;
   if (!state || (auth.role === "player" && actor.hp <= 0)) return;
   if (!Number.isInteger(wordIndex) || wordIndex < state.nextWord || wordIndex > state.nextWord + 40 ||
-      !Number.isInteger(characters) || characters < 0 || characters > wordAt(state.seed, wordIndex).text.length) return;
+      !Number.isInteger(characters) || characters < 0 || characters > wordAt(state.seed, wordIndex, state.gradeMask, state.sentimentMask).text.length) return;
   const previous = actor.progressCursor;
   if (previous && (wordIndex < previous.wordIndex || (wordIndex === previous.wordIndex && characters <= previous.characters))) return;
   // Progress is cosmetic only. It never awards damage or changes typing stats.
@@ -118,7 +118,7 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
   actor.progressUpdatedAt = now;
   actor.progressCursor = { wordIndex, characters };
   const target = auth.role === "host" ? session.boss : actor;
-  target.attackProgress = Math.round(attackProgress(state.seed, wordIndex, characters));
+  target.attackProgress = Math.round(attackProgress(state.seed, wordIndex, characters, state.gradeMask, state.sentimentMask));
   broadcast(session);
 }
 
@@ -184,3 +184,38 @@ function leaderboard(session) {
 }
 
 module.exports = { newState, submitWords, diffSnapshot, launchAttack, applyHpMultiplier, leaderboard, updateProgress };
+
+
+function applyGradeLevels(session, grades) {
+  if (session.status !== "setup") throw new Error("Grades can only be changed before the battle starts.");
+  if (grades === undefined) return;
+  if (!Array.isArray(grades) || !grades.length || grades.length > 13 || grades.some(grade => !Number.isInteger(grade) || grade < 0 || grade > 12)) {
+    throw new Error("Choose at least one grade from kindergarten through grade 12.");
+  }
+  const mask = grades.reduce((value, grade) => value | (1 << grade), 0);
+  wordsForGrades(mask); // Validate availability before changing any actor.
+  session.typingHost.gradeMask = mask;
+  for (const player of session.players.values()) player.typing.gradeMask = mask;
+}
+module.exports.applyGradeLevels = applyGradeLevels;
+
+
+function applyWordFilters(session, grades, sentiments) {
+  if (session.status !== "setup") throw new Error("Word filters can only be changed before the battle starts.");
+  let gradeMask, sentimentMask;
+  if (grades !== undefined) {
+    if (!Array.isArray(grades) || !grades.length || grades.length > 13 || grades.some(grade => !Number.isInteger(grade) || grade < 0 || grade > 12)) throw new Error("Choose valid grades.");
+    gradeMask = grades.reduce((mask, grade) => mask | (1 << grade), 0);
+  }
+  if (sentiments !== undefined) {
+    const options = ["positive", "negative", "neutral"];
+    if (!Array.isArray(sentiments) || !sentiments.length || sentiments.length > 3 || sentiments.some(value => !options.includes(value))) throw new Error("Choose valid sentiments.");
+    sentimentMask = sentiments.reduce((mask, value) => mask | (1 << options.indexOf(value)), 0);
+  }
+  wordsForGrades(gradeMask, sentimentMask);
+  for (const actor of [session.typingHost, ...[...session.players.values()].map(player => player.typing)]) {
+    actor.gradeMask = gradeMask;
+    actor.sentimentMask = sentimentMask;
+  }
+}
+module.exports.applyWordFilters = applyWordFilters;

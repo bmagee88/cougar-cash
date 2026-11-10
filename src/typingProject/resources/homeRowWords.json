@@ -1,1205 +1,5897 @@
 {
   "2": [
-    "up",
-    "in"
+    {
+      "word": "up",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "in",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    }
   ],
   "3": [
-    "hug",
-    "joy",
-    "ear",
-    "you",
-    "act",
-    "usb",
-    "api",
-    "web",
-    "gpu",
-    "bit",
-    "cpu",
-    "app",
-    "log",
-    "tag",
-    "css",
-    "dns",
-    "sql",
-    "git",
-    "dev",
-    "ssl",
-    "cli",
-    "npm",
-    "big",
-    "win",
-    "job",
-    "run",
-    "bar",
-    "top",
-    "key",
-    "new",
-    "met",
-    "hit",
-    "fix",
-    "aim",
-    "day",
-    "lab",
-    "pop",
-    "pen",
-    "ink",
-    "aid",
-    "due",
-    "pad",
-    "pet",
-    "bus",
-    "ant",
-    "bat",
-    "the",
-    "cat",
-    "dog",
-    "egg",
-    "fan",
-    "gum",
-    "hat",
-    "ice",
-    "jam",
-    "kid",
-    "log",
-    "man",
-    "net",
-    "map",
-    "owl",
-    "pen",
-    "rat",
-    "sun",
-    "tap",
-    "urn",
-    "van",
-    "web",
-    "yak",
-    "zip",
-    "bag",
-    "cap",
-    "den",
-    "ear",
-    "fig",
-    "gap",
-    "mid",
-    "hop",
-    "ink",
-    "jet",
-    "sus",
-    "kit",
-    "lid",
-    "nap",
-    "oak",
-    "pit",
-    "rib",
-    "sip",
-    "top",
-    "urn",
-    "vet",
-    "win",
-    "xen",
-    "yam",
-    "zen",
-    "ace",
-    "bee",
-    "cub",
-    "joy",
-    "fun",
-    "yes",
-    "win",
-    "sun",
-    "gem",
-    "hug",
-    "dip",
-    "elf",
-    "fin",
-    "got",
-    "hen",
-    "job",
-    "key",
-    "low",
-    "mix",
-    "nod",
-    "off",
-    "pop",
-    "ran",
-    "tin",
-    "use",
-    "vow",
-    "box",
-    "dot",
-    "eat",
-    "fix",
-    "gym",
-    "hug",
-    "ion",
-    "jar",
-    "kin",
-    "lay",
-    "mom",
-    "net",
-    "old",
-    "ask",
-    "aid",
-    "win",
-    "try",
-    "net",
-    "tip",
-    "joy",
-    "pad",
-    "run",
-    "tag",
-    "try",
-    "upn",
-    "wet",
-    "yep",
-    "zip",
-    "ark",
-    "bud",
-    "cow",
-    "app",
-    "cpu",
-    "ram",
-    "api",
-    "pay",
-    "win",
-    "net",
-    "tip",
-    "bag",
-    "job",
-    "gem",
-    "gui",
-    "usb",
-    "web",
-    "vpn",
-    "mac",
-    "ssd",
-    "dig",
-    "end",
-    "was",
-    "cap",
-    "who"
+    {
+      "word": "hug",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "joy",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "ear",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "you",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "act",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "usb",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "api",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "web",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gpu",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bit",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cpu",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "app",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "log",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tag",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "css",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dns",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sql",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "git",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dev",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ssl",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cli",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "npm",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "big",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "win",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "job",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "run",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bar",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "top",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "key",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "new",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "met",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hit",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fix",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "aim",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "day",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lab",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pop",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pen",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ink",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "aid",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "due",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pad",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bus",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ant",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "the",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dog",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "egg",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fan",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gum",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ice",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jam",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kid",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "log",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "man",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "net",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "map",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "owl",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pen",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sun",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tap",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "urn",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "van",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "web",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yak",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zip",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bag",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cap",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "den",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ear",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fig",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gap",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mid",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hop",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ink",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kit",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lid",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "nap",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "oak",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pit",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rib",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sip",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "top",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "urn",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vet",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "win",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "yam",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zen",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ace",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "bee",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cub",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "joy",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "fun",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "yes",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "win",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "sun",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gem",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "hug",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "dip",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "elf",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fin",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "got",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hen",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "job",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "key",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "low",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mix",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "nod",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "off",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pop",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ran",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tin",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "use",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vow",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "box",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dot",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "eat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fix",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gym",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hug",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "ion",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jar",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kin",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lay",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mom",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "net",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "old",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ask",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "aid",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "win",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "try",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "net",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tip",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "joy",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "pad",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "run",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tag",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "try",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yep",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zip",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ark",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bud",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cow",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "app",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cpu",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ram",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "api",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pay",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "win",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "net",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tip",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bag",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "job",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gem",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "gui",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "usb",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "web",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vpn",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mac",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ssd",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dig",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "end",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "was",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cap",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "who",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    }
   ],
   "4": [
-    "help",
-    "hand",
-    "warm",
-    "soft",
-    "open",
-    "arms",
-    "eyes",
-    "kind",
-    "true",
-    "talk",
-    "safe",
-    "calm",
-    "soul",
-    "wave",
-    "deep",
-    "love",
-    "ally",
-    "fair",
-    "play",
-    "grin",
-    "good",
-    "gift",
-    "nice",
-    "word",
-    "kept",
-    "bond",
-    "made",
-    "pure",
-    "beam",
-    "door",
-    "care",
-    "zone",
-    "ears",
-    "code",
-    "data",
-    "wifi",
-    "port",
-    "call",
-    "node",
-    "gate",
-    "tool",
-    "page",
-    "boot",
-    "rate",
-    "ping",
-    "test",
-    "core",
-    "disk",
-    "miss",
-    "tech",
-    "name",
-    "loop",
-    "file",
-    "path",
-    "byte",
-    "html",
-    "grid",
-    "sync",
-    "base",
-    "loss",
-    "case",
-    "leak",
-    "spam",
-    "repo",
-    "form",
-    "rule",
-    "cert",
-    "hash",
-    "user",
-    "auth",
-    "push",
-    "dark",
-    "mode",
-    "copy",
-    "site",
-    "goal",
-    "plan",
-    "move",
-    "bold",
-    "step",
-    "hard",
-    "work",
-    "mind",
-    "next",
-    "firm",
-    "will",
-    "path",
-    "long",
-    "high",
-    "task",
-    "done",
-    "well",
-    "grit",
-    "earn",
-    "form",
-    "haul",
-    "team",
-    "keep",
-    "turn",
-    "idea",
-    "dive",
-    "risk",
-    "role",
-    "pace",
-    "wise",
-    "gain",
-    "list",
-    "hope",
-    "held",
-    "mark",
-    "peak",
-    "game",
-    "face",
-    "fast",
-    "lane",
-    "lead",
-    "beat",
-    "paid",
-    "quiz",
-    "note",
-    "card",
-    "desk",
-    "book",
-    "exam",
-    "coat",
-    "math",
-    "prep",
-    "bell",
-    "hour",
-    "trip",
-    "text",
-    "time",
-    "home",
-    "roll",
-    "dust",
-    "term",
-    "lamp",
-    "peer",
-    "ring",
-    "hall",
-    "read",
-    "edge",
-    "slip",
-    "pass",
-    "bird",
-    "cake",
-    "what",
-    "when",
-    "code",
-    "drip",
-    "data",
-    "html",
-    "java",
-    "gold",
-    "cash",
-    "king",
-    "coin",
-    "save",
-    "earn",
-    "rich",
-    "fund",
-    "deal",
-    "sale",
-    "gain",
-    "byte",
-    "bash",
-    "node",
-    "disk",
-    "file",
-    "ping",
-    "duck",
-    "fish",
-    "goat",
-    "hand",
-    "jump",
-    "kite",
-    "lamp",
-    "moon",
-    "nest",
-    "open",
-    "play",
-    "rain",
-    "ship",
-    "tree",
-    "kind",
-    "good",
-    "love",
-    "hope",
-    "nice",
-    "fair",
-    "hero",
-    "glad",
-    "calm",
-    "free",
-    "unit",
-    "vent",
-    "wind",
-    "xray",
-    "yarn",
-    "zinc",
-    "ball",
-    "cold",
-    "drum",
-    "ever",
-    "frog",
-    "girl",
-    "hill",
-    "iron",
-    "joke",
-    "lava",
-    "mice",
-    "name",
-    "oven",
-    "peck",
-    "quiz",
-    "rock",
-    "sand",
-    "toes",
-    "urge",
-    "view",
-    "wolf",
-    "yard",
-    "zoom",
-    "ally",
-    "bake",
-    "calm",
-    "dive",
-    "echo",
-    "farm",
-    "game",
-    "heat",
-    "idea",
-    "jade",
-    "keep",
-    "leaf",
-    "mint",
-    "love",
-    "help",
-    "care",
-    "give",
-    "kind",
-    "calm",
-    "soft",
-    "safe",
-    "true",
-    "dear",
-    "note",
-    "oval",
-    "pack",
-    "race",
-    "seat",
-    "tide",
-    "vast",
-    "wave",
-    "xmas",
-    "zero",
-    "arch",
-    "belt",
-    "clay",
-    "deer",
-    "each",
-    "face",
-    "gift",
-    "hard",
-    "inch",
-    "join",
-    "loud",
-    "melt",
-    "neck",
-    "ogle",
-    "pine",
-    "rope",
-    "song",
-    "tent",
-    "unit",
-    "vase",
-    "walk",
-    "yoga",
-    "zone",
-    "aqua",
-    "blue",
-    "cool",
-    "door",
-    "kind",
-    "help",
-    "kind",
-    "give",
-    "earn",
-    "self",
-    "grow",
-    "gain",
-    "idea",
-    "plan",
-    "wise",
-    "calm"
+    {
+      "word": "help",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "hand",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "warm",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "soft",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "open",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "arms",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "eyes",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kind",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "true",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "talk",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "safe",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "calm",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "soul",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wave",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "deep",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "love",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "ally",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "fair",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "play",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "grin",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "good",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "gift",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "nice",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "word",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kept",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bond",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "made",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pure",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "beam",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "door",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "care",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "zone",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ears",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "code",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "data",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wifi",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "port",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "call",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "node",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gate",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tool",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "page",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "boot",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rate",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ping",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "test",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "core",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "disk",
+      "gradeLevel": 3,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "miss",
+      "gradeLevel": 1,
+      "sentiment": "negative"
+    },
+    {
+      "word": "tech",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "name",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "loop",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "file",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "path",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "byte",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "html",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grid",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sync",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "base",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "loss",
+      "gradeLevel": 1,
+      "sentiment": "negative"
+    },
+    {
+      "word": "case",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "leak",
+      "gradeLevel": 2,
+      "sentiment": "negative"
+    },
+    {
+      "word": "spam",
+      "gradeLevel": 2,
+      "sentiment": "negative"
+    },
+    {
+      "word": "repo",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "form",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rule",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cert",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hash",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "user",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "auth",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "push",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dark",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mode",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "copy",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "site",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "goal",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "plan",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "move",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bold",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "step",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hard",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "work",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mind",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "next",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "firm",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "will",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "path",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "long",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "high",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "task",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "done",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "well",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grit",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "earn",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "form",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "haul",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "team",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "keep",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "turn",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "idea",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dive",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "risk",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "role",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pace",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wise",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "gain",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "list",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hope",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "held",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mark",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "peak",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "game",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "face",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fast",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lane",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lead",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "beat",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "paid",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quiz",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "note",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "card",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "desk",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "book",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "exam",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "coat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "math",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "prep",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bell",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hour",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "trip",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "text",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "time",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "home",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "roll",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dust",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "term",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lamp",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "peer",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ring",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hall",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "read",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "edge",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "slip",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pass",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bird",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cake",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "what",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "when",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "code",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "drip",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "data",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "html",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "java",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gold",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "cash",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "king",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "coin",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "save",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "earn",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rich",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fund",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "deal",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sale",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gain",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "byte",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bash",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "node",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "disk",
+      "gradeLevel": 3,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "file",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ping",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "duck",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fish",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "goat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hand",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jump",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kite",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lamp",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "moon",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "nest",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "open",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "play",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "rain",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ship",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tree",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kind",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "good",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "love",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "hope",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "nice",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "fair",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "hero",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "glad",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "calm",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "free",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "unit",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vent",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wind",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "xray",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yarn",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zinc",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ball",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cold",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "drum",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ever",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "frog",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "girl",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hill",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "iron",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "joke",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lava",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mice",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "name",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "oven",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "peck",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quiz",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rock",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sand",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "toes",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "urge",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "view",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wolf",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yard",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zoom",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ally",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "bake",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "calm",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "dive",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "echo",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "farm",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "game",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "heat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "idea",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jade",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "keep",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "leaf",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mint",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "love",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "help",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "care",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "give",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "kind",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "calm",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "soft",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "safe",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "true",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "dear",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "note",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "oval",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pack",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "race",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "seat",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tide",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vast",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wave",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "xmas",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zero",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "arch",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "belt",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "clay",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "deer",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "each",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "face",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gift",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "hard",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "inch",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "join",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "loud",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "melt",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "neck",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pine",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rope",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "song",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tent",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "unit",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vase",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "walk",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yoga",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zone",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "aqua",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "blue",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cool",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "door",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kind",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "help",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "kind",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "give",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "earn",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "self",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grow",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "gain",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "idea",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "plan",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wise",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "calm",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    }
   ],
   "5": [
-    "apple",
-    "bunny",
-    "chair",
-    "learn",
-    "slaps",
-    "think",
-    "solve",
-    "heart",
-    "peace",
-    "share",
-    "sweet",
-    "trust",
-    "grace",
-    "angel",
-    "touch",
-    "grass",
-    "smile",
-    "human",
-    "unity",
-    "brave",
-    "share",
-    "trust",
-    "skill",
-    "grasp",
-    "value",
-    "asset",
-    "bonus",
-    "worth",
-    "stock",
-    "prize",
-    "raise",
-    "trade",
-    "bucks",
-    "trust",
-    "value",
-    "focus",
-    "dance",
-    "eagle",
-    "flame",
-    "happy",
-    "smile",
-    "peace",
-    "trust",
-    "brave",
-    "shine",
-    "input",
-    "array",
-    "block",
-    "cloud",
-    "mouse",
-    "drive",
-    "email",
-    "logic",
-    "fetch",
-    "proxy",
-    "cheer",
-    "sweet",
-    "thank",
-    "charm",
-    "grape",
-    "house",
-    "igloo",
-    "jelly",
-    "koala",
-    "lemon",
-    "magic",
-    "nurse",
-    "ocean",
-    "piano",
-    "queen",
-    "robot",
-    "smile",
-    "tiger",
-    "uncle",
-    "vivid",
-    "whale",
-    "xylos",
-    "yacht",
-    "zebra",
-    "angle",
-    "baker",
-    "candy",
-    "daisy",
-    "eager",
-    "fairy",
-    "giant",
-    "happy",
-    "index",
-    "jolly",
-    "kneel",
-    "laugh",
-    "match",
-    "orbit",
-    "plant",
-    "quiet",
-    "rainy",
-    "shine",
-    "train",
-    "under",
-    "vocal",
-    "wrist",
-    "yummy",
-    "zippy",
-    "acorn",
-    "brave",
-    "clean",
-    "dream",
-    "earth",
-    "field",
-    "glide",
-    "heart",
-    "inbox",
-    "jumps",
-    "liver",
-    "merry",
-    "noble",
-    "organ",
-    "pouch",
-    "quack",
-    "rider",
-    "smart",
-    "ultra",
-    "voice",
-    "world",
-    "xenon",
-    "youth",
-    "azure",
-    "beach",
-    "cloud",
-    "drill",
-    "enter",
-    "flock",
-    "grill",
-    "honey",
-    "input",
-    "jewel",
-    "karma",
-    "lemon",
-    "mango",
-    "night",
-    "oasis",
-    "penny",
-    "quick",
-    "river",
-    "swing",
-    "trick",
-    "unity",
-    "vapor",
-    "witty",
-    "zonal",
-    "power",
-    "eagle",
-    "heart",
-    "smile",
-    "touch",
-    "peace",
-    "space",
-    "sweet",
-    "words",
-    "voice",
-    "trust",
-    "brave",
-    "cheer",
-    "given",
-    "shown",
-    "laugh",
-    "grace",
-    "faith",
-    "thank",
-    "light",
-    "loyal",
-    "quiet",
-    "happy",
-    "tears",
-    "moral",
-    "vibes",
-    "group",
-    "stack",
-    "cloud",
-    "logic",
-    "debug",
-    "smart",
-    "drive",
-    "error",
-    "cache",
-    "patch",
-    "boost",
-    "trace",
-    "query",
-    "build",
-    "input",
-    "mouse",
-    "click",
-    "email",
-    "merge",
-    "route",
-    "width",
-    "media",
-    "image",
-    "table",
-    "login",
-    "shell",
-    "param",
-    "react",
-    "redux",
-    "store",
-    "token",
-    "clear",
-    "daily",
-    "grind",
-    "small",
-    "habit",
-    "level",
-    "sharp",
-    "dream",
-    "value",
-    "added",
-    "focus",
-    "solid",
-    "major",
-    "great",
-    "pitch",
-    "ethic",
-    "lucky",
-    "break",
-    "clean",
-    "board",
-    "climb",
-    "quick",
-    "going",
-    "right",
-    "skill",
-    "worth",
-    "fight",
-    "final",
-    "pivot",
-    "adapt",
-    "shift",
-    "reach",
-    "chain",
-    "study",
-    "guide",
-    "score",
-    "class",
-    "rules",
-    "lunch",
-    "chalk",
-    "grade",
-    "field",
-    "white",
-    "paper",
-    "notes",
-    "pride",
-    "honor",
-    "chair",
-    "brain",
-    "storm",
-    "sheet",
-    "tutor",
-    "extra",
-    "scale",
-    "essay",
-    "topic",
-    "proof",
-    "tardy",
-    "boost",
-    "jocky"
+    {
+      "word": "apple",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bunny",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "chair",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "learn",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "think",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "solve",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "heart",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "peace",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "share",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "sweet",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "trust",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "grace",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "angel",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "touch",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grass",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "smile",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "human",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "unity",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "brave",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "share",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "trust",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "skill",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "grasp",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "value",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "asset",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bonus",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "worth",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "stock",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "prize",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "raise",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "trade",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bucks",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "trust",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "value",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "focus",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "dance",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "eagle",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "flame",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "happy",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "smile",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "peace",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "trust",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "brave",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "shine",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "input",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "array",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "block",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cloud",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mouse",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "drive",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "email",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "logic",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fetch",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "proxy",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cheer",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "sweet",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "thank",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "charm",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "grape",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "house",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "igloo",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jelly",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "koala",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lemon",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "magic",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "nurse",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ocean",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "piano",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "queen",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "robot",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "smile",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "tiger",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "uncle",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vivid",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "whale",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yacht",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zebra",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "angle",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "baker",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "candy",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "daisy",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "eager",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "fairy",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "giant",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "happy",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "index",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jolly",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "kneel",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "laugh",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "match",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "orbit",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "plant",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quiet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rainy",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "shine",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "train",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "under",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vocal",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wrist",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yummy",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "zippy",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "acorn",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "brave",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "clean",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "dream",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "earth",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "field",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "glide",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "heart",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "inbox",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jumps",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "liver",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "merry",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "noble",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "organ",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pouch",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quack",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rider",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "smart",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "ultra",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "voice",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "world",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "xenon",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "youth",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "azure",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "beach",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cloud",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "drill",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "enter",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "flock",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grill",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "honey",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "input",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jewel",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "karma",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lemon",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mango",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "night",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "oasis",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "penny",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quick",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "river",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "swing",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "trick",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "unity",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "vapor",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "witty",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "zonal",
+      "gradeLevel": 3,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "power",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "eagle",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "heart",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "smile",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "touch",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "peace",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "space",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sweet",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "words",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "voice",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "trust",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "brave",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "cheer",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "given",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "shown",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "laugh",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "grace",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "faith",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "thank",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "light",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "loyal",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "quiet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "happy",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "tears",
+      "gradeLevel": 0,
+      "sentiment": "negative"
+    },
+    {
+      "word": "moral",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vibes",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "group",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "stack",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cloud",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "logic",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "debug",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "smart",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "drive",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "error",
+      "gradeLevel": 6,
+      "sentiment": "negative"
+    },
+    {
+      "word": "cache",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "patch",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "boost",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "trace",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "query",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "build",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "input",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mouse",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "click",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "email",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "merge",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "route",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "width",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "media",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "image",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "table",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "login",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "shell",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "param",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "react",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "redux",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "store",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "token",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "clear",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "daily",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grind",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "small",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "habit",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "level",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sharp",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dream",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "value",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "added",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "focus",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "solid",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "major",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "great",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "pitch",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ethic",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lucky",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "break",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "clean",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "board",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "climb",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quick",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "going",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "right",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "skill",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "worth",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "fight",
+      "gradeLevel": 0,
+      "sentiment": "negative"
+    },
+    {
+      "word": "final",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pivot",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "adapt",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "shift",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "reach",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "chain",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "study",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "guide",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "score",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "class",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rules",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lunch",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "chalk",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grade",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "field",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "white",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "paper",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "notes",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pride",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "honor",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "chair",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "brain",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "storm",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sheet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tutor",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "extra",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "scale",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "essay",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "topic",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "proof",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tardy",
+      "gradeLevel": 1,
+      "sentiment": "negative"
+    },
+    {
+      "word": "boost",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    }
   ],
   "6": [
-    "animal",
-    "banana",
-    "bubble",
-    "candle",
-    "income",
-    "wealth",
-    "profit",
-    "gentle",
-    "honest",
-    "humble",
-    "rescue",
-    "secure",
-    "kindly",
-    "warmth",
-    "budget",
-    "reward",
-    "credit",
-    "luxury",
-    "invest",
-    "status",
-    "circle",
-    "donkey",
-    "mentor",
-    "reward",
-    "growth",
-    "income",
-    "effort",
-    "active",
-    "wisdom",
-    "humble",
-    "honest",
-    "buffer",
-    "device",
-    "script",
-    "server",
-    "cookie",
-    "vector",
-    "router",
-    "binary",
-    "client",
-    "kernel",
-    "humble",
-    "joyful",
-    "caring",
-    "worthy",
-    "helper",
-    "giving",
-    "strong",
-    "polite",
-    "bright",
-    "family",
-    "garden",
-    "hammer",
-    "island",
-    "jungle",
-    "kitten",
-    "laptop",
-    "magnet",
-    "napkin",
-    "orange",
-    "pickle",
-    "quartz",
-    "rocket",
-    "tunnel",
-    "violin",
-    "window",
-    "yellow",
-    "zipper",
-    "anchor",
-    "bottle",
-    "crayon",
-    "drawer",
-    "engine",
-    "forest",
-    "goblin",
-    "helmet",
-    "insect",
-    "jacket",
-    "kitten",
-    "legend",
-    "market",
-    "nature",
-    "object",
-    "planet",
-    "quiver",
-    "ribbon",
-    "school",
-    "update",
-    "vacuum",
-    "whales",
-    "aboard",
-    "basket",
-    "cheese",
-    "dragon",
-    "excite",
-    "freeze",
-    "glider",
-    "honest",
-    "invite",
-    "juggle",
-    "karate",
-    "listen",
-    "marble",
-    "napkin",
-    "online",
-    "people",
-    "quaint",
-    "rescue",
-    "sprout",
-    "travel",
-    "unique",
-    "valley",
-    "wonder",
-    "energy",
-    "forest",
-    "galaxy",
-    "income",
-    "lesson",
-    "museum",
-    "winner",
-    "nature",
-    "object",
-    "rocket",
-    "silent",
-    "ticket",
-    "wander",
-    "cooked",
-    "locked",
-    "friend",
-    "blazin",
-    "gentle",
-    "bright",
-    "friend",
-    "caring",
-    "glance",
-    "shared",
-    "silent",
-    "earned",
-    "joyful",
-    "honest",
-    "answer",
-    "giving",
-    "nature",
-    "system",
-    "thanks",
-    "steady",
-    "intent",
-    "secret",
-    "warmly",
-    "tender",
-    "burden",
-    "mutual",
-    "common",
-    "ground",
-    "family",
-    "relief",
-    "warmth",
-    "binary",
-    "server",
-    "stream",
-    "signal",
-    "device",
-    "editor",
-    "driver",
-    "router",
-    "config",
-    "mobile",
-    "domain",
-    "switch",
-    "packet",
-    "branch",
-    "memory",
-    "output",
-    "client",
-    "filter",
-    "syntax",
-    "commit",
-    "deploy",
-    "script",
-    "uptime",
-    "render",
-    "design",
-    "docker",
-    "cookie",
-    "crypto",
-    "module",
-    "static",
-    "vision",
-    "strong",
-    "streak",
-    "growth",
-    "future",
-    "effort",
-    "hustle",
-    "finish",
-    "career",
-    "action",
-    "timely",
-    "pencil",
-    "school",
-    "report",
-    "lesson",
-    "drawer",
-    "credit",
-    "review",
-    "rubric",
-    "snacks",
-    "lounge"
+    {
+      "word": "animal",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "banana",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bubble",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "candle",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "income",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wealth",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "profit",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gentle",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "honest",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "humble",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "rescue",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "secure",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "kindly",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "warmth",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "budget",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "reward",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "credit",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "luxury",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "invest",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "status",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "circle",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "donkey",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mentor",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "reward",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "growth",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "income",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "effort",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "active",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wisdom",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "humble",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "honest",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "buffer",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "device",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "script",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "server",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cookie",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vector",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "router",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "binary",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "client",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kernel",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "humble",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "joyful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "caring",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "worthy",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "helper",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "giving",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "strong",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "polite",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "bright",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "family",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "garden",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hammer",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "island",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jungle",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kitten",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "laptop",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "magnet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "napkin",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "orange",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pickle",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quartz",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rocket",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "tunnel",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "violin",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "window",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "yellow",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "zipper",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "anchor",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bottle",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "crayon",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "drawer",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "engine",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "forest",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "goblin",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "helmet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "insect",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "jacket",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kitten",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "legend",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "market",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "nature",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "object",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "planet",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quiver",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ribbon",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "school",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "update",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vacuum",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "whales",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "aboard",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "basket",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cheese",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dragon",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "excite",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "freeze",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "glider",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "honest",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "invite",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "juggle",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "karate",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "listen",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "marble",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "napkin",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "online",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "people",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "quaint",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rescue",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "sprout",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "travel",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "unique",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "valley",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wonder",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "energy",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "forest",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "galaxy",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "income",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lesson",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "museum",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "winner",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "nature",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "object",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rocket",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "silent",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ticket",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "wander",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cooked",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "locked",
+      "gradeLevel": 0,
+      "sentiment": "negative"
+    },
+    {
+      "word": "friend",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "gentle",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "bright",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "friend",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "caring",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "glance",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "shared",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "silent",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "earned",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "joyful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "honest",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "answer",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "giving",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "nature",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "system",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "thanks",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "steady",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "intent",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "secret",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "warmly",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "tender",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "burden",
+      "gradeLevel": 4,
+      "sentiment": "negative"
+    },
+    {
+      "word": "mutual",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "common",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ground",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "family",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "relief",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "warmth",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "binary",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "server",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "stream",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "signal",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "device",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "editor",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "driver",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "router",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "config",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mobile",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "domain",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "switch",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "packet",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "branch",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "memory",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "output",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "client",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "filter",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "syntax",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "commit",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "deploy",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "script",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "uptime",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "render",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "design",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "docker",
+      "gradeLevel": 8,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cookie",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "crypto",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "module",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "static",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "vision",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "strong",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "streak",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "growth",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "future",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "effort",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hustle",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "finish",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "career",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "action",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "timely",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pencil",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "school",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "report",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lesson",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "drawer",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "credit",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "review",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rubric",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "snacks",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "lounge",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    }
   ],
   "7": [
-    "convert",
-    "empathy",
-    "problem",
-    "nurture",
-    "savings",
-    "curious",
-    "insight",
-    "helpful",
-    "forgive",
-    "respect",
-    "fortune",
-    "payment",
-    "support",
-    "respect",
-    "patient",
-    "comfort",
-    "healing",
-    "lovable",
-    "devoted",
-    "sincere",
-    "embrace",
-    "balance",
-    "earnest",
-    "deposit",
-    "premium",
-    "venture",
-    "success",
-    "resolve",
-    "patient",
-    "earnest",
-    "focused",
-    "network",
-    "mindset",
-    "support",
-    "control",
-    "network",
-    "monitor",
-    "browser",
-    "digital",
-    "compile",
-    "backend",
-    "gateway",
-    "printer",
-    "desktop",
-    "website",
-    "chicken",
-    "success",
-    "inspire",
-    "believe",
-    "hopeful",
-    "patient",
-    "support",
-    "mindful",
-    "balance",
-    "delight",
-    "climate",
-    "cookies",
-    "diamond",
-    "elastic",
-    "emerald",
-    "explore",
-    "factory",
-    "fortune",
-    "freedom",
-    "grammar",
-    "happily",
-    "harmony",
-    "imagine",
-    "impress",
-    "journey",
-    "landing",
-    "library",
-    "marbles",
-    "message",
-    "notepad",
-    "pattern",
-    "playful",
-    "pretend",
-    "printer",
-    "rejoice",
-    "respect",
-    "science",
-    "someone",
-    "sunrise",
-    "teacher",
-    "helpful",
-    "unicorn",
-    "village",
-    "webpage",
-    "silence",
-    "passive",
-    "hopeful",
-    "support",
-    "respect",
-    "gesture",
-    "patient",
-    "offered",
-    "sincere",
-    "forgive",
-    "quickly",
-    "empathy",
-    "welcome",
-    "comfort",
-    "smiling",
-    "healing",
-    "feeling",
-    "helpful",
-    "trusted",
-    "lasting",
-    "storage",
-    "network",
-    "browser",
-    "command",
-    "console",
-    "backend",
-    "version",
-    "control",
-    "session",
-    "timeout",
-    "tracker",
-    "handler",
-    "snippet",
-    "package",
-    "machine",
-    "focused",
-    "mindset",
-    "reached",
-    "picture",
-    "forward",
-    "project",
-    "science",
-    "college",
-    "teacher",
-    "history",
-    "reading",
-    "subject",
-    "planner",
-    "anxiety",
-    "library"
+    {
+      "word": "convert",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "empathy",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "problem",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "nurture",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "savings",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "curious",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "insight",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "helpful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "forgive",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "respect",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "fortune",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "payment",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "support",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "respect",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "patient",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "comfort",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "healing",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "lovable",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "devoted",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "sincere",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "embrace",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "balance",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "earnest",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "deposit",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "premium",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "venture",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "success",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "resolve",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "patient",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "earnest",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "focused",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "network",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mindset",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "support",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "control",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "network",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "monitor",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "browser",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "digital",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "compile",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "backend",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gateway",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "printer",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "desktop",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "website",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "chicken",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "success",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "inspire",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "believe",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "hopeful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "patient",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "support",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "mindful",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "balance",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "delight",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "climate",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cookies",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "diamond",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "elastic",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "emerald",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "explore",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "factory",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "fortune",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "freedom",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "grammar",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "happily",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "harmony",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "imagine",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "impress",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "journey",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "landing",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "library",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "marbles",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "message",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "notepad",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pattern",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "playful",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "pretend",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "printer",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "rejoice",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "respect",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "science",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "someone",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sunrise",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "teacher",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "helpful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "unicorn",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "village",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "webpage",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "silence",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "passive",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hopeful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "support",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "respect",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "gesture",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "patient",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "offered",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sincere",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "forgive",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "quickly",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "empathy",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "welcome",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "comfort",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "smiling",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "healing",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "feeling",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "helpful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "trusted",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "lasting",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "storage",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "network",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "browser",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "command",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "console",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "backend",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "version",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "control",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "session",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "timeout",
+      "gradeLevel": 2,
+      "sentiment": "negative"
+    },
+    {
+      "word": "tracker",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "handler",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "snippet",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "package",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "machine",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "focused",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "mindset",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "reached",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "picture",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "forward",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "project",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "science",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "college",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "teacher",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "history",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "reading",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "subject",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "planner",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "anxiety",
+      "gradeLevel": 2,
+      "sentiment": "negative"
+    },
+    {
+      "word": "library",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    }
   ],
   "8": [
-    "variable",
-    "solution",
-    "learning",
-    "abundant",
-    "security",
-    "treasure",
-    "currency",
-    "increase",
-    "interest",
-    "solution",
-    "positive",
-    "valuable",
-    "overcome",
-    "thoughts",
-    "resource",
-    "diligent",
-    "strength",
-    "inventor",
-    "decision",
-    "ambition",
-    "feedback",
-    "bathroom",
-    "kindness",
-    "kindness",
-    "computer",
-    "software",
-    "hardware",
-    "database",
-    "protocol",
-    "internet",
-    "terminal",
-    "security",
-    "positive",
-    "function",
-    "generous",
-    "creative",
-    "computer",
-    "cupcakes",
-    "daylight",
-    "dinosaur",
-    "goodness",
-    "grateful",
-    "handmade",
-    "homework",
-    "pancakes",
-    "password",
-    "friendly",
-    "neighbor",
-    "grateful",
-    "kindness",
-    "returned",
-    "reliable",
-    "trusting",
-    "offering",
-    "welcomed",
-    "listener",
-    "cheerful",
-    "internet",
-    "protocol",
-    "function",
-    "security",
-    "terminal",
-    "keyboard",
-    "shortcut",
-    "conflict",
-    "frontend",
-    "viewport",
-    "database",
-    "firewall",
-    "pipeline",
-    "endpoint",
-    "sequence",
-    "decision",
-    "achieved",
-    "deadline",
-    "learning",
-    "question",
-    "academic",
-    "notebook"
+    {
+      "word": "variable",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "solution",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "learning",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "abundant",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "security",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "treasure",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "currency",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "increase",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "interest",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "solution",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "positive",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "valuable",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "overcome",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "thoughts",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "resource",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "diligent",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "strength",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "inventor",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "decision",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ambition",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "feedback",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "bathroom",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kindness",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "kindness",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "computer",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "software",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "hardware",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "database",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "protocol",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "internet",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "terminal",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "security",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "positive",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "function",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "generous",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "creative",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "computer",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "cupcakes",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "daylight",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "dinosaur",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "goodness",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "grateful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "handmade",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "homework",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pancakes",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "password",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "friendly",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    },
+    {
+      "word": "neighbor",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "grateful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "kindness",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "returned",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "reliable",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "trusting",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "offering",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "welcomed",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "listener",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "cheerful",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "internet",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "protocol",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "function",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "security",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "terminal",
+      "gradeLevel": 6,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "keyboard",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "shortcut",
+      "gradeLevel": 3,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "conflict",
+      "gradeLevel": 4,
+      "sentiment": "negative"
+    },
+    {
+      "word": "frontend",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "viewport",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "database",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "firewall",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "pipeline",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "endpoint",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sequence",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "decision",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "achieved",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    },
+    {
+      "word": "deadline",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "learning",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "question",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "academic",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "notebook",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    }
   ],
   "9": [
-    "waterfall",
-    "welcoming",
-    "listening",
-    "uplifting",
-    "emotional",
-    "framework",
-    "clipboard",
-    "promotion",
-    "classmate",
-    "sharpener",
-    "worksheet"
+    {
+      "word": "waterfall",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "welcoming",
+      "gradeLevel": 1,
+      "sentiment": "positive"
+    },
+    {
+      "word": "listening",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "uplifting",
+      "gradeLevel": 4,
+      "sentiment": "positive"
+    },
+    {
+      "word": "emotional",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "framework",
+      "gradeLevel": 5,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "clipboard",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "promotion",
+      "gradeLevel": 4,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "classmate",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sharpener",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "worksheet",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    }
   ],
   "items": [
-    "diamond",
-    "ruby",
-    "emerald",
-    "sapphire",
-    "gold"
+    {
+      "word": "diamond",
+      "gradeLevel": 1,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "ruby",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "emerald",
+      "gradeLevel": 2,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "sapphire",
+      "gradeLevel": 3,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "gold",
+      "gradeLevel": 2,
+      "sentiment": "positive"
+    }
   ],
   "powerups": [
-    "end",
-    "time",
-    "life"
+    {
+      "word": "end",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "time",
+      "gradeLevel": 0,
+      "sentiment": "neutral"
+    },
+    {
+      "word": "life",
+      "gradeLevel": 0,
+      "sentiment": "positive"
+    }
   ]
 }

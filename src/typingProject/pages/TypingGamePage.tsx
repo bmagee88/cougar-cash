@@ -1,3 +1,5 @@
+import WordFilterChips, { WordFilters } from "../components/WordFilterChips";
+import { filterWordsByLength } from "../resources/homeRowWordBank";
 import {
   Box,
   Stack,
@@ -836,6 +838,13 @@ const BackpackBurstEffect: React.FC<{
 };
 
 const TypingGamePage: React.FC = () => {
+  const [wordFilters, setWordFilters] = useState<WordFilters>({});
+  const filteredWords = useMemo(() => filterWordsByLength(wordFilters.gradeMask, wordFilters.sentimentMask), [wordFilters]);
+  const filteredLengthKeys = Object.keys(filteredWords).filter(key => !isNaN(Number(key)) && filteredWords[key].length);
+  const eligibleWordSet = new Set(Object.values(filteredWords).flat());
+  const eligiblePairs = wordFilters.gradeMask === undefined && wordFilters.sentimentMask === undefined ? allCollectiblePairs : allCollectiblePairs.filter(pair => pair.split(" ").every(word => eligibleWordSet.has(word)));
+  const eligibleItems = orderedItems.filter(word => filteredWords.items.includes(word));
+
   const getTodayKey = () => new Date().toISOString().split("T")[0];
   const calculateStreak = (): number => {
     const saved = localStorage.getItem("dailies");
@@ -1592,7 +1601,7 @@ const TypingGamePage: React.FC = () => {
     setShowModal(false);
     runRecordedRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentLevel, difficulties.password, selectedLeague]);
+  }, [currentLevel, difficulties.password, selectedLeague, wordFilters]);
 
   useEffect(() => {
     if (!isHomeRowCheckOpen) {
@@ -1687,6 +1696,7 @@ const TypingGamePage: React.FC = () => {
   }, [showModal]); // Run this effect when 'showModal' changes
 
   const getRandomWords = (level: number): string[] => {
+    if (!filteredLengthKeys.length) return [];
     const minChars = level * 5 - 20;
     const maxChars = level * 5 + 20;
 
@@ -1697,14 +1707,14 @@ const TypingGamePage: React.FC = () => {
 
       // Step 1: Generate base words
       for (let i = 0; i < level; i++) {
-        const key = wordLengthKeys[Math.floor(Math.random() * wordLengthKeys.length)];
-        const wordList = words[key];
+        const key = filteredLengthKeys[Math.floor(Math.random() * filteredLengthKeys.length)];
+        const wordList = filteredWords[key];
         const word = wordList[Math.floor(Math.random() * wordList.length)];
         result.push(word);
       }
 
       // Step 2: Try inserting an item using cycle logic
-      const selectedItem = getRandomItemWithChance(orderedItems, 0.25);
+      const selectedItem = eligibleItems.length ? getRandomItemWithChance(eligibleItems, 0.25) : null;
       let itemIndex = -1;
 
       if (selectedItem) {
@@ -1713,8 +1723,8 @@ const TypingGamePage: React.FC = () => {
       }
 
       // Step 3: 10% chance to insert a powerup (avoid overwriting item)
-      if (Math.random() < 0.1 && words.powerups?.length) {
-        const powerup = words.powerups[Math.floor(Math.random() * words.powerups.length)];
+      if (Math.random() < 0.1 && filteredWords.powerups?.length) {
+        const powerup = filteredWords.powerups[Math.floor(Math.random() * filteredWords.powerups.length)];
         let powerupIndex = Math.floor(Math.random() * result.length);
 
         let avoidConflictAttempts = 0;
@@ -1730,9 +1740,9 @@ const TypingGamePage: React.FC = () => {
       const totalChars = result.reduce((sum, word) => sum + word.length, 0);
       if (totalChars >= minChars && totalChars <= maxChars) {
         // Step 5: Optionally inject collectible pair
-        if (level >= 10) {
+        if (level >= 10 && eligiblePairs.length) {
           const randomPair =
-            allCollectiblePairs[Math.floor(Math.random() * allCollectiblePairs.length)];
+            eligiblePairs[Math.floor(Math.random() * eligiblePairs.length)];
           const pairWords = randomPair.split(" ");
 
           const replaceIndex = Math.floor(Math.random() * (result.length - 1));
@@ -1745,8 +1755,8 @@ const TypingGamePage: React.FC = () => {
 
     // Fallback: basic list
     const fallbackWords = Array.from({ length: level }, () => {
-      const key = wordLengthKeys[Math.floor(Math.random() * wordLengthKeys.length)];
-      const wordList = words[key];
+      const key = filteredLengthKeys[Math.floor(Math.random() * filteredLengthKeys.length)];
+      const wordList = filteredWords[key];
       return wordList[Math.floor(Math.random() * wordList.length)];
     });
     return fallbackWords;
@@ -2861,6 +2871,7 @@ const TypingGamePage: React.FC = () => {
               })}
             </Stack>
             <IconButton
+              aria-label="Settings"
               onClick={() => setSettingsOpen(true)}
               sx={{ color: "white", pr: 1, alignSelf: "flex-end" }}>
               <SettingsIcon fontSize='large' />
@@ -2941,8 +2952,11 @@ const TypingGamePage: React.FC = () => {
             p: 4,
             borderRadius: 3,
             boxShadow: 5,
-            width: 300,
+            width: { xs: "90vw", sm: 650 },
+            maxHeight: "90vh",
+            overflowY: "auto",
           }}>
+          <WordFilterChips value={wordFilters} onChange={setWordFilters} />
           <Typography
             variant='h6'
             sx={{ mb: 2, textAlign: "center", color: "gold" }}>
@@ -3411,6 +3425,7 @@ const TypingGamePage: React.FC = () => {
           })} */}
 
         <TextField
+          disabled={!filteredLengthKeys.length}
           type='text'
           inputRef={inputRef}
           value={input}
