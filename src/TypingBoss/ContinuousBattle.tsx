@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { submitTypingBossWords } from "./api";
-import { attackProgress, consistencyMultiplier, finishWord, releaseAttack, wordAt } from "./proportionalRules";
+import { attackProgress, consistencyMultiplier, dodgeChance, finishWord, releaseAttack, wordAt } from "./proportionalRules";
 import { usePublishAttackProgress } from "./AttackProgress";
 import { TypingBossCredentials, TypingBossSessionSnapshot, TypingBossTypingState, TypingBossWordResult } from "./types";
 import "./continuousBattle.css";
@@ -22,7 +22,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
   const wordDescriptionId = React.useId();
   const typed = useRef("");
   const completedText = useRef<Record<number, string>>({});
-  const timing = useRef({ count: 0, sum: 0, squares: 0, last: null as number | null });
+  const timing = useRef({ count: 0, sum: 0, squares: 0, last: null as number | null, transitionMs: undefined as number | undefined });
   const publishProgress = usePublishAttackProgress(sessionId, credentials, active);
   const [, redraw] = useState(0);
   const [error, setError] = useState("");
@@ -42,8 +42,8 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
     if (state.nextWord < acknowledged.current || state.nextWord > model.current.nextWord) return;
     const next = { ...state };
     queue.current = queue.current.filter(record => record[0] >= state.nextWord);
-    for (const [, text, count, sum, squares] of queue.current) {
-      finishWord(next, text, count, sum, squares);
+    for (const [, text, count, sum, squares, transitionMs] of queue.current) {
+      finishWord(next, text, count, sum, squares, transitionMs);
       if (next.wordsInAttack === 10) releaseAttack(next, () => 1);
     }
     acknowledged.current = Math.max(acknowledged.current, state.nextWord);
@@ -89,6 +89,9 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
     const currentTiming = timing.current;
     if (currentTiming.last !== null) {
       const interval = Math.max(0, now - currentTiming.last);
+      if (!typed.current.length && model.current.nextWord % 10 !== 0 && model.current.dodgeSamples) {
+        currentTiming.transitionMs = interval;
+      }
       currentTiming.count += 1;
       currentTiming.sum += interval;
       currentTiming.squares += interval * interval;
@@ -99,7 +102,9 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
     const word = wordAt(current.seed, current.nextWord, current.gradeMask, current.sentimentMask);
     if (typed.current.length === word.text.length + (current.nextWord % 10 === 9 ? 0 : 1)) {
       const record: TypingBossWordResult = [current.nextWord, typed.current, currentTiming.count, currentTiming.sum, currentTiming.squares];
-      const result = finishWord(current, typed.current, currentTiming.count, currentTiming.sum, currentTiming.squares);
+      if (currentTiming.transitionMs !== undefined) record[5] = currentTiming.transitionMs;
+      const previousDodge = dodgeChance(current);
+      const result = finishWord(current, typed.current, currentTiming.count, currentTiming.sum, currentTiming.squares, record[5]);
       completedText.current[record[0]] = typed.current;
       queue.current.push(record);
       const attack = current.wordsInAttack === 10;
@@ -110,8 +115,8 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
         currentTiming.last = null;
       }
       typed.current = "";
-      currentTiming.count = 0; currentTiming.sum = 0; currentTiming.squares = 0;
-      if (attack || (result.correct && result.color === "blue") || queue.current.length >= 20) flush();
+      currentTiming.count = 0; currentTiming.sum = 0; currentTiming.squares = 0; currentTiming.transitionMs = undefined;
+      if (attack || dodgeChance(current) !== previousDodge || (result.correct && result.color === "blue") || queue.current.length >= 20) flush();
     }
     publishProgress(current.nextWord, typed.current.length, attackProgress(current.seed, current.nextWord, typed.current.length, current.gradeMask, current.sentimentMask));
     redraw(value => value + 1);
@@ -129,6 +134,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
     <Stack direction="row" flexWrap="wrap" gap={1}>
       {multiplier !== 1 && <Chip label={`Rhythm ×${multiplier.toFixed(2)}`} sx={{ color: "#e9d5ff" }} />}
       <Chip label={`Shield ${Math.round(current.shield * 100)}%`} sx={{ color: colors.blue }} />
+      {current.dodgeSamples && <Chip label={`Dodge ${dodgeChance(current)}%`} sx={{ color: colors.green }} />}
       {current.orange + current.growth > 0 && <Chip label={`Attack +${Math.round((current.orange + current.growth) * 100)}%`} sx={{ color: colors.orange }} />}
       {current.red > 0 && <Chip label={`Crit ${Math.round(current.red * 100)}%`} sx={{ color: colors.red }} />}
       {current.green > 0 && <Chip label={`+${current.green * 4}% per correct word`} sx={{ color: colors.green }} />}
@@ -159,10 +165,13 @@ export function ContinuousTyping({ sessionId, credentials, state, active, diviso
         Click the words to focus. Press space between words; word ten fires on its last letter. Correct letters and spaces add damage. Errors stay; backspace is disabled.
         Rest between attacks is free. Rhythm allows 200 ms of timing variation.
       </Typography>
+      {current.dodgeSamples && <Typography variant="body2" sx={{ mt: 1 }}>
+        Start each new word promptly after Space to build up to 25% dodge. Your last five transitions are compared with your pace within those words. Rest between attacks does not count. A dodge avoids the entire hit and keeps your shield.
+      </Typography>}
       <Typography variant="body2" sx={{ mt: 1 }}>
         30% colored words: perfect blue words block 10% of the next hit; orange adds 10% attack; red adds 10% crit chance; green adds 4% per following correct word.
         Bonuses stack. Attack bonuses reset when you fire; shields last until hit.
-        {credentials.hostToken && ` Each player takes your attack power � ${divisor} starting players.`}
+        {credentials.hostToken && ` Each player takes your attack power ÷ ${divisor} starting players.`}
       </Typography>
     </Box>
     {error && <Alert severity="warning" sx={{ mt: 1 }}>{error} Your completed words will retry automatically. <Button onClick={flush}>Retry</Button></Alert>}
@@ -184,8 +193,8 @@ export function DamageBoard({ session, personal = false }: { session: TypingBoss
         return <Box key={player.code} sx={{ border: "1px solid #344256", borderRadius: 1, px: 1.5, py: 1, minWidth: 0, bgcolor: player.defeated ? "#28151f" : "#101a2a" }}>
           <Stack direction="row" justifyContent="space-between" gap={1}><Typography fontWeight={900} noWrap>{player.name}</Typography><Typography variant="body2" whiteSpace="nowrap">{number(player.hp)} / {number(player.maxHp)} HP</Typography></Stack>
           <Stack direction="row" gap={2} sx={{ mt: 0.5 }}>
-            <Typography sx={{ color: "#7dd3fc" }}>Dealt {number(player.totalDamage)} {dealt && <strong key={dealt.id} className="damage-flash">+{number(dealt.amount || 0)}</strong>}</Typography>
-            <Typography sx={{ color: "#fda4af" }}>Taken {number(player.totalTaken || 0)} {taken && <strong key={taken.id} className="damage-flash">−{number(taken.amount || 0)}</strong>}</Typography>
+            <Typography sx={{ color: "#7dd3fc" }}>Dealt {number(player.totalDamage)} {dealt && <strong key={dealt.id} className="damage-flash">{dealt.evadeType === "dodge" ? "Dodged" : `+${number(dealt.amount || 0)}`}</strong>}</Typography>
+            <Typography sx={{ color: "#fda4af" }}>Taken {number(player.totalTaken || 0)} {taken && <strong key={taken.id} className="damage-flash">{taken.evadeType === "dodge" ? "Dodged" : `−${number(taken.amount || 0)}`}</strong>}</Typography>
           </Stack>
         </Box>;
       })}

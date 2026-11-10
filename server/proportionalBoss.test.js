@@ -30,6 +30,68 @@ function seekColor(color) {
   throw new Error("Missing color");
 }
 
+test("dodge rewards smooth word transitions at either speed and forgets older samples", () => {
+  const fast = rules.createTypingState(42);
+  const slow = rules.createTypingState(42);
+  const finish = (state, gap, pace) => {
+    const word = rules.wordAt(state.seed, state.nextWord).text;
+    const text = "!" + word.slice(1) + (state.nextWord % 10 === 9 ? "" : " ");
+    rules.finishWord(state, text, 3, gap + 2 * pace, gap ** 2 + 2 * pace ** 2, gap);
+  };
+  finish(fast, 40, 40); finish(slow, 300, 300);
+  assert.equal(rules.dodgeChance(fast), 0, "attack-opening key gap does not count");
+  finish(fast, 40, 40); finish(slow, 300, 300);
+  assert.equal(rules.dodgeChance(fast), 25);
+  assert.equal(rules.dodgeChance(slow), 25, "accuracy and absolute speed do not set dodge");
+  for (let i = 0; i < 5; i++) finish(slow, 1500, 300);
+  assert.equal(rules.dodgeChance(slow), 0);
+  assert.equal(slow.dodgeSamples.length, 5);
+  rules.releaseAttack(fast);
+  assert.equal(rules.dodgeChance(fast), 25, "firing an attack does not reset dodge");
+});
+
+test("transition timing is validated against the word's other gaps, and retries don't add samples", () => {
+  const session = sessionWithPlayers(1);
+  const actor = session.players.get("0");
+  const auth = { role: "player", actorCode: actor.code };
+  const cb = callbacks();
+  const records = recordsFor(actor.typing, 2);
+  assert.throws(() => engine.submitWords(session, auth, [[...records[0], 200]], cb), /transition timing/);
+  assert.throws(() => engine.submitWords(session, auth, [records[0], [...records[1], 400]], cb), /transition timing/);
+  assert.equal(actor.typing.nextWord, 0);
+  const valid = [records[0], [...records[1], 200]];
+  engine.submitWords(session, auth, valid, cb);
+  engine.submitWords(session, auth, valid, cb);
+  assert.deepEqual(actor.typing.dodgeSamples, [25]);
+});
+
+test("player and dragon dodges avoid damage without consuming a shield", () => {
+  const session = sessionWithPlayers(1);
+  const player = session.players.get("0");
+  const attack = { power: 20, multiplier: 2, moveId: "strong", critical: true };
+  const cb = { ...callbacks(), random: () => 0.24 };
+  for (const defender of [player.typing, session.typingHost]) {
+    defender.dodgeSamples = [25];
+    defender.shield = .1;
+  }
+  engine.launchAttack(session, session.typingHost, attack, cb);
+  engine.launchAttack(session, player, attack, cb);
+  cb.timers.splice(0).forEach(resolve => resolve());
+  assert.ok(session.projectiles.every(shot => shot.evadeType === "dodge" && !shot.willHit && shot.amount === 0));
+  assert.equal(player.hp, 100);
+  assert.equal(session.boss.hp, 100);
+  assert.equal(player.typing.shield, .1);
+  assert.equal(session.typingHost.shield, .1);
+  assert.equal(player.bossHitsTaken, 0);
+  assert.equal(player.totalDamage, 0);
+  assert.equal(player.strongestAttack, undefined);
+  cb.random = () => 0.25;
+  engine.launchAttack(session, player, attack, cb);
+  cb.timers[0]();
+  assert.equal(session.boss.hp, 82);
+  assert.equal(session.typingHost.shield, 0);
+});
+
 test("the tenth word applies its color before release, including immediate defense", () => {
   for (const color of ["orange", "red", "blue", "green"]) {
     let seed = 0;

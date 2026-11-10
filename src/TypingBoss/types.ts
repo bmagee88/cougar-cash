@@ -60,9 +60,10 @@ export interface TypingBossTypingState {
   consistency: number;
   totalTaken: number;
   totalCharacters: number;
+  dodgeSamples?: number[];
 }
-// index, typed word, interval count, sum of intervals, sum of squared intervals.
-export type TypingBossWordResult = [number, string, number, number, number];
+// index, typed word, interval count, sum, squared sum, optional Space-to-first-character gap.
+export type TypingBossWordResult = [number, string, number, number, number, number?];
 export type TypingBossMoveId = "weak" | "strong" | "special" | "potion";
 export type TypingBossProjectileKind =
   | "damage"
@@ -131,7 +132,7 @@ export interface TypingBossProjectile {
   resolvedAt: number | null;
   result: TypingBossProjectileResult;
   amount: number | null;
-  evadeType?: "regular" | "special" | null;
+  evadeType?: "regular" | "special" | "dodge" | null;
   multiplier?: number;
   sourceName?: string;
   critical?: boolean;
