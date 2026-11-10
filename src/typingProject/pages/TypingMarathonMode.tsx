@@ -196,7 +196,7 @@ export default function TypingMarathonMode() {
     }
   }, []);
 
-  const resetGame = () => {
+  const resetGame = useCallback(() => {
     setWordList(generateWords(50, sampleWords));
     setElapsedTime(0);
     setInput("");
@@ -210,9 +210,9 @@ export default function TypingMarathonMode() {
     setLastChar(null);
     setRepeatCharCount(0);
     setLossReason(null);
-  };
+  }, [sampleWords, difficulty]);
 
-  useEffect(() => { resetGame(); }, [wordFilters]);
+  useEffect(() => { resetGame(); }, [resetGame]);
 
   const handlePlayAgain = () => {
     // Increment game/run number for the next run
