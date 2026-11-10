@@ -9,6 +9,7 @@ const {
 } = require("./patternGame");
 const { closePawPassPool, handlePawPassRequest } = require("./pawPass");
 const { handleDictionaryLookup } = require("./wordWeb");
+const proportionalBoss = require("./proportionalBoss");
 
 const PORT = Number(
   process.env.APP_SERVER_PORT ||
@@ -1256,9 +1257,13 @@ function typingBossResolveTarget(session, player, move, requestedTargetCode) {
 function createTypingBossSession(body) {
   const id = createTypingBossSessionId();
   const now = Date.now();
-  const bossProfile = normalizeTypingBossProfile(body.bossId || body.bossType);
+  const mode = body.mode === "proportional" ? "proportional" : "old";
+  const bossProfile = normalizeTypingBossProfile(mode === "proportional" ? "infernalDragon" : body.bossId || body.bossType);
   const session = {
     id,
+    mode,
+    revision: 0,
+    typingHost: mode === "proportional" ? proportionalBoss.newState() : null,
     hostToken: randomHex(32),
     name: normalizeBoardName(body.name || body.gameName, "Typing Boss Battle"),
     status: "setup",
@@ -1325,6 +1330,10 @@ function getTypingBossPlayerSnapshot(player) {
     monkSpecialCharge: player.monkSpecialCharge || 0,
     specialReady: typingBossSpecialReady(player),
     defeated: player.hp <= 0,
+    ...(player.typing ? { attackProgress: player.attackProgress || 0 } : {}),
+    ...(player.typing ? { hp: Math.round(player.hp * 100) / 100,
+      totalDamage: Math.round(player.totalDamage * 100) / 100,
+      totalTaken: Math.round(player.typing.totalTaken * 100) / 100 } : {}),
   };
 }
 
@@ -1351,6 +1360,8 @@ function getTypingBossProjectileSnapshot(projectile) {
     result,
     amount: pending ? null : projectile.amount,
     evadeType: projectile.evadeType || null,
+    ...(projectile.multiplier !== undefined ? { multiplier: projectile.multiplier, sourceName: projectile.sourceName } : {}),
+    ...(projectile.critical ? { critical: true } : {}),
   };
 }
 
@@ -1372,10 +1383,32 @@ function getTypingBossSnapshot(session, options = {}) {
     closedAt: session.closedAt ? new Date(session.closedAt).toISOString() : null,
     remainingSeconds: Math.max(0, Math.ceil((session.expiresAt - now) / 1000)),
     boss: { ...session.boss },
-    players: [...session.players.values()].map(getTypingBossPlayerSnapshot),
-    projectiles: session.projectiles.map(getTypingBossProjectileSnapshot),
+    players: [...session.players.values()]
+      .filter(player => session.mode !== "proportional" || !includeChallengesFor || player.code === includeChallengesFor)
+      .map(getTypingBossPlayerSnapshot),
+    projectiles: session.projectiles
+      .filter(item => session.mode !== "proportional" || !includeChallengesFor || item.source === includeChallengesFor || item.target === includeChallengesFor)
+      .map(getTypingBossProjectileSnapshot),
     log: session.log.slice(-14),
   };
+
+  snapshot.mode = session.mode || "old";
+  if (session.mode === "proportional") {
+    snapshot.revision = session.revision;
+    snapshot.serverNow = now;
+    snapshot.startingPlayers = session.startingPlayers || session.players.size;
+    snapshot.hpMultiplier = session.hpMultiplier || 1;
+    if (["victory", "defeat", "closed", "expired"].includes(session.status)) snapshot.leaderboard = proportionalBoss.leaderboard(session);
+    snapshot.boss.hp = Math.round(session.boss.hp * 100) / 100;
+    snapshot.boss.maxHp = session.status === "setup" ? session.players.size * 100 : session.boss.maxHp;
+    snapshot.boss.hp = session.status === "setup" ? snapshot.boss.maxHp : snapshot.boss.hp;
+    snapshot.log = [];
+    if (includeChallengesFor) {
+      snapshot.typing = { ...session.players.get(includeChallengesFor).typing };
+    } else {
+      snapshot.typing = { ...session.typingHost };
+    }
+  }
 
   if (includeHostToken) {
     snapshot.hostToken = session.hostToken;
@@ -1442,6 +1475,24 @@ function getTypingBossSubscriberSnapshotKey(subscriber) {
 }
 
 function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
+  if (session.mode === "proportional") {
+    // Stop buffering a slow connection; EventSource reconnects to a fresh snapshot.
+    if (subscriber.res.writableNeedDrain) {
+      subscriber.res.destroy();
+      clearInterval(subscriber.pingTimer);
+      session.subscribers.delete(subscriber);
+      return;
+    }
+    const current = getTypingBossSnapshotForAuth(session, subscriber.auth);
+    const delta = subscriber.previous ? proportionalBoss.diffSnapshot(subscriber.previous, current) : null;
+    if (!subscriber.previous) {
+      subscriber.res.write(`event: session\ndata: ${JSON.stringify(current)}\n\n`);
+    } else if (delta) {
+      subscriber.res.write(`event: patch\ndata: ${JSON.stringify({ ...delta, revision: session.revision, serverNow: Date.now() })}\n\n`);
+    }
+    subscriber.previous = current;
+    return;
+  }
   const includeChallengesFor =
     subscriber.auth?.role === "player" ? subscriber.auth.actorCode : "";
   const cacheKey = getTypingBossSubscriberSnapshotKey(subscriber);
@@ -1462,6 +1513,19 @@ function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
 }
 
 function broadcastTypingBossSession(session) {
+  if (session.mode === "proportional") {
+    if (session.broadcastTimer) return;
+    // Coalesce simultaneous hits from a classroom into at most ten updates/second.
+    session.broadcastTimer = scheduleTypingBossTimer(session, () => {
+      session.broadcastTimer = null;
+      session.revision += 1;
+      for (const subscriber of [...session.subscribers]) {
+        try { writeTypingBossEvent(subscriber, session); }
+        catch { clearInterval(subscriber.pingTimer); session.subscribers.delete(subscriber); }
+      }
+    }, 100);
+    return;
+  }
   const snapshotCache = new Map();
   for (const subscriber of [...session.subscribers]) {
     try {
@@ -1559,6 +1623,7 @@ function scheduleTypingBossTimer(session, callback, delayMs) {
 }
 
 function scheduleTypingBossAttack(session) {
+  if (session.mode === "proportional") return;
   clearTimeout(session.bossTimer);
 
   if (session.status !== "active" || session.boss.hp <= 0) {
@@ -1851,13 +1916,14 @@ function handleTypingBossEvents(req, res, session, url) {
     "Content-Type": "text/event-stream; charset=utf-8",
     "Cache-Control": "no-cache, no-transform",
     Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
   });
 
   const subscriber = {
     res,
     auth,
     pingTimer: setInterval(() => {
-      res.write(": ping\n\n");
+      if (!res.writableNeedDrain) res.write(": ping\n\n");
     }, 25 * 1000),
   };
 
@@ -1872,6 +1938,11 @@ function handleTypingBossEvents(req, res, session, url) {
 
 async function handleCreateTypingBossParticipant(req, res, session) {
   const body = await readJson(req);
+
+  if (session.mode === "proportional" && (session.status !== "setup" || session.players.size >= 30)) {
+    sendError(res, 409, session.players.size >= 30 ? "This game already has 30 players." : "This fight has started. Join the next game.");
+    return;
+  }
 
   if (session.status === "closed" || session.status === "victory" || session.status === "defeat") {
     sendError(res, 409, "This boss game is no longer accepting players.");
@@ -1901,8 +1972,9 @@ async function handleCreateTypingBossParticipant(req, res, session) {
     code,
     name: normalizeTypingBossPlayerName(body.name, heroClass.label),
     classId,
-    hp: heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
-    maxHp: heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
+    hp: session.mode === "proportional" ? 100 : heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
+    maxHp: session.mode === "proportional" ? 100 : heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
+    typing: session.mode === "proportional" ? proportionalBoss.newState() : null,
     joinedAt: Date.now(),
     lastSeenAt: Date.now(),
     averageDps: 0,
@@ -1957,6 +2029,11 @@ async function handleStartTypingBossSession(req, res, session, url) {
     return;
   }
 
+  if (session.mode === "proportional" && session.status !== "setup") {
+    sendError(res, 409, "This fight has already started or ended.");
+    return;
+  }
+
   if (session.status === "closed") {
     sendError(res, 409, "This boss game has already been closed.");
     return;
@@ -1968,6 +2045,11 @@ async function handleStartTypingBossSession(req, res, session, url) {
   }
 
   const now = Date.now();
+  if (session.mode === "proportional") {
+    proportionalBoss.applyHpMultiplier(session, body.hpMultiplier === undefined ? 1 : body.hpMultiplier);
+    session.startingPlayers = session.players.size;
+    session.startedAt = now;
+  }
   session.status = "active";
   session.boss.lastAttackAt = now;
   session.boss.nextAttackAt = now + session.boss.attackIntervalMs;
@@ -2285,12 +2367,35 @@ async function handleTypingBossRequest(req, res, url, parts) {
   }
 
   if (req.method === "POST" && parts[4] === "challenge") {
+    if (session.mode === "proportional") { sendError(res, 409, "This mode uses continuous words."); return; }
     await handleCreateTypingBossChallenge(req, res, session, url);
     return;
   }
 
   if (req.method === "POST" && parts[4] === "actions") {
+    if (session.mode === "proportional") { sendError(res, 409, "This mode uses continuous words."); return; }
     await handleSubmitTypingBossAction(req, res, session, url);
+    return;
+  }
+
+  if (req.method === "POST" && parts[4] === "progress") {
+    const body = await readJson(req);
+    const auth = authenticateTypingBoss(session, url, body);
+    if (!auth) { sendError(res, 401, "A valid host token or player code is required."); return; }
+    proportionalBoss.updateProgress(session, auth, body.wordIndex, body.characters, broadcastTypingBossSession);
+    sendJson(res, 200, { ok: true });
+    return;
+  }
+
+  if (req.method === "POST" && parts[4] === "words") {
+    const body = await readJson(req);
+    const auth = authenticateTypingBoss(session, url, body);
+    if (!auth) { sendError(res, 401, "A valid host token or player code is required."); return; }
+    if (session.mode !== "proportional") { sendError(res, 409, "Choose proportional mode for continuous words."); return; }
+    const result = proportionalBoss.submitWords(session, auth, body.words, {
+      schedule: scheduleTypingBossTimer, broadcast: broadcastTypingBossSession,
+    });
+    sendJson(res, 200, result);
     return;
   }
 

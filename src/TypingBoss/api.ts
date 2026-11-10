@@ -5,6 +5,8 @@ import {
   TypingBossClassId,
   TypingBossCredentials,
   TypingBossId,
+  TypingBossMode,
+  TypingBossWordResult,
   TypingBossParticipantResponse,
   TypingBossSessionResponse,
 } from "./types";
@@ -120,10 +122,22 @@ export function getTypingBossEventSourceUrl(
   });
 }
 
-export function createTypingBossSession(name: string, bossId: TypingBossId) {
+export function createTypingBossSession(name: string, bossId: TypingBossId, mode: TypingBossMode = "proportional") {
   return apiFetch<CreateTypingBossSessionResponse>("/api/typing-boss/sessions", {
     method: "POST",
-    json: { name, bossId },
+    json: { name, bossId, mode },
+  });
+}
+
+export function submitTypingBossWords(sessionId: string, credentials: TypingBossCredentials, words: TypingBossWordResult[]) {
+  return apiFetch<{ nextWord: number }>(`/api/typing-boss/sessions/${sessionId}/words`, {
+    method: "POST", json: { ...credentialsBody(credentials), words },
+  });
+}
+
+export function submitTypingBossProgress(sessionId: string, credentials: TypingBossCredentials, wordIndex: number, characters: number) {
+  return apiFetch<{ ok: boolean }>(`/api/typing-boss/sessions/${sessionId}/progress`, {
+    method: "POST", json: { ...credentialsBody(credentials), wordIndex, characters },
   });
 }
 
@@ -164,12 +178,12 @@ export function verifyTypingBossParticipant(sessionId: string, code: string) {
   );
 }
 
-export function startTypingBossSession(sessionId: string, hostToken: string) {
+export function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1) {
   return apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken },
+      json: { hostToken, hpMultiplier },
     }
   );
 }

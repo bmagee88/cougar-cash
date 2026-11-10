@@ -15,6 +15,52 @@ export type TypingBossClassId =
   | "monk";
 export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon";
 export type TypingBossDifficulty = "easy" | "medium" | "hard";
+export type TypingBossMode = "old" | "proportional";
+export interface TypingBossAttackStats {
+  base: number;
+  power: number;
+  multiplier: number;
+  consistency: number;
+  orangeBonus: number;
+  greenBonus: number;
+  greenStacks: number;
+  blueShield: number;
+  meanIntervalMs: number;
+  intervalStdDevMs: number;
+  criticalChance: number;
+  critical: boolean;
+  moveId: string;
+  actualDamage: number;
+  blockedDamage: number;
+  attackNumber: number;
+  landedAt: number;
+}
+export interface TypingBossLeaderboardEntry {
+  rank: number;
+  code: string;
+  name: string;
+  totalDamage: number;
+  strongestAttack: TypingBossAttackStats | null;
+}
+export interface TypingBossTypingState {
+  seed: number;
+  nextWord: number;
+  wordsInAttack: number;
+  characters: number;
+  intervalCount: number;
+  intervalSum: number;
+  intervalSquares: number;
+  orange: number;
+  red: number;
+  green: number;
+  growth: number;
+  shield: number;
+  consistency: number;
+  totalTaken: number;
+  totalCharacters: number;
+}
+// index, typed word, interval count, sum of intervals, sum of squared intervals.
+export type TypingBossWordResult = [number, string, number, number, number];
 export type TypingBossMoveId = "weak" | "strong" | "special" | "potion";
 export type TypingBossProjectileKind =
   | "damage"
@@ -50,9 +96,13 @@ export interface TypingBossPlayer {
   monkSpecialCharge: number;
   specialReady: boolean;
   defeated: boolean;
+  typing?: TypingBossTypingState;
+  totalTaken?: number;
+  attackProgress?: number;
 }
 
 export interface TypingBossBoss {
+  attackProgress?: number;
   id: TypingBossId;
   name: string;
   difficulty: TypingBossDifficulty;
@@ -80,6 +130,9 @@ export interface TypingBossProjectile {
   result: TypingBossProjectileResult;
   amount: number | null;
   evadeType?: "regular" | "special" | null;
+  multiplier?: number;
+  sourceName?: string;
+  critical?: boolean;
 }
 
 export interface TypingBossLogEntry {
@@ -103,6 +156,13 @@ export interface TypingBossSessionSnapshot {
   log: TypingBossLogEntry[];
   hostToken?: string;
   activeChallengeIds?: string[];
+  mode?: TypingBossMode;
+  typing?: TypingBossTypingState;
+  startingPlayers?: number;
+  revision?: number;
+  serverNow?: number;
+  hpMultiplier?: number;
+  leaderboard?: TypingBossLeaderboardEntry[];
 }
 
 export interface TypingBossCredentials {
