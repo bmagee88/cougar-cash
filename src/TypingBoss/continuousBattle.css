@@ -8,6 +8,24 @@
 .dragon-cast-power { animation: dragon-cast-power 700ms ease-in-out; }
 @keyframes dragon-cast-weak { 35% { transform: scale(1.04) translateX(-5px); filter: brightness(1.15); } }
 @keyframes dragon-cast-power { 35% { transform: scale(1.12) translateX(-12px); filter: brightness(1.5) drop-shadow(0 0 18px #fb923c); } }
+.dragon-bite { animation: dragon-bite 820ms ease-in-out; }
+.dragon-tail-whip { position: relative; animation: dragon-tail-whip 820ms ease-in-out; }
+.dragon-tail-arc { position: absolute; width: 104%; height: auto; left: -30%; bottom: 4%; pointer-events: none; transform-origin: 88% 20%; animation: dragon-tail-arc 820ms ease-out both; }
+@keyframes dragon-bite { 30% { transform: translate(8px,-10px) scale(.97) rotate(3deg); } 82% { transform: translate(-30px,12px) scale(1.11) rotate(-6deg); } }
+@keyframes dragon-tail-whip { 36% { transform: rotate(9deg) translateX(9px); } 82% { transform: rotate(-11deg) translateX(-12px); } }
+@keyframes dragon-tail-arc { 0%, 38% { opacity: 0; transform: rotate(45deg) scale(.75); } 62%, 82% { opacity: 1; } 100% { opacity: 0; transform: rotate(-52deg) scale(1.12); } }
+.boss-melee-effect { position: absolute; width: 90px; transform: translate(-50%, -50%); pointer-events: none; z-index: 9; }
+.boss-melee-effect svg { display: block; width: 100%; }
+.boss-bite-effect { animation: boss-bite-flash 420ms ease-out both; filter: drop-shadow(0 0 8px #ef4444); }
+.boss-bite-effect svg { animation-delay: inherit; }
+.boss-bite-effect path { fill: #fef3c7; stroke: #b91c1c; stroke-width: 2; animation-duration: 420ms; animation-fill-mode: both; animation-delay: inherit; }
+.boss-bite-upper { animation-name: boss-jaw-upper; }
+.boss-bite-lower { animation-name: boss-jaw-lower; }
+.boss-tail-effect { animation: boss-tail-flash 420ms ease-out both; filter: drop-shadow(0 0 8px #f97316); }
+@keyframes boss-bite-flash { 0% { opacity: .5; } 20%, 58% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes boss-jaw-upper { from { transform: translateY(-14px); } 35%, to { transform: translateY(0); } }
+@keyframes boss-jaw-lower { from { transform: translateY(14px); } 35%, to { transform: translateY(0); } }
+@keyframes boss-tail-flash { from { opacity: 1; transform: translate(-78%, -50%) rotate(-28deg) scale(.7); } to { opacity: 0; transform: translate(-23%, -50%) rotate(14deg) scale(1.45); } }
 .boss-impact-crit { font: 900 clamp(24px, 3vw, 38px)/1.05 Georgia, serif; border: 2px solid #fbbf24; background: linear-gradient(135deg, #4c170d, #211020); padding: 9px 16px; text-shadow: 2px 2px #7c2d12, 0 0 12px #f59e0b; box-shadow: 0 0 18px #f59e0b88; animation-name: boss-crit-number; pointer-events: none; }
 .boss-crit-label { display: block; font: 900 13px/1.5 sans-serif; letter-spacing: .18em; color: #fbbf24; }
 .boss-crit-impact { position: absolute; width: 110px; height: 110px; margin: -55px; pointer-events: none; z-index: 9; border-radius: 50%; background: radial-gradient(circle, #fff 0%, #fff3b0 12%, #fbbf2480 35%, transparent 68%); animation: boss-crit-burst 600ms ease-out both; }
@@ -16,3 +34,7 @@
 @keyframes boss-crit-burst { 0% { opacity: 0; transform: scale(.25) rotate(-15deg); } 12% { opacity: .95; } 100% { opacity: 0; transform: scale(1.8) rotate(20deg); } }
 @keyframes boss-crit-number { 0% { opacity: 0; transform: translate(-50%, -30%) scale(.6) rotate(-8deg); } 12% { opacity: 1; transform: translate(-50%, -60%) scale(1.2) rotate(-4deg); } 22%, 70% { opacity: 1; transform: translate(-50%, -65%) scale(1) rotate(-4deg); } 100% { opacity: 0; transform: translate(-50%, -110px) scale(1) rotate(-4deg); } }
 @media (prefers-reduced-motion: reduce) { .damage-flash, .boss-impact, .dragon-cast-weak, .dragon-cast-power { animation: none; } .boss-crit-impact { display: none; } }
+@media (prefers-reduced-motion: reduce) { .dragon-bite, .dragon-tail-whip { animation: none; } .dragon-tail-arc, .boss-melee-effect { display: none; } }
+.boss-golden-shield { position: absolute; width: 104px; transform: translate(-50%, -55%); pointer-events: none; z-index: 9; filter: drop-shadow(0 0 10px #facc15); animation: boss-golden-shield 900ms ease-out both; }
+@keyframes boss-golden-shield { 0% { opacity: 0; transform: translate(-50%, -55%) scale(.45); } 24% { opacity: 1; transform: translate(-50%, -55%) scale(1.15); } 55% { opacity: .95; transform: translate(-50%, -55%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -65%) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .boss-golden-shield { display: none; } }

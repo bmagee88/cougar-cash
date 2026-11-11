@@ -1263,7 +1263,7 @@ function createTypingBossSession(body) {
     id,
     mode,
     revision: 0,
-    typingHost: mode === "proportional" ? proportionalBoss.newState() : null,
+    typingHost: mode === "proportional" ? proportionalBoss.newState(body.goldWords === true ? "dragon" : undefined) : null,
     hostToken: randomHex(32),
     name: normalizeBoardName(body.name || body.gameName, "Typing Boss Battle"),
     status: "setup",
@@ -1354,6 +1354,7 @@ function getTypingBossProjectileSnapshot(projectile) {
     moveId: projectile.moveId || null,
     bossId: projectile.bossId || null,
     moveLabel: projectile.moveLabel,
+    ...(projectile.bossAttack ? { bossAttack: projectile.bossAttack } : {}),
     startedAt: projectile.startedAt,
     impactAt: projectile.impactAt,
     resolvedAt: projectile.resolvedAt || null,
@@ -1362,6 +1363,8 @@ function getTypingBossProjectileSnapshot(projectile) {
     evadeType: projectile.evadeType || null,
     ...(projectile.multiplier !== undefined ? { multiplier: projectile.multiplier, sourceName: projectile.sourceName } : {}),
     ...(projectile.critical ? { critical: true } : {}),
+    ...(projectile.balanced ? { balanced:true } : {}),
+    ...(projectile.blockedAmount ? { blockedAmount:projectile.blockedAmount } : {}),
   };
 }
 
@@ -1398,6 +1401,7 @@ function getTypingBossSnapshot(session, options = {}) {
     snapshot.serverNow = now;
     snapshot.startingPlayers = session.startingPlayers || session.players.size;
     snapshot.hpMultiplier = session.hpMultiplier || 1;
+    snapshot.balanced = Boolean(session.balanced);
     if (["victory", "defeat", "closed", "expired"].includes(session.status)) snapshot.leaderboard = proportionalBoss.leaderboard(session);
     snapshot.boss.hp = Math.round(session.boss.hp * 100) / 100;
     snapshot.boss.maxHp = session.status === "setup" ? session.players.size * 100 : session.boss.maxHp;
@@ -1974,7 +1978,7 @@ async function handleCreateTypingBossParticipant(req, res, session) {
     classId,
     hp: session.mode === "proportional" ? 100 : heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
     maxHp: session.mode === "proportional" ? 100 : heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
-    typing: session.mode === "proportional" ? proportionalBoss.newState() : null,
+    typing: session.mode === "proportional" ? proportionalBoss.newState(body.goldWords === true ? classId : undefined) : null,
     joinedAt: Date.now(),
     lastSeenAt: Date.now(),
     averageDps: 0,
@@ -2046,8 +2050,10 @@ async function handleStartTypingBossSession(req, res, session, url) {
 
   const now = Date.now();
   if (session.mode === "proportional") {
+    if (body.balanced !== undefined && typeof body.balanced !== "boolean") { sendError(res,400,"Balanced must be true or false."); return; }
     proportionalBoss.applyWordFilters(session, body.gradeLevels, body.sentiments);
     proportionalBoss.applyHpMultiplier(session, body.hpMultiplier === undefined ? 1 : body.hpMultiplier);
+    proportionalBoss.applyBalanced(session, body.balanced);
     session.startingPlayers = session.players.size;
     session.startedAt = now;
   }

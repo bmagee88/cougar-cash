@@ -1,7 +1,7 @@
 import React from "react";
-import { act, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, createEvent, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { ContinuousTyping } from "./ContinuousBattle";
-import { createTypingState, wordAt } from "./proportionalRules";
+import { createTypingState, initializeBalanced, typingWord, wordAt } from "./proportionalRules";
 import { submitTypingBossWords } from "./api";
 import { acceptSessionSnapshot, applySessionPatch } from "./sessionPatch";
 import { TypingBossSessionSnapshot } from "./types";
@@ -30,10 +30,49 @@ function displayedWord(input: HTMLElement) {
   return document.getElementById(input.getAttribute("aria-describedby")!).textContent;
 }
 
+test("balanced client sends verifiable key gaps and shows readiness instead of a dodge roll", async () => {
+  const state = initializeBalanced(createTypingState(123, "cleric"));
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:"hero1234"}} state={state} active />);
+  expect(screen.getByText("Dodge readiness 0%")).toBeTruthy();
+  expect(screen.getByText("Quality ×1.25")).toBeTruthy();
+  const input = screen.getByRole("textbox", {name:"Type the displayed word"});
+  let timestamp=0;
+  for(let index=0;index<10;index++) {
+    for(const key of typingWord(state,index).text+(index===9?"":" ")) {
+      const event=createEvent.keyDown(input,{key});
+      Object.defineProperty(event,"timeStamp",{value:timestamp});
+      fireEvent(input,event);timestamp+=150;
+    }
+  }
+  await waitFor(()=>expect(submit.mock.calls.flatMap((call:any)=>call[2])).toHaveLength(10));
+  const records=submit.mock.calls.flatMap((call:any)=>call[2]);
+  expect(records[0][5]).toBeNull();
+  expect(records[0][6]).toHaveLength(records[0][2]);
+  expect(records[1][5]).toBe(150);
+  expect(records.every((record:any)=>record[6].every((gap:number)=>gap===150))).toBe(true);
+});
+
+test("a monk's shortened row fires on its final letter and returns to ten without gold", async () => {
+  const state = createTypingState(0, "monk");
+  state.attackWords = 5;
+  while (Array.from({ length: 5 }, (_, index) => typingWord(state, index)).some(word => word.color === "gold")) state.seed++;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={state} active />);
+  const input = screen.getByRole("textbox", { name: "Type the displayed word" });
+  expect(screen.getByText("0/5 words this attack")).toBeTruthy();
+  expect(within(screen.getByTestId("ten-word-row")).getAllByTestId("typing-word")).toHaveLength(5);
+  for (let index = 0; index < 5; index++) typeWord(input, typingWord(state, index).text, index !== 4);
+  await waitFor(() => expect(submit.mock.calls.flatMap((call: any) => call[2])).toHaveLength(5));
+  const records = submit.mock.calls.flatMap((call: any) => call[2]);
+  expect(records[4][1]).toBe(typingWord(state, 4).text);
+  expect(screen.getByText("0/10 words this attack")).toBeTruthy();
+  expect(within(screen.getByTestId("ten-word-row")).getAllByTestId("typing-word")).toHaveLength(10);
+});
+
 test("errors remain after backspace and an older backend still receives one ten-word batch", async () => {
   const seed = seedWithoutBlue();
   render(<ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={{ ...createTypingState(seed), dodgeSamples: undefined }} active />);
   const input = screen.getByRole("textbox", { name: "Type the displayed word" });
+  expect(screen.getByText("Dodge 0%")).toBeTruthy();
   const first = wordAt(seed, 0).text;
   fireEvent.keyDown(input, { key: "!" });
   fireEvent.keyDown(input, { key: "Backspace" });
@@ -99,7 +138,7 @@ test("all ten words stay in one scrolling row, while each character builds damag
     <ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={createTypingState(seed)} active /></>);
   const input = screen.getByRole("textbox", { name: "Type the displayed word" });
   const row = screen.getByTestId("ten-word-row");
-  expect(row.querySelectorAll("[data-word-index]").length).toBe(10);
+  expect(within(row).getAllByTestId("typing-word")).toHaveLength(10);
   typeWord(input, wordAt(seed, 0).text[0], false);
   expect(window.getComputedStyle(row).transform).toContain("-1ch");
   expect(Number(screen.getByRole("progressbar", { name: "Player attack progress" }).getAttribute("aria-valuenow"))).toBeGreaterThan(0);

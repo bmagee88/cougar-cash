@@ -1,22 +1,93 @@
 const crypto = require("node:crypto");
-const { createTypingState, wordAt, finishWord, releaseAttack, attackProgress, wordsForGrades, dodgeChance } = require("../src/TypingBoss/proportionalRules");
+const { createTypingState, typingWord, attackWordLimit, requiresWordSpace, finishWord, releaseAttack, typingAttackProgress, wordsForGrades, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced } = require("../src/TypingBoss/proportionalRules");
 
 const round = value => Math.round(value * 100) / 100;
-const newState = () => createTypingState(crypto.randomBytes(4).readUInt32LE());
+const newState = ability => createTypingState(crypto.randomBytes(4).readUInt32LE(), ability);
+
+const BOSS_ATTACK_LABELS = { bite: "Bite", fireball: "Fireball", tailWhip: "Tail Whip", flamethrower: "Flamethrower" };
+
+function chooseBossAttack(session, random) {
+  const roster = [...session.players.values()];
+  const living = roster.map((player, index) => ({ player, point: proportionalPlayerPoint(index, roster.length) }))
+    .filter(({ player }) => player.hp > 0);
+  const order = ["bite", "fireball", "tailWhip", "bite", "fireball", "tailWhip", "bite", "fireball", "tailWhip", "flamethrower"];
+  const step = session.bossAttackIndex || 0;
+  const roll = session.balanced ? 0 : random();
+  const kind = session.balanced ? order[step % order.length] : roll < .3 ? "bite" : roll < .6 ? "fireball" : roll < .9 ? "tailWhip" : "flamethrower";
+  if (session.balanced) session.bossAttackIndex = step + 1;
+  if (kind === "flamethrower" || !living.length) return { kind, targets: living.map(({ player }) => player) };
+  const anchor = living[session.balanced ? step % living.length : Math.floor(random() * living.length)];
+  if (kind !== "tailWhip") return { kind, targets: [anchor.player] };
+  const distance = ({ point }) => (point.x - anchor.point.x) ** 2 + (point.y - anchor.point.y) ** 2;
+  const count = Math.max(1, Math.round(living.length * .3));
+  const targets = living.sort((a, b) => distance(a) - distance(b)).slice(0, count).map(({ player }) => player);
+  return { kind, targets };
+}
+
+function resolveGoldSupport(session, actor, power, now) {
+  const roster = [...session.players.values()];
+  const byHp = (a, b) => a.hp - b.hp;
+  let target, kind, moveLabel, amount;
+  switch (actor.typing.ability) {
+    case "cleric":
+      target = roster.filter(player => player.hp > 0 && player.hp < player.maxHp).sort(byHp)[0];
+      if (!target) return false;
+      kind = "heal"; moveLabel = "Golden Heal";
+      amount = Math.min(target.maxHp - target.hp, power);
+      target.hp += amount;
+      actor.totalHealing = (actor.totalHealing || 0) + amount;
+      break;
+    case "necromancer":
+      target = roster.find(player => player.hp <= 0);
+      if (!target) return false;
+      kind = "resurrect"; moveLabel = "Golden Revival";
+      amount = Math.min(target.maxHp, power);
+      target.hp = amount;
+      actor.totalResurrections = (actor.totalResurrections || 0) + 1;
+      break;
+    case "paladin": {
+      const allies = roster.filter(player => player !== actor && player.hp > 0).sort(byHp);
+      target = allies.find(player => !player.typing.shield && !player.typing.paladinShield) || allies[0];
+      if (!target) return false;
+      kind = "buff"; moveLabel = "Golden Shield"; amount = power;
+      target.typing.paladinShield = (target.typing.paladinShield || 0) + power;
+      actor.totalBuffs = (actor.totalBuffs || 0) + 1;
+      break;
+    }
+    default: return false;
+  }
+  session.projectiles.push({
+    id: crypto.randomBytes(8).toString("hex"), source: actor.code, sourceName: actor.name,
+    target: target.code, kind, moveId: kind === "buff" ? "goldShield" : "special", moveLabel,
+    startedAt: now, impactAt: now, resolvedAt: now, willHit: true, amount: round(amount),
+  });
+  return amount;
+}
 
 function launchAttack(session, actor, attack, { schedule, broadcast, random = Math.random }) {
   const now = Date.now();
   const host = actor === session.typingHost;
+  if (attack.balanced && !host && attack.supportPower > 0) {
+    const used = resolveGoldSupport(session, actor, attack.supportPower, now) || 0;
+    attack = { ...attack, power: attack.power + attack.supportPower - used, supportUsed: used };
+    attack.multiplier = attack.base ? attack.power / attack.base : 1;
+  } else if (!attack.balanced && !host && attack.gold && attack.power > 0 && resolveGoldSupport(session, actor, attack.power, now)) return;
+  if (attack.balanced && attack.power <= 0) return;
   const attackNumber = actor.turnsTaken || 0;
-  const targets = host ? [...session.players.values()].filter(player => player.hp > 0) : [session.boss];
+  const bossAttack = host ? chooseBossAttack(session, random) : null;
+  const targets = bossAttack ? bossAttack.targets : [session.boss];
+  if (!targets.length) return;
+  const share = attack.power / targets.length;
   const volley = targets.map(target => ({
     id: crypto.randomBytes(8).toString("hex"),
     source: host ? "boss" : actor.code, sourceName: host ? session.boss.name : actor.name,
     target: host ? target.code : "boss", kind: host ? "boss" : "damage",
     bossId: session.boss.id, moveId: attack.moveId,
-    moveLabel: attack.multiplier >= 2 ? "Power attack" : "Quick attack",
+    moveLabel: bossAttack ? BOSS_ATTACK_LABELS[bossAttack.kind] : attack.multiplier >= 2 ? "Power attack" : "Quick attack",
+    ...(bossAttack ? { bossAttack: bossAttack.kind } : {}),
+    ...(attack.balanced ? { balanced: true } : {}),
     multiplier: round(attack.multiplier), startedAt: now, impactAt: now + 700,
-    resolvedAt: null, amount: host ? attack.power / session.startingPlayers : attack.power,
+    resolvedAt: null, amount: share,
     willHit: true, ...(attack.critical ? { critical: true } : {}),
   }));
   session.projectiles.push(...volley);
@@ -27,15 +98,37 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
       const target = host ? session.players.get(projectile.target) : session.boss;
       let damage = target.hp > 0 ? projectile.amount : 0;
       const defense = host ? target.typing : session.typingHost;
-      const chance = dodgeChance(defense);
-      if (damage > 0 && chance > 0 && random() < chance / 100) {
-        Object.assign(projectile, { willHit: false, evadeType: "dodge", amount: 0, resolvedAt: Date.now() });
-        continue;
+      if (damage > 0) {
+        if (session.balanced) {
+          const blocked = Math.min(damage, defense.balancedGuard || 0);
+          defense.balancedGuard = Math.max(0, (defense.balancedGuard || 0) - blocked);
+          damage -= blocked;
+          if (blocked) projectile.blockedAmount = round(blocked);
+          if (damage === 0) {
+            Object.assign(projectile, { willHit:false, evadeType:"dodge", amount:0, resolvedAt:Date.now() });
+            continue;
+          }
+        } else {
+          const chance = effectiveDodgeChance(defense);
+          if (defense.dodgeExtraRolls) defense.dodgeExtraRolls = 0;
+          if (chance > 0 && random() < chance) {
+          Object.assign(projectile, { willHit: false, evadeType: "dodge", amount: 0, resolvedAt: Date.now() });
+          continue;
+          }
+        }
       }
       if (target.hp > 0) {
+        const incoming = damage;
         damage *= 1 - defense.shield;
         defense.shield = 0;
-        if (host) target.bossHitsTaken += 1;
+        if (host) {
+          if (incoming > 0 && defense.paladinShield) {
+            const absorbed = Math.min(damage, defense.paladinShield);
+            damage = Math.max(0, damage - defense.paladinShield);
+            defense.paladinShield = session.balanced ? Math.max(0, defense.paladinShield - absorbed) : 0;
+          }
+          target.bossHitsTaken += 1;
+        }
       }
       const actual = Math.min(target.hp, damage);
       target.hp = Math.max(0, target.hp - actual);
@@ -64,26 +157,28 @@ function submitWords(session, auth, records, callbacks) {
   const state = auth.role === "host" ? actor : actor.typing;
   if (!Array.isArray(records) || !records.length || records.length > 20) throw new Error("Send 1–20 completed words.");
   // Validate the whole batch before mutating anything. Retries may overlap an acknowledged prefix.
-  let expected = state.nextWord;
+  const preview = { ...state };
   let addedCharacters = 0;
   const fresh = [];
   for (const record of records) {
-    if (!Array.isArray(record) || (record.length !== 5 && record.length !== 6)) throw new Error("Invalid word result.");
-    const [index, text, count, sum, squares, transitionMs] = record;
+    if (!Array.isArray(record) || (state.balanced ? record.length !== 7 : record.length !== 5 && record.length !== 6)) throw new Error("Invalid word result.");
+    const [index, text, count, sum, squares, rawTransition, gaps] = record;
+    const transitionMs = rawTransition === null && state.balanced ? undefined : rawTransition;
     if (!Number.isInteger(index) || index < 0) throw new Error("Invalid word index.");
     if (index < state.nextWord) continue;
-    const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask);
-    const length = word.text.length + (index % 10 === 9 ? 0 : 1);
-    const expectedCount = length - (index % 10 === 0 ? 1 : 0);
-    if (index !== expected || typeof text !== "string" || text.length !== length || (index % 10 !== 9 && !text.endsWith(" ")) ||
+    const word = typingWord(preview);
+    const finalWord = !requiresWordSpace(preview, typeof text === "string" ? text : "");
+    const length = word.text.length + (finalWord ? 0 : 1);
+    const expectedCount = length - (preview.wordsInAttack === 0 ? 1 : 0);
+    if (index !== preview.nextWord || typeof text !== "string" || text.length !== length || (!finalWord && !text.endsWith(" ")) ||
       !Number.isInteger(count) || count < length - 1 || count > expectedCount ||
       !Number.isFinite(sum) || !Number.isFinite(squares) || sum < 0 || squares < 0 ||
       sum > 7200000 * count || squares > 7200000 ** 2 * count ||
       (count > 0 && (squares + 1 < sum * sum / count || squares > sum * sum + 1))) {
       throw new Error("Invalid word order or key timing.");
     }
-    if (record.length === 6) {
-      if (index % 10 === 0 || count < 2 || count !== expectedCount ||
+    if (transitionMs !== undefined) {
+      if (preview.wordsInAttack === 0 || count < 2 || count !== expectedCount ||
           !Number.isFinite(transitionMs) || transitionMs < 0 || transitionMs > Math.min(sum, 7200000)) {
         throw new Error("Invalid word transition timing.");
       }
@@ -93,23 +188,31 @@ function submitWords(session, auth, records, callbacks) {
         throw new Error("Invalid word transition timing.");
       }
     }
-    expected += 1;
+    if (state.balanced) {
+      if (!Array.isArray(gaps) || gaps.length !== count || gaps.some(gap => !Number.isFinite(gap) || gap < 0 || gap > 7200000)) throw new Error("Balanced mode needs valid key gaps.");
+      const rawSum = gaps.reduce((a,b) => a+b,0), rawSquares = gaps.reduce((a,b) => a+b*b,0);
+      if (Math.abs(rawSum-sum) > .001 || Math.abs(rawSquares-squares) > Math.max(.01, squares*1e-9) ||
+          (count === length && preview.wordsInAttack !== 0 && transitionMs !== gaps[0]) ||
+          (count !== length && transitionMs !== undefined)) throw new Error("Balanced key timing does not match the word.");
+    }
+    finishWord(preview, text, count, sum, squares, transitionMs, gaps);
+    if (preview.wordsInAttack === attackWordLimit(preview)) releaseAttack(preview, () => 1);
     addedCharacters += text.length;
     fresh.push(record);
   }
   if (state.totalCharacters + addedCharacters > (Date.now() - session.startedAt) * 0.03 + 60) {
     throw new Error("Typing arrived too quickly. Try again shortly.");
   }
-  for (const [, text, count, sum, squares, transitionMs] of fresh) {
-    const result = finishWord(state, text, count, sum, squares, transitionMs);
+  for (const [, text, count, sum, squares, transitionMs, gaps] of fresh) {
+    const result = finishWord(state, text, count, sum, squares, transitionMs === null ? undefined : transitionMs, gaps);
     if (auth.role === "player") {
       actor.totalKeystrokes += text.length;
       actor.correctKeystrokes += result.correct ? text.length : 0;
       actor.correctStreak = result.correct ? actor.correctStreak + 1 : 0;
       actor.lastSeenAt = Date.now();
     }
-    if (state.wordsInAttack === 10) {
-      const attack = releaseAttack(state);
+    if (state.wordsInAttack === attackWordLimit(state)) {
+      const attack = releaseAttack(state, callbacks.random);
       if (auth.role === "player") actor.turnsTaken += 1;
       launchAttack(session, actor, attack, callbacks);
       (auth.role === "host" ? session.boss : actor).attackProgress = 0;
@@ -124,8 +227,8 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
   const state = auth.role === "host" ? actor : actor?.typing;
   if (!state || (auth.role === "player" && actor.hp <= 0)) return;
-  if (!Number.isInteger(wordIndex) || wordIndex < state.nextWord || wordIndex > state.nextWord + 40 ||
-      !Number.isInteger(characters) || characters < 0 || characters > wordAt(state.seed, wordIndex, state.gradeMask, state.sentimentMask).text.length) return;
+  if (!Number.isInteger(wordIndex) || wordIndex < state.nextWord || wordIndex >= state.nextWord - state.wordsInAttack + attackWordLimit(state) ||
+      !Number.isInteger(characters) || characters < 0 || characters > typingWord(state, wordIndex).text.length) return;
   const previous = actor.progressCursor;
   if (previous && (wordIndex < previous.wordIndex || (wordIndex === previous.wordIndex && characters <= previous.characters))) return;
   // Progress is cosmetic only. It never awards damage or changes typing stats.
@@ -134,14 +237,14 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
   actor.progressUpdatedAt = now;
   actor.progressCursor = { wordIndex, characters };
   const target = auth.role === "host" ? session.boss : actor;
-  target.attackProgress = Math.round(attackProgress(state.seed, wordIndex, characters, state.gradeMask, state.sentimentMask));
+  target.attackProgress = Math.round(typingAttackProgress(state, characters, wordIndex));
   broadcast(session);
 }
 
 // Nested diffs preserve unchanged player objects on the client and avoid replaying logs/FX.
 function diffSnapshot(previous, current) {
   const delta = {};
-  for (const key of ["status", "closedAt", "startingPlayers", "hpMultiplier", "leaderboard"]) {
+  for (const key of ["status", "closedAt", "startingPlayers", "hpMultiplier", "balanced", "leaderboard"]) {
     if (JSON.stringify(previous[key]) !== JSON.stringify(current[key])) delta[key] = current[key];
   }
   if (current.typing) {
@@ -192,6 +295,25 @@ function applyHpMultiplier(session, multiplier = 1) {
   session.boss.hp = session.boss.maxHp = 100 * multiplier * session.players.size;
 }
 
+function applyBalanced(session, value = false) {
+  if (session.status !== "setup") throw new Error("Balanced rules lock when the battle starts.");
+  if (typeof value !== "boolean") throw new Error("Balanced must be true or false.");
+  session.balanced = value;
+  const actors = [session.typingHost, ...[...session.players.values()].map(player => player.typing)];
+  if (!value) {
+    for (const state of actors) state.balanced = false;
+    return;
+  }
+  const seed = session.typingHost.seed;
+  actors.forEach((state, index) => {
+    const player = index ? [...session.players.values()][index-1] : null;
+    Object.assign(state, createTypingState(seed, player ? player.classId || state.ability : "dragon"));
+    initializeBalanced(state);
+    state.balancedGuardMax = player ? player.maxHp : session.boss.maxHp;
+  });
+  session.bossAttackIndex = 0;
+}
+
 function leaderboard(session) {
   return [...session.players.values()]
     .sort((a, b) => b.totalDamage - a.totalDamage || a.code.localeCompare(b.code))
@@ -199,7 +321,7 @@ function leaderboard(session) {
       totalDamage: round(player.totalDamage), strongestAttack: player.strongestAttack ? { ...player.strongestAttack } : null }));
 }
 
-module.exports = { newState, submitWords, diffSnapshot, launchAttack, applyHpMultiplier, leaderboard, updateProgress };
+module.exports = { newState, submitWords, diffSnapshot, launchAttack, applyHpMultiplier, applyBalanced, leaderboard, updateProgress };
 
 
 function applyGradeLevels(session, grades) {
