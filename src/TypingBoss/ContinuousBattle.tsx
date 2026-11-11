@@ -5,6 +5,7 @@ import { attackWordLimit, consistencyMultiplier, effectiveDodgeChance, finishWor
 import { usePublishAttackProgress } from "./AttackProgress";
 import { TypingBossCredentials, TypingBossSessionSnapshot, TypingBossTypingState, TypingBossWordResult } from "./types";
 import "./continuousBattle.css";
+import { combatFeedback, COMBAT_COLORS } from "./combatFeedback";
 
 const colors = { blue: "#7dd3fc", orange: "#fdba74", red: "#fda4af", green: "#86efac", gold: "#fde047" };
 const goldAbilityText = {
@@ -216,8 +217,8 @@ export function DamageBoard({ session, personal = false }: { session: TypingBoss
         return <Box key={player.code} sx={{ border: "1px solid #344256", borderRadius: 1, px: 1.5, py: 1, minWidth: 0, bgcolor: player.defeated ? "#28151f" : "#101a2a" }}>
           <Stack direction="row" justifyContent="space-between" gap={1}><Typography fontWeight={900} noWrap>{player.name}</Typography><Typography variant="body2" whiteSpace="nowrap">{number(player.hp)} / {number(player.maxHp)} HP</Typography></Stack>
           <Stack direction="row" gap={2} sx={{ mt: 0.5 }}>
-            <Typography sx={{ color: "#7dd3fc" }}>Dealt {number(player.totalDamage)} {dealt && <strong key={dealt.id} className="damage-flash">{dealt.evadeType === "dodge" ? "Dodged" : `+${number(dealt.amount || 0)}`}</strong>}</Typography>
-            <Typography sx={{ color: "#fda4af" }}>Taken {number(player.totalTaken || 0)} {taken && <strong key={taken.id} className="damage-flash">{taken.evadeType === "dodge" ? "Dodged" : `−${number(taken.amount || 0)}`}</strong>}</Typography>
+            <Typography sx={{ color: COMBAT_COLORS.damage }}>Dealt {number(player.totalDamage)} {dealt && <strong key={dealt.id} className="damage-flash" style={{ color: combatFeedback(dealt).color }}>{combatFeedback(dealt).label}</strong>}</Typography>
+            <Typography sx={{ color: COMBAT_COLORS.damage }}>Taken {number(player.totalTaken || 0)} {taken && <strong key={taken.id} className="damage-flash" style={{ color: combatFeedback(taken).color }}>{combatFeedback(taken).label}</strong>}</Typography>
           </Stack>
         </Box>;
       })}

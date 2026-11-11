@@ -1,0 +1,58 @@
+.combat-actor { position:relative; display:inline-block; flex-shrink:0; overflow:visible; vertical-align:bottom; }
+.actor-body { position:absolute; inset:0; transform-origin:50% 88%; filter:drop-shadow(0 3px 1px #0009) drop-shadow(0 0 var(--actor-glow,8px) var(--actor-color,#facc15)); }
+.actor-frames { position:absolute; display:block; background-repeat:no-repeat; image-rendering:pixelated; animation-name:actor-sprite-frames; animation-timing-function:steps(5,end); animation-iteration-count:1; animation-fill-mode:forwards; }
+.actor-frames-idle { animation-timing-function:steps(6,jump-none); animation-iteration-count:infinite; }
+.actor-frames-held { animation:none; }
+@keyframes actor-sprite-frames { from { background-position-x:0%; } to { background-position-x:100%; } }
+.actor-body-strongAttack { animation:actor-power-lunge var(--pose-ms) ease-out both; }
+.actor-body-healCast, .actor-body-selfHeal, .actor-body-reviveCast { animation:actor-cast-glow var(--pose-ms) ease-out both; }
+.actor-body-shieldCast, .actor-body-buffCast, .actor-body-block, .actor-body-shielded, .actor-body-buffed { animation:actor-shield-glow var(--pose-ms) ease-out both; }
+.actor-body-dodge { animation:actor-dodge-glow var(--pose-ms) ease-out both; }
+.actor-body-hit { animation:actor-hit-flash var(--pose-ms) ease-out both; }
+.actor-body-death { animation:actor-fall-shade var(--pose-ms) ease-out both; }
+.actor-body-defeated { filter:drop-shadow(0 3px 1px #0009) saturate(.5) brightness(.65); }
+.actor-effect { position:absolute; pointer-events:none; inset:-12% -30%; border-radius:50%; animation:actor-effect-pulse var(--pose-ms) ease-out both; }
+.actor-effect-healed, .actor-effect-reviving { border:2px solid #facc15; box-shadow:0 0 14px #facc1580,inset 0 0 14px #facc1540; background:radial-gradient(ellipse at bottom,#facc1560,transparent 70%); }
+.actor-effect-shielded, .actor-effect-buffed, .actor-effect-block { border:2px solid #60a5fa; box-shadow:0 0 12px #60a5fa90,inset 0 0 10px #60a5fa40; }
+.actor-effect-dodge { border-left:4px solid #4ade80; box-shadow:-9px 0 12px #4ade8050; animation-name:actor-evade-trail; }
+.actor-effect-evasionReady { border:2px solid #4ade80; box-shadow:0 0 10px #4ade8070; }
+.actor-effect-hit { background:radial-gradient(ellipse,#f8717190,transparent 68%); animation-name:actor-damage-burst; }
+.actor-action-cue { position:absolute; right:-25%; top:20%; width:55%; height:45%; border-radius:50%; pointer-events:none; background:radial-gradient(ellipse,#fff9,transparent 70%); animation:actor-effect-pulse var(--pose-ms) ease-out both; }
+.actor-action-healCast,.actor-action-selfHeal,.actor-action-reviveCast { background:radial-gradient(ellipse,#facc15b0,transparent 70%); }
+.actor-action-shieldCast,.actor-action-buffCast { background:radial-gradient(ellipse,#60a5fab0,transparent 70%); }
+@keyframes actor-power-lunge { 0%,100% { transform:translateX(0) scale(1); } 35% { transform:translateX(-3%) scale(.98); } 58% { transform:translateX(12%) scale(1.09); } }
+@keyframes actor-cast-glow { 45% { filter:drop-shadow(0 0 10px #facc15); } }
+@keyframes actor-shield-glow { 35% { filter:drop-shadow(0 0 10px #60a5fa); } }
+@keyframes actor-dodge-glow { 35% { filter:drop-shadow(-5px 0 6px #4ade80); } }
+@keyframes actor-hit-flash { 0%,40% { filter:brightness(1.8) sepia(.4) saturate(2) drop-shadow(0 0 5px #f87171); } 70%,100% { filter:none; } }
+@keyframes actor-fall-shade { to { filter:saturate(.5) brightness(.65); } }
+@keyframes actor-effect-pulse { 0% { opacity:0; transform:scale(.7); } 25% { opacity:1; transform:scale(1.1); } 100% { opacity:0; transform:scale(1.25); } }
+@keyframes actor-evade-trail { 0% { opacity:0; transform:translateX(20%); } 30% { opacity:1; } 100% { opacity:0; transform:translateX(-35%); } }
+@keyframes actor-damage-burst { 0%,20% { opacity:1; transform:scale(.8); } 100% { opacity:0; transform:scale(1.4); } }
+.dragon-pose { position:relative; transform-origin:55% 85%; }
+.dragon-pose-idle { animation:dragon-breathe 2600ms ease-in-out infinite; }
+.dragon-pose-weakAttack, .dragon-pose-strongAttack, .dragon-pose-flamethrower { animation:dragon-exhale var(--pose-ms) ease-out both; }
+.dragon-pose-bite { animation:dragon-bite var(--pose-ms) ease-in-out both; }
+.dragon-pose-tailWhip { animation:dragon-tail-whip var(--pose-ms) ease-in-out both; }
+.dragon-pose-hit { animation:dragon-recoil var(--pose-ms) ease-out both; }
+.dragon-pose-dodge { animation:dragon-dodge var(--pose-ms) ease-out both; }
+.dragon-pose-evasionReady { animation:actor-dodge-glow var(--pose-ms) ease-out both; }
+.dragon-pose-block, .dragon-pose-shielded, .dragon-pose-buffed { animation:dragon-brace var(--pose-ms) ease-out both; }
+.dragon-pose-healed, .dragon-pose-selfHeal, .dragon-pose-healCast, .dragon-pose-shieldCast, .dragon-pose-buffCast, .dragon-pose-reviveCast { animation:dragon-renew var(--pose-ms) ease-out both; }
+.dragon-pose-death { animation:dragon-collapse var(--pose-ms) ease-out both; }
+.dragon-pose-defeated { transform:translateY(16%) rotate(-12deg) scale(.9); filter:grayscale(.65) brightness(.55); }
+.dragon-pose-reviving { animation:dragon-rise var(--pose-ms) ease-out both; }
+@keyframes dragon-breathe { 50% { transform:translateY(-1%) scale(1.015); } }
+@keyframes dragon-exhale { 30% { transform:translateX(4%) scale(.98); } 62% { transform:translateX(-5%) scale(1.05); filter:brightness(1.3); } }
+@keyframes dragon-recoil { 30% { transform:translateX(5%) rotate(3deg); filter:brightness(1.7) drop-shadow(0 0 14px #f87171); } }
+@keyframes dragon-dodge { 35% { transform:translate(8%,-4%) rotate(4deg); filter:drop-shadow(-12px 0 8px #4ade80); } }
+@keyframes dragon-brace { 35% { transform:scale(.96); filter:drop-shadow(0 0 16px #60a5fa); } }
+@keyframes dragon-renew { 40% { transform:translateY(-2%) scale(1.03); filter:drop-shadow(0 0 18px #facc15); } }
+@keyframes dragon-collapse { to { transform:translateY(16%) rotate(-12deg) scale(.9); filter:grayscale(.65) brightness(.55); } }
+@keyframes dragon-rise { from { transform:translateY(16%) rotate(-12deg) scale(.9); opacity:.4; } to { transform:none; opacity:1; } }
+@media (prefers-reduced-motion:reduce) {
+  .actor-frames,.actor-body,.actor-effect,.actor-action-cue,.dragon-pose { animation:none!important; }
+  .actor-effect,.actor-action-cue { display:none; }
+  .actor-pose-death .actor-frames,.actor-pose-reviving .actor-frames { background-position-x:100%!important; }
+  .dragon-pose-death { transform:translateY(16%) rotate(-12deg) scale(.9); filter:grayscale(.65) brightness(.55); }
+}

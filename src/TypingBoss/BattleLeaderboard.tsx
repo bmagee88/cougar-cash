@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import { TypingBossLeaderboardEntry } from "./types";
+import { COMBAT_COLORS } from "./combatFeedback";
 
 const num = (value: number) => Number(value.toFixed(2)).toLocaleString();
 const percent = (value: number) => `${Number((value * 100).toFixed(1))}%`;
@@ -17,7 +18,7 @@ export default function BattleLeaderboard({ entries }: { entries: TypingBossLead
         return <Paper key={entry.code} variant="outlined" sx={{ p: 2, borderColor: entry.rank === 1 ? "#facc15" : "#344256" }}>
           <Stack direction="row" justifyContent="space-between" gap={1} flexWrap="wrap">
             <Typography fontWeight={900}>#{entry.rank} {entry.name}</Typography>
-            <Chip label={`${num(entry.totalDamage)} total damage`} sx={{ color: "#7dd3fc" }} />
+            <Chip label={`${num(entry.totalDamage)} total damage`} sx={{ color: COMBAT_COLORS.damage }} />
           </Stack>
           {attack ? <>
             <Typography sx={{ mt: 1, fontWeight: 800 }}>Strongest attack: {num(attack.power)} power · {num(attack.actualDamage)} damage dealt</Typography>
@@ -30,11 +31,11 @@ export default function BattleLeaderboard({ entries }: { entries: TypingBossLead
               <span>Orange: +{percent(attack.orangeBonus)}</span>
               <span>Green: +{percent(attack.greenBonus)} ({attack.greenStacks} stacked)</span>
               <span>Red: {percent(attack.criticalChance)} crit chance</span>
-              <span>Blue shield ready at release: {percent(attack.blueShield)}</span>
+              <span style={{ color: COMBAT_COLORS.shield }}>Blue shield ready at release: {percent(attack.blueShield)}</span>
               <span>{attack.balanced ? `Skill strike: ${attack.critical ? "Yes" : "No"} (no extra damage)` : `Critical: ${attack.critical ? "Yes · ×2" : "No · ×1"}`}</span>
-              {attack.balanced && <><span>Earned power: {num(attack.earnedPower || 0)}</span><span>Support used: {num(attack.supportUsed || 0)}</span><span>Guard earned: {num(attack.guardPower || 0)}</span></>}
+              {attack.balanced && <><span>Earned power: {num(attack.earnedPower || 0)}</span><span>Support used: {num(attack.supportUsed || 0)}</span><span style={{ color: COMBAT_COLORS.shield }}>Guard earned: {num(attack.guardPower || 0)}</span></>}
               {!!attack.powerBonus && <span>Golden power: +{percent(attack.powerBonus)}</span>}
-              <span>Shield blocked: {num(attack.blockedDamage)}</span>
+              <span style={{ color: COMBAT_COLORS.shield }}>Shield blocked: {num(attack.blockedDamage)}</span>
               <span>{attack.moveId === "strong" ? "Power attack" : "Weak attack"} · attack #{attack.attackNumber}</span>
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 1 }}>

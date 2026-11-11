@@ -161,6 +161,7 @@ export interface TypingBossProjectile {
   evadeType?: "regular" | "special" | "dodge" | null;
   multiplier?: number;
   sourceName?: string;
+  targetName?: string;
   critical?: boolean;
 }
 

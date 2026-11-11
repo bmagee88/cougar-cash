@@ -164,6 +164,42 @@ test("gold support targets living wounded players, knocked-out players, and unsh
   assert.equal(down.typing.paladinShield, 0, "the shield expires after absorbing one hit");
 });
 
+test("a full-health cleric heals the lowest-HP living ally in randomized and balanced battles", () => {
+  for (const balanced of [false, true]) {
+    const session = sessionWithPlayers(4);
+    const [cleric, down, lowest, injured] = [...session.players.values()];
+    cleric.typing = rules.createTypingState(1, "cleric");
+    down.hp = 0; lowest.hp = 20; injured.hp = 60;
+    const attack = balanced ? { balanced: true, base: 100, earnedPower: 125, power: 100, supportPower: 25, multiplier: 1, moveId: "weak", gold: 1 }
+      : { power: 30, multiplier: 1, moveId: "weak", gold: 1 };
+    engine.launchAttack(session, cleric, attack, callbacks());
+    const heal = session.projectiles.find(projectile => projectile.kind === "heal");
+    assert.equal(cleric.hp, 100, "the caster receives no healing at full HP");
+    assert.equal(down.hp, 0, "healing cannot revive");
+    assert.equal(injured.hp, 60);
+    assert.equal(lowest.hp, balanced ? 45 : 50);
+    assert.equal(heal.target, lowest.code);
+    assert.equal(heal.targetName, lowest.name, "personal views can name off-screen recipients");
+    assert.equal(cleric.totalHealing, heal.amount);
+  }
+});
+
+test("shield feedback reports the absorbed amount separately from damage", () => {
+  for (const shield of [0.5, 1]) {
+    const session = sessionWithPlayers(1);
+    const player = session.players.get("0");
+    player.typing.shield = shield;
+    player.typing.paladinShield = shield === .5 ? 3 : 0;
+    const cb = { ...callbacks(), random: () => .99 };
+    engine.launchAttack(session, session.typingHost, { power: 20, multiplier: 1, moveId: "weak" }, cb);
+    cb.timers.shift()();
+    const hit = session.projectiles[0];
+    assert.equal(hit.amount, shield === .5 ? 7 : 0);
+    assert.equal(hit.blockedAmount, 20 - hit.amount);
+    assert.equal(player.hp, 100 - hit.amount);
+  }
+});
+
 test("rogue stacks independent dodge rolls for one incoming attack", () => {
   const session = sessionWithPlayers(1);
   const player = session.players.get("0");
@@ -404,23 +440,41 @@ test("power animation uses the actual multiplier, including critical hits below 
 test("boss attack roll selects the advertised pattern and splits all power among its targets", () => {
   for (const [roll, kind, count] of [[0, "bite", 1], [.299, "bite", 1], [.3, "fireball", 1], [.599, "fireball", 1], [.6, "tailWhip", 3], [.899, "tailWhip", 3], [.9, "flamethrower", 10], [.999, "flamethrower", 10]]) {
     const session = sessionWithPlayers(10);
-    const rolls = [roll, .49]; // Select position 4 in the middle of the formation.
+    const rolls = [roll, .49]; // Select position 4, at the start of the second rank.
     const cb = { ...callbacks(), random: () => rolls.shift() ?? 1 };
     engine.launchAttack(session, session.typingHost, { power: 90, multiplier: 1, moveId: "weak" }, cb);
     assert.equal(session.projectiles.length, count);
     assert.ok(session.projectiles.every(shot => shot.bossAttack === kind && shot.amount === 90 / count));
-    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["3", "4", "5"]);
+    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["4", "5", "6"]);
   }
 });
 
 test("tail whip respects the formation's row edge and skips defeated players", () => {
   const session = sessionWithPlayers(12);
   session.players.get("8").hp = 0;
-  const rolls = [.7, .8]; // Position 9, at the right end of the first row.
+  const rolls = [.7, .8]; // Position 9, in the last diagonal rank.
   const cb = { ...callbacks(), random: () => rolls.shift() ?? 1 };
   engine.launchAttack(session, session.typingHost, { power: 60, multiplier: 1, moveId: "weak" }, cb);
-  assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["6", "7", "9"]);
+  assert.deepEqual(session.projectiles.map(shot => shot.target).sort((a,b)=>Number(a)-Number(b)), ["9", "10", "11"]);
   assert.ok(session.projectiles.every(shot => shot.amount === 20));
+});
+
+test("bridge formation has four diagonal slots per rank and recedes from the dragon for up to 30 players", () => {
+  for (const size of [1,4,5,10,15,30]) {
+    const points = Array.from({length:size}, (_, index) => rules.proportionalPlayerPoint(index,size));
+    assert.equal(new Set(points.map(point => `${point.x}:${point.y}`)).size,size);
+    assert.ok(points.every(point => point.x >= 10 && point.x <= 86 && point.y >= 50 && point.y <= 92));
+    for (let index=0;index<size;index++) {
+      if (index%4) {
+        assert.equal(points[index].x-points[index-1].x,9);
+        assert.equal(points[index].y-points[index-1].y,3);
+      }
+      if (index>=4) {
+        assert.ok(points[index].x<points[index-4].x);
+        assert.ok(points[index].y>points[index-4].y);
+      }
+    }
+  }
 });
 
 test("flamethrower shields apply on impact and consume once", () => {

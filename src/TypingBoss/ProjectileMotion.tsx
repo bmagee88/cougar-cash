@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { TypingBossProjectile } from "./types";
 import "./continuousBattle.css";
+import { combatFeedback, COMBAT_COLORS } from "./combatFeedback";
 
-export function ProjectileMotion({ projectile, from, to, art, serverOffset, labelOffset = 0, showName = false, hitPoint }: {
+export function ProjectileMotion({ projectile, from, to, art, serverOffset, labelOffset = 0, showName = false, hitPoint, targetOffscreen = false }: {
   projectile: TypingBossProjectile; from: { x: number; y: number }; to: { x: number; y: number };
   art: { src: string; size: number; glow: string } | null; serverOffset: number; labelOffset?: number; showName?: boolean;
   hitPoint?: { x: number; y: number };
+  targetOffscreen?: boolean;
 }) {
   const flight = useRef<HTMLDivElement>(null);
   const offset = useRef(serverOffset);
@@ -33,11 +35,10 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
   }, [projectile.impactAt, projectile.resolvedAt]);
 
   const dodged = projectile.evadeType === "dodge";
-  const color = goldenShield ? "#fde047" : dodged ? "#86efac" : projectile.kind === "boss" ? "#fda4af" : ["heal", "resurrect"].includes(projectile.kind) ? "#86efac" : "#7dd3fc";
+  const { color, label } = combatFeedback(projectile);
   const amount = Number((projectile.amount || 0).toFixed(2));
   const crit = projectile.critical && amount > 0 && !["miss", "evade"].includes(projectile.result);
   const hitAge = projectile.resolvedAt ? Math.max(0, now - projectile.resolvedAt) : 0;
-  const label = goldenShield ? `SHIELD +${amount}` : dodged ? "DODGED!" : projectile.result === "evade" ? "EVADE" : projectile.result === "miss" ? "MISS" : projectile.kind === "buff" ? "BUFF" : `${["heal", "resurrect"].includes(projectile.kind) ? "+" : "−"}${amount}`;
   const angle = Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
   return <>
     {!melee && !goldenShield && <div ref={flight} className="boss-projectile" style={{ visibility: flying ? "visible" : "hidden", transform: `translate(${to.x}%, ${to.y}%)` }} aria-hidden="true">
@@ -47,9 +48,9 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
     </div>}
     {visibleHit && goldenShield && hitAge < 900 && <svg className="boss-golden-shield" viewBox="0 0 100 108" aria-hidden="true"
       style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}>
-      <path d="M50 6Q69 19 91 22V51Q91 79 50 102Q9 79 9 51V22Q31 19 50 6Z" fill="#facc1550" stroke="#fde047" strokeWidth="5" />
-      <path d="M50 17Q65 27 80 30V51Q80 72 50 91Q20 72 20 51V30Q35 27 50 17Z" fill="none" stroke="#fef3c7" strokeWidth="2" />
-      <path d="M50 32L55 48L70 53L55 58L50 75L45 58L30 53L45 48Z" fill="#fef9c3" />
+      <path d="M50 6Q69 19 91 22V51Q91 79 50 102Q9 79 9 51V22Q31 19 50 6Z" fill="#60a5fa50" stroke={COMBAT_COLORS.shield} strokeWidth="5" />
+      <path d="M50 17Q65 27 80 30V51Q80 72 50 91Q20 72 20 51V30Q35 27 50 17Z" fill="none" stroke="#dbeafe" strokeWidth="2" />
+      <path d="M50 32L55 48L70 53L55 58L50 75L45 58L30 53L45 48Z" fill="#eff6ff" />
     </svg>}
     {visibleHit && melee && hitAge < 420 && <div className={`boss-melee-effect ${projectile.bossAttack === "bite" ? "boss-bite-effect" : "boss-tail-effect"}`}
       aria-hidden="true" style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}>
@@ -60,10 +61,12 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
         <path d="M4 66Q50 58 93 11M13 72Q61 62 96 24M3 52Q45 47 76 15" fill="none" stroke="#fde68a" strokeWidth="4" strokeLinecap="round" />
       </svg>}
     </div>}
-    {visibleHit && crit && hitAge < 600 && <div aria-hidden="true" className="boss-crit-impact" style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}><i /><b /></div>}
-    {visibleHit && <div className={`boss-impact${crit ? " boss-impact-crit" : ""}`} style={{ left: `${(hitPoint || to).x}%`, top: `${(hitPoint || to).y + labelOffset}%`, zIndex: 10, color: crit ? "#fff2a8" : color, animationDelay: `-${hitAge}ms` }}>
+    {visibleHit && crit && hitAge < 600 && <div aria-hidden="true" data-testid="critical-impact-flash" className="boss-crit-impact" style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}><i /><b /></div>}
+    {visibleHit && <div className={`boss-impact${crit ? " boss-impact-crit" : ""}`} style={{ left: `${(hitPoint || to).x}%`, top: `${(hitPoint || to).y + labelOffset}%`, zIndex: 10, color, animationDelay: `-${hitAge}ms` }}>
       {crit && <span className="boss-crit-label">{projectile.balanced ? "SKILL!" : "CRIT!"}</span>}
       {showName && projectile.kind === "damage" && `${projectile.sourceName || "Player"} `}{label}{projectile.moveId === "strong" && !dodged && " ★"}
+      {targetOffscreen && <span className="boss-impact-recipient">→ {projectile.targetName || "Ally"}</span>}
+      {!!projectile.blockedAmount && amount > 0 && !dodged && <span className="boss-impact-blocked" style={{ color: COMBAT_COLORS.shield }}>BLOCKED {Number(projectile.blockedAmount.toFixed(2))}</span>}
     </div>}
   </>;
 }

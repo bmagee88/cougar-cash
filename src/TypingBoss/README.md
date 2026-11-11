@@ -64,12 +64,57 @@ The existing HTTP/SSE transport is retained. No key-by-key messages or animation
 - Completed words are batched until an attack releases; Randomized also flushes when a perfect blue word grants a shield or the dodge percentage changes. Requests serialize while typing continues; sequence numbers make retries idempotent. Batches are validated atomically and capped at 20 words.
 - Dodge averages the last five Space-to-next-word transition scores, from 0% to 25%. Each score compares the transition gap with the average of the remaining gaps in that word (with a 40 ms minimum pace): up to 1.25× the pace earns full credit, 2.5× or more earns zero, and in-between scores taper linearly. Accuracy does not enter the score. The first word of each attack has no transition, and firing does not reset the rolling average. The server rolls at impact before applying shields, for both the dragon and players. Dodges deal no damage, preserve the shield, and do not qualify for strongest landed attack. New servers accept the original five-field word records; clients include the optional transition only when the server advertises dodge state.
 - Each player receives only their character and projectiles they send or receive. The host receives the full roster and all combat events. Full snapshots are sent on first connection/reconnect; subsequent events contain only changed fields, including small impact-result patches.
+- The host's Battle log accordion is available in development and production beneath the game. It records resolved combat and game status from existing updates, names both participants, uses the combat colors, shows timestamps, and supports text filtering and clearing. History stays in that tab, keeps at most 200 entries, and resets on refresh or a new room. It adds no network requests or server-side history; reconnect can recover only events still present in the live snapshot.
 - Simultaneous events are coalesced for 100 ms (at most ten stream updates/second). Idle rooms only send a 25-second connection keepalive. A slow stream is disconnected before it can accumulate unbounded writes, and reconnect receives a fresh authoritative snapshot.
 - Projectile movement uses browser-driven transform animations, with local impact expiry. React no longer rerenders the projectile layer on a frame timer. Character assets are reused, and host impacts appear beside the corresponding player to avoid a pile of labels on the dragon. Per-player totals stay visible beneath all 30 host avatars.
+- The bridge artwork is anchored at the bottom with lighter foreground shading. Proportional host formations use four diagonal slots per rank, starting by the dragon and receding toward the lower-left foreground. The server uses the same positions for Tail Whip neighbors, including knocked-out slots. Compact horizontal player cards preserve names, charge, HP, and totals; smaller host screens can scroll the formation horizontally rather than squeeze the labels. The original arena image is retained alongside the edited bridge asset and its generation prompt.
 - Session and game state remain in memory, matching the existing backend. A backend restart ends rooms. A single room must stay on one backend process; this change does not add distributed room storage.
+- Rooms with no connected clients and no authenticated activity expire after 10 minutes. Disconnecting the final client starts a fresh reconnect grace period; connected rooms retain the two-hour maximum from creation. Finished/closed rooms retain results for 15 minutes, capped by that maximum. Expiry allows one minute to deliver its final notice, then deletes the room and releases its timers, sockets, snapshots, and game state. The 15-second server sweep enforces idle and result deadlines independently of incoming requests.
+- Old Mode keeps only the latest challenge per player and expires unfinished challenges after 10 minutes. Finished fights release challenges immediately. Combat events are pruned by the sweep even without viewers. Filtered word pools use a 32-entry least-recently-used cache on server and client; eviction preserves word generation order.
+- Saved host/player credentials carry the room expiry plus the one-minute removal grace; finished snapshots shorten it. Typing Boss prunes expired entries on access and every minute while mounted. Existing raw credentials get a one-time 10-minute verification grace, then adopt the real room expiry. Confirmed missing/expired rooms or invalid credentials remove saved entries; temporary network failures preserve them. Unrelated browser storage is untouched. End screens close their live stream while keeping results visible and available for reconnect during retention.
 - At the end, players receive a damage-ranked leaderboard with each player's strongest landed attack: base characters, power, actual damage, total multiplier, timing mean/variation, consistency, orange/green bonuses, red chance and critical outcome, and blue defense ready at release. Strongest is ranked by power before defenses and overkill limits; canceled in-flight attacks do not qualify. Shared results are sent only after the fight ends and remain available after reconnect.
 
 Implementation references: [Node writable-stream backpressure](https://nodejs.org/api/stream.html), [HTML EventSource reconnection](https://html.spec.whatwg.org/dev/server-sent-events.html).
+
+## Character actions and reactions
+
+All six classes use six-frame sprite actions. The approved paladin, cleric and
+barbarian idle strips remain in place. Rogue, necromancer and monk now also have
+animated idle strips. The dragon uses local motion and reaction effects on its
+existing artwork.
+
+| Combat event | Source action | Recipient reaction |
+| --- | --- | --- |
+| Damage | Weapon/cast, or power attack | Hit recoil and red flash |
+| Healing | Support cast (including self-healing) | Yellow healing pulse |
+| Shield grant | Shield cast | Blue shield pulse and brace |
+| Shield absorption | Attacker's normal action | Blue block; partial damage also flashes red |
+| Buff | Support cast | Blue pulse; evasion readiness uses green |
+| Dodge/miss | Attacker's normal action | Dodge pose and green trail, without a hit reaction |
+| Revival | Revival cast | Rise from the ground and yellow pulse |
+| Knockout | Incoming action | Fall once, then hold the collapsed pose |
+
+Source actions begin at the event's start; recipient reactions wait for the
+server-confirmed impact. The actor clock uses the server timestamp. Reconnects
+skip expired animation, and progress snapshots cannot restart it. Simultaneous
+impacts coalesce; a cast interrupted by a reaction retains a visible action cue.
+Revival completes before the body returns to normal action. These are visual
+changes and do not change combat calculations or add network messages.
+
+CSS plays the frames and effects; React schedules only pose changes, with no
+per-frame updates. A shared preload cache holds at most one combat atlas per
+class, keeps idle visible while loading, and can retry failed loads. Runtime
+atlases total about 2.55 MB for all six classes (about 77% smaller than the PNG
+masters). Reduced-motion preferences disable sprite motion and effects while
+preserving the standing/down state.
+
+The development preview is `/typing-boss/animations`; it lets you replay every
+pose for all six classes and the dragon without opening a room. That preview
+route is excluded from production; battle animations are enabled in production.
+Assets and the exact built-in image-generation prompts are in
+`public/assets/typing-boss/characters/generation-prompts.md`. PNG masters are
+retained; rebuild the runtime WebP atlases with
+`node scripts/prepare-typing-boss-animation.cjs` (requires Sharp locally).
 
 ## Verification
 
