@@ -9,6 +9,7 @@ const ENTRIES = Object.keys(entriesByLength).filter(key => !isNaN(Number(key))).
 const GRADE_OPTIONS = Array.from({ length: 13 }, (_, grade) => ({ grade,
   count: ENTRIES.filter(entry => entry.gradeLevel === grade).length }));
 const pools = new Map();
+const MAX_WORD_POOLS = 32;
 function wordsForGrades(mask, sentimentMask) {
   if (mask === undefined && sentimentMask === undefined) return WORDS;
   if (mask !== undefined && (!Number.isInteger(mask) || mask < 1 || mask > 8191)) throw new Error("Choose at least one available grade.");
@@ -16,10 +17,14 @@ function wordsForGrades(mask, sentimentMask) {
   const key = `${mask}:${sentimentMask}`;
   if (!pools.has(key)) {
     const bank = filterWordsByLength(mask, sentimentMask);
-    pools.set(key, Object.keys(bank).filter(key => !isNaN(Number(key))).flatMap(key => bank[key]));
+    const pool = Object.keys(bank).filter(key => !isNaN(Number(key))).flatMap(key => bank[key]);
+    if (!pool.length) throw new Error("No words match the selected grades and sentiments.");
+    if (pools.size >= MAX_WORD_POOLS) pools.delete(pools.keys().next().value);
+    pools.set(key, pool);
   }
   const pool = pools.get(key);
-  if (!pool.length) throw new Error("No words match the selected grades and sentiments.");
+  pools.delete(key);
+  pools.set(key, pool); // Refresh recency; eviction never changes seeded word order.
   return pool;
 }
 
@@ -83,8 +88,10 @@ function typingAttackProgress(state, characters, cursor = state.nextWord) {
 
 // The server and host display use the same formation, including knocked-out slots.
 function proportionalPlayerPoint(index, rosterSize) {
-  const columns = Math.max(1, Math.min(10, rosterSize));
-  return { x: columns === 1 ? 50 : 6 + (index % columns) * 88 / (columns - 1), y: 51 + Math.floor(index / columns) * 16 };
+  const rows = Math.max(1, Math.ceil(rosterSize / 4));
+  const depth = rows === 1 ? 0 : Math.floor(index / 4) / (rows - 1);
+  // Four abreast across the bridge; each rank recedes toward the lower-left foreground.
+  return { x: 56 + (index % 4) * 9 - depth * 42, y: 54 + depth * 28 + (index % 4) * 3 };
 }
 
 function createTypingState(seed, ability) {

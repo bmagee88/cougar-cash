@@ -1,0 +1,68 @@
+[
+  {
+    "id": "cleric",
+    "columns": 6,
+    "rows": 8,
+    "width": 576,
+    "height": 768,
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "sourceBytes": 1961114,
+    "runtimeBytes": 460372
+  },
+  {
+    "id": "barbarian",
+    "columns": 6,
+    "rows": 8,
+    "width": 576,
+    "height": 768,
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "sourceBytes": 1649110,
+    "runtimeBytes": 382058
+  },
+  {
+    "id": "paladin",
+    "columns": 6,
+    "rows": 8,
+    "width": 576,
+    "height": 768,
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "sourceBytes": 2080022,
+    "runtimeBytes": 491312
+  },
+  {
+    "id": "rogue",
+    "columns": 6,
+    "rows": 8,
+    "width": 576,
+    "height": 768,
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "sourceBytes": 1747264,
+    "runtimeBytes": 389876
+  },
+  {
+    "id": "necromancer",
+    "columns": 6,
+    "rows": 8,
+    "width": 576,
+    "height": 768,
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "sourceBytes": 1992296,
+    "runtimeBytes": 444764
+  },
+  {
+    "id": "monk",
+    "columns": 6,
+    "rows": 8,
+    "width": 576,
+    "height": 768,
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "sourceBytes": 1622073,
+    "runtimeBytes": 386222
+  }
+]

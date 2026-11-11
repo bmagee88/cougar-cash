@@ -10,6 +10,7 @@ const {
 const { closePawPassPool, handlePawPassRequest } = require("./pawPass");
 const { handleDictionaryLookup } = require("./wordWeb");
 const proportionalBoss = require("./proportionalBoss");
+const typingBossLifecycle = require("./typingBossLifecycle");
 
 const PORT = Number(
   process.env.APP_SERVER_PORT ||
@@ -1240,7 +1241,7 @@ function typingBossResolveTarget(session, player, move, requestedTargetCode) {
 
   if (move.kind === "heal-other") {
     const requested = session.players.get(normalizeTypingBossPlayerCode(requestedTargetCode));
-    if (requested && requested.hp > 0) {
+    if (requested && requested.hp > 0 && requested.hp < requested.maxHp) {
       return requested.code;
     }
 
@@ -1269,6 +1270,7 @@ function createTypingBossSession(body) {
     status: "setup",
     createdAt: now,
     expiresAt: now + TYPING_BOSS_SESSION_MS,
+    lastActivityAt: now,
     closedAt: null,
     boss: {
       id: bossProfile.id,
@@ -1354,6 +1356,7 @@ function getTypingBossProjectileSnapshot(projectile) {
     moveId: projectile.moveId || null,
     bossId: projectile.bossId || null,
     moveLabel: projectile.moveLabel,
+    ...(["heal", "resurrect", "buff"].includes(projectile.kind) ? { targetName: projectile.targetName } : {}),
     ...(projectile.bossAttack ? { bossAttack: projectile.bossAttack } : {}),
     startedAt: projectile.startedAt,
     impactAt: projectile.impactAt,
@@ -1370,6 +1373,7 @@ function getTypingBossProjectileSnapshot(projectile) {
 
 function getTypingBossSnapshot(session, options = {}) {
   const now = Date.now();
+  typingBossLifecycle.maintainSession(session, now);
   const includeHostToken = Boolean(options.includeHostToken);
   const includeChallengesFor = options.includeChallengesFor || "";
 
@@ -1434,11 +1438,13 @@ function isTypingBossHostToken(session, token) {
 function authenticateTypingBoss(session, url, body = {}) {
   const hostToken = body.hostToken || url.searchParams.get("hostToken");
   if (isTypingBossHostToken(session, hostToken)) {
+    typingBossLifecycle.touchSession(session);
     return { role: "host", actorCode: "HOST" };
   }
 
   const code = normalizeTypingBossPlayerCode(body.code || url.searchParams.get("code"));
   if (code && session.players.has(code)) {
+    typingBossLifecycle.touchSession(session);
     return { role: "player", actorCode: code };
   }
 
@@ -1479,14 +1485,13 @@ function getTypingBossSubscriberSnapshotKey(subscriber) {
 }
 
 function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
+  // Stop buffering a slow connection in either mode; reconnect starts from a snapshot.
+  if (subscriber.res.writableNeedDrain || subscriber.res.destroyed || subscriber.res.writableEnded) {
+    typingBossLifecycle.detachSubscriber(session, subscriber);
+    subscriber.res.destroy();
+    return;
+  }
   if (session.mode === "proportional") {
-    // Stop buffering a slow connection; EventSource reconnects to a fresh snapshot.
-    if (subscriber.res.writableNeedDrain) {
-      subscriber.res.destroy();
-      clearInterval(subscriber.pingTimer);
-      session.subscribers.delete(subscriber);
-      return;
-    }
     const current = getTypingBossSnapshotForAuth(session, subscriber.auth);
     const delta = subscriber.previous ? proportionalBoss.diffSnapshot(subscriber.previous, current) : null;
     if (!subscriber.previous) {
@@ -1517,6 +1522,7 @@ function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
 }
 
 function broadcastTypingBossSession(session) {
+  typingBossLifecycle.maintainSession(session);
   if (session.mode === "proportional") {
     if (session.broadcastTimer) return;
     // Coalesce simultaneous hits from a classroom into at most ten updates/second.
@@ -1525,7 +1531,7 @@ function broadcastTypingBossSession(session) {
       session.revision += 1;
       for (const subscriber of [...session.subscribers]) {
         try { writeTypingBossEvent(subscriber, session); }
-        catch { clearInterval(subscriber.pingTimer); session.subscribers.delete(subscriber); }
+        catch { typingBossLifecycle.detachSubscriber(session, subscriber); subscriber.res.destroy(); }
       }
     }, 100);
     return;
@@ -1535,19 +1541,14 @@ function broadcastTypingBossSession(session) {
     try {
       writeTypingBossEvent(subscriber, session, snapshotCache);
     } catch (error) {
-      clearInterval(subscriber.pingTimer);
-      session.subscribers.delete(subscriber);
+      typingBossLifecycle.detachSubscriber(session, subscriber);
+      subscriber.res.destroy();
     }
   }
 }
 
 function clearTypingBossTimers(session) {
-  clearTimeout(session.expireTimer);
-  clearTimeout(session.bossTimer);
-  for (const timer of session.timers) {
-    clearTimeout(timer);
-  }
-  session.timers.clear();
+  typingBossLifecycle.clearSessionTimers(session);
 }
 
 function expireTypingBossSession(session) {
@@ -1557,22 +1558,18 @@ function expireTypingBossSession(session) {
 
   session.status = "expired";
   session.closedAt = Date.now();
-  clearTimeout(session.bossTimer);
+  session.expiresAt = Math.min(session.expiresAt, session.closedAt);
+  clearTypingBossTimers(session);
+  session.challenges.clear();
   broadcastTypingBossSession(session);
 
-  setTimeout(() => {
-    for (const subscriber of [...session.subscribers]) {
-      clearInterval(subscriber.pingTimer);
-      subscriber.res.end();
-      session.subscribers.delete(subscriber);
-    }
-    clearTypingBossTimers(session);
-    typingBossSessions.delete(session.id);
+  session.deleteTimer = setTimeout(() => {
+    typingBossLifecycle.removeSession(typingBossSessions, session);
   }, TYPING_BOSS_DELETE_EXPIRED_AFTER_MS).unref?.();
 }
 
 function refreshTypingBossSessionStatus(session) {
-  if (Date.now() >= session.expiresAt) {
+  if (typingBossLifecycle.maintainSession(session)) {
     expireTypingBossSession(session);
   }
 }
@@ -1808,6 +1805,7 @@ function createTypingBossProjectile(session, projectile) {
     impactAt: Date.now() + projectile.travelMs,
     resolvedAt: null,
     ...projectile,
+    ...(["heal", "resurrect", "buff"].includes(projectile.kind) ? { targetName: session.players.get(projectile.target)?.name } : {}),
   };
 
   session.projectiles.push(fullProjectile);
@@ -1927,7 +1925,13 @@ function handleTypingBossEvents(req, res, session, url) {
     res,
     auth,
     pingTimer: setInterval(() => {
-      if (!res.writableNeedDrain) res.write(": ping\n\n");
+      if (res.writableNeedDrain || res.destroyed || res.writableEnded) {
+        typingBossLifecycle.detachSubscriber(session, subscriber);
+        res.destroy();
+        return;
+      }
+      try { res.write(": ping\n\n"); }
+      catch { typingBossLifecycle.detachSubscriber(session, subscriber); res.destroy(); }
     }, 25 * 1000),
   };
 
@@ -1935,8 +1939,7 @@ function handleTypingBossEvents(req, res, session, url) {
   writeTypingBossEvent(subscriber, session);
 
   req.on("close", () => {
-    clearInterval(subscriber.pingTimer);
-    session.subscribers.delete(subscriber);
+    typingBossLifecycle.detachSubscriber(session, subscriber);
   });
 }
 
@@ -1999,6 +2002,7 @@ async function handleCreateTypingBossParticipant(req, res, session) {
   };
 
   session.players.set(code, player);
+  typingBossLifecycle.touchSession(session);
   addTypingBossLog(session, `${player.name} joined as ${heroClass.label}.`, "info");
   broadcastTypingBossSession(session);
 
@@ -2019,6 +2023,7 @@ async function handleVerifyTypingBossParticipant(req, res, session) {
   }
 
   player.lastSeenAt = Date.now();
+  typingBossLifecycle.touchSession(session);
   broadcastTypingBossSession(session);
   sendJson(res, 200, {
     code,
@@ -2130,7 +2135,7 @@ async function handleCreateTypingBossChallenge(req, res, session, url) {
     createdAt: Date.now(),
   };
 
-  session.challenges.set(challenge.id, challenge);
+  typingBossLifecycle.storeChallenge(session, challenge);
   player.lastSeenAt = Date.now();
 
   sendJson(res, 201, {
@@ -2170,6 +2175,7 @@ async function handleSubmitTypingBossAction(req, res, session, url) {
     return;
   }
 
+  typingBossLifecycle.pruneChallenges(session);
   const challenge = session.challenges.get(toSafeString(body.challengeId));
   if (!challenge || challenge.playerCode !== player.code) {
     sendError(res, 404, "That typing challenge is no longer active.");
@@ -2311,6 +2317,7 @@ async function handleTypingBossRequest(req, res, url, parts) {
   }
 
   if (req.method === "GET" && parts.length === 4 && parts[3] === "active") {
+    refreshAllTypingBossSessionStatuses();
     const activeSessions = [...typingBossSessions.values()]
       .filter((session) => session.status === "setup" || session.status === "active")
       .map((session) => ({

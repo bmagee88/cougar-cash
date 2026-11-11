@@ -58,7 +58,7 @@ function resolveGoldSupport(session, actor, power, now) {
   }
   session.projectiles.push({
     id: crypto.randomBytes(8).toString("hex"), source: actor.code, sourceName: actor.name,
-    target: target.code, kind, moveId: kind === "buff" ? "goldShield" : "special", moveLabel,
+    target: target.code, targetName: target.name, kind, moveId: kind === "buff" ? "goldShield" : "special", moveLabel,
     startedAt: now, impactAt: now, resolvedAt: now, willHit: true, amount: round(amount),
   });
   return amount;
@@ -129,6 +129,8 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
           }
           target.bossHitsTaken += 1;
         }
+        const shieldBlocked = incoming - damage;
+        if (shieldBlocked > 0) projectile.blockedAmount = round((projectile.blockedAmount || 0) + shieldBlocked);
       }
       const actual = Math.min(target.hp, damage);
       target.hp = Math.max(0, target.hp - actual);
@@ -244,7 +246,7 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
 // Nested diffs preserve unchanged player objects on the client and avoid replaying logs/FX.
 function diffSnapshot(previous, current) {
   const delta = {};
-  for (const key of ["status", "closedAt", "startingPlayers", "hpMultiplier", "balanced", "leaderboard"]) {
+  for (const key of ["status", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "leaderboard"]) {
     if (JSON.stringify(previous[key]) !== JSON.stringify(current[key])) delta[key] = current[key];
   }
   if (current.typing) {

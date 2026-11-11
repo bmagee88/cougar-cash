@@ -44,7 +44,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { keyframes } from "@emotion/react";
 import React, {
   useCallback,
   useEffect,
@@ -89,13 +88,19 @@ import { ContinuousTyping, DamageBoard } from "./ContinuousBattle";
 import BattleLeaderboard from "./BattleLeaderboard";
 import { AttackProgressBar } from "./AttackProgress";
 import { acceptSessionSnapshot, applySessionPatch, SessionPatch } from "./sessionPatch";
+import { pruneSavedCredentials, readSavedCredential, removeSavedCredential, saveCredential } from "./credentials";
+import { COMBAT_COLORS, projectileEndpoints } from "./combatFeedback";
+import HostBattleLog from "./HostBattleLog";
+import CombatCharacter, { CombatEffects, useCombatAnimation, useCombatClock } from "./CombatCharacter";
+import { collectCombatAnimations, CombatAnimation, CombatAnimationEvent, NO_ANIMATION_EVENTS } from "./combatAnimation";
+const AnimationPreview = process.env.NODE_ENV === "development" ? React.lazy(() => import("./AnimationPreview")) : null;
 
 const SESSION_ID_PATTERN = /^boss[0-9A-F]{3}$/;
 const PLAYER_CODE_PATTERN = /^hero[0-9A-F]{4}$/;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const PUBLIC_ASSET_BASE = (process.env.PUBLIC_URL || "").replace(/\/$/, "");
 const TYPING_BOSS_ASSETS = {
-  arena: `${PUBLIC_ASSET_BASE}/assets/typing-boss/volcanic-arena.png`,
+  arena: `${PUBLIC_ASSET_BASE}/assets/typing-boss/volcanic-bridge-arena.png`,
   boss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/red-dragon-sprite.png`,
   emberWhelpBoss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/ember-whelp-sprite.png`,
   cindermawBoss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/red-dragon-sprite.png`,
@@ -166,107 +171,6 @@ const CLASS_PROJECTILE_ASSETS: Record<
     strong: TYPING_BOSS_ASSETS.clericStrongAttack,
   },
 };
-
-type CharacterAnimationState =
-  | "idle"
-  | "weakAttack"
-  | "strongAttack"
-  | "potion"
-  | "death"
-  | "resurrection";
-
-type CharacterAnimationEvent = {
-  id: string;
-  state: Exclude<CharacterAnimationState, "idle" | "death">;
-};
-
-const CHARACTER_SPRITE_COLUMNS = 6;
-const CHARACTER_SPRITE_LAST_COLUMN = CHARACTER_SPRITE_COLUMNS - 1;
-const CLERIC_LEGACY_SPRITE_ROWS = 6;
-
-type CharacterSpriteAnimationConfig = {
-  src: string;
-  rows: number;
-  row: number;
-  durationMs: number;
-  frameAspectRatio?: number;
-};
-
-const CLASS_CHARACTER_ANIMATION_CONFIG: Partial<
-  Record<
-    TypingBossClassId,
-    Partial<Record<CharacterAnimationState, CharacterSpriteAnimationConfig>>
-  >
-> = {
-  cleric: {
-    idle: {
-      src: TYPING_BOSS_ASSETS.clericIdleAnimation,
-      rows: 1,
-      row: 0,
-      durationMs: 900,
-    },
-    weakAttack: {
-      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
-      rows: CLERIC_LEGACY_SPRITE_ROWS,
-      row: 1,
-      durationMs: 620,
-    },
-    strongAttack: {
-      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
-      rows: CLERIC_LEGACY_SPRITE_ROWS,
-      row: 2,
-      durationMs: 760,
-    },
-    potion: {
-      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
-      rows: CLERIC_LEGACY_SPRITE_ROWS,
-      row: 3,
-      durationMs: 760,
-    },
-    death: {
-      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
-      rows: CLERIC_LEGACY_SPRITE_ROWS,
-      row: 4,
-      durationMs: 920,
-    },
-    resurrection: {
-      src: TYPING_BOSS_ASSETS.clericAnimationSheet,
-      rows: CLERIC_LEGACY_SPRITE_ROWS,
-      row: 5,
-      durationMs: 1100,
-    },
-  },
-  barbarian: {
-    idle: {
-      src: TYPING_BOSS_ASSETS.barbarianIdleAnimation,
-      rows: 1,
-      row: 0,
-      durationMs: 900,
-      frameAspectRatio: 32 / 34,
-    },
-  },
-  paladin: {
-    idle: {
-      src: TYPING_BOSS_ASSETS.paladinIdleAnimation,
-      rows: 1,
-      row: 0,
-      durationMs: 900,
-      frameAspectRatio: 48 / 64,
-    },
-  },
-};
-
-function getCharacterAnimationConfig(
-  classId: TypingBossClassId,
-  state: CharacterAnimationState
-) {
-  return CLASS_CHARACTER_ANIMATION_CONFIG[classId]?.[state];
-}
-
-const characterSpriteStep = keyframes`
-  from { background-position-x: 0; }
-  to { background-position-x: 100%; }
-`;
 
 const CLASS_ORDER: TypingBossClassId[] = [
   "cleric",
@@ -521,14 +425,6 @@ const bossTheme = createTheme({
 });
 
 type Point = { x: number; y: number };
-
-function hostStorageKey(sessionId: string) {
-  return `typingBossHost:${sessionId}`;
-}
-
-function playerStorageKey(sessionId: string) {
-  return `typingBossPlayer:${sessionId}`;
-}
 
 function normalizeSessionAlias(value: string) {
   const hex = value
@@ -808,14 +704,23 @@ function useTypingBossSessionStream(
     const source = new EventSource(
       getTypingBossEventSourceUrl(sessionId, activeCredentials)
     );
+    const role = hostToken ? "host" : "player";
+    const credential = hostToken || code || "";
+    function rememberExpiry(incoming: TypingBossSessionSnapshot) {
+      if (incoming.status === "expired") removeSavedCredential(sessionId!, role, credential);
+      else saveCredential(sessionId!, role, credential, incoming.expiresAt);
+      if (["victory", "defeat", "closed", "expired"].includes(incoming.status)) source.close();
+    }
 
     async function checkSessionStillExists() {
       try {
         await getTypingBossSession(sessionId, activeCredentials);
       } catch (caught) {
         const status = getErrorStatus(caught);
-        if (status === 404 || status === 410) {
+        if (closed) return;
+        if (status === 401 || status === 403 || status === 404 || status === 410) {
           source.close();
+          removeSavedCredential(sessionId!, role, credential);
           setConnected(false);
           setTerminalReason("not-found");
           setStreamError("This boss game is no longer available.");
@@ -827,6 +732,7 @@ function useTypingBossSessionStream(
       if (closed) return;
       const message = event as MessageEvent<string>;
       const incoming = JSON.parse(message.data) as TypingBossSessionSnapshot;
+      rememberExpiry(incoming);
       setSession(previous => acceptSessionSnapshot(previous, incoming));
       setConnected(true);
       setStreamError("");
@@ -838,6 +744,11 @@ function useTypingBossSessionStream(
     source.addEventListener("patch", (event) => {
       if (closed) return;
       const patch = JSON.parse((event as MessageEvent<string>).data) as SessionPatch;
+      if (patch.expiresAt) saveCredential(sessionId!, role, credential, patch.expiresAt);
+      if (patch.status && ["victory", "defeat", "closed", "expired"].includes(patch.status)) {
+        if (patch.status === "expired") removeSavedCredential(sessionId!, role, credential);
+        source.close();
+      }
       setSession(previous => previous ? applySessionPatch(previous, patch) : previous);
       setConnected(true);
       setStreamError("");
@@ -979,8 +890,8 @@ function VolcanicBackdrop({ background = TYPING_BOSS_ASSETS.arena }: { backgroun
         sx={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `linear-gradient(180deg, rgba(5,8,13,.08), rgba(5,8,13,.22) 48%, rgba(5,8,13,.64) 100%), url("${background}")`,
-          backgroundPosition: "center center",
+          backgroundImage: `linear-gradient(180deg, rgba(5,8,13,.12), rgba(5,8,13,.1) 48%, rgba(5,8,13,.18) 100%), url("${background}")`,
+          backgroundPosition: "center bottom",
           backgroundSize: "cover",
           imageRendering: "pixelated",
         }}
@@ -990,7 +901,7 @@ function VolcanicBackdrop({ background = TYPING_BOSS_ASSETS.arena }: { backgroun
           position: "absolute",
           inset: 0,
           background:
-            "linear-gradient(180deg, rgba(0,0,0,.2), transparent 22%, rgba(0,0,0,.12) 58%, rgba(0,0,0,.72)), linear-gradient(90deg, rgba(0,0,0,.36), transparent 18%, transparent 78%, rgba(0,0,0,.32))",
+            "linear-gradient(180deg, rgba(0,0,0,.25), transparent 25%, transparent 70%, rgba(0,0,0,.12)), linear-gradient(90deg, rgba(0,0,0,.22), transparent 18%, transparent 78%, rgba(0,0,0,.2))",
         }}
       />
     </>
@@ -1080,176 +991,8 @@ function classIcon(classId: TypingBossClassId) {
   return <BoltIcon />;
 }
 
-function PlayerCharacterSprite({
-  classId,
-  color,
-  size = 62,
-  highlight = false,
-  animationState = "idle",
-  animationKey = "idle",
-}: {
-  classId: TypingBossClassId;
-  color: string;
-  size?: number;
-  highlight?: boolean;
-  animationState?: CharacterAnimationState;
-  animationKey?: string;
-}) {
-  const animationConfig = getCharacterAnimationConfig(classId, animationState);
-
-  if (animationConfig) {
-    return (
-      <AnimatedCharacterSprite
-        color={color}
-        config={animationConfig}
-        size={size}
-        highlight={highlight}
-        animationState={animationState}
-        animationKey={animationKey}
-      />
-    );
-  }
-
-  const src = TYPING_BOSS_ASSETS[classId];
-  return (
-    <Box
-      component="img"
-      src={src}
-      alt=""
-      draggable={false}
-      aria-hidden="true"
-      sx={{
-        height: size,
-        width: "auto",
-        maxWidth: size * 0.82,
-        objectFit: "contain",
-        display: "block",
-        imageRendering: "pixelated",
-        filter: `drop-shadow(0 8px 0 rgba(0,0,0,.34)) drop-shadow(0 0 ${
-          highlight ? 18 : 10
-        }px ${color}${highlight ? "cc" : "66"})`,
-        userSelect: "none",
-      }}
-    />
-  );
-}
-
-function AnimatedCharacterSprite({
-  color,
-  config,
-  size,
-  highlight,
-  animationState,
-  animationKey,
-}: {
-  color: string;
-  config: CharacterSpriteAnimationConfig;
-  size: number;
-  highlight: boolean;
-  animationState: CharacterAnimationState;
-  animationKey: string;
-}) {
-  const repeats = animationState === "idle" ? "infinite" : "1";
-  const frameSteps = animationState === "idle"
-    ? `steps(${CHARACTER_SPRITE_COLUMNS}, jump-none)`
-    : `steps(${CHARACTER_SPRITE_LAST_COLUMN}, end)`;
-  const frameAspectRatio = config.frameAspectRatio || 1;
-  const width = size * frameAspectRatio;
-  const rowPosition =
-    config.rows <= 1
-      ? "0%"
-      : `${(config.row / (config.rows - 1)) * 100}%`;
-
-  return (
-    <Box
-      key={`${animationState}-${animationKey}`}
-      aria-hidden="true"
-      sx={{
-        width,
-        height: size,
-        maxWidth: Math.max(size, width),
-        display: "block",
-        backgroundImage: `url(${config.src})`,
-        backgroundRepeat: "no-repeat",
-        backgroundSize: `${CHARACTER_SPRITE_COLUMNS * 100}% ${
-          config.rows * 100
-        }%`,
-        backgroundPositionX: "0%",
-        backgroundPositionY: rowPosition,
-        animation: `${characterSpriteStep} ${config.durationMs}ms ${frameSteps} ${repeats}`,
-        ...(animationState === "idle" && { "@media (prefers-reduced-motion: reduce)": { animation: "none" } }),
-        animationFillMode: animationState === "idle" ? "none" : "forwards",
-        imageRendering: "pixelated",
-        filter: `drop-shadow(0 8px 0 rgba(0,0,0,.34)) drop-shadow(0 0 ${
-          highlight ? 18 : 10
-        }px ${color}${highlight ? "cc" : "66"})`,
-        userSelect: "none",
-      }}
-    />
-  );
-}
-
-function characterAnimationEventForPlayer(
-  player: TypingBossPlayer,
-  projectiles: TypingBossProjectile[]
-): CharacterAnimationEvent | null {
-  for (let index = projectiles.length - 1; index >= 0; index -= 1) {
-    const projectile = projectiles[index];
-
-    if (projectile.kind === "resurrect" && projectile.target === player.code) {
-      if (getCharacterAnimationConfig(player.classId, "resurrection")) {
-        return { id: projectile.id, state: "resurrection" };
-      }
-      continue;
-    }
-
-    if (projectile.source !== player.code) continue;
-
-    if (projectile.kind === "damage") {
-      const state =
-        projectile.moveId === "weak" ? "weakAttack" : "strongAttack";
-      if (getCharacterAnimationConfig(player.classId, state)) {
-        return { id: projectile.id, state };
-      }
-      continue;
-    }
-
-    if (projectile.kind === "heal") {
-      if (getCharacterAnimationConfig(player.classId, "potion")) {
-        return { id: projectile.id, state: "potion" };
-      }
-    }
-  }
-
-  return null;
-}
-
-function useCharacterAnimation(
-  classId: TypingBossClassId,
-  event: CharacterAnimationEvent | null,
-  defeated: boolean
-): CharacterAnimationState {
-  const [state, setState] = useState<CharacterAnimationState>("idle");
-  const eventId = event?.id;
-  const eventState = event?.state;
-
-  useEffect(() => {
-    if (!eventId || !eventState) return undefined;
-
-    setState(eventState);
-    const durationMs =
-      getCharacterAnimationConfig(classId, eventState)?.durationMs || 800;
-    const timer = window.setTimeout(
-      () => setState("idle"),
-      durationMs
-    );
-
-    return () => window.clearTimeout(timer);
-  }, [classId, eventId, eventState]);
-
-  if (state === "resurrection") return state;
-  if (defeated) return "death";
-  return state;
+function PlayerCharacterSprite(props: { classId: TypingBossClassId; color: string; size?: number; highlight?: boolean; pose?: CombatAnimation; clock?: React.MutableRefObject<number> }) {
+  return <CombatCharacter {...props} />;
 }
 
 function StatBar({
@@ -1311,10 +1054,7 @@ function CreateGamePage() {
     setError("");
     try {
       const response = await createTypingBossSession(name, selectedBossId, mode);
-      localStorage.setItem(
-        hostStorageKey(response.sessionId),
-        response.hostToken
-      );
+      saveCredential(response.sessionId, "host", response.hostToken, response.session.expiresAt);
       navigate(`/typing-boss/host/${response.sessionId}`);
     } catch (caught) {
       setError(messageFromError(caught));
@@ -1536,7 +1276,7 @@ function HostSessionPage() {
   const { sessionId } = useParams();
   const normalizedSessionId = normalizeSessionAlias(sessionId || "");
   const hostToken = normalizedSessionId
-    ? localStorage.getItem(hostStorageKey(normalizedSessionId)) || ""
+    ? readSavedCredential(normalizedSessionId, "host")
     : "";
   const {
     connected,
@@ -1731,6 +1471,7 @@ function HostSessionPage() {
             </Stack>
           </Grid>
         </Grid>}
+        <HostBattleLog key={session.id} session={session} />
       </Stack>
       <HostCodeModal
         open={codeModalOpen}
@@ -1787,7 +1528,7 @@ function JoinPage() {
         name,
         classId
       );
-      localStorage.setItem(playerStorageKey(normalizedSessionId), response.code);
+      saveCredential(normalizedSessionId, "player", response.code, response.session.expiresAt);
       navigate(`/typing-boss/play/${normalizedSessionId}`);
     } catch (caught) {
       setError(messageFromError(caught));
@@ -1950,7 +1691,7 @@ function PlayerSessionPage() {
   const [savedCode, setSavedCode] = useState(() =>
     normalizedSessionId
       ? normalizePlayerCode(
-          localStorage.getItem(playerStorageKey(normalizedSessionId)) || ""
+          readSavedCredential(normalizedSessionId, "player")
         )
       : ""
   );
@@ -1975,13 +1716,18 @@ function PlayerSessionPage() {
     setVerified(false);
     setVerifyError("");
     verifyTypingBossParticipant(normalizedSessionId, savedCode)
-      .then(() => {
-        if (!cancelled) setVerified(true);
+      .then(response => {
+        if (!cancelled) {
+          saveCredential(normalizedSessionId, "player", savedCode, response.session.expiresAt);
+          setVerified(true);
+        }
       })
       .catch((caught) => {
         if (cancelled) return;
-        localStorage.removeItem(playerStorageKey(normalizedSessionId));
-        setSavedCode("");
+        if ([401, 403, 404, 410].includes(getErrorStatus(caught) || 0)) {
+          removeSavedCredential(normalizedSessionId, "player", savedCode);
+          setSavedCode("");
+        }
         setVerifyError(messageFromError(caught));
       });
 
@@ -3221,11 +2967,11 @@ function BattleLog({
 }) {
   const colorByTone: Record<string, string> = {
     info: "#aab4c4",
-    hit: "#67e8f9",
+    hit: COMBAT_COLORS.damage,
     miss: "#fda4af",
-    heal: "#86efac",
-    danger: "#fb7185",
-    evade: "#facc15",
+    heal: COMBAT_COLORS.healing,
+    danger: COMBAT_COLORS.damage,
+    evade: COMBAT_COLORS.dodge,
     victory: "#67e8f9",
   };
 
@@ -3390,7 +3136,7 @@ function StatTile({ label, value }: { label: string; value: string | number }) {
       <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 800 }}>
         {label}
       </Typography>
-      <Typography sx={{ fontWeight: 950, fontSize: 20 }}>{value}</Typography>
+      <Typography sx={{ fontWeight: 950, fontSize: 20, color: label === "Damage" || label === "Avg DPS" || label === "Boss Hits" ? COMBAT_COLORS.damage : label === "Healing" || label === "Revives" ? COMBAT_COLORS.healing : label === "Buffs" ? COMBAT_COLORS.shield : label === "Evades" || label === "Dodges" ? COMBAT_COLORS.dodge : undefined }}>{value}</Typography>
     </Box>
   );
 }
@@ -3552,18 +3298,6 @@ function playerPersonalPositions(
   return positions;
 }
 
-function projectileEndpoints(
-  projectile: TypingBossProjectile,
-  positions: Map<string, Point>,
-  bossPoint: Point
-) {
-  const from =
-    projectile.source === "boss" ? bossPoint : positions.get(projectile.source) || bossPoint;
-  const to =
-    projectile.target === "boss" ? bossPoint : positions.get(projectile.target) || bossPoint;
-  return { from, to };
-}
-
 type ProjectileArt = {
   src: string;
   size: number;
@@ -3628,6 +3362,8 @@ function projectileArtFor(
 function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.hostBossPoint;
+  const clock = useCombatClock(session.serverNow);
+  const animations = useMemo(() => collectCombatAnimations(session.projectiles), [session.projectiles]);
   const positions = useMemo(
     () => session.mode === "proportional" ? new Map(session.players.map((player, index) =>
       [player.code, proportionalPlayerPoint(index, session.players.length)] as [string, Point]
@@ -3636,20 +3372,19 @@ function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
   );
 
   return (
-    <BattlefieldShell minHeight={session.mode === "proportional" ? 480 : 640} background={arena.background}>
-      <BossNode session={session} point={bossPoint} size="host" />
+    <Box sx={{ overflowX:"auto" }} role="region" aria-label="Host battle scene" tabIndex={0}>
+    <BattlefieldShell minWidth={session.mode === "proportional" ? 960 : undefined} minHeight={session.mode === "proportional" ? Math.max(540, 440 + Math.ceil(session.players.length / 4) * 36) : 640} background={arena.background}>
+      <BossNode session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
       {session.players.map((player) => (
         <PlayerNode
           key={player.code}
           player={player}
           point={positions.get(player.code) || { x: 50, y: 80 }}
-          compact={session.players.length > 6}
+          compact={session.mode === "proportional" || session.players.length > 6}
           proportional={session.mode === "proportional"}
           sessionId={session.id}
-          animationEvent={characterAnimationEventForPlayer(
-            player,
-            session.projectiles
-          )}
+          events={animations.get(player.code) || NO_ANIMATION_EVENTS}
+          clock={clock}
         />
       ))}
       <ProjectileLayer
@@ -3660,6 +3395,7 @@ function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
         serverNow={session.serverNow}
       />
     </BattlefieldShell>
+    </Box>
   );
 }
 
@@ -3672,6 +3408,8 @@ function PlayerBattlefield({
 }) {
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.playerBossPoint;
+  const clock = useCombatClock(session.serverNow);
+  const animations = useMemo(() => collectCombatAnimations(session.projectiles), [session.projectiles]);
   const positions = useMemo(
     () => playerPersonalPositions(session.players, me, arena.playerSpawns),
     [arena.playerSpawns, me, session.players]
@@ -3679,7 +3417,7 @@ function PlayerBattlefield({
 
   return (
     <BattlefieldShell minHeight={session.mode === "proportional" ? 400 : 600} background={arena.background}>
-      <BossNode session={session} point={bossPoint} size="player" />
+      <BossNode session={session} point={bossPoint} size="player" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
       {session.players.map((player) => (
         <PlayerNode
           key={player.code}
@@ -3689,10 +3427,8 @@ function PlayerBattlefield({
           proportional={session.mode === "proportional"}
           sessionId={session.id}
           highlight={player.code === me.code}
-          animationEvent={characterAnimationEventForPlayer(
-            player,
-            session.projectiles
-          )}
+          events={animations.get(player.code) || NO_ANIMATION_EVENTS}
+          clock={clock}
         />
       ))}
       <ProjectileLayer
@@ -3710,16 +3446,19 @@ function BattlefieldShell({
   children,
   minHeight,
   background,
+  minWidth,
 }: {
   children: React.ReactNode;
   minHeight: number;
   background: string;
+  minWidth?: number;
 }) {
   return (
     <Box
       sx={{
         position: "relative",
         minHeight,
+        minWidth,
         height: { xs: minHeight, md: minHeight },
         border: "2px solid #120707",
         borderRadius: 2,
@@ -3738,17 +3477,19 @@ function BossNode({
   session,
   point,
   size,
+  events,
+  clock,
 }: {
   session: TypingBossSessionSnapshot;
   point: Point;
   size: "host" | "player";
+  events: readonly CombatAnimationEvent[];
+  clock: React.MutableRefObject<number>;
 }) {
+  const pose = useCombatAnimation(events, session.status !== "setup" && session.boss.hp <= 0, clock);
+  const poseDelay = useMemo(() => pose.id === "idle" || pose.state === "idle" ? 0 : Math.max(0, Date.now() + clock.current - pose.at), [pose.id, pose.state, pose.at, clock]);
   const dragonWidth = session.mode === "proportional" ? size === "host" ? { xs: 230, md: 300 } : { xs: 240, md: 320 } : bossBattleWidth(session.boss.id, size);
   const latestAttack = session.projectiles.filter(projectile => projectile.source === "boss").slice(-1)[0];
-  const attackClass = session.mode !== "proportional" || !latestAttack ? undefined
-    : latestAttack.bossAttack === "bite" ? "dragon-bite"
-    : latestAttack.bossAttack === "tailWhip" ? "dragon-tail-whip"
-    : latestAttack.moveId === "strong" ? "dragon-cast-power" : "dragon-cast-weak";
   return (
     <>
       <Box
@@ -3815,9 +3556,11 @@ function BossNode({
           filter: `drop-shadow(0 18px 34px ${session.boss.glow})`,
         }}
       >
-        <Box key={latestAttack?.id || "idle"} className={attackClass}>
+        <Box key={`${pose.id}:${pose.state}`} data-testid="dragon-animation" data-animation={pose.state}
+          className={`dragon-pose dragon-pose-${pose.state}`} style={{ "--pose-ms":`${pose.duration || 900}ms`, animationDelay:`-${poseDelay}ms` } as React.CSSProperties}>
           <BossSprite width={dragonWidth} glow={session.boss.color} bossId={session.boss.id} />
-          {attackClass === "dragon-tail-whip" && <svg className="dragon-tail-arc" viewBox="0 0 260 118" aria-hidden="true">
+          <CombatEffects pose={pose} clock={clock} />
+          {pose.state === "tailWhip" && <svg className="dragon-tail-arc" viewBox="0 0 260 118" aria-hidden="true" style={{animationDelay:`-${poseDelay}ms`}}>
             <path d="M234 11C242 52 207 90 146 102C89 115 40 93 5 56C58 83 108 85 154 71C198 57 220 38 234 11Z" fill="#9a3412" stroke="#fbbf24" strokeWidth="3" />
             <path d="M232 24C210 72 135 111 52 78" fill="none" stroke="#fed7aa" strokeWidth="5" strokeLinecap="round" />
           </svg>}
@@ -3852,7 +3595,8 @@ const PlayerNode = React.memo(function PlayerNode({
   point,
   compact = false,
   highlight = false,
-  animationEvent = null,
+  events = NO_ANIMATION_EVENTS,
+  clock,
   proportional = false,
   sessionId = "",
 }: {
@@ -3860,19 +3604,16 @@ const PlayerNode = React.memo(function PlayerNode({
   point: Point;
   compact?: boolean;
   highlight?: boolean;
-  animationEvent?: CharacterAnimationEvent | null;
+  events?: readonly CombatAnimationEvent[];
+  clock: React.MutableRefObject<number>;
   proportional?: boolean;
   sessionId?: string;
 }) {
-  const width = proportional && compact ? "8.5%" : compact ? 132 : 170;
+  const formation = proportional && compact;
+  const width = formation ? "9%" : compact ? 132 : 170;
   const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
-  const animationState = useCharacterAnimation(
-    player.classId,
-    animationEvent,
-    player.defeated
-  );
-  const animationKey = animationEvent?.id || (player.defeated ? "death" : "idle");
+  const pose = useCombatAnimation(events, player.defeated, clock);
   return (
     <Box
       sx={{
@@ -3885,7 +3626,7 @@ const PlayerNode = React.memo(function PlayerNode({
         opacity: player.defeated ? 0.58 : 1,
       }}
     >
-      <Stack spacing={0.5} alignItems="center">
+      <Stack direction={formation ? "row" : "column"} spacing={0.5} alignItems="center">
         <Stack
           direction="row"
           spacing={0.5}
@@ -3897,8 +3638,8 @@ const PlayerNode = React.memo(function PlayerNode({
             color={highlight ? "#67e8f9" : player.color}
             size={proportional && compact ? 32 : compact ? 62 : 86}
             highlight={highlight}
-            animationState={animationState}
-            animationKey={animationKey}
+            pose={pose}
+            clock={clock}
           />
           {!proportional && <Stack spacing={0.35}>
             <Chip
@@ -3955,15 +3696,17 @@ const PlayerNode = React.memo(function PlayerNode({
             )}
           </Stack>}
         </Stack>
-        <Box sx={{ width: "100%", textAlign: "center" }}>
+        <Box sx={{ width: "100%", minWidth:0, textAlign: "center" }}>
           <Typography
             sx={{
               fontWeight: 950,
               fontSize: compact ? 12 : 14,
+              lineHeight: formation ? 1.2 : undefined,
               overflow: "hidden",
               textOverflow: "ellipsis",
               whiteSpace: "nowrap",
             }}
+            title={player.name}
           >
             {player.name}
           </Typography>
@@ -3979,8 +3722,8 @@ const PlayerNode = React.memo(function PlayerNode({
               {player.hp}/{player.maxHp}
             </Typography>
           )}
-          {proportional && <Typography sx={{ fontSize: compact ? 10 : 12, lineHeight: 1.4, mt: .25, whiteSpace: "nowrap", fontFamily: "monospace", bgcolor: "#0b1220dd", borderRadius: .5 }}>
-            <span style={{ color: "#7dd3fc" }}>↑{Number(player.totalDamage.toFixed(1))}</span>{" "}<span style={{ color: "#fda4af" }}>↓{Number((player.totalTaken || 0).toFixed(1))}</span>
+          {proportional && <Typography sx={{ fontSize: compact ? 9 : 12, lineHeight: 1.4, mt: .25, whiteSpace: "nowrap", fontFamily: "monospace", bgcolor: "#0b1220dd", borderRadius: .5 }}>
+            <span style={{ color: COMBAT_COLORS.damage }}>↑{Number(player.totalDamage.toFixed(1))}</span>{" "}<span style={{ color: COMBAT_COLORS.damage }}>↓{Number((player.totalTaken || 0).toFixed(1))}</span>
           </Typography>}
         </Box>
       </Stack>
@@ -3999,19 +3742,26 @@ function ProjectileLayer({ projectiles, positions, bossPoint, players, serverNow
   const offset = useRef(0);
   if (serverNow) offset.current = serverNow - Date.now();
   return <>{projectiles.map(projectile => {
-    const { from, to } = projectileEndpoints(projectile, positions, bossPoint);
+    const { from, to, targetOffscreen } = projectileEndpoints(projectile, positions, bossPoint);
     return <ProjectileMotion key={projectile.id} projectile={projectile} from={from} to={to}
       art={projectileArtFor(projectile, playerByCode)} serverOffset={offset.current}
+      targetOffscreen={targetOffscreen}
       hitPoint={serverNow && players.length > 1 && projectile.target === "boss" ? from : undefined}
       labelOffset={serverNow && players.length > 1 ? projectile.target === "boss" ? -5 : 4 : 0} />;
   })}</>;
 }
 
 export default function TypingBossApp() {
+  useEffect(() => {
+    pruneSavedCredentials();
+    const timer = window.setInterval(pruneSavedCredentials, 60000);
+    return () => window.clearInterval(timer);
+  }, []);
   return (
     <ThemeProvider theme={bossTheme}>
       <CssBaseline />
       <Routes>
+        {AnimationPreview && <Route path="animations" element={<React.Suspense fallback={<LoadingPanel label="Loading animations..." />}><AnimationPreview /></React.Suspense>} />}
         <Route index element={<CreateGamePage />} />
         <Route path="host/:sessionId" element={<HostSessionPage />} />
         <Route path="join" element={<JoinPage />} />
