@@ -31,9 +31,9 @@ export function usePublishAttackProgress(sessionId: string, credentials: TypingB
     }
   }, [active]);
 
-  const publish = useCallback((wordIndex: number, characters: number, progress: number) => {
+  const publish = useCallback((wordIndex: number, characters: number, progress: number, released: boolean) => {
     window.dispatchEvent(new CustomEvent(EVENT, { detail: { key: `${sessionId}:${actor}`, progress } }));
-    if (wordIndex % 10 === 0 && characters === 0) {
+    if (released) {
       // Word submissions already broadcast attack release. Avoid a duplicate POST.
       latest.current = null;
       if (timer.current) clearTimeout(timer.current);

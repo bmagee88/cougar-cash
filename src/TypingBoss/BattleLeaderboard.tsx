@@ -31,12 +31,14 @@ export default function BattleLeaderboard({ entries }: { entries: TypingBossLead
               <span>Green: +{percent(attack.greenBonus)} ({attack.greenStacks} stacked)</span>
               <span>Red: {percent(attack.criticalChance)} crit chance</span>
               <span>Blue shield ready at release: {percent(attack.blueShield)}</span>
-              <span>Critical: {attack.critical ? "Yes · ×2" : "No · ×1"}</span>
+              <span>{attack.balanced ? `Skill strike: ${attack.critical ? "Yes" : "No"} (no extra damage)` : `Critical: ${attack.critical ? "Yes · ×2" : "No · ×1"}`}</span>
+              {attack.balanced && <><span>Earned power: {num(attack.earnedPower || 0)}</span><span>Support used: {num(attack.supportUsed || 0)}</span><span>Guard earned: {num(attack.guardPower || 0)}</span></>}
+              {!!attack.powerBonus && <span>Golden power: +{percent(attack.powerBonus)}</span>}
               <span>Shield blocked: {num(attack.blockedDamage)}</span>
               <span>{attack.moveId === "strong" ? "Power attack" : "Weak attack"} · attack #{attack.attackNumber}</span>
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 1 }}>
-              {attack.base} × {num(attack.consistency)} × (1 + {num(attack.orangeBonus)} + {num(attack.greenBonus)}) × {attack.critical ? 2 : 1} ≈ {num(attack.power)} power (rounded factors)
+              {attack.balanced ? `${attack.base} correct characters × ${num(attack.consistency)} quality ≈ ${num(attack.earnedPower || 0)} earned power, allocated between damage and class effects` : <>{attack.base} × {num(attack.consistency)} × (1 + {num(attack.orangeBonus)} + {num(attack.greenBonus)}) × {attack.critical ? 2 : 1}{attack.powerBonus ? ` × ${num(1 + attack.powerBonus)}` : ""} ≈ {num(attack.power)} power (rounded factors)</>}
             </Typography>
           </> : <Typography sx={{ mt: 1, color: "text.secondary" }}>No attacks landed this battle.</Typography>}
         </Paper>;

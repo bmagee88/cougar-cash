@@ -17,6 +17,12 @@ export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon";
 export type TypingBossDifficulty = "easy" | "medium" | "hard";
 export type TypingBossMode = "old" | "proportional";
 export interface TypingBossAttackStats {
+  balanced?: boolean;
+  earnedPower?: number;
+  supportPower?: number;
+  supportUsed?: number;
+  guardPower?: number;
+  powerBonus?: number;
   base: number;
   power: number;
   multiplier: number;
@@ -43,6 +49,23 @@ export interface TypingBossLeaderboardEntry {
   strongestAttack: TypingBossAttackStats | null;
 }
 export interface TypingBossTypingState {
+  balanced?: boolean;
+  balancedPower?: number;
+  balancedCharacters?: number;
+  balancedSpecialAt?: number;
+  balancedPace?: number[];
+  balancedFlow?: number[];
+  balancedGuard?: number;
+  balancedGuardMax?: number;
+  balancedQuality?: number;
+  balancedDefenseWord?: boolean;
+  balancedSkillWord?: boolean;
+  ability?: TypingBossClassId | "dragon";
+  gold?: number;
+  attackWords?: number;
+  nextPowerBonus?: number;
+  dodgeExtraRolls?: number;
+  paladinShield?: number;
   gradeMask?: number;
   sentimentMask?: number;
   seed: number;
@@ -63,7 +86,7 @@ export interface TypingBossTypingState {
   dodgeSamples?: number[];
 }
 // index, typed word, interval count, sum, squared sum, optional Space-to-first-character gap.
-export type TypingBossWordResult = [number, string, number, number, number, number?];
+export type TypingBossWordResult = [number, string, number, number, number, (number | null)?, number[]?];
 export type TypingBossMoveId = "weak" | "strong" | "special" | "potion";
 export type TypingBossProjectileKind =
   | "damage"
@@ -120,6 +143,8 @@ export interface TypingBossBoss {
 }
 
 export interface TypingBossProjectile {
+  balanced?: boolean;
+  blockedAmount?: number;
   id: string;
   source: string;
   target: string;
@@ -127,6 +152,7 @@ export interface TypingBossProjectile {
   moveId?: string | null;
   bossId?: TypingBossId | null;
   moveLabel: string;
+  bossAttack?: "bite" | "fireball" | "tailWhip" | "flamethrower";
   startedAt: number;
   impactAt: number;
   resolvedAt: number | null;
@@ -146,6 +172,7 @@ export interface TypingBossLogEntry {
 }
 
 export interface TypingBossSessionSnapshot {
+  balanced?: boolean;
   id: string;
   name: string;
   status: TypingBossStatus;

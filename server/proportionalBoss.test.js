@@ -30,6 +30,162 @@ function seekColor(color) {
   throw new Error("Missing color");
 }
 
+test("gold words leave existing colors intact and require an exact word", () => {
+  const state = rules.createTypingState(123, "barbarian");
+  let gold = 0;
+  for (let i = 0; i < 10000; i++) {
+    const legacy = rules.wordAt(state.seed, i);
+    const word = rules.typingWord(state, i);
+    assert.equal(word.text, legacy.text);
+    if (legacy.color) assert.equal(word.color, legacy.color);
+    if (word.color === "gold") gold++;
+  }
+  assert.ok(gold > 400 && gold < 600);
+  while (rules.typingWord(state).color !== "gold") state.nextWord++;
+  const { text } = rules.typingWord(state);
+  const missed = { ...state };
+  rules.finishWord(missed, "!" + text.slice(1) + " ", 2, 400, 80000);
+  assert.equal(missed.gold, 0);
+  rules.finishWord(state, text + " ", 2, 400, 80000);
+  assert.equal(state.gold, 1);
+});
+
+test("barbarian and dragon gold have no damage multiplier or carryover", () => {
+  for (const role of ["barbarian", "dragon"]) {
+    const state = rules.createTypingState(1, role);
+    Object.assign(state, { characters: 100, gold: 3, nextPowerBonus: 5 });
+    assert.equal(rules.releaseAttack(state).power, 100);
+    assert.equal(state.nextPowerBonus, undefined);
+    assert.equal(state.attackWords, 10);
+    assert.equal(state.gold, 0);
+    state.characters = 32;
+    assert.equal(rules.releaseAttack(state).power, 32);
+  }
+});
+
+test("a perfect final gold extends the current run and requires its separator", () => {
+  for (const ability of ["barbarian", "dragon"]) {
+    const state = rules.createTypingState(0, ability);
+    while (rules.typingWord(state, 9).color !== "gold" || Array.from({length:9}, (_,i)=>rules.typingWord(state,i)).some(w=>w.color === "gold") || rules.typingWord(state,10).color === "gold" || rules.typingWord(state,11).color === "gold") state.seed++;
+    const session = sessionWithPlayers(2);
+    const host = ability === "dragon";
+    if (host) session.typingHost = {...state}; else session.players.get("0").typing = {...state};
+    const records = [];
+    let characters = 0;
+    for (let i=0; i<12; i++) {
+      const word = rules.typingWord(state);
+      const text = word.text + (rules.requiresWordSpace(state,word.text) ? " " : "");
+      const count=text.length-(state.wordsInAttack === 0 ? 1 : 0);
+      records.push([i,text,count,count*200,count*40000]);
+      characters += text.length;
+      rules.finishWord(state,text,count,count*200,count*40000);
+      if(i === 9) { assert.equal(state.attackWords,12); assert.equal(state.characters,characters); }
+    }
+    assert.ok(records[9][1].endsWith(" "));
+    assert.ok(!records[11][1].endsWith(" "));
+    const cb = callbacks();
+    engine.submitWords(session, host ? {role:"host"} : {role:"player",actorCode:"0"}, records, cb);
+    const actual = host ? session.typingHost : session.players.get("0").typing;
+    assert.equal(actual.nextWord,12);
+    assert.equal(actual.attackWords,10);
+    assert.equal(actual.characters,0);
+    assert.equal(cb.timers.length,1, "no attack fires until the extra words are typed");
+  }
+});
+
+test("monk attack size rounds upward and resets, or renews from a shortened attack", () => {
+  const state = rules.createTypingState(1, "monk");
+  for (const [gold, size] of [[0, 10], [1, 5], [2, 3], [3, 2], [4, 1], [5, 1], [1, 5], [0, 10]]) {
+    Object.assign(state, { characters: 20, gold });
+    assert.equal(rules.releaseAttack(state).power, 20, "gold does not change the monk's damage formula");
+    assert.equal(rules.attackWordLimit(state), size);
+  }
+});
+
+test("monk batch validation follows gold into two consecutive five-word attacks", () => {
+  const session = sessionWithPlayers(2);
+  const actor = session.players.get("0");
+  const preview = rules.createTypingState(0, "monk");
+  const goldIn = (start, count) => Array.from({ length: count }, (_, i) => rules.typingWord(preview, start + i)).filter(word => word.color === "gold").length;
+  while (goldIn(0, 10) !== 1 || goldIn(10, 5) !== 1 || goldIn(15, 5) !== 0) preview.seed++;
+  actor.typing = { ...preview };
+  const records = Array.from({ length: 20 }, (_, index) => {
+    const text = rules.typingWord(preview).text + (rules.isLastAttackWord(preview) ? "" : " ");
+    const count = text.length - (preview.wordsInAttack === 0 ? 1 : 0);
+    const record = [index, text, count, count * 200, count * 40000];
+    rules.finishWord(preview, ...record.slice(1));
+    if (preview.wordsInAttack === rules.attackWordLimit(preview)) rules.releaseAttack(preview);
+    return record;
+  });
+  assert.ok(!records[14][1].endsWith(" ") && !records[19][1].endsWith(" "));
+  const auth = { role: "player", actorCode: actor.code };
+  const invalid = records.map(record => [...record]);
+  invalid[14][1] += " ";
+  const cb = callbacks();
+  assert.throws(() => engine.submitWords(session, auth, invalid, cb), /word order/);
+  assert.equal(actor.typing.nextWord, 0, "bad mixed-length batch is atomic");
+  engine.submitWords(session, auth, records, cb);
+  engine.submitWords(session, auth, records, cb);
+  assert.equal(actor.turnsTaken, 3);
+  assert.equal(actor.typing.nextWord, 20);
+  assert.equal(actor.typing.attackWords, 10);
+});
+
+test("gold support targets living wounded players, knocked-out players, and unshielded allies respectively", () => {
+  const session = sessionWithPlayers(4);
+  const [actor, down, lowest, ally] = [...session.players.values()];
+  down.hp = 0; lowest.hp = 20; ally.hp = 40;
+  const attack = { power: 30, multiplier: 1, moveId: "weak", gold: 1 };
+  const cb = callbacks();
+  actor.typing = rules.createTypingState(1, "cleric");
+  engine.launchAttack(session, actor, attack, cb);
+  assert.equal(lowest.hp, 50);
+  assert.equal(down.hp, 0);
+  assert.equal(session.projectiles.at(-1).kind, "heal");
+  actor.typing = rules.createTypingState(1, "necromancer");
+  engine.launchAttack(session, actor, attack, cb);
+  assert.equal(down.hp, 30);
+  assert.equal(session.projectiles.at(-1).kind, "resurrect");
+  engine.launchAttack(session, actor, attack, cb);
+  assert.equal(session.projectiles.at(-1).kind, "damage", "no knocked-out ally means normal attack");
+  actor.typing = rules.createTypingState(1, "paladin");
+  down.typing.paladinShield = 10;
+  ally.typing.paladinShield = 15;
+  engine.launchAttack(session, actor, attack, cb);
+  assert.equal(lowest.typing.paladinShield, 30);
+  assert.equal(session.projectiles.at(-1).moveId, "goldShield");
+  engine.launchAttack(session, actor, attack, cb);
+  assert.equal(down.typing.paladinShield, 40, "stack if everyone already has shields");
+  assert.equal(actor.typing.paladinShield, 0);
+  const hit = { ...callbacks(), random: () => .99 };
+  engine.launchAttack(session, session.typingHost, { ...attack, power: 100 }, hit);
+  hit.timers.shift()();
+  assert.equal(down.hp, 30);
+  assert.equal(down.typing.paladinShield, 0, "the shield expires after absorbing one hit");
+});
+
+test("rogue stacks independent dodge rolls for one incoming attack", () => {
+  const session = sessionWithPlayers(1);
+  const player = session.players.get("0");
+  player.typing = rules.createTypingState(1, "rogue");
+  Object.assign(player.typing, { gold: 2, dodgeSamples: [25], paladinShield: 10 });
+  rules.releaseAttack(player.typing);
+  assert.equal(player.typing.dodgeExtraRolls, 2);
+  assert.equal(rules.effectiveDodgeChance(player.typing), 1 - .75 ** 3);
+  const rolls = [.99, .5, .99, .5];
+  const cb = { ...callbacks(), random: () => rolls.shift() };
+  const attack = { power: 20, multiplier: 1, moveId: "weak" };
+  engine.launchAttack(session, session.typingHost, attack, cb);
+  cb.timers.shift()();
+  assert.equal(session.projectiles.at(-1).evadeType, "dodge");
+  assert.equal(player.typing.dodgeExtraRolls, 0);
+  assert.equal(player.typing.paladinShield, 10);
+  engine.launchAttack(session, session.typingHost, attack, cb);
+  cb.timers.shift()();
+  assert.equal(player.hp, 90);
+  assert.equal(player.typing.paladinShield, 0);
+});
+
 test("dodge rewards smooth word transitions at either speed and forgets older samples", () => {
   const fast = rules.createTypingState(42);
   const slow = rules.createTypingState(42);
@@ -245,9 +401,31 @@ test("power animation uses the actual multiplier, including critical hits below 
   assert.equal(attack.critical, true); assert.equal(attack.multiplier, 1); assert.equal(attack.moveId, "weak");
 });
 
-test("host attacks everyone proportionately; shields apply on impact and consume once", () => {
+test("boss attack roll selects the advertised pattern and splits all power among its targets", () => {
+  for (const [roll, kind, count] of [[0, "bite", 1], [.299, "bite", 1], [.3, "fireball", 1], [.599, "fireball", 1], [.6, "tailWhip", 3], [.899, "tailWhip", 3], [.9, "flamethrower", 10], [.999, "flamethrower", 10]]) {
+    const session = sessionWithPlayers(10);
+    const rolls = [roll, .49]; // Select position 4 in the middle of the formation.
+    const cb = { ...callbacks(), random: () => rolls.shift() ?? 1 };
+    engine.launchAttack(session, session.typingHost, { power: 90, multiplier: 1, moveId: "weak" }, cb);
+    assert.equal(session.projectiles.length, count);
+    assert.ok(session.projectiles.every(shot => shot.bossAttack === kind && shot.amount === 90 / count));
+    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["3", "4", "5"]);
+  }
+});
+
+test("tail whip respects the formation's row edge and skips defeated players", () => {
+  const session = sessionWithPlayers(12);
+  session.players.get("8").hp = 0;
+  const rolls = [.7, .8]; // Position 9, at the right end of the first row.
+  const cb = { ...callbacks(), random: () => rolls.shift() ?? 1 };
+  engine.launchAttack(session, session.typingHost, { power: 60, multiplier: 1, moveId: "weak" }, cb);
+  assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["6", "7", "9"]);
+  assert.ok(session.projectiles.every(shot => shot.amount === 20));
+});
+
+test("flamethrower shields apply on impact and consume once", () => {
   const session = sessionWithPlayers(15);
-  const cb = callbacks();
+  const cb = { ...callbacks(), random: () => .95 };
   engine.launchAttack(session, session.typingHost, { power: 150, multiplier: 1.5, moveId: "weak" }, cb);
   assert.equal(session.projectiles.length, 15);
   assert.equal(cb.timers.length, 1, "one timer for the whole volley");
@@ -261,13 +439,13 @@ test("host attacks everyone proportionately; shields apply on impact and consume
   assert.equal(player.hp, 82); assert.equal(player.typing.totalTaken, 18);
 });
 
-test("division keeps fractional damage and the starting count after knockouts", () => {
-  const session = sessionWithPlayers(30); const cb = callbacks();
+test("flamethrower divides fractional damage equally among survivors", () => {
+  const session = sessionWithPlayers(30); const cb = { ...callbacks(), random: () => .95 };
   session.players.get("0").hp = 0;
   engine.launchAttack(session, session.typingHost, { power: 10, multiplier: 1, moveId: "weak" }, cb);
   assert.equal(session.projectiles.length, 29);
   cb.timers.shift()();
-  assert.ok(Math.abs(session.players.get("1").hp - (100 - 1 / 3)) < .000001);
+  assert.ok(Math.abs(session.players.get("1").hp - (100 - 10 / 29)) < .000001);
 });
 
 test("host can earn blue defense, and damage credit is capped at remaining HP", () => {

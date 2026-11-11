@@ -125,7 +125,7 @@ export function getTypingBossEventSourceUrl(
 export async function createTypingBossSession(name: string, bossId: TypingBossId, mode: TypingBossMode = "proportional") {
   const response = await apiFetch<CreateTypingBossSessionResponse>("/api/typing-boss/sessions", {
     method: "POST",
-    json: { name, bossId, mode },
+    json: { name, bossId, mode, ...(mode === "proportional" ? { goldWords: true } : {}) },
   });
   if ((response.session?.mode ?? "old") !== mode) {
     throw new Error("The Typing Boss backend returned a different battle mode. Update the backend to match this version of the game, then try again.");
@@ -167,7 +167,7 @@ export function createTypingBossParticipant(
     `/api/typing-boss/sessions/${sessionId}/participants`,
     {
       method: "POST",
-      json: { name, classId },
+      json: { name, classId, goldWords: true },
     }
   );
 }
@@ -182,14 +182,18 @@ export function verifyTypingBossParticipant(sessionId: string, code: string) {
   );
 }
 
-export function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[]) {
-  return apiFetch<TypingBossSessionResponse>(
+export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false) {
+  const response = await apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken, hpMultiplier, gradeLevels, sentiments },
+      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced },
     }
   );
+  if (Boolean(response.session.balanced) !== balanced) {
+    throw new Error("The backend did not apply Balanced mode. Deploy the matching Typing Boss backend and create a fresh room.");
+  }
+  return response;
 }
 
 export function closeTypingBossSession(sessionId: string, hostToken: string) {

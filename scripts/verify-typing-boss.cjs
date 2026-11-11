@@ -5,6 +5,7 @@ const { wordAt } = require("../src/TypingBoss/proportionalRules");
 const base = process.env.TYPING_BOSS_TEST_URL || "http://127.0.0.1:4000/api/typing-boss/sessions";
 const openStreams = [];
 const games = [];
+const balanced = process.env.TYPING_BOSS_BALANCED === "1";
 
 async function request(path, body, expected = 200) {
   const response = await fetch(`${base}${path}`, body === undefined ? {} : {
@@ -45,27 +46,37 @@ function words(state, start = 0, countWords = 10) {
     const text = wordAt(state.seed, index).text + (index % 10 === 9 ? "" : " ");
     const count = text.length - (index % 10 === 0 ? 1 : 0);
     // One wrong letter per word prevents random color bonuses; spaces still score.
+    if (state.balanced) {
+      const gaps=Array(count).fill(0);gaps[0]=2000;
+      return [index,"!"+text.slice(1),count,2000,4000000,index%10===0?null:2000,gaps];
+    }
     return [index, "!" + text.slice(1), count, 2000, 4000000];
   });
 }
 
 (async () => {
   try {
-    const created = await request("", { name: "31-client verification", mode: "proportional", bossId: "emberWhelp" }, 201);
+    const created = await request("", { name: "31-client verification", mode: "proportional", bossId: "emberWhelp", goldWords: true }, 201);
     games.push(created);
     const id = created.sessionId;
     assert.equal(created.session.boss.id, "infernalDragon");
+    assert.equal(created.session.typing.ability, "dragon");
     const participants = [];
     for (let i = 0; i < 30; i++) {
-      const player = await request(`/${id}/participants`, { name: `Test ${i + 1}`, classId: ["cleric", "rogue", "barbarian"][i % 3] }, 201);
+      const classId = ["cleric", "rogue", "barbarian"][i % 3];
+      const player = await request(`/${id}/participants`, { name: `Test ${i + 1}`, classId, goldWords: true }, 201);
       assert.equal(player.session.players.length, 1);
       assert.equal(player.session.players[0].hp, 100);
+      assert.equal(player.session.typing.ability, classId);
       participants.push(player);
     }
     await request(`/${id}/participants`, { name: "Overflow", classId: "monk" }, 409);
     await request(`/${id}/start`, { hostToken: created.hostToken, hpMultiplier: 1.5 }, 400);
-    const started = await request(`/${id}/start`, { hostToken: created.hostToken });
+    const started = await request(`/${id}/start`, { hostToken: created.hostToken, balanced });
     assert.equal(started.session.boss.hp, 3000);
+    assert.equal(started.session.balanced,balanced);
+    const actorSnapshots = await Promise.all(participants.map(player => request(`/${id}?code=${player.code}`)));
+    actorSnapshots.forEach((snapshot,index)=>{participants[index].session=snapshot.session;});
     await request(`/${id}/start`, { hostToken: created.hostToken }, 409);
     const host = await stream(id, { hostToken: created.hostToken });
     const clients = await Promise.all(participants.map(player => stream(id, { code: player.code })));
@@ -81,7 +92,12 @@ function words(state, start = 0, countWords = 10) {
     assert.ok(clients.every(client => client.patches.some(patch => patch.players?.some(player => player.attackProgress > 0))));
     await request(`/${id}/challenge`, { code: participants[0].code, moveId: "special" }, 409);
     await request(`/${id}/actions`, { code: participants[0].code }, 409);
-    await request(`/${id}/words`, { hostToken: created.hostToken, words: words(started.session.typing) });
+    const hostWords = words(started.session.typing).map(record => {
+      const hasSpace = record[1].endsWith(" ");
+      record[1] = "!".repeat(record[1].length - (hasSpace ? 1 : 0)) + (hasSpace ? " " : "");
+      return record;
+    });
+    await request(`/${id}/words`, { hostToken: created.hostToken, words: hostWords });
     await Promise.all(participants.map(player => request(`/${id}/words`, { code: player.code, words: words(player.session.typing) })));
     // Retry the same ten words; it must be idempotent even with an attack in flight.
     await request(`/${id}/words`, { code: participants[0].code, words: words(participants[0].session.typing) });
@@ -89,8 +105,13 @@ function words(state, start = 0, countWords = 10) {
     const final = (await request(`/${id}?hostToken=${created.hostToken}`)).session;
     assert.equal(final.players.length, 30);
     assert.ok(final.boss.hp > 0 && final.boss.hp < 3000);
-    assert.equal(final.projectiles.length, 60, "30 player attacks plus 30 host targets");
-    assert.ok(final.players.every(player => player.totalDamage > 0 && player.totalTaken > 0 && player.hp < 100));
+    const bossShots = final.projectiles.filter(shot => shot.source === "boss");
+    const bossPattern = bossShots[0]?.bossAttack;
+    assert.equal(bossShots.length, { bite: 1, fireball: 1, tailWhip: 9, flamethrower: 30 }[bossPattern]);
+    assert.ok(bossShots.every(shot => shot.bossAttack === bossPattern));
+    assert.equal(final.projectiles.length, 30 + bossShots.length);
+    const targets = new Set(bossShots.map(shot => shot.target));
+    assert.ok(final.players.every(player => player.totalDamage > 0 && (player.totalTaken > 0) === targets.has(player.code)));
     assert.ok(final.players.every(player => player.turnsTaken === 1));
     for (let i = 0; i < clients.length; i++) {
       const client = clients[i];
@@ -106,7 +127,7 @@ function words(state, start = 0, countWords = 10) {
       assert.ok(client.patchBytes < 10000, "personal updates stay small");
     }
     const hostShots = new Map(host.patches.flatMap(patch => patch.projectiles || []).map(shot => [shot.id, shot]));
-    assert.equal(hostShots.size, 60);
+    assert.equal(hostShots.size, 30 + bossShots.length);
     const reconnected = await stream(id, { code: participants[0].code });
     await delay(100);
     assert.equal(reconnected.snapshot.typing.nextWord, 10);
@@ -152,7 +173,7 @@ function words(state, start = 0, countWords = 10) {
       answerText: challenge.challenge.answers[0], durationMs: 5000, acceptedCharacters: 20, mistakes: 0 }, 201);
     assert.ok(action.projectile); assert.ok(action.stats);
 
-    const report = { clients: 31, attacks: 31, projectiles: final.projectiles.length, endLeaderboard: "passed", hpMultiplier: "passed", progressUpdates: "passed",
+    const report = { balanced, clients: 31, attacks: 31, bossPattern, bossTargets: bossShots.length, projectiles: final.projectiles.length, endLeaderboard: "passed", hpMultiplier: "passed", progressUpdates: "passed",
       ...burst, originalMode: "passed", reconnectAndRetry: "passed",
       note: "Local SSE payload bytes for a progress update per actor, one host volley and 30 simultaneous player attacks; excludes initial snapshots and HTTP/TLS overhead." };
     console.log(JSON.stringify(report, null, 2));

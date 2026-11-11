@@ -1,5 +1,6 @@
 import WordFilterChips, { WordFilters, filteredWordCount } from "../typingProject/components/WordFilterChips";
 import { SENTIMENTS } from "../typingProject/resources/homeRowWordBank";
+import { initializeBalanced, proportionalPlayerPoint } from "./proportionalRules";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
@@ -30,6 +31,8 @@ import {
   DialogTitle,
   Divider,
   Grid,
+  FormControlLabel,
+  Switch,
   IconButton,
   LinearProgress,
   MenuItem,
@@ -105,6 +108,7 @@ const TYPING_BOSS_ASSETS = {
   monk: `${PUBLIC_ASSET_BASE}/assets/typing-boss/monk-sprite.png`,
   clericIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-idle-sprite.png`,
   barbarianIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-idle-sprite.png`,
+  paladinIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/paladin-idle-sprite.png`,
   clericAnimationSheet: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-animation-sheet.png`,
   barbarianWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-weak-attack-sprite.png`,
   barbarianStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-strong-attack-sprite.png`,
@@ -239,6 +243,15 @@ const CLASS_CHARACTER_ANIMATION_CONFIG: Partial<
       row: 0,
       durationMs: 900,
       frameAspectRatio: 32 / 34,
+    },
+  },
+  paladin: {
+    idle: {
+      src: TYPING_BOSS_ASSETS.paladinIdleAnimation,
+      rows: 1,
+      row: 0,
+      durationMs: 900,
+      frameAspectRatio: 48 / 64,
     },
   },
 };
@@ -1137,6 +1150,9 @@ function AnimatedCharacterSprite({
   animationKey: string;
 }) {
   const repeats = animationState === "idle" ? "infinite" : "1";
+  const frameSteps = animationState === "idle"
+    ? `steps(${CHARACTER_SPRITE_COLUMNS}, jump-none)`
+    : `steps(${CHARACTER_SPRITE_LAST_COLUMN}, end)`;
   const frameAspectRatio = config.frameAspectRatio || 1;
   const width = size * frameAspectRatio;
   const rowPosition =
@@ -1160,7 +1176,8 @@ function AnimatedCharacterSprite({
         }%`,
         backgroundPositionX: "0%",
         backgroundPositionY: rowPosition,
-        animation: `${characterSpriteStep} ${config.durationMs}ms steps(${CHARACTER_SPRITE_LAST_COLUMN}, end) ${repeats}`,
+        animation: `${characterSpriteStep} ${config.durationMs}ms ${frameSteps} ${repeats}`,
+        ...(animationState === "idle" && { "@media (prefers-reduced-motion: reduce)": { animation: "none" } }),
         animationFillMode: animationState === "idle" ? "none" : "forwards",
         imageRendering: "pixelated",
         filter: `drop-shadow(0 8px 0 rgba(0,0,0,.34)) drop-shadow(0 0 ${
@@ -1534,14 +1551,15 @@ function HostSessionPage() {
   );
   const [copied, setCopied] = useState(false);
   const [hpMultiplier, setHpMultiplier] = useState(1);
+  const [balanced, setBalanced] = useState(false);
   const [wordFilters, setWordFilters] = useState<WordFilters>({});
   const lobbyPreview = useMemo(() => {
     if (!session || session.mode !== "proportional" || session.status !== "setup") return session;
     const playerHp = 100 * hpMultiplier;
     const bossHp = playerHp * session.players.length;
-    return { ...session, typing: session.typing ? { ...session.typing, ...wordFilters } : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
+    return { ...session, typing: session.typing ? (balanced ? initializeBalanced({ ...session.typing, ...wordFilters, ability: "dragon" }) : { ...session.typing, ...wordFilters, balanced:false }) : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
       players: session.players.map(player => ({ ...player, hp: playerHp, maxHp: playerHp })) };
-  }, [session, hpMultiplier, wordFilters]);
+  }, [session, hpMultiplier, wordFilters, balanced]);
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
   const [codeModalOpen, setCodeModalOpen] = useState(false);
@@ -1619,6 +1637,7 @@ function HostSessionPage() {
                 {session.name}
               </Typography>
               <StatusChip status={session.status} />
+              {session.mode === "proportional" && session.status !== "setup" && <Chip label={session.balanced ? "Balanced" : "Randomized"} size="small" />}
               <Chip
                 size="small"
                 label={connected ? "LIVE" : "OFFLINE"}
@@ -1660,7 +1679,7 @@ function HostSessionPage() {
               disabled={busy || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
               onClick={() =>
                 runHostAction(() =>
-                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)))
+                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced)
                 )
               }
             >
@@ -1687,6 +1706,8 @@ function HostSessionPage() {
 
         {session.mode === "proportional" ? <>
           {session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <FormControlLabel label="Balanced" control={<Switch checked={balanced} onChange={(_event, checked) => setBalanced(checked)} disabled={busy} inputProps={{ "aria-label": "Balanced" }} />} />
+            <Typography variant="body2" sx={{ color:"text.secondary" }}>{balanced ? "Skill-earned power, shared words, deterministic specials and defense. Rules lock at Start." : "Randomized colors, critical hits, dodges, and boss patterns."}</Typography>
             <WordFilterChips value={wordFilters} onChange={setWordFilters} disabled={busy} />
             <Typography id="hp-multiplier-label" fontWeight={900}>HP multiplier: ×{hpMultiplier}</Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
@@ -1697,7 +1718,7 @@ function HostSessionPage() {
               marks={[{ value: 1, label: "1×" }, { value: 10, label: "10×" }, { value: 30, label: "30×" }, { value: 60, label: "60×" }, { value: 100, label: "100×" }]} />
           </Paper>}
           <HostBattlefield session={lobbyPreview!} />
-          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}`} sessionId={normalizedSessionId} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected} divisor={session.startingPlayers || 1} />}
+          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}:${balanced}`} sessionId={normalizedSessionId} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected} />}
           <DamageBoard session={lobbyPreview!} />
         </> : <Grid container spacing={2}>
           <Grid item xs={12} lg={8}>
@@ -1792,7 +1813,7 @@ function JoinPage() {
             Join a Game
           </Typography>
             <Typography sx={{ color: "text.secondary", mt: 1 }}>
-            Choose your class, enter your name, and connect to the host session. In proportional mode, all classes have 100 HP and the same typing attacks. The class abilities below apply to old mode.
+            Choose your class, enter your name, and connect to the host session. In proportional mode, all classes start with 100 HP, and perfect gold words activate a class ability. The move descriptions below apply to old mode.
           </Typography>
         </Box>
 
@@ -2024,7 +2045,7 @@ function PlayerSessionPage() {
       <ReconnectOverlay show={reconnecting} />
       {session.mode === "proportional" ? <Stack spacing={2}>
         <PlayerBattlefield session={session} me={me} />
-        <ContinuousTyping key={session.typing!.seed} sessionId={normalizedSessionId} credentials={{ code: savedCode }} state={session.typing!} active={session.status === "active" && !me.defeated && !reconnecting} />
+        <ContinuousTyping key={`${session.typing!.seed}:${session.typing!.balanced}`} sessionId={normalizedSessionId} credentials={{ code: savedCode }} state={session.typing!} active={session.status === "active" && !me.defeated && !reconnecting} />
         {session.leaderboard && <BattleLeaderboard entries={session.leaderboard} />}
       </Stack> : <PlayerBattlePanel
         session={session}
@@ -3608,10 +3629,9 @@ function HostBattlefield({ session }: { session: TypingBossSessionSnapshot }) {
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.hostBossPoint;
   const positions = useMemo(
-    () => session.mode === "proportional" ? new Map(session.players.map((player, index) => {
-      const columns = Math.min(10, session.players.length);
-      return [player.code, { x: columns === 1 ? 50 : 6 + (index % columns) * (88 / Math.max(1, columns - 1)), y: 51 + Math.floor(index / columns) * 16 }] as [string, Point];
-    })) : playerHostPositions(session.players, arena.hostSpawns),
+    () => session.mode === "proportional" ? new Map(session.players.map((player, index) =>
+      [player.code, proportionalPlayerPoint(index, session.players.length)] as [string, Point]
+    )) : playerHostPositions(session.players, arena.hostSpawns),
     [arena.hostSpawns, session.players, session.mode]
   );
 
@@ -3725,6 +3745,10 @@ function BossNode({
 }) {
   const dragonWidth = session.mode === "proportional" ? size === "host" ? { xs: 230, md: 300 } : { xs: 240, md: 320 } : bossBattleWidth(session.boss.id, size);
   const latestAttack = session.projectiles.filter(projectile => projectile.source === "boss").slice(-1)[0];
+  const attackClass = session.mode !== "proportional" || !latestAttack ? undefined
+    : latestAttack.bossAttack === "bite" ? "dragon-bite"
+    : latestAttack.bossAttack === "tailWhip" ? "dragon-tail-whip"
+    : latestAttack.moveId === "strong" ? "dragon-cast-power" : "dragon-cast-weak";
   return (
     <>
       <Box
@@ -3777,7 +3801,9 @@ function BossNode({
         >
           {session.mode === "proportional" ? Number(session.boss.hp.toFixed(2)) : Math.round(session.boss.hp)} / {session.boss.maxHp} HP
         </Typography>
-        {session.mode === "proportional" ? <Typography variant="caption" sx={{ color: "#fde68a", display: "block", mt: 1 }}>Host controlled · every 10 words · ↑ damage dealt · ↓ damage taken</Typography> : <BossChargeBar session={session} />}
+        {session.mode === "proportional" ? <Typography variant="caption" sx={{ color: "#fde68a", display: "block", mt: 1 }}>
+          {latestAttack?.bossAttack && <strong>{latestAttack.moveLabel} · </strong>}Host controlled · every 10 words · ↑ damage dealt · ↓ damage taken
+        </Typography> : <BossChargeBar session={session} />}
       </Box>
       <Box
         sx={{
@@ -3789,8 +3815,12 @@ function BossNode({
           filter: `drop-shadow(0 18px 34px ${session.boss.glow})`,
         }}
       >
-        <Box key={latestAttack?.id || "idle"} className={session.mode === "proportional" && latestAttack ? latestAttack.moveId === "strong" ? "dragon-cast-power" : "dragon-cast-weak" : undefined}>
+        <Box key={latestAttack?.id || "idle"} className={attackClass}>
           <BossSprite width={dragonWidth} glow={session.boss.color} bossId={session.boss.id} />
+          {attackClass === "dragon-tail-whip" && <svg className="dragon-tail-arc" viewBox="0 0 260 118" aria-hidden="true">
+            <path d="M234 11C242 52 207 90 146 102C89 115 40 93 5 56C58 83 108 85 154 71C198 57 220 38 234 11Z" fill="#9a3412" stroke="#fbbf24" strokeWidth="3" />
+            <path d="M232 24C210 72 135 111 52 78" fill="none" stroke="#fed7aa" strokeWidth="5" strokeLinecap="round" />
+          </svg>}
         </Box>
       </Box>
     </>
