@@ -1,0 +1,1814 @@
+[
+  {
+    "id": "paladin",
+    "filename": "paladin-combat-v3.webp",
+    "clips": [
+      {
+        "row": 0,
+        "action": "idle / receiving buff",
+        "rawHorizontalDrift": 1.349,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2615,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2634,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2671,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2599,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2669,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2568,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 1,
+        "action": "weapon / power",
+        "rawHorizontalDrift": 7.586,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2651,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2754,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2807,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 3545,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2706,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2658,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "action": "support cast",
+        "rawHorizontalDrift": 8.779,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2887,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 3133,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 3256,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 3384,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2958,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2891,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "action": "receiving healing",
+        "rawHorizontalDrift": 3.724,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2603,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2480,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2572,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2531,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2592,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2566,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "action": "dodge",
+        "rawHorizontalDrift": 5.443,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2575,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2328,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2423,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2429,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2713,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2556,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "action": "hit / block / receiving shield",
+        "rawHorizontalDrift": 9.531,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2589,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2552,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2441,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2167,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2576,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2557,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 6,
+        "action": "being revived",
+        "rawHorizontalDrift": 5.89,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1921,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2387,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2383,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2546,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2657,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2584,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 7,
+        "action": "death / knocked out",
+        "rawHorizontalDrift": 13.434,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2568,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2444,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2457,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2258,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1936,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1812,
+            "edgePixels": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "cleric",
+    "filename": "cleric-combat-v3.webp",
+    "clips": [
+      {
+        "row": 0,
+        "action": "idle / receiving buff",
+        "rawHorizontalDrift": 0.792,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2210,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2214,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2208,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2173,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2198,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2217,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 1,
+        "action": "weapon / power",
+        "rawHorizontalDrift": 19.489,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2282,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2184,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2295,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2555,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2056,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2236,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "action": "support cast",
+        "rawHorizontalDrift": 1.708,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2277,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2268,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2259,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2288,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2218,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2277,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "action": "receiving healing",
+        "rawHorizontalDrift": 1.9,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2201,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2027,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2029,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2040,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2157,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2185,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "action": "dodge",
+        "rawHorizontalDrift": 4.377,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2195,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2009,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2012,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1932,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1960,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2208,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "action": "hit / block / receiving shield",
+        "rawHorizontalDrift": 2.756,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2179,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2087,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2071,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2020,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2206,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2190,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 6,
+        "action": "being revived",
+        "rawHorizontalDrift": 14.289,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1424,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1560,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1763,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1784,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1994,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2214,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 7,
+        "action": "death / knocked out",
+        "rawHorizontalDrift": 14.95,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2195,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1972,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1894,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1751,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1501,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1300,
+            "edgePixels": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "barbarian",
+    "filename": "barbarian-combat.webp",
+    "clips": [
+      {
+        "row": 0,
+        "action": "idle / receiving buff",
+        "rawHorizontalDrift": 18.788,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1909,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1926,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1907,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1894,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1896,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1920,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 1,
+        "action": "weapon / power",
+        "rawHorizontalDrift": 18.526,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1911,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1889,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2049,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1937,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1751,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1932,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "action": "support cast",
+        "rawHorizontalDrift": 21.147,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1866,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1842,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1847,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2011,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1756,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1873,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "action": "receiving healing",
+        "rawHorizontalDrift": 18.474,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1883,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1922,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1868,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1905,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1875,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1884,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "action": "dodge",
+        "rawHorizontalDrift": 18.281,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1869,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1751,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1649,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1716,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1815,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1886,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "action": "hit / block / receiving shield",
+        "rawHorizontalDrift": 19.331,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1862,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1781,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1622,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1569,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1800,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1864,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 6,
+        "action": "being revived",
+        "rawHorizontalDrift": 18.695,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1204,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1457,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1502,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1706,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1819,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1816,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 7,
+        "action": "death / knocked out",
+        "rawHorizontalDrift": 24.82,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1837,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1911,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1710,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1488,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1449,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1293,
+            "edgePixels": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "rogue",
+    "filename": "rogue-combat-v2.webp",
+    "clips": [
+      {
+        "row": 0,
+        "action": "idle / receiving buff",
+        "rawHorizontalDrift": 16.023,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2489,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2499,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2486,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2493,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2443,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2495,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 1,
+        "action": "weapon / power",
+        "rawHorizontalDrift": 6.806,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2721,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2992,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 3196,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 3070,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2885,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2708,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "action": "support cast",
+        "rawHorizontalDrift": 20.827,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2464,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2603,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2742,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2850,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2203,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2483,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "action": "receiving healing",
+        "rawHorizontalDrift": 15.839,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2481,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2391,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2414,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2417,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2393,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2479,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "action": "dodge",
+        "rawHorizontalDrift": 16.224,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2425,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2253,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2420,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2328,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2297,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2452,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "action": "hit / block / receiving shield",
+        "rawHorizontalDrift": 18.269,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2435,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2338,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2475,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2370,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2407,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2465,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 6,
+        "action": "being revived",
+        "rawHorizontalDrift": 13.04,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1806,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1814,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1905,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2124,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2164,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2460,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 7,
+        "action": "death / knocked out",
+        "rawHorizontalDrift": 25.022,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2498,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2560,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2276,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2027,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1667,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1564,
+            "edgePixels": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "necromancer",
+    "filename": "necromancer-combat-v3.webp",
+    "clips": [
+      {
+        "row": 0,
+        "action": "idle / receiving buff",
+        "rawHorizontalDrift": 2.631,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2786,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2834,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2858,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2790,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2755,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2773,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 1,
+        "action": "weapon / power",
+        "rawHorizontalDrift": 4.705,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 3038,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 3203,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 3237,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 3780,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 3449,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 3049,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "action": "support cast",
+        "rawHorizontalDrift": 8.77,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2900,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 3172,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 3556,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 3669,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 3265,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2893,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "action": "receiving healing",
+        "rawHorizontalDrift": 2.371,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2661,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2652,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2675,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2761,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2648,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2676,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "action": "dodge",
+        "rawHorizontalDrift": 2.828,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2706,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2620,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2928,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2637,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2636,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2709,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "action": "hit / block / receiving shield",
+        "rawHorizontalDrift": 9.582,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2732,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2763,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2479,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2402,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2542,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2716,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 6,
+        "action": "being revived",
+        "rawHorizontalDrift": 10.429,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1577,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1870,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2239,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2465,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2670,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2691,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 7,
+        "action": "death / knocked out",
+        "rawHorizontalDrift": 16.65,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2700,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2519,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2477,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1958,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1601,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1557,
+            "edgePixels": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "monk",
+    "filename": "monk-combat.webp",
+    "clips": [
+      {
+        "row": 0,
+        "action": "idle / receiving buff",
+        "rawHorizontalDrift": 0.579,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2072,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2018,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2069,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2046,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2026,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2038,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 1,
+        "action": "weapon / power",
+        "rawHorizontalDrift": 6.482,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2065,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2120,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2138,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2127,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2037,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2063,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 2,
+        "action": "support cast",
+        "rawHorizontalDrift": 2.187,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2061,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1958,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1999,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2037,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1983,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2034,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 3,
+        "action": "receiving healing",
+        "rawHorizontalDrift": 0.602,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2006,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1854,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1874,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1906,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2046,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2058,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 4,
+        "action": "dodge",
+        "rawHorizontalDrift": 3.029,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2064,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1978,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1885,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1864,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2012,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2052,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 5,
+        "action": "hit / block / receiving shield",
+        "rawHorizontalDrift": 6.05,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2072,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2083,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 2319,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1996,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 2120,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2050,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 6,
+        "action": "being revived",
+        "rawHorizontalDrift": 9.883,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 1546,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 1714,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1904,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 2074,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1983,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 2023,
+            "edgePixels": 0
+          }
+        ]
+      },
+      {
+        "row": 7,
+        "action": "death / knocked out",
+        "rawHorizontalDrift": 14.077,
+        "frames": [
+          {
+            "frame": 1,
+            "opaquePixels": 2090,
+            "edgePixels": 0
+          },
+          {
+            "frame": 2,
+            "opaquePixels": 2077,
+            "edgePixels": 0
+          },
+          {
+            "frame": 3,
+            "opaquePixels": 1970,
+            "edgePixels": 0
+          },
+          {
+            "frame": 4,
+            "opaquePixels": 1811,
+            "edgePixels": 0
+          },
+          {
+            "frame": 5,
+            "opaquePixels": 1501,
+            "edgePixels": 0
+          },
+          {
+            "frame": 6,
+            "opaquePixels": 1463,
+            "edgePixels": 0
+          }
+        ]
+      }
+    ]
+  }
+]

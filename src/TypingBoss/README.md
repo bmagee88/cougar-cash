@@ -60,14 +60,15 @@ The existing HTTP/SSE transport is retained. No key-by-key messages or animation
 
 - Each client builds its words locally from a server-issued seed and word index. Randomized submissions contain completed word text and aggregate key interval count/sum/sum-of-squares. Balanced submissions also contain the measured gaps needed to score each character; neither mode sends absolute key timestamps or per-key requests.
 - The scene is above the typing panel. The chip row always shows the current Dodge percentage, including 0%. The dragon lunges and snaps its jaws for Bite, swings its tail for Tail Whip, and uses the existing fire projectile art for Fireball and Flamethrower. Target shields are applied on impact.
-- Attack-charge bars sit immediately above health bars. Own charge updates locally on every character. A compact word/character cursor goes to the server at most once per 400 ms, with one request in flight. The host sees all player charges; each player receives only their own charge plus the dragon's. Progress is cosmetic, validated, and cannot award damage or alter typing statistics.
+- Attack-charge bars sit immediately above health bars. Own charge updates locally on every character. A compact word/character cursor goes to the server at most once per 400 ms, with one request in flight. The host and every player see all player charges and the dragon's charge. Progress is cosmetic, validated, and cannot award damage or alter typing statistics.
 - Completed words are batched until an attack releases; Randomized also flushes when a perfect blue word grants a shield or the dodge percentage changes. Requests serialize while typing continues; sequence numbers make retries idempotent. Batches are validated atomically and capped at 20 words.
 - Dodge averages the last five Space-to-next-word transition scores, from 0% to 25%. Each score compares the transition gap with the average of the remaining gaps in that word (with a 40 ms minimum pace): up to 1.25× the pace earns full credit, 2.5× or more earns zero, and in-between scores taper linearly. Accuracy does not enter the score. The first word of each attack has no transition, and firing does not reset the rolling average. The server rolls at impact before applying shields, for both the dragon and players. Dodges deal no damage, preserve the shield, and do not qualify for strongest landed attack. New servers accept the original five-field word records; clients include the optional transition only when the server advertises dodge state.
-- Each player receives only their character and projectiles they send or receive. The host receives the full roster and all combat events. Full snapshots are sent on first connection/reconnect; subsequent events contain only changed fields, including small impact-result patches.
+- The host and every player receive the same public roster and combat events and render the same camera, formation and sprite sizes. Each player receives only their own private typing state; host credentials and other typing states are excluded. A persistent green pointer identifies the client's own character, including when knocked out or when the HUD is hidden. Full snapshots are sent on first connection/reconnect; subsequent events contain only changed fields, including small impact-result patches.
 - The host's Battle log accordion is available in development and production beneath the game. It records resolved combat and game status from existing updates, names both participants, uses the combat colors, shows timestamps, and supports text filtering and clearing. History stays in that tab, keeps at most 200 entries, and resets on refresh or a new room. It adds no network requests or server-side history; reconnect can recover only events still present in the live snapshot.
 - Simultaneous events are coalesced for 100 ms (at most ten stream updates/second). Idle rooms only send a 25-second connection keepalive. A slow stream is disconnected before it can accumulate unbounded writes, and reconnect receives a fresh authoritative snapshot.
-- Projectile movement uses browser-driven transform animations, with local impact expiry. React no longer rerenders the projectile layer on a frame timer. Character assets are reused, and host impacts appear beside the corresponding player to avoid a pile of labels on the dragon. Per-player totals stay visible beneath all 30 host avatars.
-- The bridge artwork is anchored at the bottom with lighter foreground shading. Proportional host formations use four diagonal slots per rank, starting by the dragon and receding toward the lower-left foreground. The server uses the same positions for Tail Whip neighbors, including knocked-out slots. Compact horizontal player cards preserve names, charge, HP, and totals; smaller host screens can scroll the formation horizontally rather than squeeze the labels. The original arena image is retained alongside the edited bridge asset and its generation prompt.
+- Projectile movement uses browser-driven transform animations, with local impact expiry. React no longer rerenders the projectile layer on a frame timer. Character assets are reused, and host impacts appear beside the corresponding player to avoid a pile of labels on the dragon. At 1–10 players, names and both bars remain visible. At 11–20, names are hidden and bars are shorter and thinner. At 21–30, names and both bars are hidden. These thresholds apply to both host and player scenes; live damage-in/out totals are available through Stats instead of the scene.
+- The volcanic valley has separate distance, battle-ground, haze, and transparent foreground layers. The party stands on the left and the dragon on the right, with the dragon name and bars at the upper right. Foreground basalt rises in front of the actors while leaving names, charge, and HP clear. The shared formation uses four players per rank and up to eight ranks, each lower rank staggered toward the bottom left. The server uses the same positions for Tail Whip neighbors, including knocked-out slots. Narrow screens can scroll the battle scene horizontally. Scenery and its generation prompts live under `public/assets/typing-boss`; the original arena assets are retained.
+- The join menu automatically supplies a curated classroom-friendly alias of at most nine letters. Shuffle always picks a different alias. Display Code and Copy Code show only the final three characters (including leading zeroes); the join field accepts those characters and existing full `boss` codes. Full join links remain available from the host toolbar.
 - Session and game state remain in memory, matching the existing backend. A backend restart ends rooms. A single room must stay on one backend process; this change does not add distributed room storage.
 - Rooms with no connected clients and no authenticated activity expire after 10 minutes. Disconnecting the final client starts a fresh reconnect grace period; connected rooms retain the two-hour maximum from creation. Finished/closed rooms retain results for 15 minutes, capped by that maximum. Expiry allows one minute to deliver its final notice, then deletes the room and releases its timers, sockets, snapshots, and game state. The 15-second server sweep enforces idle and result deadlines independently of incoming requests.
 - Old Mode keeps only the latest challenge per player and expires unfinished challenges after 10 minutes. Finished fights release challenges immediately. Combat events are pruned by the sweep even without viewers. Filtered word pools use a 32-entry least-recently-used cache on server and client; eviction preserves word generation order.
@@ -80,8 +81,36 @@ Implementation references: [Node writable-stream backpressure](https://nodejs.or
 
 All six classes use six-frame sprite actions. The approved paladin, cleric and
 barbarian idle strips remain in place. Rogue, necromancer and monk now also have
-animated idle strips. The dragon uses local motion and reaction effects on its
-existing artwork.
+animated idle strips. All three dragons use generated six-frame attack sheets for Bite, Fireball, Tail
+Whip, and Flamethrower. The jaw, neck, wings, and tail change pose in the artwork;
+attack playback does not translate or rotate a static image. The ready cell is
+also used for idle so scale and footing stay consistent. Incoming hit/shield
+effects overlay an in-progress attack instead of replacing its frames. Sheets
+preload with the actor; a late load catches up to server time, and repeated
+snapshots do not restart playback. The original sprite is the loading fallback.
+Atlas PNG masters, lossless runtime WebPs, layout manifest, and generation
+prompts are under `public/assets/typing-boss/dragons`. Current runtime files use
+`*-attacks-v2.webp`, repaired from two 3×4 masters per dragon. Run
+`node scripts/prepare-typing-boss-dragon-repair.cjs` to validate and pack them.
+All 72 frames have 12px transparent guard bands and are checked for opaque
+artwork cut by source boundaries. The viewport clips one cell at a time and
+allows room around wings, tails and compact mouth flames. The original masters
+and their legacy packing script remain available for reference. Repair prompts
+and the per-frame validation manifest are in the same asset directory.
+The development `/typing-boss/animations` screen previews all three dragons;
+its dragon frame inspector can freeze every frame of each attack. Slow preview
+and Replay dragons resume playback. Reduced-motion mode shows one drawn attack
+pose without animation.
+
+Dragon attack/idle footing uses a shared ground line and registered claw contacts.
+`node scripts/register-typing-boss-dragon-feet.cjs` analyzes all 72 frames, generates
+compact CSS geometry in `dragonRegistration.ts`, and records the pixel measurements
+in `dragons/footing-manifest.json`. A single padded camera per dragon fits the full
+set of registered poses, including wings, tail and fire. The supporting forefoot
+stays registered when a tail sweep hides the rear contact. Idle no longer bobs the
+whole actor off the ground; intentional dodge, death and revival movement remains.
+Re-run registration after repacking dragon art. Playback is still native CSS, with
+no per-frame React updates or additional combat messages.
 
 | Combat event | Source action | Recipient reaction |
 | --- | --- | --- |
@@ -115,6 +144,26 @@ Assets and the exact built-in image-generation prompts are in
 `public/assets/typing-boss/characters/generation-prompts.md`. PNG masters are
 retained; rebuild the runtime WebP atlases with
 `node scripts/prepare-typing-boss-animation.cjs` (requires Sharp locally).
+
+The paladin, cleric, rogue and necromancer use `*-combat-v2.webp`. Their weapon
+rows were repaired with the built-in image-generation tool and packed into wider
+128×96 cells. `node scripts/prepare-typing-boss-weapon-repair.cjs` checks all 24
+frames for empty gutters and preserves the other seven rows' pixels with added
+horizontal padding. It also regenerates `weaponRepairAnchors.ts` to keep the
+footing aligned. Exact prompts and sources are documented in
+`public/assets/typing-boss/characters/weapon-repair-prompts.md`.
+
+The full player audit covers all 288 source frames across six classes. Re-run
+`node scripts/audit-typing-boss-sprites.cjs --check` after changing art; it checks
+cell borders and generates the per-class registration data. Stable casts and
+receiving-heal poses stay planted; dodging, hit recoil, falling and rising retain
+their drawn motion with the source strip's drift removed. The three repaired
+support strips use `*-combat-v3.webp`, packed by
+`scripts/prepare-typing-boss-support-repair.cjs`; their exact generation prompts
+are in `public/assets/typing-boss/characters/support-repair-prompts.md`. Weapon
+repairs and the other seven source rows are preserved. The preview's Inspect
+player frames checkbox and slider allow all six frames to be reviewed individually;
+Replay resumes animation. Inspector controls are development-only.
 
 ## Verification
 
@@ -174,7 +223,7 @@ npx tsc --noEmit
 npm run build
 ```
 
-With the classroom backend running, `node scripts/verify-typing-boss.cjs` opens 31 SSE clients, checks 30-player scaling, personal event filtering, simultaneous attacks, sequence retries, reconnect snapshots, and the original mode's challenge/action routes. It closes its rooms afterward.
+With the classroom backend running, `node scripts/verify-typing-boss.cjs` opens 31 SSE clients, checks 30-player scaling, shared scene delivery, private typing-state isolation, simultaneous attacks, sequence retries, reconnect snapshots, and the original mode's challenge/action routes. It closes its rooms afterward.
 
 One local run produced 60 projectiles (30 player shots plus 30 host targets), including one progress update per actor, using 32,813 host payload bytes and an average 1,442 payload bytes per player, with four host updates. These are measured SSE event payloads for that one attack burst, excluding initial snapshots, uploads, HTTP/TLS overhead, and real-world latency. Word lengths and scheduling change the exact totals. This is a local concurrency test, not an internet latency or classroom hardware benchmark.
 

@@ -1,9 +1,22 @@
 .combat-actor { position:relative; display:inline-block; flex-shrink:0; overflow:visible; vertical-align:bottom; }
+.own-character-arrow { position:absolute; bottom:100%; left:50%; margin-left:-12px; margin-bottom:6px; z-index:10; line-height:0; pointer-events:none; filter:drop-shadow(0 1px 2px #000) drop-shadow(0 0 4px #4ade80); animation:own-character-pointer 1100ms ease-in-out infinite; }
+@keyframes own-character-pointer { 50% { transform:translateY(-5px); } }
 .actor-body { position:absolute; inset:0; transform-origin:50% 88%; filter:drop-shadow(0 3px 1px #0009) drop-shadow(0 0 var(--actor-glow,8px) var(--actor-color,#facc15)); }
-.actor-frames { position:absolute; display:block; background-repeat:no-repeat; image-rendering:pixelated; animation-name:actor-sprite-frames; animation-timing-function:steps(5,end); animation-iteration-count:1; animation-fill-mode:forwards; }
-.actor-frames-idle { animation-timing-function:steps(6,jump-none); animation-iteration-count:infinite; }
+.actor-viewport { position:absolute; display:block; overflow:hidden; contain:paint; }
+.actor-frames { position:absolute; display:block; inset:0; background-repeat:no-repeat; image-rendering:pixelated; transition:none; animation-name:actor-sprite-frames; animation-timing-function:steps(1,end); animation-iteration-count:1; animation-fill-mode:both; }
+.actor-frames-idle { animation-iteration-count:infinite; animation-direction:alternate; }
 .actor-frames-held { animation:none; }
-@keyframes actor-sprite-frames { from { background-position-x:0%; } to { background-position-x:100%; } }
+.combat-actor-inspecting .actor-body { animation:none!important; }
+.combat-actor-inspecting .actor-effect,.combat-actor-inspecting .actor-action-cue { display:none; }
+/* Six complete cells, each held for an equal interval. Never slide through the atlas. */
+@keyframes actor-sprite-frames {
+  0% { background-position-x:0%; transform:translateX(var(--frame-x-0,0%)); }
+  16.666667% { background-position-x:20%; transform:translateX(var(--frame-x-1,0%)); }
+  33.333333% { background-position-x:40%; transform:translateX(var(--frame-x-2,0%)); }
+  50% { background-position-x:60%; transform:translateX(var(--frame-x-3,0%)); }
+  66.666667% { background-position-x:80%; transform:translateX(var(--frame-x-4,0%)); }
+  83.333333%,100% { background-position-x:100%; transform:translateX(var(--frame-x-5,0%)); }
+}
 .actor-body-strongAttack { animation:actor-power-lunge var(--pose-ms) ease-out both; }
 .actor-body-healCast, .actor-body-selfHeal, .actor-body-reviveCast { animation:actor-cast-glow var(--pose-ms) ease-out both; }
 .actor-body-shieldCast, .actor-body-buffCast, .actor-body-block, .actor-body-shielded, .actor-body-buffed { animation:actor-shield-glow var(--pose-ms) ease-out both; }
@@ -31,9 +44,6 @@
 @keyframes actor-damage-burst { 0%,20% { opacity:1; transform:scale(.8); } 100% { opacity:0; transform:scale(1.4); } }
 .dragon-pose { position:relative; transform-origin:55% 85%; }
 .dragon-pose-idle { animation:dragon-breathe 2600ms ease-in-out infinite; }
-.dragon-pose-weakAttack, .dragon-pose-strongAttack, .dragon-pose-flamethrower { animation:dragon-exhale var(--pose-ms) ease-out both; }
-.dragon-pose-bite { animation:dragon-bite var(--pose-ms) ease-in-out both; }
-.dragon-pose-tailWhip { animation:dragon-tail-whip var(--pose-ms) ease-in-out both; }
 .dragon-pose-hit { animation:dragon-recoil var(--pose-ms) ease-out both; }
 .dragon-pose-dodge { animation:dragon-dodge var(--pose-ms) ease-out both; }
 .dragon-pose-evasionReady { animation:actor-dodge-glow var(--pose-ms) ease-out both; }
@@ -43,7 +53,6 @@
 .dragon-pose-defeated { transform:translateY(16%) rotate(-12deg) scale(.9); filter:grayscale(.65) brightness(.55); }
 .dragon-pose-reviving { animation:dragon-rise var(--pose-ms) ease-out both; }
 @keyframes dragon-breathe { 50% { transform:translateY(-1%) scale(1.015); } }
-@keyframes dragon-exhale { 30% { transform:translateX(4%) scale(.98); } 62% { transform:translateX(-5%) scale(1.05); filter:brightness(1.3); } }
 @keyframes dragon-recoil { 30% { transform:translateX(5%) rotate(3deg); filter:brightness(1.7) drop-shadow(0 0 14px #f87171); } }
 @keyframes dragon-dodge { 35% { transform:translate(8%,-4%) rotate(4deg); filter:drop-shadow(-12px 0 8px #4ade80); } }
 @keyframes dragon-brace { 35% { transform:scale(.96); filter:drop-shadow(0 0 16px #60a5fa); } }
@@ -51,6 +60,7 @@
 @keyframes dragon-collapse { to { transform:translateY(16%) rotate(-12deg) scale(.9); filter:grayscale(.65) brightness(.55); } }
 @keyframes dragon-rise { from { transform:translateY(16%) rotate(-12deg) scale(.9); opacity:.4; } to { transform:none; opacity:1; } }
 @media (prefers-reduced-motion:reduce) {
+  .own-character-arrow { animation:none; }
   .actor-frames,.actor-body,.actor-effect,.actor-action-cue,.dragon-pose { animation:none!important; }
   .actor-effect,.actor-action-cue { display:none; }
   .actor-pose-death .actor-frames,.actor-pose-reviving .actor-frames { background-position-x:100%!important; }

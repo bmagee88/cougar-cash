@@ -60,8 +60,8 @@ export function usePublishAttackProgress(sessionId: string, credentials: TypingB
   return publish;
 }
 
-export function AttackProgressBar({ sessionId, actor, progress = 0, label, compact = false }: {
-  sessionId: string; actor: string; progress?: number; label: string; compact?: boolean;
+export function AttackProgressBar({ sessionId, actor, progress = 0, label, compact = false, dense = false }: {
+  sessionId: string; actor: string; progress?: number; label: string; compact?: boolean; dense?: boolean;
 }) {
   const [local, setLocal] = useState<number | null>(null);
   useEffect(() => {
@@ -73,8 +73,8 @@ export function AttackProgressBar({ sessionId, actor, progress = 0, label, compa
     window.addEventListener(EVENT, update);
     return () => window.removeEventListener(EVENT, update);
   }, [actor, sessionId]);
-  return <Box sx={{ mb: .5 }} title={`${label}: ${Math.round(local ?? progress)}%`}>
+  return <Box sx={{ mb: dense ? .25 : .5 }} title={`${label}: ${Math.round(local ?? progress)}%`}>
     <LinearProgress aria-label={label} variant="determinate" value={Math.min(100, Math.max(0, local ?? progress))}
-      sx={{ height: compact ? 4 : 7, borderRadius: 1, bgcolor: "#312e81", "& .MuiLinearProgress-bar": { bgcolor: "#c4b5fd", transition: "transform 100ms linear" } }} />
+      sx={{ height: dense ? 2 : compact ? 4 : 7, borderRadius: 1, bgcolor: "#312e81", "& .MuiLinearProgress-bar": { bgcolor: "#c4b5fd", transition: "transform 100ms linear" } }} />
   </Box>;
 }

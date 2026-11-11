@@ -1,0 +1,128 @@
+[
+  {
+    "id": "paladin",
+    "cellWidth": 128,
+    "cellHeight": 112,
+    "side": 137,
+    "offsetX": -4,
+    "offsetY": -11,
+    "frames": [
+      {
+        "frame": 1,
+        "visiblePixels": 3164,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 2,
+        "visiblePixels": 3552,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 3,
+        "visiblePixels": 3804,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 4,
+        "visiblePixels": 3834,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 5,
+        "visiblePixels": 3508,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 6,
+        "visiblePixels": 3201,
+        "transparentGutter": 4
+      }
+    ],
+    "otherRowsPreserved": true,
+    "runtimeBytes": 464210
+  },
+  {
+    "id": "cleric",
+    "cellWidth": 128,
+    "cellHeight": 112,
+    "side": 153,
+    "offsetX": -12,
+    "offsetY": -15,
+    "frames": [
+      {
+        "frame": 1,
+        "visiblePixels": 2590,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 2,
+        "visiblePixels": 3080,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 3,
+        "visiblePixels": 2936,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 4,
+        "visiblePixels": 3231,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 5,
+        "visiblePixels": 2710,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 6,
+        "visiblePixels": 2583,
+        "transparentGutter": 4
+      }
+    ],
+    "otherRowsPreserved": true,
+    "runtimeBytes": 432446
+  },
+  {
+    "id": "necromancer",
+    "cellWidth": 128,
+    "cellHeight": 112,
+    "side": 144,
+    "offsetX": -8,
+    "offsetY": -11,
+    "frames": [
+      {
+        "frame": 1,
+        "visiblePixels": 3218,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 2,
+        "visiblePixels": 3586,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 3,
+        "visiblePixels": 3967,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 4,
+        "visiblePixels": 4104,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 5,
+        "visiblePixels": 3710,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 6,
+        "visiblePixels": 3209,
+        "transparentGutter": 4
+      }
+    ],
+    "otherRowsPreserved": true,
+    "runtimeBytes": 423024
+  }
+]

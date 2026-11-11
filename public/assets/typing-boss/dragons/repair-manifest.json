@@ -1,0 +1,620 @@
+[
+  {
+    "id": "ancient-red-dragon",
+    "cell": 256,
+    "columns": 6,
+    "rows": [
+      "bite",
+      "fireball",
+      "tailWhip",
+      "flamethrower"
+    ],
+    "runtimeBytes": 1404856,
+    "frames": [
+      {
+        "row": 0,
+        "column": 0,
+        "solid": 21912,
+        "clear": 40623,
+        "transparentGutter": 12,
+        "hash": "ff2c221a205ab17233d7097808b7f505113fec7a07a2bb8344b13c033b3bd463"
+      },
+      {
+        "row": 0,
+        "column": 1,
+        "solid": 21363,
+        "clear": 41073,
+        "transparentGutter": 12,
+        "hash": "b7f033e746e306d1ccd42b71c12ac3030b1c38013fad2baf1a8cfc92bf2e0946"
+      },
+      {
+        "row": 0,
+        "column": 2,
+        "solid": 21004,
+        "clear": 41731,
+        "transparentGutter": 12,
+        "hash": "f1fa6d445c440409aede01f1d8a72d91a729f1c8426bd31ab105a5ef2b83ba3f"
+      },
+      {
+        "row": 0,
+        "column": 3,
+        "solid": 21057,
+        "clear": 41697,
+        "transparentGutter": 12,
+        "hash": "a6c624253921939dcc04682accea2b7bbb24809662c602d0e5c82bcc56763477"
+      },
+      {
+        "row": 0,
+        "column": 4,
+        "solid": 21058,
+        "clear": 41509,
+        "transparentGutter": 12,
+        "hash": "47f0014f6574466ecd37d63a4b6ab8f029f0cb0049b2b13c199b02d8d515983c"
+      },
+      {
+        "row": 0,
+        "column": 5,
+        "solid": 21802,
+        "clear": 40809,
+        "transparentGutter": 12,
+        "hash": "2e7f86bc44fddde83da24e97c0712c71df8ae8e9f7ca4b167d9c1c4a712d270f"
+      },
+      {
+        "row": 1,
+        "column": 0,
+        "solid": 21828,
+        "clear": 40591,
+        "transparentGutter": 12,
+        "hash": "7ebe2e9470f6eb0f8c5f03d28660ccdbf9cd458591604526f3c49d0ead4ad6f5"
+      },
+      {
+        "row": 1,
+        "column": 1,
+        "solid": 21975,
+        "clear": 39875,
+        "transparentGutter": 12,
+        "hash": "8c0c6914fb979e80dd2b033b611de22089e4b129468f7a8dfdd176438aa9c204"
+      },
+      {
+        "row": 1,
+        "column": 2,
+        "solid": 21269,
+        "clear": 41059,
+        "transparentGutter": 12,
+        "hash": "2b28b87075c9292ef99f411b20d13cf6800fd5ebeb474e8d40e432ed0bedc754"
+      },
+      {
+        "row": 1,
+        "column": 3,
+        "solid": 21041,
+        "clear": 41245,
+        "transparentGutter": 12,
+        "hash": "140ac8926c9f5d1cffadd0b577d6a40df2428750f2b0469a150f0ad0471615df"
+      },
+      {
+        "row": 1,
+        "column": 4,
+        "solid": 20919,
+        "clear": 41537,
+        "transparentGutter": 12,
+        "hash": "a20271bbf54aa79abbbd23ab744664097bc850808e9fe43ae05b9237ba5ad3fb"
+      },
+      {
+        "row": 1,
+        "column": 5,
+        "solid": 21716,
+        "clear": 40969,
+        "transparentGutter": 12,
+        "hash": "af06887f935aca77d7c87f499fbdd684c3c6a2e4fd6233761efe8cc4000ec769"
+      },
+      {
+        "row": 2,
+        "column": 0,
+        "solid": 21506,
+        "clear": 41271,
+        "transparentGutter": 12,
+        "hash": "48111113208c6d652bbe7adbfa2c1eeb632ba046e516d4895b38d6fb6647cae6"
+      },
+      {
+        "row": 2,
+        "column": 1,
+        "solid": 21640,
+        "clear": 41087,
+        "transparentGutter": 12,
+        "hash": "17ec1993ef57c31f431e2b028d4b744990a84d9262ea3e2253fb14c7b83c9fa9"
+      },
+      {
+        "row": 2,
+        "column": 2,
+        "solid": 21300,
+        "clear": 41226,
+        "transparentGutter": 12,
+        "hash": "a0eaa6ece0e74c76ef9508d51328e337bea6df7848261b7c9119033619edc772"
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "solid": 21337,
+        "clear": 41421,
+        "transparentGutter": 12,
+        "hash": "124e657ccef1266f5566874ba939bf2c50808c60780381b296795fe148f6f279"
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "solid": 21439,
+        "clear": 41388,
+        "transparentGutter": 12,
+        "hash": "96a14d8ab10b60d7c2e14a62f6fdd8464b971c5c6eec76fac09fa51e77bfe4a3"
+      },
+      {
+        "row": 2,
+        "column": 5,
+        "solid": 21970,
+        "clear": 40568,
+        "transparentGutter": 12,
+        "hash": "1b21c11fb3597b1d69286afb6d83670f31ca40ebc89e723babe38d57c3eb4c48"
+      },
+      {
+        "row": 3,
+        "column": 0,
+        "solid": 21545,
+        "clear": 41116,
+        "transparentGutter": 12,
+        "hash": "5c2a6d41459474c7499635b64c7f47bacd9ed9171a451001ab149f0961e3b870"
+      },
+      {
+        "row": 3,
+        "column": 1,
+        "solid": 21452,
+        "clear": 41388,
+        "transparentGutter": 12,
+        "hash": "232b8f70c6a0f906555b02401500d2a1e32f838a2a9dcf0b561f98c2e2c960a6"
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "solid": 21332,
+        "clear": 41540,
+        "transparentGutter": 12,
+        "hash": "75469cf1f43a00f078ffcef5bd7f34d0bd46ca203550fe4c72ed188c79c37d86"
+      },
+      {
+        "row": 3,
+        "column": 3,
+        "solid": 21295,
+        "clear": 41459,
+        "transparentGutter": 12,
+        "hash": "c39cad8416b2fe5f9387e01fa294fcd7f106a4a70e6560abd34a15e1a450a668"
+      },
+      {
+        "row": 3,
+        "column": 4,
+        "solid": 21998,
+        "clear": 40876,
+        "transparentGutter": 12,
+        "hash": "236a631b2e15e5a924f7e1354e5e3e5221726c02d22ab455306d8ab809e1d1f8"
+      },
+      {
+        "row": 3,
+        "column": 5,
+        "solid": 21724,
+        "clear": 40807,
+        "transparentGutter": 12,
+        "hash": "eed7f2d04b7fa9ec707eb22b49dde2ad2dc37191b8f401cca3c7a4522fff55e4"
+      }
+    ]
+  },
+  {
+    "id": "cindermaw",
+    "cell": 256,
+    "columns": 6,
+    "rows": [
+      "bite",
+      "fireball",
+      "tailWhip",
+      "flamethrower"
+    ],
+    "runtimeBytes": 1006654,
+    "frames": [
+      {
+        "row": 0,
+        "column": 0,
+        "solid": 16328,
+        "clear": 45367,
+        "transparentGutter": 12,
+        "hash": "66d4f107d212781ebe71ec2e2031878bca15f88b522071ae7ee309995ac305b4"
+      },
+      {
+        "row": 0,
+        "column": 1,
+        "solid": 15679,
+        "clear": 46218,
+        "transparentGutter": 12,
+        "hash": "0e578df141f6b32a0b9928698143e47e3c2ec6ddf595d0b12d8e72f6d6ba3cd0"
+      },
+      {
+        "row": 0,
+        "column": 2,
+        "solid": 15643,
+        "clear": 46871,
+        "transparentGutter": 12,
+        "hash": "91289eb6e02ae9d746fbde35a164fba5832327fcca8c7ea93523566e2fbe39f5"
+      },
+      {
+        "row": 0,
+        "column": 3,
+        "solid": 14765,
+        "clear": 47711,
+        "transparentGutter": 12,
+        "hash": "fe4027fe1c180cad5ff80794a22d15aa19e66c5d38ae28d824b53739df496e37"
+      },
+      {
+        "row": 0,
+        "column": 4,
+        "solid": 17063,
+        "clear": 44923,
+        "transparentGutter": 12,
+        "hash": "cb624a3f2b9cb23428b9abd990c596af18d0d57175f2393fe7dc5327f7d048ff"
+      },
+      {
+        "row": 0,
+        "column": 5,
+        "solid": 16244,
+        "clear": 45709,
+        "transparentGutter": 12,
+        "hash": "587c4095abd8fd3b1308e952113915a6ad4a9f933028f682720f361f08e0ddc1"
+      },
+      {
+        "row": 1,
+        "column": 0,
+        "solid": 16285,
+        "clear": 45590,
+        "transparentGutter": 12,
+        "hash": "0b8140914d087986c3b1c07be6cf4111b98542acabd1261c2098c46ce11fd0f8"
+      },
+      {
+        "row": 1,
+        "column": 1,
+        "solid": 18002,
+        "clear": 43194,
+        "transparentGutter": 12,
+        "hash": "eb02e72f56062ff1073c6c3d3410fc7061d476db94c6a84e3c9713f1e3e7001d"
+      },
+      {
+        "row": 1,
+        "column": 2,
+        "solid": 16123,
+        "clear": 45772,
+        "transparentGutter": 12,
+        "hash": "f29b1a128087ebd032a883c1e86451df3737a5b5e8a8308261b9e38f0f2800cd"
+      },
+      {
+        "row": 1,
+        "column": 3,
+        "solid": 15612,
+        "clear": 46339,
+        "transparentGutter": 12,
+        "hash": "13e6b68c8957ea9bad4ee5e863ccc91a2558b64856b926f067bd14ff5a661f0c"
+      },
+      {
+        "row": 1,
+        "column": 4,
+        "solid": 14638,
+        "clear": 47680,
+        "transparentGutter": 12,
+        "hash": "130006fb34217ca576042eb494b653713ac83de0832989f7b528131abfebf87b"
+      },
+      {
+        "row": 1,
+        "column": 5,
+        "solid": 16206,
+        "clear": 45993,
+        "transparentGutter": 12,
+        "hash": "e34f603745820366167f57a79345f6286982236b14da6a890793d1fdcf286aab"
+      },
+      {
+        "row": 2,
+        "column": 0,
+        "solid": 16378,
+        "clear": 45749,
+        "transparentGutter": 12,
+        "hash": "59356df4d44b8ec58d4132c753e13e01e12b58997f34e1ceaffef269fe2d3ae6"
+      },
+      {
+        "row": 2,
+        "column": 1,
+        "solid": 16423,
+        "clear": 45741,
+        "transparentGutter": 12,
+        "hash": "41b5c5ec76ece4bd01cf325a115e06fb247451a7cf4aff25265df6b00f9f12c1"
+      },
+      {
+        "row": 2,
+        "column": 2,
+        "solid": 15126,
+        "clear": 47192,
+        "transparentGutter": 12,
+        "hash": "da52136a4472f2026fba39beb62158b2eaffccbf3448fabb15e3da1897c4fcfd"
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "solid": 15786,
+        "clear": 46829,
+        "transparentGutter": 12,
+        "hash": "f4e8ddb6017589c16fded782721ab4dbdb5e1160b2841a2a73c2bac23d68da27"
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "solid": 16606,
+        "clear": 45605,
+        "transparentGutter": 12,
+        "hash": "dde4ce06c06767649c47bc3d5f6ba6e3dcadf6aba46676f4527c5a033ebb9f73"
+      },
+      {
+        "row": 2,
+        "column": 5,
+        "solid": 16484,
+        "clear": 45738,
+        "transparentGutter": 12,
+        "hash": "5160431fe0ee761d2f2b945563ba8c2f3a34f5f115283d9038b2eba32a760f38"
+      },
+      {
+        "row": 3,
+        "column": 0,
+        "solid": 16394,
+        "clear": 45651,
+        "transparentGutter": 12,
+        "hash": "29db708f31d1cd668642da8ba8b77462f215e801097067dbfcbf58b91e2cf30c"
+      },
+      {
+        "row": 3,
+        "column": 1,
+        "solid": 17064,
+        "clear": 45106,
+        "transparentGutter": 12,
+        "hash": "1e1b8a936cea7cd451039cd9add4152ed428188163bc75c3575b0fec425d68e3"
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "solid": 16193,
+        "clear": 45980,
+        "transparentGutter": 12,
+        "hash": "7ba345f27dc151f75c1c7855959c905dfe3954187778696c47a642563ceb5671"
+      },
+      {
+        "row": 3,
+        "column": 3,
+        "solid": 15641,
+        "clear": 46229,
+        "transparentGutter": 12,
+        "hash": "4c3913607619abf808425a2fe7dda4ceab2c42cfe8bfa04da2773ae2752a0c32"
+      },
+      {
+        "row": 3,
+        "column": 4,
+        "solid": 16062,
+        "clear": 46026,
+        "transparentGutter": 12,
+        "hash": "cf9eca84c1b34e4acb1defc69cf3b63a1ffb9d0077bc0faa2a8e78d846796b41"
+      },
+      {
+        "row": 3,
+        "column": 5,
+        "solid": 16370,
+        "clear": 45788,
+        "transparentGutter": 12,
+        "hash": "7f8e67ffb235b3c27e3ff023f778fa661ec147fc7b224b4573090c949341bf32"
+      }
+    ]
+  },
+  {
+    "id": "ember-whelp",
+    "cell": 256,
+    "columns": 6,
+    "rows": [
+      "bite",
+      "fireball",
+      "tailWhip",
+      "flamethrower"
+    ],
+    "runtimeBytes": 1021902,
+    "frames": [
+      {
+        "row": 0,
+        "column": 0,
+        "solid": 14922,
+        "clear": 46816,
+        "transparentGutter": 12,
+        "hash": "3b76b24d45902f553b6df5d977e2787683a874271b30cad9ef589e2a842db6ed"
+      },
+      {
+        "row": 0,
+        "column": 1,
+        "solid": 14250,
+        "clear": 48473,
+        "transparentGutter": 12,
+        "hash": "8c012e36945ec4e7dd1922bbce9092ec89ff23ec06a2c829092750edb03a7b7c"
+      },
+      {
+        "row": 0,
+        "column": 2,
+        "solid": 15022,
+        "clear": 47062,
+        "transparentGutter": 12,
+        "hash": "62ac351ab180a1b29254da757ab8b0acdce1d22995e9339a1c55105e444bb6eb"
+      },
+      {
+        "row": 0,
+        "column": 3,
+        "solid": 15104,
+        "clear": 46795,
+        "transparentGutter": 12,
+        "hash": "28ea380df00dc4d1a536a03427445c77020abf84269f1250c56bdf17685f427a"
+      },
+      {
+        "row": 0,
+        "column": 4,
+        "solid": 14869,
+        "clear": 46977,
+        "transparentGutter": 12,
+        "hash": "f30d6de7f9544c02221dc679bc24b835ecea690ec1739f9059128308635376e7"
+      },
+      {
+        "row": 0,
+        "column": 5,
+        "solid": 14810,
+        "clear": 47089,
+        "transparentGutter": 12,
+        "hash": "2de0ca4eea28563d07e841196a95f6b0f3ed1f7bc46de5e0b92a420794ad6293"
+      },
+      {
+        "row": 1,
+        "column": 0,
+        "solid": 14906,
+        "clear": 46941,
+        "transparentGutter": 12,
+        "hash": "5484a54866c527551b4bdddc115d7a91754a73173e078875e4adf4ce71649659"
+      },
+      {
+        "row": 1,
+        "column": 1,
+        "solid": 16025,
+        "clear": 45090,
+        "transparentGutter": 12,
+        "hash": "bf11752eecd331be5ae786c1174077514ce34e0dcbbd9e5a9ba35e6ed7100a68"
+      },
+      {
+        "row": 1,
+        "column": 2,
+        "solid": 15602,
+        "clear": 46405,
+        "transparentGutter": 12,
+        "hash": "84828af524b5e31369739431a97b4ee855797da0e314ec422b1cfac60e8a2aad"
+      },
+      {
+        "row": 1,
+        "column": 3,
+        "solid": 15431,
+        "clear": 46163,
+        "transparentGutter": 12,
+        "hash": "8219547c6e9ed14b57f9f3c50e112fda6413199451435c46908edbdb54ada248"
+      },
+      {
+        "row": 1,
+        "column": 4,
+        "solid": 14479,
+        "clear": 47440,
+        "transparentGutter": 12,
+        "hash": "124ed2d0904c79ee9c7baa61cec505e2a3df753bce8ea1da3a23f65d4e41129b"
+      },
+      {
+        "row": 1,
+        "column": 5,
+        "solid": 14846,
+        "clear": 47231,
+        "transparentGutter": 12,
+        "hash": "a24950d77109be62921cdeb87e2c575976c1d6369125502c6ea238f9787fe942"
+      },
+      {
+        "row": 2,
+        "column": 0,
+        "solid": 13702,
+        "clear": 48863,
+        "transparentGutter": 12,
+        "hash": "00e4d059eaf58ab07a002dca8cbbcfaec5b8d99db5ddeffe1b90254788027698"
+      },
+      {
+        "row": 2,
+        "column": 1,
+        "solid": 14356,
+        "clear": 47758,
+        "transparentGutter": 12,
+        "hash": "4a46d624888fc1a97500f3124c60188c7381fc7be489b52a506798ed613e1ff8"
+      },
+      {
+        "row": 2,
+        "column": 2,
+        "solid": 14586,
+        "clear": 47453,
+        "transparentGutter": 12,
+        "hash": "a3f70a1fc8280e7d72fe8845fcb063ed9313041b2ab648006ae9e149b33371b2"
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "solid": 13894,
+        "clear": 48045,
+        "transparentGutter": 12,
+        "hash": "80822ce5a1e7f95750f759da386e63d7976dc0fbf458446f51ac2282b6e1ecc7"
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "solid": 13942,
+        "clear": 48334,
+        "transparentGutter": 12,
+        "hash": "4c121b89472cbc774c7af6e4904e0d4d693236de2ecf4f31ed56301a521a451d"
+      },
+      {
+        "row": 2,
+        "column": 5,
+        "solid": 13764,
+        "clear": 48372,
+        "transparentGutter": 12,
+        "hash": "ec6c1b8099c981bdeafd5fb63389168a71bd75e640f4d7e7a338ace8c553e0e3"
+      },
+      {
+        "row": 3,
+        "column": 0,
+        "solid": 13606,
+        "clear": 48793,
+        "transparentGutter": 12,
+        "hash": "5612bb40fdff0483bdf86b1250f6c0c5b485fdb90a27c7c37cf280e5949a3ee5"
+      },
+      {
+        "row": 3,
+        "column": 1,
+        "solid": 13885,
+        "clear": 48352,
+        "transparentGutter": 12,
+        "hash": "b8a501a23e342c9519ea26e14e6d6d43ef96b8005ac3dfab90a2507d3c2423c6"
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "solid": 14454,
+        "clear": 47805,
+        "transparentGutter": 12,
+        "hash": "e32b2427de7f1ba9ce7679b6de33e62422637f26298745a624269e20c0ac3380"
+      },
+      {
+        "row": 3,
+        "column": 3,
+        "solid": 14680,
+        "clear": 46943,
+        "transparentGutter": 12,
+        "hash": "8ab67896e3ff03395dec7f6f47062b2548696ca3cffeea375c9b889318da8e42"
+      },
+      {
+        "row": 3,
+        "column": 4,
+        "solid": 14847,
+        "clear": 46996,
+        "transparentGutter": 12,
+        "hash": "4b0eff965a4f1fd2e5e33d0d958c25f43d4d35a648a99f552657a14d42c92af6"
+      },
+      {
+        "row": 3,
+        "column": 5,
+        "solid": 13760,
+        "clear": 48416,
+        "transparentGutter": 12,
+        "hash": "9efa5d5d1693f385abbe5644c78eb53cc30b836583b37e5836814f11c30b2b0c"
+      }
+    ]
+  }
+]

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CombatAnimation, CombatAnimationEvent, POSE_ROW, selectCombatAnimation } from "./combatAnimation";
 import { TypingBossClassId } from "./types";
+import { combatAtlasCellHeight, combatAtlasCellWidth, combatAtlasFilename, spriteFrameOffsets } from "./spriteAnchors";
 import "./characterAnimation.css";
 
 const ASSETS = `${(process.env.PUBLIC_URL || "").replace(/\/$/, "")}/assets/typing-boss`;
@@ -61,12 +62,12 @@ export function CombatEffects({pose,clock}:{pose:CombatAnimation;clock:React.Mut
   </>;
 }
 
-export default function CombatCharacter({classId,color,size=62,highlight=false,pose,clock:providedClock}:{
-  classId:TypingBossClassId;color:string;size?:number;highlight?:boolean;pose?:CombatAnimation;clock?:React.MutableRefObject<number>;
+export default function CombatCharacter({classId,color,size=62,highlight=false,pose,clock:providedClock,inspectFrame}:{
+  classId:TypingBossClassId;color:string;size?:number;highlight?:boolean;pose?:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;
 }) {
   const localClock=useRef(0),clock=providedClock || localClock;
   const state=pose?.state || "idle";
-  const atlas=`${ASSETS}/characters/${classId}-combat.webp`;
+  const atlas=`${ASSETS}/characters/${combatAtlasFilename(classId)}`;
   const [readyClass,setReadyClass]=useState<TypingBossClassId | null>(()=>preloaded.get(classId)?.ready?classId:null);
   const preload=Boolean(pose);
   const poseId=pose?.id,poseAt=pose?.at;
@@ -81,18 +82,31 @@ export default function CombatCharacter({classId,color,size=62,highlight=false,p
   const isIdle=spriteState==="idle",held=spriteState==="defeated";
   const config=idle[classId];
   const scale=isIdle && ["paladin","cleric","barbarian"].includes(classId)?1:1.12;
-  const frameWidth=isIdle?size*config.aspect*scale:size*scale;
+  // Whole-pixel cells prevent a fractional background offset exposing the adjacent frame.
+  const frameWidth=Math.round(isIdle?size*config.aspect*scale:size*scale*combatAtlasCellWidth(classId)/96);
+  const baseHeight=Math.round(size*scale);
+  const frameHeight=isIdle?baseHeight:Math.round(baseHeight*combatAtlasCellHeight(classId)/96);
+  const verticalPadding=(frameHeight-baseHeight)/2;
+  const frameOffsets=spriteFrameOffsets(classId,POSE_ROW[spriteState],!isIdle);
+  const frameStyle=Object.fromEntries(frameOffsets.map((offset,index)=>[`--frame-x-${index}`,`${offset}%`])) as React.CSSProperties;
+  // Leave space for the registration shift without clipping the moving weapon.
+  const framePadding=Math.ceil(frameWidth/3);
+  // Inspect "Dying" to scrub the fall; "Knocked out" always holds its down pose.
+  const frozen=inspectFrame===undefined?undefined:held?5:Math.min(5,Math.max(0,Math.trunc(inspectFrame)));
   return <span data-testid="combat-character" data-character={classId} data-animation={state}
     data-action={pose?.action?.state} data-reaction={pose?.reaction?.state} data-sprite-state={spriteState}
-    className={`combat-actor actor-pose-${state}`} aria-hidden="true"
+    className={`combat-actor actor-pose-${state}${frozen===undefined?"":" combat-actor-inspecting"}`} aria-hidden="true"
     style={{width:size*.85,height:size,"--actor-color":color,"--actor-glow":`${highlight?18:8}px`,"--pose-ms":`${pose?.duration || 900}ms`} as React.CSSProperties}>
     <span key={`${spriteState}:${pose?.id || "idle"}`} className={`actor-body actor-body-${state}`} style={{animationDelay:`-${delay}ms`}}>
+      <span className="actor-viewport" style={{width:frameWidth+framePadding*2,height:frameHeight,left:"50%",top:size-baseHeight-verticalPadding,marginLeft:-frameWidth/2-framePadding}}>
       <span className={`actor-frames${isIdle?" actor-frames-idle":""}${held?" actor-frames-held":""}`} style={{
-        width:frameWidth,height:size*scale,left:"50%",top:size-size*scale,marginLeft:-frameWidth/2,
+        ...frameStyle,width:frameWidth,height:frameHeight,left:framePadding,
         backgroundImage:`url("${isIdle?config.src:atlas}")`,backgroundSize:`600% ${isIdle?100:800}%`,
-        backgroundPositionY:isIdle?"0%":`${POSE_ROW[spriteState]/7*100}%`,backgroundPositionX:held?"100%":"0%",
-        animationDuration:`${pose?.duration || 900}ms`,animationDelay:`-${delay}ms`,
+        backgroundPositionY:isIdle?"0%":`${POSE_ROW[spriteState]/7*100}%`,backgroundPositionX:frozen!==undefined?`${frozen/5*100}%`:held?"100%":"0%",
+        animationDuration:`${pose?.duration || 900}ms`,animationDelay:`-${delay}ms`,animationName:frozen===undefined?undefined:"none",
+        transform:frozen!==undefined?`translateX(${frameOffsets[frozen]}%)`:held?`translateX(${frameOffsets[5]}%)`:undefined,
       }} />
+      </span>
     </span>
     {pose && <CombatEffects pose={pose} clock={clock} />}
   </span>;
