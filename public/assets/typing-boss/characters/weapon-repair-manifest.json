@@ -1,0 +1,202 @@
+[
+  {
+    "id": "paladin",
+    "sourceWidth": 1536,
+    "sourceHeight": 1024,
+    "cellWidth": 128,
+    "cellHeight": 96,
+    "scaledSize": 131,
+    "offsetX": -1,
+    "offsetY": -17,
+    "runtimeBytes": 479470,
+    "frames": [
+      {
+        "frame": 1,
+        "anchor": 65.1166,
+        "visiblePixels": 3000,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 2,
+        "anchor": 63.0476,
+        "visiblePixels": 3123,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 3,
+        "anchor": 59.5783,
+        "visiblePixels": 3267,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 4,
+        "anchor": 59.6235,
+        "visiblePixels": 4007,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 5,
+        "anchor": 57.531,
+        "visiblePixels": 3129,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 6,
+        "anchor": 58.7444,
+        "visiblePixels": 3035,
+        "transparentGutter": 4
+      }
+    ],
+    "unchangedOtherRows": true
+  },
+  {
+    "id": "cleric",
+    "sourceWidth": 1536,
+    "sourceHeight": 1024,
+    "cellWidth": 128,
+    "cellHeight": 96,
+    "scaledSize": 122,
+    "offsetX": 3,
+    "offsetY": -13,
+    "runtimeBytes": 451122,
+    "frames": [
+      {
+        "frame": 1,
+        "anchor": 63.3218,
+        "visiblePixels": 2746,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 2,
+        "anchor": 57.112,
+        "visiblePixels": 2693,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 3,
+        "anchor": 43.8327,
+        "visiblePixels": 3120,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 4,
+        "anchor": 53.9778,
+        "visiblePixels": 3867,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 5,
+        "anchor": 56.9801,
+        "visiblePixels": 2532,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 6,
+        "anchor": 61.1679,
+        "visiblePixels": 2704,
+        "transparentGutter": 4
+      }
+    ],
+    "unchangedOtherRows": true
+  },
+  {
+    "id": "rogue",
+    "sourceWidth": 1536,
+    "sourceHeight": 1024,
+    "cellWidth": 128,
+    "cellHeight": 96,
+    "scaledSize": 126,
+    "offsetX": 1,
+    "offsetY": -12,
+    "runtimeBytes": 377332,
+    "frames": [
+      {
+        "frame": 1,
+        "anchor": 62.5635,
+        "visiblePixels": 2933,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 2,
+        "anchor": 63.2801,
+        "visiblePixels": 3276,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 3,
+        "anchor": 61.226,
+        "visiblePixels": 3494,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 4,
+        "anchor": 56.4744,
+        "visiblePixels": 3429,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 5,
+        "anchor": 61.4695,
+        "visiblePixels": 3203,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 6,
+        "anchor": 62.1419,
+        "visiblePixels": 2942,
+        "transparentGutter": 4
+      }
+    ],
+    "unchangedOtherRows": true
+  },
+  {
+    "id": "necromancer",
+    "sourceWidth": 1536,
+    "sourceHeight": 1024,
+    "cellWidth": 128,
+    "cellHeight": 96,
+    "scaledSize": 127,
+    "offsetX": 1,
+    "offsetY": -19,
+    "runtimeBytes": 435892,
+    "frames": [
+      {
+        "frame": 1,
+        "anchor": 57.0518,
+        "visiblePixels": 3311,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 2,
+        "anchor": 58.9704,
+        "visiblePixels": 3469,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 3,
+        "anchor": 59.6757,
+        "visiblePixels": 3539,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 4,
+        "anchor": 56.1073,
+        "visiblePixels": 4201,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 5,
+        "anchor": 54.971,
+        "visiblePixels": 3926,
+        "transparentGutter": 4
+      },
+      {
+        "frame": 6,
+        "anchor": 57.0653,
+        "visiblePixels": 3345,
+        "transparentGutter": 4
+      }
+    ],
+    "unchangedOtherRows": true
+  }
+]

@@ -1,0 +1,39 @@
+.dragon-atlas-preload { display: none; }
+.dragon-static-fallback { width: 100%; height: 100%; object-fit: contain; image-rendering: pixelated; }
+.dragon-sprite-viewport { position:absolute; width:100%; height:100%; left:0; top:4%; display:block; overflow:hidden; contain:paint; }
+.dragon-sprite-cell {
+  position: absolute;
+  transform-origin:0 0;
+  transform:translate(var(--dragon-x-0,0%),var(--dragon-y-0,0%)) scaleX(var(--dragon-scale-0,1));
+  display: block;
+  background-repeat: no-repeat;
+  background-size: 600% 400%;
+  background-position-x: 0%;
+  image-rendering: pixelated;
+  pointer-events: none;
+  transition:none;
+}
+/* These are discrete drawn poses, never a pan across neighboring atlas cells. */
+.dragon-sprite-playing {
+  animation-name: dragon-attack-frames;
+  animation-timing-function: steps(1, end);
+  animation-iteration-count: 1;
+  animation-fill-mode: both;
+}
+.dragon-sheet-attacking { animation: none !important; transform: none; }
+/* Keep the ground contacts fixed during idle, attacks and bracing. Deliberate
+   dodge/death/revival travel can still move the actor away from the ground. */
+.dragon-sheet-ready:not(.dragon-pose-dodge):not(.dragon-pose-death):not(.dragon-pose-defeated):not(.dragon-pose-reviving) { animation:none!important; transform:none; }
+.dragon-inspecting { animation:none!important; transform:none!important; }
+.dragon-inspecting .actor-effect,.dragon-inspecting .actor-action-cue { display:none; }
+@keyframes dragon-attack-frames {
+  0% { background-position-x: 0%; transform:translate(var(--dragon-x-0),var(--dragon-y-0)) scaleX(var(--dragon-scale-0)); }
+  14% { background-position-x: 20%; transform:translate(var(--dragon-x-1),var(--dragon-y-1)) scaleX(var(--dragon-scale-1)); }
+  28% { background-position-x: 40%; transform:translate(var(--dragon-x-2),var(--dragon-y-2)) scaleX(var(--dragon-scale-2)); }
+  42% { background-position-x: 60%; transform:translate(var(--dragon-x-3),var(--dragon-y-3)) scaleX(var(--dragon-scale-3)); }
+  72% { background-position-x: 80%; transform:translate(var(--dragon-x-4),var(--dragon-y-4)) scaleX(var(--dragon-scale-4)); }
+  90%, 100% { background-position-x: 100%; transform:translate(var(--dragon-x-5),var(--dragon-y-5)) scaleX(var(--dragon-scale-5)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dragon-sprite-playing { animation: none; background-position-x: 60%; transform:translate(var(--dragon-x-3),var(--dragon-y-3)) scaleX(var(--dragon-scale-3)); }
+}

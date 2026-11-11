@@ -1,0 +1,18 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest
+
+PASS src/TypingBoss/ContinuousBattle.test.tsx (7.427 s)
+PASS src/TypingBoss/combatAnimation.test.tsx
+PASS src/TypingBoss/HostBattleLog.test.tsx
+PASS src/TypingBoss/BattleLeaderboard.test.tsx
+PASS src/TypingBoss/credentials.test.ts
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+PASS src/TypingBoss/joinNames.test.ts
+
+Test Suites: 8 passed, 8 total
+Tests:       68 passed, 68 total
+Snapshots:   0 total
+Time:        18.208 s
+Ran all test suites matching /TypingBoss/i.

@@ -1391,10 +1391,8 @@ function getTypingBossSnapshot(session, options = {}) {
     remainingSeconds: Math.max(0, Math.ceil((session.expiresAt - now) / 1000)),
     boss: { ...session.boss },
     players: [...session.players.values()]
-      .filter(player => session.mode !== "proportional" || !includeChallengesFor || player.code === includeChallengesFor)
       .map(getTypingBossPlayerSnapshot),
     projectiles: session.projectiles
-      .filter(item => session.mode !== "proportional" || !includeChallengesFor || item.source === includeChallengesFor || item.target === includeChallengesFor)
       .map(getTypingBossProjectileSnapshot),
     log: session.log.slice(-14),
   };

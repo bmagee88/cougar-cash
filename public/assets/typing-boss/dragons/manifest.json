@@ -1,0 +1,476 @@
+[
+  {
+    "id": "ancient-red-dragon",
+    "columns": 6,
+    "rows": [
+      "bite",
+      "fireball",
+      "tailWhip",
+      "flamethrower"
+    ],
+    "cell": 256,
+    "runtimeBytes": 2425300,
+    "frames": [
+      {
+        "row": 0,
+        "column": 0,
+        "solid": 36689,
+        "clear": 25163
+      },
+      {
+        "row": 0,
+        "column": 1,
+        "solid": 34269,
+        "clear": 27701
+      },
+      {
+        "row": 0,
+        "column": 2,
+        "solid": 34288,
+        "clear": 27756
+      },
+      {
+        "row": 0,
+        "column": 3,
+        "solid": 34344,
+        "clear": 27879
+      },
+      {
+        "row": 0,
+        "column": 4,
+        "solid": 35001,
+        "clear": 26760
+      },
+      {
+        "row": 0,
+        "column": 5,
+        "solid": 36204,
+        "clear": 25680
+      },
+      {
+        "row": 1,
+        "column": 0,
+        "solid": 36207,
+        "clear": 25713
+      },
+      {
+        "row": 1,
+        "column": 1,
+        "solid": 36475,
+        "clear": 25445
+      },
+      {
+        "row": 1,
+        "column": 2,
+        "solid": 34352,
+        "clear": 27692
+      },
+      {
+        "row": 1,
+        "column": 3,
+        "solid": 34853,
+        "clear": 27222
+      },
+      {
+        "row": 1,
+        "column": 4,
+        "solid": 35148,
+        "clear": 26575
+      },
+      {
+        "row": 1,
+        "column": 5,
+        "solid": 36031,
+        "clear": 25875
+      },
+      {
+        "row": 2,
+        "column": 0,
+        "solid": 36184,
+        "clear": 25748
+      },
+      {
+        "row": 2,
+        "column": 1,
+        "solid": 33724,
+        "clear": 28521
+      },
+      {
+        "row": 2,
+        "column": 2,
+        "solid": 33893,
+        "clear": 28204
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "solid": 34473,
+        "clear": 27482
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "solid": 34875,
+        "clear": 27043
+      },
+      {
+        "row": 2,
+        "column": 5,
+        "solid": 36039,
+        "clear": 25913
+      },
+      {
+        "row": 3,
+        "column": 0,
+        "solid": 36285,
+        "clear": 25565
+      },
+      {
+        "row": 3,
+        "column": 1,
+        "solid": 35703,
+        "clear": 25729
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "solid": 33494,
+        "clear": 28372
+      },
+      {
+        "row": 3,
+        "column": 3,
+        "solid": 35755,
+        "clear": 25890
+      },
+      {
+        "row": 3,
+        "column": 4,
+        "solid": 35795,
+        "clear": 25708
+      },
+      {
+        "row": 3,
+        "column": 5,
+        "solid": 35999,
+        "clear": 25891
+      }
+    ]
+  },
+  {
+    "id": "cindermaw",
+    "columns": 6,
+    "rows": [
+      "bite",
+      "fireball",
+      "tailWhip",
+      "flamethrower"
+    ],
+    "cell": 256,
+    "runtimeBytes": 1901130,
+    "frames": [
+      {
+        "row": 0,
+        "column": 0,
+        "solid": 30198,
+        "clear": 31327
+      },
+      {
+        "row": 0,
+        "column": 1,
+        "solid": 26308,
+        "clear": 34699
+      },
+      {
+        "row": 0,
+        "column": 2,
+        "solid": 25974,
+        "clear": 36182
+      },
+      {
+        "row": 0,
+        "column": 3,
+        "solid": 26650,
+        "clear": 35785
+      },
+      {
+        "row": 0,
+        "column": 4,
+        "solid": 27618,
+        "clear": 33441
+      },
+      {
+        "row": 0,
+        "column": 5,
+        "solid": 30060,
+        "clear": 31412
+      },
+      {
+        "row": 1,
+        "column": 0,
+        "solid": 30133,
+        "clear": 31285
+      },
+      {
+        "row": 1,
+        "column": 1,
+        "solid": 29863,
+        "clear": 31000
+      },
+      {
+        "row": 1,
+        "column": 2,
+        "solid": 25731,
+        "clear": 35781
+      },
+      {
+        "row": 1,
+        "column": 3,
+        "solid": 27053,
+        "clear": 33507
+      },
+      {
+        "row": 1,
+        "column": 4,
+        "solid": 27161,
+        "clear": 34327
+      },
+      {
+        "row": 1,
+        "column": 5,
+        "solid": 30039,
+        "clear": 31171
+      },
+      {
+        "row": 2,
+        "column": 0,
+        "solid": 30065,
+        "clear": 31540
+      },
+      {
+        "row": 2,
+        "column": 1,
+        "solid": 28222,
+        "clear": 32062
+      },
+      {
+        "row": 2,
+        "column": 2,
+        "solid": 28814,
+        "clear": 32296
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "solid": 29862,
+        "clear": 31575
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "solid": 28487,
+        "clear": 33074
+      },
+      {
+        "row": 2,
+        "column": 5,
+        "solid": 30035,
+        "clear": 31533
+      },
+      {
+        "row": 3,
+        "column": 0,
+        "solid": 30116,
+        "clear": 31596
+      },
+      {
+        "row": 3,
+        "column": 1,
+        "solid": 28895,
+        "clear": 32215
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "solid": 27038,
+        "clear": 34402
+      },
+      {
+        "row": 3,
+        "column": 3,
+        "solid": 28470,
+        "clear": 32552
+      },
+      {
+        "row": 3,
+        "column": 4,
+        "solid": 28591,
+        "clear": 32166
+      },
+      {
+        "row": 3,
+        "column": 5,
+        "solid": 30008,
+        "clear": 31537
+      }
+    ]
+  },
+  {
+    "id": "ember-whelp",
+    "columns": 6,
+    "rows": [
+      "bite",
+      "fireball",
+      "tailWhip",
+      "flamethrower"
+    ],
+    "cell": 256,
+    "runtimeBytes": 1725926,
+    "frames": [
+      {
+        "row": 0,
+        "column": 0,
+        "solid": 26236,
+        "clear": 36029
+      },
+      {
+        "row": 0,
+        "column": 1,
+        "solid": 23815,
+        "clear": 38837
+      },
+      {
+        "row": 0,
+        "column": 2,
+        "solid": 26634,
+        "clear": 35796
+      },
+      {
+        "row": 0,
+        "column": 3,
+        "solid": 24962,
+        "clear": 37914
+      },
+      {
+        "row": 0,
+        "column": 4,
+        "solid": 25559,
+        "clear": 36713
+      },
+      {
+        "row": 0,
+        "column": 5,
+        "solid": 26055,
+        "clear": 36113
+      },
+      {
+        "row": 1,
+        "column": 0,
+        "solid": 26173,
+        "clear": 35956
+      },
+      {
+        "row": 1,
+        "column": 1,
+        "solid": 25176,
+        "clear": 36587
+      },
+      {
+        "row": 1,
+        "column": 2,
+        "solid": 24639,
+        "clear": 37852
+      },
+      {
+        "row": 1,
+        "column": 3,
+        "solid": 26221,
+        "clear": 35198
+      },
+      {
+        "row": 1,
+        "column": 4,
+        "solid": 24774,
+        "clear": 37184
+      },
+      {
+        "row": 1,
+        "column": 5,
+        "solid": 25940,
+        "clear": 36284
+      },
+      {
+        "row": 2,
+        "column": 0,
+        "solid": 26259,
+        "clear": 35760
+      },
+      {
+        "row": 2,
+        "column": 1,
+        "solid": 25633,
+        "clear": 36032
+      },
+      {
+        "row": 2,
+        "column": 2,
+        "solid": 24070,
+        "clear": 38235
+      },
+      {
+        "row": 2,
+        "column": 3,
+        "solid": 25666,
+        "clear": 36745
+      },
+      {
+        "row": 2,
+        "column": 4,
+        "solid": 26313,
+        "clear": 35834
+      },
+      {
+        "row": 2,
+        "column": 5,
+        "solid": 26004,
+        "clear": 36044
+      },
+      {
+        "row": 3,
+        "column": 0,
+        "solid": 26264,
+        "clear": 35727
+      },
+      {
+        "row": 3,
+        "column": 1,
+        "solid": 25123,
+        "clear": 37548
+      },
+      {
+        "row": 3,
+        "column": 2,
+        "solid": 25271,
+        "clear": 36678
+      },
+      {
+        "row": 3,
+        "column": 3,
+        "solid": 26673,
+        "clear": 34591
+      },
+      {
+        "row": 3,
+        "column": 4,
+        "solid": 26556,
+        "clear": 34734
+      },
+      {
+        "row": 3,
+        "column": 5,
+        "solid": 25899,
+        "clear": 36025
+      }
+    ]
+  }
+]

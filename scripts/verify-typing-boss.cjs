@@ -65,8 +65,10 @@ function words(state, start = 0, countWords = 10) {
     for (let i = 0; i < 30; i++) {
       const classId = ["cleric", "rogue", "barbarian"][i % 3];
       const player = await request(`/${id}/participants`, { name: `Test ${i + 1}`, classId, goldWords: true }, 201);
-      assert.equal(player.session.players.length, 1);
-      assert.equal(player.session.players[0].hp, 100);
+      assert.equal(player.session.players.length, i + 1);
+      assert.equal(player.session.players.find(hero => hero.code === player.code).hp, 100);
+      assert.equal(player.session.hostToken, undefined);
+      assert.ok(player.session.players.every(hero => !hero.typing), "roster never contains private typing state");
       assert.equal(player.session.typing.ability, classId);
       participants.push(player);
     }
@@ -81,7 +83,7 @@ function words(state, start = 0, countWords = 10) {
     const host = await stream(id, { hostToken: created.hostToken });
     const clients = await Promise.all(participants.map(player => stream(id, { code: player.code })));
     await delay(1000);
-    for (const client of clients) assert.equal(client.snapshot.players.length, 1);
+    for (const client of clients) assert.equal(client.snapshot.players.length, 30);
     await request(`/${id}/progress`, { hostToken: created.hostToken, wordIndex: 0, characters: 1 });
     await Promise.all(participants.map(player => request(`/${id}/progress`, { code: player.code, wordIndex: 0, characters: 1 })));
     await delay(200);
@@ -117,21 +119,24 @@ function words(state, start = 0, countWords = 10) {
       const client = clients[i];
       const received = new Map();
       for (const patch of client.patches) {
-        assert.ok((patch.players || []).every(player => player.code === participants[i].code));
+        assert.equal(patch.hostToken, undefined);
+        assert.ok((patch.players || []).every(player => !player.typing), "shared roster has no private typing state");
         for (const shot of patch.projectiles || []) {
-          const merged = { ...received.get(shot.id), ...shot };
-          received.set(shot.id, merged);
-          assert.ok(merged.source === participants[i].code || merged.target === participants[i].code);
+          received.set(shot.id, { ...received.get(shot.id), ...shot });
         }
       }
-      assert.ok(client.patchBytes < 10000, "personal updates stay small");
+      assert.equal(received.size, final.projectiles.length, "each client sees every combat event");
+      assert.ok(client.patchBytes < 80000, "shared scene still uses bounded compact patches");
     }
     const hostShots = new Map(host.patches.flatMap(patch => patch.projectiles || []).map(shot => [shot.id, shot]));
     assert.equal(hostShots.size, 30 + bossShots.length);
     const reconnected = await stream(id, { code: participants[0].code });
     await delay(100);
     assert.equal(reconnected.snapshot.typing.nextWord, 10);
-    assert.equal(reconnected.snapshot.players[0].turnsTaken, 1);
+    assert.equal(reconnected.snapshot.players.find(player => player.code === participants[0].code).turnsTaken, 1);
+    assert.equal(reconnected.snapshot.hostToken, undefined);
+    assert.equal(reconnected.snapshot.typing.seed, participants[0].session.typing.seed);
+    assert.ok(reconnected.snapshot.players.every(player => !player.typing));
     const burst = { hostCombatBytes: host.patchBytes,
       averagePlayerCombatBytes: Math.round(clients.reduce((sum, client) => sum + client.patchBytes, 0) / 30),
       totalCombatBytes: host.patchBytes + clients.reduce((sum, client) => sum + client.patchBytes, 0), hostUpdateCount: host.patches.length };
@@ -145,7 +150,7 @@ function words(state, start = 0, countWords = 10) {
       ended = (await request(`/${id}?code=${participants[0].code}`)).session;
     }
     assert.equal(ended.status, "victory");
-    assert.equal(ended.players.length, 1, "live roster remains personal even in the final snapshot");
+    assert.equal(ended.players.length, 30, "shared roster remains visible at the end");
     assert.equal(ended.leaderboard.length, 30);
     assert.ok(ended.leaderboard.every((entry, index, list) => !index || entry.totalDamage <= list[index - 1].totalDamage));
     assert.ok(ended.leaderboard.some(entry => entry.strongestAttack && entry.strongestAttack.base > 0 && entry.strongestAttack.consistency >= .5 && entry.strongestAttack.orangeBonus === 0));

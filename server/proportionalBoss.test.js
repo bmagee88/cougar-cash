@@ -445,30 +445,27 @@ test("boss attack roll selects the advertised pattern and splits all power among
     engine.launchAttack(session, session.typingHost, { power: 90, multiplier: 1, moveId: "weak" }, cb);
     assert.equal(session.projectiles.length, count);
     assert.ok(session.projectiles.every(shot => shot.bossAttack === kind && shot.amount === 90 / count));
-    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["4", "5", "6"]);
+    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["0", "4", "5"]);
   }
 });
 
-test("tail whip respects the formation's row edge and skips defeated players", () => {
+test("tail whip selects nearby formation slots and skips defeated players", () => {
   const session = sessionWithPlayers(12);
   session.players.get("8").hp = 0;
-  const rolls = [.7, .8]; // Position 9, in the last diagonal rank.
+  const rolls = [.7, .8]; // Position 9, in the last rank.
   const cb = { ...callbacks(), random: () => rolls.shift() ?? 1 };
   engine.launchAttack(session, session.typingHost, { power: 60, multiplier: 1, moveId: "weak" }, cb);
-  assert.deepEqual(session.projectiles.map(shot => shot.target).sort((a,b)=>Number(a)-Number(b)), ["9", "10", "11"]);
+  assert.deepEqual(session.projectiles.map(shot => shot.target).sort((a,b)=>Number(a)-Number(b)), ["5", "9", "10"]);
   assert.ok(session.projectiles.every(shot => shot.amount === 20));
 });
 
-test("bridge formation has four diagonal slots per rank and recedes from the dragon for up to 30 players", () => {
+test("battle formation keeps up to 30 players on the left platform clear of the dragon and foreground", () => {
   for (const size of [1,4,5,10,15,30]) {
     const points = Array.from({length:size}, (_, index) => rules.proportionalPlayerPoint(index,size));
     assert.equal(new Set(points.map(point => `${point.x}:${point.y}`)).size,size);
-    assert.ok(points.every(point => point.x >= 10 && point.x <= 86 && point.y >= 50 && point.y <= 92));
+    assert.ok(points.every(point => point.x >= 10 && point.x <= 55 && point.y >= 54 && point.y <= 84));
     for (let index=0;index<size;index++) {
-      if (index%4) {
-        assert.equal(points[index].x-points[index-1].x,9);
-        assert.equal(points[index].y-points[index-1].y,3);
-      }
+      if (index%4) assert.ok(Math.abs(points[index].x-points[index-1].x-12)<1e-10);
       if (index>=4) {
         assert.ok(points[index].x<points[index-4].x);
         assert.ok(points[index].y>points[index-4].y);

@@ -86,12 +86,13 @@ function typingAttackProgress(state, characters, cursor = state.nextWord) {
   return Math.min(100, Math.max(0, completed / total * 100));
 }
 
-// The server and host display use the same formation, including knocked-out slots.
+// The server and both views use the same formation, including knocked-out slots.
 function proportionalPlayerPoint(index, rosterSize) {
   const rows = Math.max(1, Math.ceil(rosterSize / 4));
   const depth = rows === 1 ? 0 : Math.floor(index / 4) / (rows - 1);
-  // Four abreast across the bridge; each rank recedes toward the lower-left foreground.
-  return { x: 56 + (index % 4) * 9 - depth * 42, y: 54 + depth * 28 + (index % 4) * 3 };
+  // Four per rank, with each lower rank stepping left toward the foreground.
+  // Keep the full 30-player formation on the platform and clear of the dragon.
+  return { x: 18 + (index % 4) * 12 - depth * 8, y: 55 + depth * 27 + (index % 4) * 0.5 };
 }
 
 function createTypingState(seed, ability) {
