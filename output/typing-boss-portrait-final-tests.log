@@ -1,0 +1,9 @@
+PASS src/TypingBoss/BattleScene.test.tsx (11.969 s)
+PASS src/TypingBoss/ContinuousBattle.test.tsx
+PASS src/TypingBoss/typingFeedback.test.ts
+
+Test Suites: 3 passed, 3 total
+Tests:       24 passed, 24 total
+Snapshots:   0 total
+Time:        30.042 s, estimated 40 s
+Ran all test suites matching /TypingBoss\\(BattleScene|ContinuousBattle|typingFeedback)/i.

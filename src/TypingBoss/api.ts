@@ -122,13 +122,20 @@ export function getTypingBossEventSourceUrl(
   });
 }
 
-export async function createTypingBossSession(name: string, bossId: TypingBossId, mode: TypingBossMode = "proportional") {
+export function unlockTypingBossCreation(password: string) {
+  return apiFetch<{ allowed: boolean }>("/api/typing-boss/creation-access", { method: "POST", json: { password } });
+}
+
+export async function createTypingBossSession(name: string, bossId: TypingBossId, mode: TypingBossMode = "proportional", creationPassword?: string) {
   const response = await apiFetch<CreateTypingBossSessionResponse>("/api/typing-boss/sessions", {
     method: "POST",
-    json: { name, bossId, mode, ...(mode === "proportional" ? { goldWords: true } : {}) },
+    json: { name, bossId, mode, creationPassword, ...(mode === "proportional" ? { goldWords: true } : {}) },
   });
   if ((response.session?.mode ?? "old") !== mode) {
     throw new Error("The Typing Boss backend returned a different battle mode. Update the backend to match this version of the game, then try again.");
+  }
+  if(response.session.boss.id!==bossId) {
+    throw new Error("The backend did not use the selected boss. Restart or deploy the matching Typing Boss backend, then create a fresh room.");
   }
   return response;
 }
@@ -182,16 +189,19 @@ export function verifyTypingBossParticipant(sessionId: string, code: string) {
   );
 }
 
-export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false) {
+export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true) {
   const response = await apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced },
+      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors },
     }
   );
   if (Boolean(response.session.balanced) !== balanced) {
     throw new Error("The backend did not apply Balanced mode. Deploy the matching Typing Boss backend and create a fresh room.");
+  }
+  if (balanced && Boolean(response.session.balancedRandomColors) !== balancedRandomColors) {
+    throw new Error("The backend did not apply Random colors. Restart or deploy the matching Typing Boss backend and create a fresh room.");
   }
   return response;
 }

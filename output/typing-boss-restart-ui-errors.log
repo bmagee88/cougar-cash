@@ -1,0 +1,18 @@
+Browserslist: browsers data (caniuse-lite) is 21 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+(node:9876) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:9876) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:9876) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+ERROR in src/TypingBoss/TypingPortrait.tsx:62:89
+TS2322: Type '{ xs: number; sm: number; }' is not assignable to type 'number | { xs: number; md: number; }'.
+  Object literal may only specify known properties, and 'sm' does not exist in type '{ xs: number; md: number; }'.
+    60 |     {special && <div className="portrait-special" aria-hidden="true"><i/><i/><i/></div>}
+    61 |     {defense && <div className="portrait-dodge" style={{opacity:Math.sqrt(defense.dodge)}} aria-hidden="true"/>}
+  > 62 |     <div className="portrait-dragon"><DragonCombatSprite bossId={boss.id} width={{xs:98,sm:136}} glow={boss.glow} pose={pose} clock={clock} /></div>
+       |                                                                                         ^^^^^^
+    63 |     <HostHitFeedback events={events} clock={clock}/>
+    64 |     {defense && <div className="portrait-shield" style={{opacity:Math.sqrt(defense.shield)}} aria-hidden="true"/>}
+    65 |     <div className="portrait-attack" title="Dragon attack charge" aria-label={`Dragon attack letters: ${letters}`}>
+

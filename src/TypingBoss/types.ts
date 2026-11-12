@@ -15,9 +15,16 @@ export type TypingBossClassId =
   | "monk";
 export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon";
 export type TypingBossDifficulty = "easy" | "medium" | "hard";
+export type DragonHurtTier = "basic" | "power" | "critical";
+export interface DragonHurt { id: string; tier: DragonHurtTier; at: number; until: number }
+export interface DragonFlameBreath { id: string; at: number; until: number }
 export type TypingBossMode = "old" | "proportional";
 export interface TypingBossAttackStats {
+  orangePower?: number;
+  criticalPower?: number;
+  criticalBonus?: number;
   balanced?: boolean;
+  balancedRandomColors?: boolean;
   earnedPower?: number;
   supportPower?: number;
   supportUsed?: number;
@@ -50,6 +57,7 @@ export interface TypingBossLeaderboardEntry {
 }
 export interface TypingBossTypingState {
   balanced?: boolean;
+  balancedRandomColors?: boolean;
   balancedPower?: number;
   balancedCharacters?: number;
   balancedSpecialAt?: number;
@@ -60,6 +68,13 @@ export interface TypingBossTypingState {
   balancedQuality?: number;
   balancedDefenseWord?: boolean;
   balancedSkillWord?: boolean;
+  balancedOrangeBank?: number;
+  balancedHealingBank?: number;
+  balancedHealingDeposit?: number;
+  balancedOrangePower?: number;
+  balancedCritCharge?: number;
+  balancedCritBonus?: number;
+  balancedCritAt?: number;
   ability?: TypingBossClassId | "dragon";
   gold?: number;
   attackWords?: number;
@@ -84,6 +99,8 @@ export interface TypingBossTypingState {
   totalTaken: number;
   totalCharacters: number;
   dodgeSamples?: number[];
+  dodgeBank?: number;
+  attackErrors?: number;
 }
 // index, typed word, interval count, sum, squared sum, optional Space-to-first-character gap.
 export type TypingBossWordResult = [number, string, number, number, number, (number | null)?, number[]?];
@@ -128,6 +145,12 @@ export interface TypingBossPlayer {
 }
 
 export interface TypingBossBoss {
+  profile?: Partial<TypingBossTypingState>;
+  flameBreath?: DragonFlameBreath | null;
+  queuedStrongReactions?: number;
+  attackCharacters?: number;
+  hurt?: DragonHurt | null;
+  queuedAttacks?: number;
   attackProgress?: number;
   id: TypingBossId;
   name: string;
@@ -143,7 +166,9 @@ export interface TypingBossBoss {
 }
 
 export interface TypingBossProjectile {
+  animationStartedAt?: number;
   balanced?: boolean;
+  balancedRandomColors?: boolean;
   blockedAmount?: number;
   id: string;
   source: string;
@@ -173,7 +198,11 @@ export interface TypingBossLogEntry {
 }
 
 export interface TypingBossSessionSnapshot {
+  countdownEndsAt?: number | null;
+  clericHealingPool?: number;
+  clericHealingAllowance?: number;
   balanced?: boolean;
+  balancedRandomColors?: boolean;
   id: string;
   name: string;
   status: TypingBossStatus;

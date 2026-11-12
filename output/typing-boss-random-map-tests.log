@@ -1,0 +1,112 @@
+TAP version 13
+# Subtest: balanced random colors default on, can be disabled before Start and lock during combat
+ok 1 - balanced random colors default on, can be disabled before Start and lock during combat
+  ---
+  duration_ms: 2.8528
+  type: 'test'
+  ...
+# Subtest: random color map totals 100%, is stable per generated word and matches its advertised weights
+ok 2 - random color map totals 100%, is stable per generated word and matches its advertised weights
+  ---
+  duration_ms: 619.418
+  type: 'test'
+  ...
+# Subtest: random orange words still cash in Charge and random red words cash in saved crit
+ok 3 - random orange words still cash in Charge and random red words cash in saved crit
+  ---
+  duration_ms: 2.0813
+  type: 'test'
+  ...
+# Subtest: partial-word bank preview matches committed earnings without activating bonuses or mutating state
+ok 4 - partial-word bank preview matches committed earnings without activating bonuses or mutating state
+  ---
+  duration_ms: 2.6785
+  type: 'test'
+  ...
+# Subtest: balanced power per correct character is identical for short and long runs at fast or slow steady pace
+ok 5 - balanced power per correct character is identical for short and long runs at fast or slow steady pace
+  ---
+  duration_ms: 7.8146
+  type: 'test'
+  ...
+# Subtest: hesitation lowers earned power while incorrect letters reduce power once
+ok 6 - hesitation lowers earned power while incorrect letters reduce power once
+  ---
+  duration_ms: 0.6338
+  type: 'test'
+  ...
+# Subtest: every class conserves its 80/20 power allocation and defensive overflow becomes damage
+ok 7 - every class conserves its 80/20 power allocation and defensive overflow becomes damage
+  ---
+  duration_ms: 0.8454
+  type: 'test'
+  ...
+# Subtest: orange and red banks fund exactly 10% each across short, long, and extended attacks
+ok 8 - orange and red banks fund exactly 10% each across short, long, and extended attacks
+  ---
+  duration_ms: 86.7852
+  type: 'test'
+  ...
+# Subtest: crit appears every 134 correct characters and missed triggers wait for their next slot
+ok 9 - crit appears every 134 correct characters and missed triggers wait for their next slot
+  ---
+  duration_ms: 1.0477
+  type: 'test'
+  ...
+# Subtest: missed gold expires and returns at the next 150-character slot
+ok 10 - missed gold expires and returns at the next 150-character slot
+  ---
+  duration_ms: 1.6834
+  type: 'test'
+  ...
+# Subtest: host switch defaults off, validates and locks, and balanced actors share content
+ok 11 - host switch defaults off, validates and locks, and balanced actors share content
+  ---
+  duration_ms: 1.5145
+  type: 'test'
+  ...
+# Subtest: both Block banks scale by the attack target count, including single and group attacks
+ok 12 - both Block banks scale by the attack target count, including single and group attacks
+  ---
+  duration_ms: 5.3005
+  type: 'test'
+  ...
+# Subtest: successful dodge clears chance, prevents the whole hit, and preserves Block; failed rolls retain chance
+ok 13 - successful dodge clears chance, prevents the whole hit, and preserves Block; failed rolls retain chance
+  ---
+  duration_ms: 1.1276
+  type: 'test'
+  ...
+# Subtest: successful dodges spend 100 banked points, preserve overflow and Block, and never make chance exceed 100%
+ok 14 - successful dodges spend 100 banked points, preserve overflow and Block, and never make chance exceed 100%
+  ---
+  duration_ms: 2.5832
+  type: 'test'
+  ...
+# Subtest: support spends only the reserve and overheal returns to damage
+ok 15 - support spends only the reserve and overheal returns to damage
+  ---
+  duration_ms: 0.9928
+  type: 'test'
+  ...
+# Subtest: balanced batches validate actual key gaps atomically and remain retry-safe
+ok 16 - balanced batches validate actual key gaps atomically and remain retry-safe
+  ---
+  duration_ms: 2.1536
+  type: 'test'
+  ...
+# Subtest: balanced crit boosts current attack by its charged percentage
+ok 17 - balanced crit boosts current attack by its charged percentage
+  ---
+  duration_ms: 0.5109
+  type: 'test'
+  ...
+1..17
+# tests 17
+# suites 0
+# pass 17
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 911.1582

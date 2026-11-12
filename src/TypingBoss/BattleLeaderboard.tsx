@@ -10,7 +10,7 @@ export default function BattleLeaderboard({ entries }: { entries: TypingBossLead
   return <Box sx={{ mt: 2 }}>
     <Typography variant="h6" fontWeight={900}>Damage leaderboard</Typography>
     <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
-      Ranked by total damage dealt. Strongest attack means the highest attack power that landed, before shielding and remaining-HP limits.
+      Ranked by total damage dealt. Strongest attack means the highest attack power that landed, before blocking and remaining-HP limits.
     </Typography>
     <Stack spacing={1.5}>
       {entries.map(entry => {
@@ -28,18 +28,18 @@ export default function BattleLeaderboard({ entries }: { entries: TypingBossLead
               <span>Mean key gap: {num(attack.meanIntervalMs)} ms</span>
               <span>Timing variation: {num(attack.intervalStdDevMs)} ms</span>
               <span>Total multiplier: ×{num(attack.multiplier)}</span>
-              <span>Orange: +{percent(attack.orangeBonus)}</span>
+              <span>Orange: +{attack.balanced ? `${num(attack.orangePower || 0)} power` : percent(attack.orangeBonus)}</span>
               <span>Green: +{percent(attack.greenBonus)} ({attack.greenStacks} stacked)</span>
-              <span>Red: {percent(attack.criticalChance)} crit chance</span>
-              <span style={{ color: COMBAT_COLORS.shield }}>Blue shield ready at release: {percent(attack.blueShield)}</span>
-              <span>{attack.balanced ? `Skill strike: ${attack.critical ? "Yes" : "No"} (no extra damage)` : `Critical: ${attack.critical ? "Yes · ×2" : "No · ×1"}`}</span>
-              {attack.balanced && <><span>Earned power: {num(attack.earnedPower || 0)}</span><span>Support used: {num(attack.supportUsed || 0)}</span><span style={{ color: COMBAT_COLORS.shield }}>Guard earned: {num(attack.guardPower || 0)}</span></>}
+              <span>Red: {attack.balanced ? `+${percent(attack.criticalBonus || 0)} crit damage` : `${percent(attack.criticalChance)} crit chance`}</span>
+              <span style={{ color: COMBAT_COLORS.shield }}>Blue block ready at release: {percent(attack.blueShield)}</span>
+              <span>{attack.balanced ? `Critical: ${attack.critical ? "Yes · bank released" : "No"}` : `Critical: ${attack.critical ? "Yes · ×2" : "No · ×1"}`}</span>
+              {attack.balanced && <><span>Earned power: {num(attack.earnedPower || 0)}</span><span>Support used: {num(attack.supportUsed || 0)}</span><span style={{ color: COMBAT_COLORS.shield }}>Block earned: {num(attack.guardPower || 0)}</span></>}
               {!!attack.powerBonus && <span>Golden power: +{percent(attack.powerBonus)}</span>}
-              <span style={{ color: COMBAT_COLORS.shield }}>Shield blocked: {num(attack.blockedDamage)}</span>
+              <span style={{ color: COMBAT_COLORS.shield }}>Blocked: {num(attack.blockedDamage)}</span>
               <span>{attack.moveId === "strong" ? "Power attack" : "Weak attack"} · attack #{attack.attackNumber}</span>
             </Box>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 1 }}>
-              {attack.balanced ? `${attack.base} correct characters × ${num(attack.consistency)} quality ≈ ${num(attack.earnedPower || 0)} earned power, allocated between damage and class effects` : <>{attack.base} × {num(attack.consistency)} × (1 + {num(attack.orangeBonus)} + {num(attack.greenBonus)}) × {attack.critical ? 2 : 1}{attack.powerBonus ? ` × ${num(1 + attack.powerBonus)}` : ""} ≈ {num(attack.power)} power (rounded factors)</>}
+              {attack.balanced ? `${num(attack.earnedPower || 0)} base power − ${num((attack.supportUsed || 0) + (attack.guardPower || 0))} class/defense power + ${num(attack.orangePower || 0)} orange + ${num(attack.criticalPower || 0)} crit ≈ ${num(attack.power)} attack power` : <>{attack.base} × {num(attack.consistency)} × (1 + {num(attack.orangeBonus)} + {num(attack.greenBonus)}) × {attack.critical ? 2 : 1}{attack.powerBonus ? ` × ${num(1 + attack.powerBonus)}` : ""} ≈ {num(attack.power)} power (rounded factors)</>}
             </Typography>
           </> : <Typography sx={{ mt: 1, color: "text.secondary" }}>No attacks landed this battle.</Typography>}
         </Paper>;

@@ -1,0 +1,9 @@
+{
+  "sharedCritical": true,
+  "queuedWithoutProjectile": true,
+  "hurtFrames": 10,
+  "hurtDurationMs": 1200,
+  "launchAfterHurtMs": 5,
+  "delayedFlightMs": 700,
+  "resolvedAfterScheduledImpact": true
+}

@@ -1,5 +1,6 @@
 import { TypingBossTypingState } from "./types";
 export const WORDS: string[];
+export const BALANCED_COLOR_CHANCES: Record<string,number>;
 export const GRADE_OPTIONS: { grade: number; count: number }[];
 export function wordsForGrades(mask?: number, sentimentMask?: number): string[];
 export function attackProgress(seed: number, wordIndex: number, characters: number, gradeMask?: number, sentimentMask?: number): number;
@@ -13,8 +14,8 @@ export function typingAttackProgress(state: TypingBossTypingState, characters: n
 export function consistencyMultiplier(count: number, sum: number, squares: number): number;
 export function createTypingState(seed: number, ability?: TypingBossTypingState["ability"]): TypingBossTypingState;
 export function dodgeChance(state: TypingBossTypingState): number;
-export function effectiveDodgeChance(state: TypingBossTypingState): number;
+export function effectiveDodgeChance(state: Partial<TypingBossTypingState>): number;
 export function initializeBalanced(state: TypingBossTypingState): TypingBossTypingState;
 export function proportionalPlayerPoint(index: number, rosterSize: number): { x: number; y: number };
 export function finishWord(state: TypingBossTypingState, text: string, count: number, sum: number, squares: number, transitionMs?: number, gaps?: number[]): { correct: boolean; color: string | null };
-export function releaseAttack(state: TypingBossTypingState, random?: () => number): { base: number; power: number; multiplier: number; critical: boolean; consistency: number; moveId: string; orangeBonus: number; greenBonus: number; greenStacks: number; criticalChance: number; blueShield: number; meanIntervalMs: number; intervalStdDevMs: number; gold?: number; powerBonus?: number; balanced?: boolean; earnedPower?: number; supportPower?: number; guardPower?: number };
+export function releaseAttack(state: TypingBossTypingState, random?: () => number): { base: number; power: number; multiplier: number; critical: boolean; consistency: number; moveId: string; orangeBonus: number; greenBonus: number; greenStacks: number; criticalChance: number; blueShield: number; meanIntervalMs: number; intervalStdDevMs: number; gold?: number; powerBonus?: number; balanced?: boolean; earnedPower?: number; supportPower?: number; guardPower?: number; orangePower?: number; criticalPower?: number; criticalBonus?: number };

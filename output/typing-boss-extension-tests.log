@@ -1,0 +1,27 @@
+PASS src/TypingBoss/ContinuousBattle.test.tsx (9.257 s)
+  √ barbarian gold reveals two extra words on the last letter and keeps them through the separator and pending server response (234 ms)
+  √ dragon gold reveals two extra words on the last letter and keeps them through the separator and pending server response (126 ms)
+  √ a missed extension trigger never adds preview words (66 ms)
+  √ red trigger immediately moves charge into the profile badge; new charge builds separately and firing clears ready effects (465 ms)
+  √ a missed red trigger keeps the charge and never shows ready crit effects (74 ms)
+  √ portrait letters and shield react locally, and completed words show their earned bonus (99 ms)
+  √ a perfect special charges the portrait immediately and the aura clears on attack release (412 ms)
+  √ an incorrect special word never charges the aura or announces a special bonus (82 ms)
+  √ balanced client sends verifiable key gaps and shows readiness instead of a dodge roll (334 ms)
+  √ dragon and player profile attack text grow at a two-to-one rate (43 ms)
+  √ a monk's shortened row fires on its final letter and returns to ten without gold (191 ms)
+  √ errors remain after backspace and an older backend still receives one ten-word batch (202 ms)
+  √ blue defense submits immediately, and input continues during the pending request (109 ms)
+  √ inactive typing sends nothing (27 ms)
+  √ network patches preserve unchanged players and do not replay old projectiles (1 ms)
+  √ a delayed HTTP snapshot cannot roll back a newer combat update (1 ms)
+  √ all ten words stay in one scrolling row, while each character builds damage and local charge (42 ms)
+  √ native key timestamps drive the measured mean instead of handler execution time (261 ms)
+  √ the last letter waits for a space, and that space adds damage and completes the word (40 ms)
+  √ a long rest between attacks is excluded from the next attack's timing (487 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       20 passed, 20 total
+Snapshots:   0 total
+Time:        12.832 s
+Ran all test suites matching /ContinuousBattle.test/i.

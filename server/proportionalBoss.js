@@ -1,5 +1,7 @@
 const crypto = require("node:crypto");
-const { createTypingState, typingWord, attackWordLimit, requiresWordSpace, finishWord, releaseAttack, typingAttackProgress, wordsForGrades, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced } = require("../src/TypingBoss/proportionalRules");
+const { requestDragonAttack, recordDragonHurt, clearDragonCombat } = require("./dragonCombat");
+const { DRAGON_FLAME, dragonAttackDuration } = require("../src/TypingBoss/dragonHurtRules");
+const { createTypingState, typingWord, attackWordLimit, requiresWordSpace, finishWord, releaseAttack, typingAttackProgress, wordsForGrades, effectiveDodgeChance, dodgeChance, proportionalPlayerPoint, initializeBalanced } = require("../src/TypingBoss/proportionalRules");
 
 const round = value => Math.round(value * 100) / 100;
 const newState = ability => createTypingState(crypto.randomBytes(4).readUInt32LE(), ability);
@@ -64,12 +66,38 @@ function resolveGoldSupport(session, actor, power, now) {
   return amount;
 }
 
-function launchAttack(session, actor, attack, { schedule, broadcast, random = Math.random }) {
+function launchAttack(session, actor, attack, callbacks) {
+  if(session.countdownEndsAt>Date.now())return false;
+  if (actor === session.typingHost) {
+    return requestDragonAttack(session, () => launchAttackNow(session, actor, { ...attack }, callbacks), callbacks);
+  }
+  return launchAttackNow(session, actor, attack, callbacks);
+}
+
+function launchAttackNow(session, actor, attack, { schedule, broadcast, random = Math.random }) {
   const now = Date.now();
   const host = actor === session.typingHost;
-  if (attack.balanced && !host && attack.supportPower > 0) {
+  if(attack.balanced && !host && actor.typing.ability==='cleric') {
+    session.clericHealingPool=(session.clericHealingPool || 0)+(attack.healingDeposit || 0);
+    if(attack.gold && attack.power>0) {
+      const available=Math.min(session.clericHealingPool,session.clericHealingAllowance || 0,attack.power);
+      const wounded=[...session.players.values()].filter(p=>p.hp>0 && p.hp<p.maxHp);
+      if(available>0 && wounded.length) {
+        const target=wounded[Math.min(wounded.length-1,Math.floor(random()*wounded.length))];
+        const amount=Math.min(available,target.maxHp-target.hp);
+        target.hp+=amount;actor.totalHealing=(actor.totalHealing || 0)+amount;
+        session.clericHealingPool-=amount;session.clericHealingAllowance-=amount;
+        session.projectiles.push({id:crypto.randomBytes(8).toString('hex'),source:actor.code,sourceName:actor.name,
+          target:target.code,targetName:target.name,kind:'heal',moveId:'special',moveLabel:'Prayer Heal',
+          startedAt:now,impactAt:now,resolvedAt:now,willHit:true,amount:round(amount)});
+      }
+    }
+  }
+  if (attack.balanced && !host && actor.typing.ability!=='cleric' && attack.supportPower > 0) {
     const used = resolveGoldSupport(session, actor, attack.supportPower, now) || 0;
-    attack = { ...attack, power: attack.power + attack.supportPower - used, supportUsed: used };
+    const returned = attack.supportPower - used;
+    attack = { ...attack, power: attack.power + returned * (1 + (attack.criticalBonus || 0)),
+      criticalPower: (attack.criticalPower || 0) + returned * (attack.criticalBonus || 0), supportUsed: used };
     attack.multiplier = attack.base ? attack.power / attack.base : 1;
   } else if (!attack.balanced && !host && attack.gold && attack.power > 0 && resolveGoldSupport(session, actor, attack.power, now)) return;
   if (attack.balanced && attack.power <= 0) return;
@@ -77,6 +105,9 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
   const bossAttack = host ? chooseBossAttack(session, random) : null;
   const targets = bossAttack ? bossAttack.targets : [session.boss];
   if (!targets.length) return;
+  const breath = bossAttack?.kind === "flamethrower";
+  const windup = breath ? DRAGON_FLAME.windup : 0;
+  const travel = breath ? DRAGON_FLAME.flight : 700;
   const share = attack.power / targets.length;
   const volley = targets.map(target => ({
     id: crypto.randomBytes(8).toString("hex"),
@@ -86,7 +117,8 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
     moveLabel: bossAttack ? BOSS_ATTACK_LABELS[bossAttack.kind] : attack.multiplier >= 2 ? "Power attack" : "Quick attack",
     ...(bossAttack ? { bossAttack: bossAttack.kind } : {}),
     ...(attack.balanced ? { balanced: true } : {}),
-    multiplier: round(attack.multiplier), startedAt: now, impactAt: now + 700,
+    multiplier: round(attack.multiplier), startedAt: now + windup, impactAt: now + windup + travel,
+    ...(breath ? { animationStartedAt: now } : {}),
     resolvedAt: null, amount: share,
     willHit: true, ...(attack.critical ? { critical: true } : {}),
   }));
@@ -99,22 +131,20 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
       let damage = target.hp > 0 ? projectile.amount : 0;
       const defense = host ? target.typing : session.typingHost;
       if (damage > 0) {
+        const chance = effectiveDodgeChance(defense);
+        if (defense.dodgeExtraRolls) defense.dodgeExtraRolls = 0;
+        if (chance > 0 && random() < chance) {
+          defense.dodgeBank = Math.max(0, dodgeChance(defense) - 100);
+          defense.dodgeSamples = [];
+          Object.assign(projectile, { willHit:false, evadeType:"dodge", amount:0, resolvedAt:Date.now() });
+          continue;
+        }
         if (session.balanced) {
-          const blocked = Math.min(damage, defense.balancedGuard || 0);
-          defense.balancedGuard = Math.max(0, (defense.balancedGuard || 0) - blocked);
+          const divisor = host ? Math.max(1, targets.length) : 1;
+          const blocked = Math.min(damage, (defense.balancedGuard || 0) / divisor);
+          defense.balancedGuard = Math.max(0, (defense.balancedGuard || 0) - blocked * divisor);
           damage -= blocked;
           if (blocked) projectile.blockedAmount = round(blocked);
-          if (damage === 0) {
-            Object.assign(projectile, { willHit:false, evadeType:"dodge", amount:0, resolvedAt:Date.now() });
-            continue;
-          }
-        } else {
-          const chance = effectiveDodgeChance(defense);
-          if (defense.dodgeExtraRolls) defense.dodgeExtraRolls = 0;
-          if (chance > 0 && random() < chance) {
-          Object.assign(projectile, { willHit: false, evadeType: "dodge", amount: 0, resolvedAt: Date.now() });
-          continue;
-          }
         }
       }
       if (target.hp > 0) {
@@ -123,9 +153,10 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
         defense.shield = 0;
         if (host) {
           if (incoming > 0 && defense.paladinShield) {
-            const absorbed = Math.min(damage, defense.paladinShield);
-            damage = Math.max(0, damage - defense.paladinShield);
-            defense.paladinShield = session.balanced ? Math.max(0, defense.paladinShield - absorbed) : 0;
+            const divisor = session.balanced ? Math.max(1, targets.length) : 1;
+            const absorbed = Math.min(damage, defense.paladinShield / divisor);
+            damage -= absorbed;
+            defense.paladinShield = session.balanced ? Math.max(0, defense.paladinShield - absorbed * divisor) : 0;
           }
           target.bossHitsTaken += 1;
         }
@@ -136,6 +167,8 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
       target.hp = Math.max(0, target.hp - actual);
       projectile.amount = round(actual);
       projectile.resolvedAt = Date.now();
+      if(host && session.balanced) session.clericHealingAllowance=(session.clericHealingAllowance || 0)+actual*.5;
+      if (!host) recordDragonHurt(session, projectile);
       defense.totalTaken += actual;
       if (!host) actor.totalDamage += actual;
       if (!host && (!actor.strongestAttack || attack.power > actor.strongestAttack.power ||
@@ -147,12 +180,14 @@ function launchAttack(session, actor, attack, { schedule, broadcast, random = Ma
     }
     if (session.boss.hp <= 0) session.status = "victory";
     else if (![...session.players.values()].some(player => player.hp > 0)) session.status = "defeat";
-    if (session.status !== "active") session.closedAt = Date.now();
+    if (session.status !== "active") { session.closedAt = Date.now(); clearDragonCombat(session); }
     broadcast(session);
-  }, 700);
+  }, windup + travel);
+  return host ? { duration: dragonAttackDuration(volley[0]), kind: bossAttack.kind, id: volley[0].id } : 0;
 }
 
 function submitWords(session, auth, records, callbacks) {
+  if(session.countdownEndsAt>Date.now())throw new Error("The battle countdown is still running.");
   if (session.status !== "active") throw new Error("The fight is not active.");
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
   if (!actor || (auth.role === "player" && actor.hp <= 0)) throw new Error("You have been knocked out.");
@@ -207,6 +242,10 @@ function submitWords(session, auth, records, callbacks) {
   }
   for (const [, text, count, sum, squares, transitionMs, gaps] of fresh) {
     const result = finishWord(state, text, count, sum, squares, transitionMs === null ? undefined : transitionMs, gaps);
+    if(auth.role==='player' && state.balanced && state.ability==='cleric' && state.balancedHealingDeposit>0) {
+      session.clericHealingPool=(session.clericHealingPool || 0)+state.balancedHealingDeposit;
+      state.balancedHealingDeposit=0;
+    }
     if (auth.role === "player") {
       actor.totalKeystrokes += text.length;
       actor.correctKeystrokes += result.correct ? text.length : 0;
@@ -218,6 +257,7 @@ function submitWords(session, auth, records, callbacks) {
       if (auth.role === "player") actor.turnsTaken += 1;
       launchAttack(session, actor, attack, callbacks);
       (auth.role === "host" ? session.boss : actor).attackProgress = 0;
+      if (auth.role === "host") session.boss.attackCharacters = 0;
     }
   }
   if (fresh.length) callbacks.broadcast(session);
@@ -225,6 +265,7 @@ function submitWords(session, auth, records, callbacks) {
 }
 
 function updateProgress(session, auth, wordIndex, characters, broadcast) {
+  if(session.countdownEndsAt>Date.now())return;
   if (session.mode !== "proportional" || session.status !== "active") return;
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
   const state = auth.role === "host" ? actor : actor?.typing;
@@ -240,13 +281,20 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
   actor.progressCursor = { wordIndex, characters };
   const target = auth.role === "host" ? session.boss : actor;
   target.attackProgress = Math.round(typingAttackProgress(state, characters, wordIndex));
+  if (auth.role === "host") {
+    // Cosmetic charge includes unsubmitted words, with exactly the same cursor
+    // bounds as the existing progress bar. It cannot award combat power.
+    let charge = state.characters + characters;
+    for (let index = state.nextWord; index < wordIndex; index++) charge += typingWord(state, index).text.length + 1;
+    target.attackCharacters = charge;
+  }
   broadcast(session);
 }
 
 // Nested diffs preserve unchanged player objects on the client and avoid replaying logs/FX.
 function diffSnapshot(previous, current) {
   const delta = {};
-  for (const key of ["status", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "leaderboard"]) {
+  for (const key of ["status", "countdownEndsAt", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "balancedRandomColors", "clericHealingPool", "clericHealingAllowance", "leaderboard"]) {
     if (JSON.stringify(previous[key]) !== JSON.stringify(current[key])) delta[key] = current[key];
   }
   if (current.typing) {
@@ -297,10 +345,13 @@ function applyHpMultiplier(session, multiplier = 1) {
   session.boss.hp = session.boss.maxHp = 100 * multiplier * session.players.size;
 }
 
-function applyBalanced(session, value = false) {
+function applyBalanced(session, value = false, randomColors = true) {
   if (session.status !== "setup") throw new Error("Balanced rules lock when the battle starts.");
   if (typeof value !== "boolean") throw new Error("Balanced must be true or false.");
+  if (typeof randomColors !== "boolean") throw new Error("Random colors must be true or false.");
   session.balanced = value;
+  session.clericHealingPool=0;session.clericHealingAllowance=0;
+  session.balancedRandomColors = value && randomColors;
   const actors = [session.typingHost, ...[...session.players.values()].map(player => player.typing)];
   if (!value) {
     for (const state of actors) state.balanced = false;
@@ -311,6 +362,7 @@ function applyBalanced(session, value = false) {
     const player = index ? [...session.players.values()][index-1] : null;
     Object.assign(state, createTypingState(seed, player ? player.classId || state.ability : "dragon"));
     initializeBalanced(state);
+    state.balancedRandomColors = randomColors;
     state.balancedGuardMax = player ? player.maxHp : session.boss.maxHp;
   });
   session.bossAttackIndex = 0;

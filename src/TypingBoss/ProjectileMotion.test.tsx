@@ -20,9 +20,9 @@ test.each([
   ["incoming damage",{kind:"boss",source:"boss",target:"me"},"−25","rgb(248, 113, 113)"],
   ["healing",{kind:"heal",target:"me"},"HEAL +25","rgb(250, 204, 21)"],
   ["revival",{kind:"resurrect",target:"me"},"REVIVE +25","rgb(250, 204, 21)"],
-  ["shield",{kind:"buff",moveId:"goldShield",target:"me"},"SHIELD +25","rgb(96, 165, 250)"],
+  ["shield",{kind:"buff",moveId:"goldShield",target:"me"},"BLOCK +25","rgb(96, 165, 250)"],
   ["dodge",{result:"evade",evadeType:"dodge",amount:0},"DODGED!","rgb(74, 222, 128)"],
-  ["fully shielded hit",{amount:0,blockedAmount:25},"SHIELD 25","rgb(96, 165, 250)"],
+  ["fully shielded hit",{amount:0,blockedAmount:25},"BLOCK 25","rgb(96, 165, 250)"],
 ])("%s uses the requested combat color", (_name: string, values: Partial<TypingBossProjectile>, label: string, color: string) => {
   display(shot(values));
   expect(screen.getByText(label).style.color).toBe(color);
@@ -34,6 +34,15 @@ test("crit damage stays red and keeps its impact flash and large type", () => {
   expect(screen.getByText(/−25/).className).toContain("boss-impact-crit");
   expect(screen.getByText("CRIT!")).toBeTruthy();
   expect(screen.getByTestId("critical-impact-flash")).toBeTruthy();
+});
+
+test("dragon fire breath warns the target and uses a distinct stream; blocks get a blue impact", () => {
+  const pending=shot({kind:"boss",source:"boss",target:"me",bossAttack:"flamethrower",startedAt:Date.now()-100,impactAt:Date.now()+600,resolvedAt:null,result:"pending"});
+  const {rerender}=display(pending);
+  expect(screen.getByTestId("dragon-breath-stream")).toBeTruthy();
+  rerender(<ProjectileMotion projectile={{...pending,resolvedAt:Date.now(),result:"hit",amount:0,blockedAmount:25}} from={point} to={point} art={null} serverOffset={0} />);
+  expect(screen.queryByTestId("dragon-breath-stream")).toBeNull();
+  expect(screen.getByTestId("dragon-player-impact").className).toContain("dragon-impact-blocked");
 });
 
 test("a partial shield shows red damage and a separate blue blocked amount", () => {

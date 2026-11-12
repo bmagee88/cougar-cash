@@ -1,0 +1,8 @@
+{
+  "flameFrames": 20,
+  "protectedDurationMs": 2000,
+  "inhaleMs": 600,
+  "impactMs": 1700,
+  "queuedWithoutProjectile": true,
+  "delayedNextAttackMs": 11
+}

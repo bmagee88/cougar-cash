@@ -1,0 +1,24 @@
+PASS src/TypingBoss/ContinuousBattle.test.tsx (10.113 s)
+  √ red trigger immediately moves charge into the profile badge; new charge builds separately and firing clears ready effects (1188 ms)
+  √ a missed red trigger keeps the charge and never shows ready crit effects (127 ms)
+  √ portrait letters and shield react locally, and completed words show their earned bonus (150 ms)
+  √ a perfect special charges the portrait immediately and the aura clears on attack release (527 ms)
+  √ an incorrect special word never charges the aura or announces a special bonus (105 ms)
+  √ balanced client sends verifiable key gaps and shows readiness instead of a dodge roll (449 ms)
+  √ dragon and player profile attack text grow at a two-to-one rate (60 ms)
+  √ a monk's shortened row fires on its final letter and returns to ten without gold (223 ms)
+  √ errors remain after backspace and an older backend still receives one ten-word batch (264 ms)
+  √ blue defense submits immediately, and input continues during the pending request (126 ms)
+  √ inactive typing sends nothing (31 ms)
+  √ network patches preserve unchanged players and do not replay old projectiles (1 ms)
+  √ a delayed HTTP snapshot cannot roll back a newer combat update
+  √ all ten words stay in one scrolling row, while each character builds damage and local charge (65 ms)
+  √ native key timestamps drive the measured mean instead of handler execution time (312 ms)
+  √ the last letter waits for a space, and that space adds damage and completes the word (52 ms)
+  √ a long rest between attacks is excluded from the next attack's timing (621 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        13.772 s
+Ran all test suites matching /ContinuousBattle.test/i.

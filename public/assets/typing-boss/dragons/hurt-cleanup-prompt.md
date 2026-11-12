@@ -1,0 +1,5 @@
+# Final Whelp transparency cleanup
+
+Generated with the built-in imagegen edit tool. Input: ember-whelp-hurt.png. The final cleaned output is retained at the same workspace asset path and repacked into ember-whelp-hurt.webp.
+
+Use case: background-extraction. Edit ONLY the background transparency of this 5 by 4 pixel-art baby dragon hurt sprite sheet. Preserve all twenty existing poses, exact cell layout, frame spacing, anatomy, colors, sharp pixel edges, and consistent character scale. Remove every trace of the beige/gray speckled noisy background between and around the dragons. Every pixel outside each actual dragon silhouette must have exactly ZERO alpha. No background color, haze, tint, shadow, glow, checkerboard, or semi-transparent noise. Keep soft alpha only at the actual silhouette edge. Do not redraw the dragons, rearrange the frames, add text, or change the canvas layout. The output must be a genuinely transparent PNG game asset that composites cleanly over a dark navy background.

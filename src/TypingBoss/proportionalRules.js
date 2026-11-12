@@ -5,6 +5,7 @@ const WORDS = Object.keys(wordsByLength)
   .filter(key => !isNaN(Number(key)))
   .flatMap(key => wordsByLength[key]);
 const COLORS = ["blue", "orange", "red", "green"];
+const BALANCED_COLOR_CHANCES = {white:40,orange:20,blue:18,green:15,red:4,gold:3};
 const ENTRIES = Object.keys(entriesByLength).filter(key => !isNaN(Number(key))).flatMap(key => entriesByLength[key]);
 const GRADE_OPTIONS = Array.from({ length: 13 }, (_, grade) => ({ grade,
   count: ENTRIES.filter(entry => entry.gradeLevel === grade).length }));
@@ -47,6 +48,15 @@ function wordAt(seed, index, gradeMask, sentimentMask, goldEnabled = false) {
 
 function typingWord(state, index = state.nextWord) {
   const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask, Boolean(state.ability));
+  if(state.balanced && state.balancedRandomColors) {
+    const roll=randomAt(state.seed,index,42)*100;
+    let cumulative=0,color=null;
+    for(const [name,chance] of Object.entries(BALANCED_COLOR_CHANCES)) {
+      cumulative+=chance;
+      if(roll<cumulative){color=name==='white'?null:name;break;}
+    }
+    return {...word,color};
+  }
   return state.balanced ? { ...word, color: index === state.nextWord ? balancedWordColor(state) : null } : word;
 }
 
@@ -88,11 +98,10 @@ function typingAttackProgress(state, characters, cursor = state.nextWord) {
 
 // The server and both views use the same formation, including knocked-out slots.
 function proportionalPlayerPoint(index, rosterSize) {
-  const rows = Math.max(1, Math.ceil(rosterSize / 4));
-  const depth = rows === 1 ? 0 : Math.floor(index / 4) / (rows - 1);
-  // Four per rank, with each lower rank stepping left toward the foreground.
-  // Keep the full 30-player formation on the platform and clear of the dragon.
-  return { x: 18 + (index % 4) * 12 - depth * 8, y: 55 + depth * 27 + (index % 4) * 0.5 };
+  const rank=Math.floor(index/4),slot=index%4;
+  // Fill the four-person diagonal nearest the dragon, then step each new rank
+  // left. Fixed slots keep existing players still when the roster grows.
+  return { x:54-slot*2-rank*5.3, y:56+slot*8+rank*.4 };
 }
 
 function createTypingState(seed, ability) {
@@ -104,28 +113,35 @@ function createTypingState(seed, ability) {
 }
 
 function dodgeChance(state) {
+  if (Number.isFinite(state.dodgeBank)) return Math.max(0, state.dodgeBank);
   const samples = state.dodgeSamples;
   return samples?.length ? Math.round(samples.reduce((total, score) => total + score, 0) / samples.length) : 0;
 }
 
 function effectiveDodgeChance(state) {
-  return 1 - (1 - dodgeChance(state) / 100) ** (1 + (state.dodgeExtraRolls || 0));
+  return 1 - (1 - Math.min(100,dodgeChance(state)) / 100) ** (1 + (state.dodgeExtraRolls || 0));
 }
 
 function finishWord(state, text, count, sum, squares, transitionMs, gaps) {
   const word = typingWord(state);
   const correct = text === word.text + (requiresWordSpace(state, text) ? " " : "");
+  const prayerWord=state.balanced && state.ability==='cleric' && word.color==='orange';
+  const errors = [...text].filter((letter,index)=>letter !== (word.text + " ")[index]).length;
+  state.attackErrors = (state.attackErrors || 0) + (prayerWord?0:errors);
   if (state.balanced) recordBalancedWord(state, text, word.text + " ", gaps || [], correct, word.color);
-  if (!state.balanced && state.dodgeSamples && state.wordsInAttack !== 0 && count > 1 && Number.isFinite(transitionMs)) {
+  if (state.dodgeSamples && state.wordsInAttack !== 0 && count > 1 && Number.isFinite(transitionMs)) {
     // Compare Space → first character with the rest of that word's key gaps.
     const pace = Math.max(40, (sum - transitionMs) / (count - 1));
     const ratio = transitionMs / pace;
     const score = Math.round(25 * Math.max(0, Math.min(1, (2.5 - ratio) / 1.25)));
+    // Bank up to one point per proficient transition, without a storage cap. A slower
+    // transition earns less without taking away previously earned dodge.
+    state.dodgeBank = Math.round((dodgeChance(state) + score / 25) * 100) / 100;
     state.dodgeSamples = [...state.dodgeSamples.slice(-4), score];
   }
   state.nextWord += 1;
   state.wordsInAttack += 1;
-  state.characters += [...text].reduce((total, letter, index) => total + (letter === (word.text + " ")[index] ? 1 : 0), 0);
+  if(!prayerWord)state.characters += [...text].reduce((total, letter, index) => total + (letter === (word.text + " ")[index] ? 1 : 0), 0);
   state.totalCharacters += text.length;
   state.intervalCount += count;
   state.intervalSum += sum;
@@ -152,14 +168,15 @@ function releaseAttack(state, random = Math.random) {
   const critical = random() < state.red;
   const gold = state.gold || 0;
   const multiplier = consistency * (1 + state.orange + state.growth) * (critical ? 2 : 1);
-  const attack = { base: state.characters, power: state.characters * multiplier,
+  const base = Math.max(0,state.characters - 2 * (state.attackErrors || 0));
+  const attack = { base, power: base * multiplier,
     orangeBonus: state.orange, greenBonus: state.growth, greenStacks: state.green, criticalChance: state.red,
     blueShield: state.shield,
     meanIntervalMs: state.intervalCount ? state.intervalSum / state.intervalCount : 0,
     intervalStdDevMs: state.intervalCount ? Math.sqrt(Math.max(0, state.intervalSquares / state.intervalCount - (state.intervalSum / state.intervalCount) ** 2)) : 0,
     multiplier, critical, consistency, moveId: multiplier >= 2 ? "strong" : "weak",
     ...(gold > 0 ? { gold } : {}) };
-  Object.assign(state, { wordsInAttack: 0, characters: 0, intervalCount: 0,
+  Object.assign(state, { wordsInAttack: 0, characters: 0, attackErrors: 0, intervalCount: 0,
     intervalSum: 0, intervalSquares: 0, orange: 0, red: 0, green: 0, growth: 0, consistency });
   if (state.ability) {
     state.gold = 0;
@@ -170,4 +187,4 @@ function releaseAttack(state, random = Math.random) {
   return attack;
 }
 
-module.exports = { WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, typingWord, attackWordLimit, isLastAttackWord, requiresWordSpace, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress, typingAttackProgress, dodgeChance, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced };
+module.exports = { BALANCED_COLOR_CHANCES, WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, typingWord, attackWordLimit, isLastAttackWord, requiresWordSpace, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress, typingAttackProgress, dodgeChance, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced };

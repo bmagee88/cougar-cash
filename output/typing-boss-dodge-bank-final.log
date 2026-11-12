@@ -1,0 +1,256 @@
+TAP version 13
+# Subtest: gold words leave existing colors intact and require an exact word
+ok 1 - gold words leave existing colors intact and require an exact word
+  ---
+  duration_ms: 9.6934
+  type: 'test'
+  ...
+# Subtest: barbarian and dragon gold have no damage multiplier or carryover
+ok 2 - barbarian and dragon gold have no damage multiplier or carryover
+  ---
+  duration_ms: 0.7489
+  type: 'test'
+  ...
+# Subtest: a perfect final gold extends the current run and requires its separator
+ok 3 - a perfect final gold extends the current run and requires its separator
+  ---
+  duration_ms: 4.3963
+  type: 'test'
+  ...
+# Subtest: monk attack size rounds upward and resets, or renews from a shortened attack
+ok 4 - monk attack size rounds upward and resets, or renews from a shortened attack
+  ---
+  duration_ms: 0.4058
+  type: 'test'
+  ...
+# Subtest: monk batch validation follows gold into two consecutive five-word attacks
+ok 5 - monk batch validation follows gold into two consecutive five-word attacks
+  ---
+  duration_ms: 2.3854
+  type: 'test'
+  ...
+# Subtest: gold support targets living wounded players, knocked-out players, and unshielded allies respectively
+ok 6 - gold support targets living wounded players, knocked-out players, and unshielded allies respectively
+  ---
+  duration_ms: 3.3055
+  type: 'test'
+  ...
+# Subtest: a full-health cleric heals the lowest-HP living ally in randomized and balanced battles
+ok 7 - a full-health cleric heals the lowest-HP living ally in randomized and balanced battles
+  ---
+  duration_ms: 0.8232
+  type: 'test'
+  ...
+# Subtest: shield feedback reports the absorbed amount separately from damage
+ok 8 - shield feedback reports the absorbed amount separately from damage
+  ---
+  duration_ms: 0.4136
+  type: 'test'
+  ...
+# Subtest: rogue stacks independent dodge rolls for one incoming attack
+ok 9 - rogue stacks independent dodge rolls for one incoming attack
+  ---
+  duration_ms: 1.5167
+  type: 'test'
+  ...
+# Subtest: dodge banks proficiency gains at either speed without losing progress to slow transitions
+ok 10 - dodge banks proficiency gains at either speed without losing progress to slow transitions
+  ---
+  duration_ms: 1.2353
+  type: 'test'
+  ...
+# Subtest: transition timing is validated against the word's other gaps, and retries don't add samples
+ok 11 - transition timing is validated against the word's other gaps, and retries don't add samples
+  ---
+  duration_ms: 2.3096
+  type: 'test'
+  ...
+# Subtest: player and dragon dodges avoid damage without consuming a shield
+ok 12 - player and dragon dodges avoid damage without consuming a shield
+  ---
+  duration_ms: 1.1005
+  type: 'test'
+  ...
+# Subtest: the tenth word applies its color before release, including immediate defense
+ok 13 - the tenth word applies its color before release, including immediate defense
+  ---
+  duration_ms: 1.1106
+  type: 'test'
+  ...
+# Subtest: word generation uses the exact Home Row Run pool, deterministically, with 30% colors
+ok 14 - word generation uses the exact Home Row Run pool, deterministically, with 30% colors
+  ---
+  duration_ms: 28.3805
+  type: 'test'
+  ...
+# Subtest: consistency depends on timing variation, with 1.5x and 0.5x limits
+ok 15 - consistency depends on timing variation, with 1.5x and 0.5x limits
+  ---
+  duration_ms: 0.1677
+  type: 'test'
+  ...
+# Subtest: fast key rolls receive jitter tolerance without penalizing typing speed
+ok 16 - fast key rolls receive jitter tolerance without penalizing typing speed
+  ---
+  duration_ms: 0.0891
+  type: 'test'
+  ...
+# Subtest: character progress covers exactly ten words and wraps at release
+ok 17 - character progress covers exactly ten words and wraps at release
+  ---
+  duration_ms: 0.2434
+  type: 'test'
+  ...
+# Subtest: progress is bounded, throttled, and cosmetic; it cannot award damage
+ok 18 - progress is bounded, throttled, and cosmetic; it cannot award damage
+  ---
+  duration_ms: 0.3387
+  type: 'test'
+  ...
+# Subtest: required spaces are timed and a reconnect can omit one unknown interval
+ok 19 - required spaces are timed and a reconnect can omit one unknown interval
+  ---
+  duration_ms: 0.1569
+  type: 'test'
+  ...
+# Subtest: colored words require zero errors, and only matching characters build attack damage
+ok 20 - colored words require zero errors, and only matching characters build attack damage
+  ---
+  duration_ms: 0.1791
+  type: 'test'
+  ...
+# Subtest: green stacks per subsequent correct word, including other colored words
+ok 21 - green stacks per subsequent correct word, including other colored words
+  ---
+  duration_ms: 0.1209
+  type: 'test'
+  ...
+# Subtest: attack bonuses reset on release, while shields persist until the next hit
+ok 22 - attack bonuses reset on release, while shields persist until the next hit
+  ---
+  duration_ms: 0.1495
+  type: 'test'
+  ...
+# Subtest: power animation uses the actual multiplier, including critical hits below 2x
+ok 23 - power animation uses the actual multiplier, including critical hits below 2x
+  ---
+  duration_ms: 0.1242
+  type: 'test'
+  ...
+# Subtest: boss attack roll selects the advertised pattern and splits all power among its targets
+ok 24 - boss attack roll selects the advertised pattern and splits all power among its targets
+  ---
+  duration_ms: 1.0476
+  type: 'test'
+  ...
+# Subtest: tail whip selects nearby formation slots and skips defeated players
+ok 25 - tail whip selects nearby formation slots and skips defeated players
+  ---
+  duration_ms: 0.2514
+  type: 'test'
+  ...
+# Subtest: battle formation keeps up to 30 players on the left platform clear of the dragon and foreground
+ok 26 - battle formation keeps up to 30 players on the left platform clear of the dragon and foreground
+  ---
+  duration_ms: 0.3039
+  type: 'test'
+  ...
+# Subtest: flamethrower shields apply on impact and consume once
+ok 27 - flamethrower shields apply on impact and consume once
+  ---
+  duration_ms: 0.9867
+  type: 'test'
+  ...
+# Subtest: flamethrower divides fractional damage equally among survivors
+ok 28 - flamethrower divides fractional damage equally among survivors
+  ---
+  duration_ms: 0.4733
+  type: 'test'
+  ...
+# Subtest: host can earn blue defense, and damage credit is capped at remaining HP
+ok 29 - host can earn blue defense, and damage credit is capped at remaining HP
+  ---
+  duration_ms: 0.3044
+  type: 'test'
+  ...
+# Subtest: attacks release exactly every ten words, and retried batches do not duplicate attacks
+ok 30 - attacks release exactly every ten words, and retried batches do not duplicate attacks
+  ---
+  duration_ms: 0.328
+  type: 'test'
+  ...
+# Subtest: bad batches fail atomically; invalid timings, gaps, and old endpoints cannot award damage
+ok 31 - bad batches fail atomically; invalid timings, gaps, and old endpoints cannot award damage
+  ---
+  duration_ms: 0.2744
+  type: 'test'
+  ...
+# Subtest: patches contain changed players and events without resending static roster data
+ok 32 - patches contain changed players and events without resending static roster data
+  ---
+  duration_ms: 0.4659
+  type: 'test'
+  ...
+# Subtest: HP multiplier scales both sides equally and rejects invalid or late changes
+ok 33 - HP multiplier scales both sides equally and rejects invalid or late changes
+  ---
+  duration_ms: 0.3211
+  type: 'test'
+  ...
+# Subtest: strongest landed attack preserves the bonus breakdown, shield reduction, and overkill limits
+ok 34 - strongest landed attack preserves the bonus breakdown, shield reduction, and overkill limits
+  ---
+  duration_ms: 0.3523
+  type: 'test'
+  ...
+# Subtest: a weaker attack cannot replace the strongest attack, and canceled shots do not count
+ok 35 - a weaker attack cannot replace the strongest attack, and canceled shots do not count
+  ---
+  duration_ms: 0.1943
+  type: 'test'
+  ...
+# Subtest: end-of-game leaderboard is included in a patch without resending the live roster
+ok 36 - end-of-game leaderboard is included in a patch without resending the live roster
+  ---
+  duration_ms: 0.1339
+  type: 'test'
+  ...
+# Subtest: 200ms tolerance gives the requested fast sequence full rhythm and penalizes long pauses
+ok 37 - 200ms tolerance gives the requested fast sequence full rhythm and penalizes long pauses
+  ---
+  duration_ms: 0.1439
+  type: 'test'
+  ...
+# Subtest: word submissions without the required trailing space are rejected
+ok 38 - word submissions without the required trailing space are rejected
+  ---
+  duration_ms: 0.2245
+  type: 'test'
+  ...
+# Subtest: selected grades filter every generated word and server validation uses the same pool
+ok 39 - selected grades filter every generated word and server validation uses the same pool
+  ---
+  duration_ms: 2.4187
+  type: 'test'
+  ...
+# Subtest: invalid or empty grade selections are rejected without changing the pool
+ok 40 - invalid or empty grade selections are rejected without changing the pool
+  ---
+  duration_ms: 0.3801
+  type: 'test'
+  ...
+# Subtest: sentiment selections are shared by all actors and invalid combinations are atomic
+ok 41 - sentiment selections are shared by all actors and invalid combinations are atomic
+  ---
+  duration_ms: 1.3608
+  type: 'test'
+  ...
+1..41
+# tests 41
+# suites 0
+# pass 41
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 236.5539

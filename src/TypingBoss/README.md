@@ -1,10 +1,14 @@
 # Typing Boss modes
 
+Pressing Start sets a shared server `countdownEndsAt` five seconds ahead for both modes. Host and player scenes show 5–4–3–2–1, and typing/actions are disabled until the deadline. Reconnecting resumes the remaining time. The server rejects early words and Old Mode challenges/actions, ignores early progress, and begins the typing-rate clock at the deadline. Old Mode's first timed boss attack occurs only after the countdown plus its attack interval. Repeated Start cannot reset the countdown; closing cancels its callback. `node scripts/verify-battle-countdown.cjs` checks both modes against an isolated backend on port 4003 (or `TYPING_BOSS_TEST_URL`).
+
+Wrong letters now subtract attack power before bonuses: 2 base power per error in standard Proportional, or 2.5 in Balanced. Penalties accumulate across the current attack, including errors early in the run, and reset on release. Final power bottoms out at zero. Balanced class reserves and color-bank growth use power after penalties; a zero-power run cannot regain damage from saved orange or crit bonuses. Correct spaces alone cannot fund damage against a run of incorrect letters. The portrait ATK count subtracts error penalties immediately; there is no separate error chip. Orange bank and crit charge preview each character locally using the shared earning rules. Word completion still confirms earnings and activates perfect-word bonuses. Old mode retains its challenge scoring.
+
 The creation screen defaults to **Proportional**. **Old mode** retains the original quiz challenges, class HP, moves, damage calculations, and timed automatic boss attacks. Requests from older clients that omit `mode` still create old-mode sessions.
 
 ## Proportional rules (Balanced off)
 
-- The host plays the Ancient Red Dragon. Up to 30 players choose a class; all start with 100 HP and have a unique gold-word ability.
+- The host chooses Ember Whelp, Cindermaw, or Ancient Red Dragon when creating the room. Ancient Red Dragon remains the default; proportional HP and combat rules are shared by all three. Up to 30 players choose a class; all start with 100 HP and have a unique gold-word ability.
 - The roster locks at Start. Dragon HP is `100 × starting player count`. Each dragon attack rolls 30% Bite, 30% Fireball, 30% Tail Whip, or 10% Flamethrower. Bite and Fireball focus all power on one random living player. Tail Whip chooses a random living anchor and its nearest living neighbors in the host's formation, targeting 30% of survivors (rounded to the nearest whole player, minimum one). Flamethrower hits every survivor. Power is divided evenly among the selected targets before dodge and shields; a target's avoided damage is not redistributed.
 - Before Start, the host can choose a 1×–100× HP multiplier (default 1×). It applies equally to every player's HP and dragon HP, with unchanged damage. The server validates and locks it when the battle starts.
 - Both sides continuously type random words from the exact numeric word pools used by Home Row Run. The data lives in one shared JSON file. Each attack normally shows ten words on a single clipped line that moves left per character. Words advance after a required trailing space, except the final word, which fires on its last letter. Correct characters (including required spaces) add damage. Input continues while requests and projectiles are in flight.
@@ -23,29 +27,34 @@ The creation screen defaults to **Proportional**. **Old mode** retains the origi
 The host's Balanced switch defaults off and locks at Start. It applies only to
 Proportional mode. Old Mode and the randomized Proportional rules are retained.
 
-- All actors receive the same word seed and filters. Colors follow a repeating
-  character-work schedule rather than independent rolls; gold becomes available
-  after every 100 correct characters and stays available until mastered.
+- All actors receive the same word seed and filters. The **Random colors** toggle appears only with Balanced enabled and defaults on. Every generated word uses the shared chance map: white 40%, orange 20%, blue 18%, green 15%, red crit 4%, gold special 3%. Color is seeded by word index so previews, server validation, retries and reconnects agree. Banking, accuracy penalties and class effects remain Balanced. This option locks at Start and is included in host/player snapshots.
+- With Random colors off, colors follow the character-work schedule: gold every 150 correct characters and red every 134. Each scheduled trigger gets one attempt; a miss waits for the next slot. Existing rooms without the option retain scheduled colors.
 - Every correct character earns 1–1.25 power. A key gap within the greater of
   200 ms or twice the recent within-word median earns 1.25; a hesitation earns 1.
   The median uses up to 21 within-word gaps. Attack-opening gaps are omitted.
   Errors earn zero; WPM is not multiplied again. Each character contributes once,
-  independently of run length, so Green/Orange no longer compound across runs.
-- Damage gets at least 80% of earned power. Up to 20% can be converted to a class
-  effect. A gold Cleric/Necromancer/Paladin spends only that reserve. Unused
-  healing/revival power remains damage. The rest of the attack still deals damage.
+  independently of run length. Green never compounds across runs.
+- Each correct character banks 10% of earned power for orange and charges red
+  by 0.1 percentage points per earned power. Perfect orange words add their bank
+  to the current attack. Red words appear randomly, or every 134 correct characters with Random colors off;
+  mastering it applies the saved percentage to the current attack's damage
+  (including orange and unused support returned as damage). A +25% Crit makes
+  a 100-power attack deal 125 power. Missed red/gold triggers expire until their
+  next scheduled slot; crit charge stays saved. Crit percentage resets on release.
+- Balanced Clerics earn **Prayer** instead of Charge. Ordinary words add 10% of post-penalty earnings to private Prayer. Their orange-category words display flat yellow without glow: all of that word's typing power goes to Prayer, adding no ATK or crit charge. Each mistyped character in a Prayer word subtracts 2.5 private Prayer, clamped at zero immediately; it does not penalize attack power. A perfect Prayer word deposits the entire saved balance into the shared Prayer pool, with retry-safe acknowledgement. A missed word retains the reduced private balance and deposits nothing. No orange damage bonus or 20% gold-healing deduction applies to Clerics; other words still build attack power normally.
+- On gold attack release, a Cleric picks a random wounded living player, including self. The heal is limited by attack damage power, shared pool, missing HP, and the shared healing allowance. Only actual HP restored is deducted; no target, overheal and allowance-limited surplus all stay pooled. The allowance starts at zero and increases by half the **actual HP damage** the dragon deals after dodge/Block. This bounds cumulative pooled healing across any number of Clerics to half cumulative boss HP damage. It does not claim a tested match win rate. UI labels show Prayer and Prayer pool. Standard non-Balanced Cleric healing is unchanged.
+- Other classes keep the 20% support/defense budget. A gold Necromancer/Paladin spends only that reserve; unused support returns to attack damage.
 - Blue converts the reserve to stored guard; Rogue converts it according to
   recent transition fluency, or the full reserve after gold. Guard caps at one
   health bar, with overflow returned to damage. It prevents only the amount earned,
-  never random immunity. Readiness is stored capacity, not a probability.
+  Block capacity. Player Block from both blue and Paladin banks is divided by that dragon attack's target count, captured at launch (not reduced when a target dodges or is knocked out before impact). The client displays the unscaled bank. Dodge separately rolls the earned transition percentage before Block; success cancels the whole hit and spends 100 Dodge points (minimum zero), preserving Block. Failed rolls retain Dodge.
 - Paladin shields persist until their capacity is spent in Balanced mode. All
   defensive capacity is funded by reduced outgoing damage. Overkill and eventual
   shield use are tactical considerations, not a promise of equal match win rates.
-- Red grants a visual SKILL strike at high quality without doubling damage.
-  Barbarian/dragon extensions and Monk shortened runs keep the same power per
-  correct character. Gold creates no extra multiplier.
+- Red grants a real CRIT with its saved percentage damage boost. Barbarian/dragon extensions and Monk shortened runs keep the same earned
+  power and bonus budget per correct character. Gold creates no extra multiplier.
 - Boss patterns follow Bite, Fireball, Tail Whip three times, then Flamethrower.
-  Target anchors rotate through survivors. Balanced damage and defense never roll dice.
+  Target anchors rotate through survivors. Balanced damage and targeting are deterministic; Dodge rolls at impact.
 - Balanced submissions include each completed word's key gaps. The server checks
   them against the aggregate timing and computes quality itself. They are sent in
   existing batches, never as per-key network updates. This validates consistency,
@@ -62,7 +71,7 @@ The existing HTTP/SSE transport is retained. No key-by-key messages or animation
 - The scene is above the typing panel. The chip row always shows the current Dodge percentage, including 0%. The dragon lunges and snaps its jaws for Bite, swings its tail for Tail Whip, and uses the existing fire projectile art for Fireball and Flamethrower. Target shields are applied on impact.
 - Attack-charge bars sit immediately above health bars. Own charge updates locally on every character. A compact word/character cursor goes to the server at most once per 400 ms, with one request in flight. The host and every player see all player charges and the dragon's charge. Progress is cosmetic, validated, and cannot award damage or alter typing statistics.
 - Completed words are batched until an attack releases; Randomized also flushes when a perfect blue word grants a shield or the dodge percentage changes. Requests serialize while typing continues; sequence numbers make retries idempotent. Batches are validated atomically and capped at 20 words.
-- Dodge averages the last five Space-to-next-word transition scores, from 0% to 25%. Each score compares the transition gap with the average of the remaining gaps in that word (with a 40 ms minimum pace): up to 1.25× the pace earns full credit, 2.5× or more earns zero, and in-between scores taper linearly. Accuracy does not enter the score. The first word of each attack has no transition, and firing does not reset the rolling average. The server rolls at impact before applying shields, for both the dragon and players. Dodges deal no damage, preserve the shield, and do not qualify for strongest landed attack. New servers accept the original five-field word records; clients include the optional transition only when the server advertises dodge state.
+- Dodge banks up to 1 point per proficient word transition with no storage cap; actual dodge chance is capped at 100%. Growth compares the Space-to-next-word gap with the remaining key gaps in that word: up to 1.25× pace earns full growth, 2.5× or more earns zero, with linear growth between them. Slow transitions never remove saved dodge. Opening words do not earn a transition bonus. Attack release and failed dodge rolls preserve the bank; a successful dodge spends 100 points, stopping at zero, and preserves Block. Rogue extra rolls still apply.
 - The host and every player receive the same public roster and combat events and render the same camera, formation and sprite sizes. Each player receives only their own private typing state; host credentials and other typing states are excluded. A persistent green pointer identifies the client's own character, including when knocked out or when the HUD is hidden. Full snapshots are sent on first connection/reconnect; subsequent events contain only changed fields, including small impact-result patches.
 - The host's Battle log accordion is available in development and production beneath the game. It records resolved combat and game status from existing updates, names both participants, uses the combat colors, shows timestamps, and supports text filtering and clearing. History stays in that tab, keeps at most 200 entries, and resets on refresh or a new room. It adds no network requests or server-side history; reconnect can recover only events still present in the live snapshot.
 - Simultaneous events are coalesced for 100 ms (at most ten stream updates/second). Idle rooms only send a 25-second connection keepalive. A slow stream is disconnected before it can accumulate unbounded writes, and reconnect receives a fresh authoritative snapshot.
@@ -79,13 +88,48 @@ Implementation references: [Node writable-stream backpressure](https://nodejs.or
 
 ## Character actions and reactions
 
+The personal continuous-typing panel includes an animated player profile to
+the left of the word row and a dragon profile to its right (both above the words
+on small screens). Special counts and words-per-attack counters are hidden on
+the client. Defense labels read Dodge and Block. The player's red ATK counter shows correctly typed characters
+(including required spaces) charged in the current attack and pulses only when
+that count rises. It resets on release. Both ATK counters sit at the top left;
+their font grows by .12 px per charged player character and .24 px per dragon
+character, with a 22 px growth cap. Dragon charge uses the existing validated,
+cosmetic cursor and cannot award power. The green ground oval tracks dodge (or
+Dodge chance in Balanced), and the blue bubble tracks Block capacity.
+A perfect gold word lights a larger golden energy aura until attack release.
+The portrait uses the same combat events and sprite animation as the scene.
+
+Completed words produce a short notice at the word row with the actual earned
+bonus. Errors never announce a bonus; capped defenses and Balanced word effects
+are labeled accurately. Only the latest notice remains visible, and it expires
+even with reduced motion enabled. These effects are local and add no requests.
+
+On a player's device, that player's outgoing and incoming projectiles use the
+profile as their endpoint, with damage traveling to the dragon profile and support going
+to its real recipient. Other players' projectiles remain in the battlefield.
+The overlay measures the actual profile and scene bounds on resize/scroll and
+retains the original attack timestamps. The host scene and shared formation are
+unchanged. The dragon profile to the right of the typing text shows the full
+shared dragon: all attacks, all landed-hit feedback, authoritative hurt, Power,
+ready crit, special, dodge and Block. Public combat fields are supplied in
+`boss.profile`; the host's word seed, cursor and key timings stay private.
+Incoming dragon attacks include a target warning, a fireball trail or continuous
+flame stream, and distinct impact rings/sparks with blue feedback for blocks.
+Reduced-motion preferences suppress the new travel/impact effects.
+
 All six classes use six-frame sprite actions. The approved paladin, cleric and
 barbarian idle strips remain in place. Rogue, necromancer and monk now also have
 animated idle strips. All three dragons use generated six-frame attack sheets for Bite, Fireball, Tail
 Whip, and Flamethrower. The jaw, neck, wings, and tail change pose in the artwork;
 attack playback does not translate or rotate a static image. The ready cell is
-also used for idle so scale and footing stay consistent. Incoming hit/shield
-effects overlay an in-progress attack instead of replacing its frames. Sheets
+also used for idle so scale and footing stay consistent. Dragon hurt reactions
+use three basic frames (300 ms), six power frames (660 ms), or ten critical frames
+(1200 ms), with progressively stronger facial/body reactions. Critical overrides
+power or basic, and power overrides basic. Lower and equal hits never restart an
+active higher/equal reaction. Dragon attacks override basic hurt; power and
+critical hurt own the sprite until they finish. Shield effects can overlay it. Sheets
 preload with the actor; a late load catches up to server time, and repeated
 snapshots do not restart playback. The original sprite is the loading fallback.
 Atlas PNG masters, lossless runtime WebPs, layout manifest, and generation
@@ -111,6 +155,27 @@ stays registered when a tail sweep hides the rear contact. Idle no longer bobs t
 whole actor off the ground; intentional dodge, death and revival movement remains.
 Re-run registration after repacking dragon art. Playback is still native CSS, with
 no per-frame React updates or additional combat messages.
+
+`server/dragonCombat.js` queues whole dragon attacks during power/critical hurt,
+including their projectile creation and damage timers. Waiting attacks drain once
+in FIFO order, reevaluating the current pain deadline if a critical replaces a
+power reaction. Targets are chosen when the queued attack actually launches.
+Already-launched projectiles finish on their existing impact timers. Finished or
+expired rooms discard queued attacks and release their timers/closures. Shared
+frame counts, durations, and hit classification live in `dragonHurtRules.js`.
+Snapshots carry the authoritative reaction and queue count so all devices use
+the same timeline. Misses, full blocks, and support effects never inflict pain.
+
+Hurt masters, lossless runtime sheets, prompts, and footing data are under
+`public/assets/typing-boss/dragons`. `node scripts/prepare-typing-boss-dragon-hurt.cjs`
+packs the 3/6/10 cells and registers feet against the existing attack camera.
+The development animation viewer can scrub all ten critical frames.
+
+With a local backend running, `node scripts/verify-dragon-hurt-queue.cjs` creates
+and closes its own Balanced room, earns a real critical through the words API,
+checks the shared hurt state, and verifies that a queued dragon attack creates
+its projectile after recovery and resolves damage only after the new flight
+timer. Set `TYPING_BOSS_TEST_URL` to use a backend other than localhost:4000.
 
 | Combat event | Source action | Recipient reaction |
 | --- | --- | --- |
@@ -232,3 +297,15 @@ Every word must end with a typed space, except word ten, which fires on its last
 Before starting proportional mode, the host can select one or more grade chips. Everyone uses the union of those grades; unreviewed entries with null grades are excluded. Grades without words are disabled. Selection locks at Start. A compact grade bitmask in each typing state lets clients and the server derive the same filtered pool without sending word lists or changing color odds. Legacy API callers omitting grades retain the full original pool.
 
 Host setup includes shared grade and sentiment checkbox chips. Each group has All, which disables individual chips until toggled off. Selected grades and sentiments intersect; empty combinations cannot start. Both masks are locked at Start and distributed in actor typing states. Color-bonus probabilities remain independent of sentiment.
+
+## Flame breath animation and scheduling
+
+Each dragon has a transparent 20-frame flame-breath master (`dragons/*-flame-20.png`) and a lossless 5×4 runtime atlas (`*-flame-20.webp`). `scripts/prepare-typing-boss-dragon-flame.cjs` packs cells and registers feet to the existing attack camera. `flame-20-generation-prompts.md` records the built-in imagegen prompts. The animation inspector supports all twenty frames and slow playback.
+
+The shared `DRAGON_FLAME` timeline runs for 2000ms: 600ms inhale, then 1100ms fire flight, impact at 1700ms, followed by recovery. `animationStartedAt` starts the body before the projectile's `startedAt`. The full body animation cannot be interrupted by attacks, hurt, dodge or block. Lethal damage still ends combat normally.
+
+While breath is active, incoming hits apply damage immediately on impact. Basic hurt is skipped; power and critical hurt enter the strong-reaction queue, with one pending reaction per tier to bound classroom bursts. Critical reactions play before power reactions after breath ends. Other outgoing dragon attacks wait behind breath and the stronger hurt queue, including their projectile launch and damage timer. Room cleanup and victory/defeat discard both queues and invalidate their timer callbacks. The client dragon portrait uses the full authoritative delayed hurt and shared combat events.
+
+## Room creation access
+
+Room creation requires the password on both the unlock endpoint and the session creation POST. The server defaults to the configured classroom password and supports a `TYPING_BOSS_CREATION_PASSWORD` environment override. The browser keeps the entered password only in component memory and sends it with creation requests; refreshing locks the creation page again. Joining remains public. The password field displays two masking dots for each real character. Joining existing rooms requires no creation password.

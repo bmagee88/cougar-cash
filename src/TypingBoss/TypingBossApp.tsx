@@ -3,6 +3,7 @@ import { SENTIMENTS } from "../typingProject/resources/homeRowWordBank";
 import { initializeBalanced, proportionalPlayerPoint } from "./proportionalRules";
 import { generateJoinName, shortJoinCode } from "./joinNames";
 import { VolcanicBackdrop, VolcanicForeground } from "./VolcanicScenery";
+import BattleCountdown,{useBattleCountdown} from "./BattleCountdown";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
@@ -93,7 +94,10 @@ import { acceptSessionSnapshot, applySessionPatch, SessionPatch } from "./sessio
 import { pruneSavedCredentials, readSavedCredential, removeSavedCredential, saveCredential } from "./credentials";
 import { COMBAT_COLORS, projectileEndpoints } from "./combatFeedback";
 import HostBattleLog from "./HostBattleLog";
+import RoomCreationGate from "./RoomCreationGate";
 import DragonCombatSprite from "./DragonCombatSprite";
+import { useDragonCombatAnimation } from "./useDragonCombatAnimation";
+import { usePortraitProjectileLayout } from "./usePortraitProjectileLayout";
 import CombatCharacter, { useCombatAnimation, useCombatClock } from "./CombatCharacter";
 import { collectCombatAnimations, CombatAnimation, CombatAnimationEvent, NO_ANIMATION_EVENTS } from "./combatAnimation";
 const AnimationPreview = process.env.NODE_ENV === "development" ? React.lazy(() => import("./AnimationPreview")) : null;
@@ -303,20 +307,20 @@ const VOLCANIC_PLAYER_SPAWNS: Point[] = [
 
 const BOSS_ARENAS: Record<TypingBossId, ArenaLayout> = {
   emberWhelp: {
-    hostBossPoint: { x: 80, y: 62 },
-    playerBossPoint: { x: 80, y: 62 },
+    hostBossPoint: { x: 80, y: 52 },
+    playerBossPoint: { x: 80, y: 52 },
     hostSpawns: VOLCANIC_HOST_SPAWNS,
     playerSpawns: VOLCANIC_PLAYER_SPAWNS,
   },
   cindermaw: {
-    hostBossPoint: { x: 80, y: 62 },
-    playerBossPoint: { x: 78, y: 60 },
+    hostBossPoint: { x: 80, y: 52 },
+    playerBossPoint: { x: 78, y: 50 },
     hostSpawns: VOLCANIC_HOST_SPAWNS,
     playerSpawns: VOLCANIC_PLAYER_SPAWNS,
   },
   infernalDragon: {
-    hostBossPoint: { x: 80, y: 62 },
-    playerBossPoint: { x: 78, y: 60 },
+    hostBossPoint: { x: 80, y: 52 },
+    playerBossPoint: { x: 78, y: 50 },
     hostSpawns: VOLCANIC_HOST_SPAWNS,
     playerSpawns: VOLCANIC_PLAYER_SPAWNS,
   },
@@ -883,7 +887,7 @@ function BossSprite({
         height: "auto",
         display: "block",
         imageRendering: "pixelated",
-        filter: `drop-shadow(0 18px 34px ${glow}66) drop-shadow(0 18px 0 rgba(0,0,0,.22))`,
+        filter: "drop-shadow(0 18px 0 rgba(0,0,0,.22))",
         userSelect: "none",
       }}
     />
@@ -949,6 +953,12 @@ function PlayerCharacterSprite(props: { classId: TypingBossClassId; color: strin
   return <CombatCharacter {...props} />;
 }
 
+function playerHealthColor(hp:number,maxHp:number,defeated=false) {
+  if(defeated)return "#64748b";
+  const ratio=maxHp>0?hp/maxHp:0;
+  return ratio<.15?"#ef4444":ratio<.5?"#f97316":"#22c55e";
+}
+
 function StatBar({
   value,
   max,
@@ -989,15 +999,19 @@ function moveIcon(moveId: TypingBossMoveId, classId: TypingBossClassId) {
 }
 
 function CreateGamePage() {
+  return <RoomCreationGate>{password => <UnlockedCreateGamePage creationPassword={password} />}</RoomCreationGate>;
+}
+
+function UnlockedCreateGamePage({ creationPassword }: { creationPassword: string }) {
   const navigate = useNavigate();
   const [gameName, setGameName] = useState("Typing Boss Battle");
   const [selectedBossId, setSelectedBossId] =
-    useState<TypingBossId>("cindermaw");
+    useState<TypingBossId>("infernalDragon");
   const [mode, setMode] = useState<TypingBossMode>("proportional");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const selectedBoss =
-    BOSS_CHOICES.find((boss) => boss.id === (mode === "proportional" ? "infernalDragon" : selectedBossId)) || BOSS_CHOICES[1];
+    BOSS_CHOICES.find((boss) => boss.id === selectedBossId) || BOSS_CHOICES[1];
   const selectedArena = arenaForBoss(selectedBoss.id);
 
   async function handleCreate() {
@@ -1007,7 +1021,7 @@ function CreateGamePage() {
     setBusy(true);
     setError("");
     try {
-      const response = await createTypingBossSession(name, selectedBossId, mode);
+      const response = await createTypingBossSession(name, selectedBossId, mode, creationPassword);
       saveCredential(response.sessionId, "host", response.hostToken, response.session.expiresAt);
       navigate(`/typing-boss/host/${response.sessionId}`);
     } catch (caught) {
@@ -1084,8 +1098,8 @@ function CreateGamePage() {
               />
               <Stack spacing={1}>
                 <Typography sx={{ fontWeight: 900 }}>Boss</Typography>
-                {(mode === "proportional" ? BOSS_CHOICES.filter(boss => boss.id === "infernalDragon") : BOSS_CHOICES).map((boss) => {
-                  const selected = mode === "proportional" || boss.id === selectedBossId;
+                {BOSS_CHOICES.map((boss) => {
+                  const selected = boss.id === selectedBossId;
                   return (
                     <Button
                       key={boss.id}
@@ -1171,7 +1185,7 @@ function CreateGamePage() {
               },
               top: `${selectedArena.hostBossPoint.y}%`,
               transform: "translate(-50%, -50%)",
-              filter: `drop-shadow(0 20px 45px ${selectedBoss.color}99)`,
+
             }}
           >
             <BossSprite
@@ -1246,14 +1260,15 @@ function HostSessionPage() {
   const [copied, setCopied] = useState(false);
   const [hpMultiplier, setHpMultiplier] = useState(1);
   const [balanced, setBalanced] = useState(false);
+  const [balancedRandomColors,setBalancedRandomColors] = useState(true);
   const [wordFilters, setWordFilters] = useState<WordFilters>({});
   const lobbyPreview = useMemo(() => {
     if (!session || session.mode !== "proportional" || session.status !== "setup") return session;
     const playerHp = 100 * hpMultiplier;
     const bossHp = playerHp * session.players.length;
-    return { ...session, typing: session.typing ? (balanced ? initializeBalanced({ ...session.typing, ...wordFilters, ability: "dragon" }) : { ...session.typing, ...wordFilters, balanced:false }) : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
+    return { ...session, typing: session.typing ? (balanced ? initializeBalanced({ ...session.typing, ...wordFilters, ability: "dragon", balancedRandomColors }) : { ...session.typing, ...wordFilters, balanced:false }) : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
       players: session.players.map(player => ({ ...player, hp: playerHp, maxHp: playerHp })) };
-  }, [session, hpMultiplier, wordFilters, balanced]);
+  }, [session, hpMultiplier, wordFilters, balanced, balancedRandomColors]);
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
   const [codeModalOpen, setCodeModalOpen] = useState(false);
@@ -1373,7 +1388,7 @@ function HostSessionPage() {
               disabled={busy || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
               onClick={() =>
                 runHostAction(() =>
-                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced)
+                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors)
                 )
               }
             >
@@ -1401,7 +1416,9 @@ function HostSessionPage() {
         {session.mode === "proportional" ? <>
           {session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
             <FormControlLabel label="Balanced" control={<Switch checked={balanced} onChange={(_event, checked) => setBalanced(checked)} disabled={busy} inputProps={{ "aria-label": "Balanced" }} />} />
-            <Typography variant="body2" sx={{ color:"text.secondary" }}>{balanced ? "Skill-earned power, shared words, deterministic specials and defense. Rules lock at Start." : "Randomized colors, critical hits, dodges, and boss patterns."}</Typography>
+            {balanced && <FormControlLabel label="Random colors" control={<Switch checked={balancedRandomColors} onChange={(_event,checked)=>setBalancedRandomColors(checked)} disabled={busy} inputProps={{"aria-label":"Random colors"}}/>}/>}
+            {balanced && <Typography variant="body2">{balancedRandomColors ? "Color chances per word: white 40%, orange 20%, blue 18%, green 15%, crit 4%, special 3%. Banking stays active." : "Scheduled colors: special every 150 correct characters; crit every 134."}</Typography>}
+            <Typography variant="body2" sx={{ color:"text.secondary" }}>{balanced ? "Skill-earned power, shared words and banking. Color settings lock at Start." : "Randomized colors, critical hits, dodges, and boss patterns."}</Typography>
             <WordFilterChips value={wordFilters} onChange={setWordFilters} disabled={busy} />
             <Typography id="hp-multiplier-label" fontWeight={900}>HP multiplier: ×{hpMultiplier}</Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
@@ -1412,7 +1429,8 @@ function HostSessionPage() {
               marks={[{ value: 1, label: "1×" }, { value: 10, label: "10×" }, { value: 30, label: "30×" }, { value: 60, label: "60×" }, { value: 100, label: "100×" }]} />
           </Paper>}
           <HostBattlefield session={lobbyPreview!} />
-          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}:${balanced}`} sessionId={normalizedSessionId} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected} />}
+          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}:${balanced}:${balancedRandomColors}`} sessionId={normalizedSessionId} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected}
+            hostProfile={{boss:lobbyPreview!.boss,events:collectCombatAnimations(session.projectiles).get("boss") || NO_ANIMATION_EVENTS,serverNow:session.serverNow}} />}
         </> : <Grid container spacing={2}>
           <Grid item xs={12} lg={8}>
             <HostBattlefield session={session} />
@@ -1741,8 +1759,7 @@ function PlayerSessionPage() {
       <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
       <ReconnectOverlay show={reconnecting} />
       {session.mode === "proportional" ? <Stack spacing={2}>
-        <PlayerBattlefield session={session} me={me} />
-        <ContinuousTyping key={`${session.typing!.seed}:${session.typing!.balanced}`} sessionId={normalizedSessionId} credentials={{ code: savedCode }} state={session.typing!} active={session.status === "active" && !me.defeated && !reconnecting} />
+        <PlayerTypingBattle session={session} me={me} code={savedCode} active={session.status === "active" && !me.defeated && !reconnecting} />
         {session.leaderboard && <BattleLeaderboard entries={session.leaderboard} />}
       </Stack> : <PlayerBattlePanel
         session={session}
@@ -1918,7 +1935,8 @@ function PlayerBattlePanel({
     return [];
   }, [me.classId, me.code, session.players]);
 
-  const canAct = session.status === "active" && !me.defeated && !busy;
+  const countdown=useBattleCountdown(session.countdownEndsAt,session.serverNow);
+  const canAct = session.status === "active" && countdown===0 && !me.defeated && !busy;
 
   const startChallenge = useCallback(
     async (moveId: TypingBossMoveId, targetCode?: string) => {
@@ -2313,7 +2331,7 @@ function PlayerBattlePanel({
                 </Typography>
               </Box>
             </Stack>
-            <StatBar value={me.hp} max={me.maxHp} color="#22c55e" />
+            <StatBar value={me.hp} max={me.maxHp} color={playerHealthColor(me.hp,me.maxHp,me.defeated)} />
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               HP {me.hp}/{me.maxHp}
             </Typography>
@@ -2515,7 +2533,7 @@ function TargetSelector({
                 <Typography sx={{ fontWeight: 950 }}>{target.name}</Typography>
                 <Typography>{target.hp}/{target.maxHp}</Typography>
               </Stack>
-              <StatBar value={target.hp} max={target.maxHp} color="#22c55e" />
+              <StatBar value={target.hp} max={target.maxHp} color={playerHealthColor(target.hp,target.maxHp,target.defeated)} />
             </Stack>
           </Button>
         ))}
@@ -2892,7 +2910,7 @@ function PlayerRoster({ players }: { players: TypingBossPlayer[] }) {
                 <StatBar
                   value={player.hp}
                   max={player.maxHp}
-                  color={player.defeated ? "#64748b" : "#22c55e"}
+                  color={playerHealthColor(player.hp,player.maxHp,player.defeated)}
                 />
                 <Typography variant="caption" sx={{ color: "text.secondary" }}>
                   {Math.round(player.accuracy * 100)}% · DPS{" "}
@@ -3301,9 +3319,35 @@ function PlayerBattlefield({ session, me }: { session: TypingBossSessionSnapshot
   return <BattleScene session={session} ownCode={me.code} />;
 }
 
-// Both audiences use the same camera, formation, sprite sizes and combat events.
-// Only the client's own-character marker is local to their view.
-export function BattleScene({ session, ownCode }: { session: TypingBossSessionSnapshot; ownCode?: string }) {
+export function PlayerTypingBattle({ session, me, code, active }: {
+  session: TypingBossSessionSnapshot; me: TypingBossPlayer; code: string; active: boolean;
+}) {
+  const rootRef = useRef<HTMLDivElement>(null), sceneRef = useRef<HTMLDivElement>(null), profileRef = useRef<HTMLDivElement>(null), dragonRef = useRef<HTMLDivElement>(null);
+  const arena = arenaForBoss(session.boss.id);
+  const positions = useMemo(() => new Map(session.players.map((player, index) =>
+    [player.code, proportionalPlayerPoint(index, session.players.length)] as [string, Point])), [session.players]);
+  const layout = usePortraitProjectileLayout(rootRef, sceneRef, profileRef, positions, arena.hostBossPoint, me.code, dragonRef);
+  const events = useMemo(() => collectCombatAnimations(session.projectiles).get(me.code) || NO_ANIMATION_EVENTS, [session.projectiles, me.code]);
+  const ownProjectiles = session.projectiles.filter(shot => shot.source === me.code || shot.target === me.code);
+  const dragonEvents = useMemo(() => collectCombatAnimations(session.projectiles).get("boss") || NO_ANIMATION_EVENTS, [session.projectiles]);
+  return <Box ref={rootRef} data-testid="personal-typing-stage" sx={{ position: "relative" }}>
+    <Stack spacing={2}>
+      <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} profileProjectilesFor={me.code} />
+      <ContinuousTyping key={`${session.typing!.seed}:${session.typing!.balanced}`} sessionId={session.id} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} credentials={{ code }} state={session.typing!} active={active}
+        profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef }}
+        dragonProfile={{ boss: session.boss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
+    </Stack>
+    {layout && <Box data-testid="portrait-projectile-layer" sx={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 8 }}>
+      <ProjectileLayer projectiles={ownProjectiles} positions={layout.positions} bossPoint={layout.bossPoint} players={session.players} serverNow={session.serverNow} personal />
+    </Box>}
+  </Box>;
+}
+
+// Both audiences share the camera, formation, sprite sizes and combat events.
+// Personal shots can move to the portrait overlay without duplicating them here.
+export function BattleScene({ session, ownCode, sceneRef, profileProjectilesFor }: {
+  session: TypingBossSessionSnapshot; ownCode?: string; sceneRef?: React.Ref<HTMLDivElement>; profileProjectilesFor?: string;
+}) {
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.hostBossPoint;
   const clock = useCombatClock(session.serverNow);
@@ -3318,7 +3362,8 @@ export function BattleScene({ session, ownCode }: { session: TypingBossSessionSn
 
   return (
     <Box sx={{ overflowX: "auto" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
-      <BattlefieldShell minWidth={session.mode === "proportional" ? 960 : undefined} minHeight={session.mode === "proportional" ? Math.max(540, 440 + Math.ceil(session.players.length / 4) * 48) : 640}>
+      <BattleCountdown session={session}/>
+      <BattlefieldShell sceneRef={sceneRef} minWidth={session.mode === "proportional" ? 960 : undefined} minHeight={session.mode === "proportional" ? Math.max(540, 440 + Math.ceil(session.players.length / 4) * 48) : 640}>
         <BossNode session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
         {session.players.map((player) => (
           <PlayerNode
@@ -3334,7 +3379,7 @@ export function BattleScene({ session, ownCode }: { session: TypingBossSessionSn
             clock={clock}
           />
         ))}
-        <ProjectileLayer projectiles={session.projectiles} positions={positions} bossPoint={bossPoint} players={session.players} serverNow={session.serverNow} />
+        <ProjectileLayer projectiles={profileProjectilesFor ? session.projectiles.filter(shot => shot.source !== profileProjectilesFor && shot.target !== profileProjectilesFor) : session.projectiles} positions={positions} bossPoint={bossPoint} players={session.players} serverNow={session.serverNow} />
       </BattlefieldShell>
     </Box>
   );
@@ -3344,13 +3389,16 @@ function BattlefieldShell({
   children,
   minHeight,
   minWidth,
+  sceneRef,
 }: {
   children: React.ReactNode;
   minHeight: number;
   minWidth?: number;
+  sceneRef?: React.Ref<HTMLDivElement>;
 }) {
   return (
     <Box
+      ref={sceneRef}
       sx={{
         position: "relative",
         minHeight,
@@ -3383,7 +3431,7 @@ function BossNode({
   events: readonly CombatAnimationEvent[];
   clock: React.MutableRefObject<number>;
 }) {
-  const pose = useCombatAnimation(events, session.status !== "setup" && session.boss.hp <= 0, clock);
+  const pose = useDragonCombatAnimation(events, session.boss.hurt, session.status !== "setup" && session.boss.hp <= 0, clock, session.boss.flameBreath);
   const dragonWidth = session.mode === "proportional" ? size === "host" ? { xs: 230, md: 300 } : { xs: 240, md: 320 } : bossBattleWidth(session.boss.id, size);
   const latestAttack = session.projectiles.filter(projectile => projectile.source === "boss").slice(-1)[0];
   return (
@@ -3440,6 +3488,12 @@ function BossNode({
         {session.mode === "proportional" ? <Typography variant="caption" sx={{ color: "#fde68a", display: "block", mt: 1 }}>
           {latestAttack?.bossAttack && <strong>{latestAttack.moveLabel} · </strong>}Host controlled · every 10 words
         </Typography> : <BossChargeBar session={session} />}
+        {!!session.boss.queuedAttacks && <Typography variant="caption" sx={{ display: "block", color: "#fbbf24", mt: .5 }}>
+          {session.boss.queuedAttacks} {session.boss.queuedAttacks === 1 ? "attack" : "attacks"} queued · recovering
+        </Typography>}
+        {!!session.boss.queuedStrongReactions && <Typography variant="caption" sx={{ display: "block", color: "#fca5a5", mt: .5 }}>
+          {session.boss.queuedStrongReactions} strong {session.boss.queuedStrongReactions === 1 ? "reaction" : "reactions"} queued
+        </Typography>}
       </Box>
       <Box
         sx={{
@@ -3448,7 +3502,7 @@ function BossNode({
           top: `${point.y}%`,
           transform: "translate(-50%, -50%)",
           zIndex: 2,
-          filter: `drop-shadow(0 18px 34px ${session.boss.glow})`,
+
         }}
       >
         <DragonCombatSprite bossId={session.boss.id} width={dragonWidth} glow={session.boss.color} pose={pose} clock={clock} />
@@ -3612,7 +3666,7 @@ const PlayerNode = React.memo(function PlayerNode({
           <StatBar
             value={player.hp}
             max={player.maxHp}
-            color={player.defeated ? "#64748b" : "#22c55e"}
+            color={playerHealthColor(player.hp,player.maxHp,player.defeated)}
             height={density === "compact" ? 3 : compact ? 6 : 8}
           />
           {!compact && density === "normal" && (
@@ -3627,12 +3681,13 @@ const PlayerNode = React.memo(function PlayerNode({
   );
 });
 
-function ProjectileLayer({ projectiles, positions, bossPoint, players, serverNow }: {
+function ProjectileLayer({ projectiles, positions, bossPoint, players, serverNow, personal = false }: {
   projectiles: TypingBossProjectile[];
   positions: Map<string, Point>;
   bossPoint: Point;
   players: TypingBossPlayer[];
   serverNow?: number;
+  personal?: boolean;
 }) {
   const playerByCode = useMemo(() => new Map(players.map(player => [player.code, player])), [players]);
   const offset = useRef(0);
@@ -3642,8 +3697,8 @@ function ProjectileLayer({ projectiles, positions, bossPoint, players, serverNow
     return <ProjectileMotion key={projectile.id} projectile={projectile} from={from} to={to}
       art={projectileArtFor(projectile, playerByCode)} serverOffset={offset.current}
       targetOffscreen={targetOffscreen}
-      hitPoint={serverNow && players.length > 1 && projectile.target === "boss" ? from : undefined}
-      labelOffset={serverNow && players.length > 1 ? projectile.target === "boss" ? -5 : 4 : 0} />;
+      hitPoint={!personal && serverNow && players.length > 1 && projectile.target === "boss" ? from : undefined}
+      labelOffset={personal ? 0 : serverNow && players.length > 1 ? projectile.target === "boss" ? -5 : 4 : 0} />;
   })}</>;
 }
 
