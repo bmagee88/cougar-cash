@@ -1,4 +1,5 @@
-import { TypingBossProjectile } from "./types";
+import { DragonHurtTier, TypingBossProjectile } from "./types";
+import { DRAGON_FLAME } from "./dragonHurtRules";
 
 export type CombatPose = "idle" | "weakAttack" | "strongAttack" | "healCast" | "selfHeal" | "healed" |
   "shieldCast" | "shielded" | "buffCast" | "buffed" | "evasionReady" | "reviveCast" | "reviving" | "dodge" | "hit" | "block" |
@@ -6,21 +7,22 @@ export type CombatPose = "idle" | "weakAttack" | "strongAttack" | "healCast" | "
 export const POSE_MS: Record<CombatPose, number> = {
   idle:900, weakAttack:620, strongAttack:780, healCast:780, selfHeal:800, healed:700,
   shieldCast:780, shielded:700, buffCast:780, buffed:700, evasionReady:700, reviveCast:900, reviving:1100,
-  dodge:520, hit:460, block:520, death:950, defeated:0, bite:820, tailWhip:820, flamethrower:900,
+  dodge:520, hit:460, block:520, death:950, defeated:0, bite:820, tailWhip:820, flamethrower:DRAGON_FLAME.duration,
 };
 export const POSE_ROW: Record<CombatPose, number> = {
   idle:0, weakAttack:1, strongAttack:1, healCast:2, selfHeal:2, healed:3,
   shieldCast:2, shielded:5, buffCast:2, buffed:0, evasionReady:0, reviveCast:2, reviving:6,
   dodge:4, hit:5, block:5, death:7, defeated:7, bite:1, tailWhip:1, flamethrower:1,
 };
-export type CombatAnimationEvent = { id:string; state:CombatPose; at:number; duration:number; channel:"action"|"reaction"; critical?:boolean };
-export type CombatAnimation = { state:CombatPose; id:string; at:number; duration:number; action?:CombatAnimationEvent; reaction?:CombatAnimationEvent; block?:CombatAnimationEvent; nextAt?:number };
+export type CombatAnimationEvent = { id:string; state:CombatPose; at:number; duration:number; channel:"action"|"reaction"; critical?:boolean; hurtTier?:DragonHurtTier };
+export type CombatAnimation = { state:CombatPose; id:string; at:number; duration:number; action?:CombatAnimationEvent; reaction?:CombatAnimationEvent; block?:CombatAnimationEvent; nextAt?:number; hurtTier?:DragonHurtTier };
 export const NO_ANIMATION_EVENTS: readonly CombatAnimationEvent[] = [];
 
 export function collectCombatAnimations(projectiles: readonly TypingBossProjectile[]) {
   const actors = new Map<string,CombatAnimationEvent[]>();
   const add = (actor:string, projectile:TypingBossProjectile, state:CombatPose, at:number, channel:"action"|"reaction") => {
-    const event = {id:`${projectile.id}:${channel}`,state,at,duration:POSE_MS[state],channel,critical:projectile.critical};
+    const event = {id:`${projectile.id}:${channel}`,state,at,duration:POSE_MS[state],channel,critical:projectile.critical,
+      ...(actor === "boss" && state === "hit" ? { hurtTier: projectile.critical ? "critical" as const : projectile.moveId === "strong" ? "power" as const : "basic" as const } : {})};
     const list = actors.get(actor) || []; list.push(event); actors.set(actor,list);
   };
   for (const shot of projectiles) {
@@ -29,7 +31,7 @@ export function collectCombatAnimations(projectiles: readonly TypingBossProjecti
       shot.kind === "resurrect" ? "reviveCast" : shot.kind === "buff" ? shot.moveId === "goldShield" ? "shieldCast" : "buffCast" :
       shot.bossAttack === "bite" ? "bite" : shot.bossAttack === "tailWhip" ? "tailWhip" : shot.bossAttack === "flamethrower" ? "flamethrower" :
       shot.moveId === "strong" ? "strongAttack" : "weakAttack";
-    add(shot.source,shot,cast,shot.startedAt,"action");
+    add(shot.source,shot,cast,shot.animationStartedAt ?? shot.startedAt,"action");
     if (!shot.resolvedAt || shot.result === "pending") continue;
     if (shot.result === "evade" || shot.result === "miss") {
       if (shot.kind === "damage" || shot.kind === "boss") add(shot.target,shot,"dodge",shot.resolvedAt,"reaction");

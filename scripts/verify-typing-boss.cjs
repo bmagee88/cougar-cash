@@ -9,7 +9,7 @@ const balanced = process.env.TYPING_BOSS_BALANCED === "1";
 
 async function request(path, body, expected = 200) {
   const response = await fetch(`${base}${path}`, body === undefined ? {} : {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(path === "" ? { ...body, creationPassword: process.env.TYPING_BOSS_CREATION_PASSWORD || "sheep" } : body),
   });
   const result = await response.json();
   assert.equal(response.status, expected, result.error || path);
@@ -59,7 +59,7 @@ function words(state, start = 0, countWords = 10) {
     const created = await request("", { name: "31-client verification", mode: "proportional", bossId: "emberWhelp", goldWords: true }, 201);
     games.push(created);
     const id = created.sessionId;
-    assert.equal(created.session.boss.id, "infernalDragon");
+    assert.equal(created.session.boss.id, "emberWhelp");
     assert.equal(created.session.typing.ability, "dragon");
     const participants = [];
     for (let i = 0; i < 30; i++) {
@@ -75,6 +75,7 @@ function words(state, start = 0, countWords = 10) {
     await request(`/${id}/participants`, { name: "Overflow", classId: "monk" }, 409);
     await request(`/${id}/start`, { hostToken: created.hostToken, hpMultiplier: 1.5 }, 400);
     const started = await request(`/${id}/start`, { hostToken: created.hostToken, balanced });
+    await delay(Math.max(0,(started.session.countdownEndsAt || 0)-Date.now()+20));
     assert.equal(started.session.boss.hp, 3000);
     assert.equal(started.session.balanced,balanced);
     const actorSnapshots = await Promise.all(participants.map(player => request(`/${id}?code=${player.code}`)));
@@ -171,7 +172,8 @@ function words(state, start = 0, countWords = 10) {
     assert.equal(old.session.mode, "old"); assert.equal(old.session.boss.hp, 1200);
     const hero = await request(`/${old.sessionId}/participants`, { name: "Original cleric", classId: "cleric" }, 201);
     assert.equal(hero.session.players[0].hp, 135);
-    await request(`/${old.sessionId}/start`, { hostToken: old.hostToken });
+    const oldStarted = await request(`/${old.sessionId}/start`, { hostToken: old.hostToken });
+    await delay(Math.max(0,(oldStarted.session.countdownEndsAt || 0)-Date.now()+20));
     const challenge = await request(`/${old.sessionId}/challenge`, { code: hero.code, moveId: "weak" }, 201);
     assert.ok(challenge.challenge.question);
     const action = await request(`/${old.sessionId}/actions`, { code: hero.code, challengeId: challenge.challenge.id,

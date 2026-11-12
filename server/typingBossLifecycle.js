@@ -1,4 +1,5 @@
 const ABANDONED_MS = 10 * 60 * 1000;
+const { clearDragonCombat } = require('./dragonCombat');
 const FINISHED_MS = 15 * 60 * 1000;
 const CHALLENGE_MS = 10 * 60 * 1000;
 const FINISHED = new Set(["victory", "defeat", "closed"]);
@@ -27,6 +28,7 @@ function maintainSession(session, now = Date.now()) {
   session.projectiles = session.projectiles.filter(projectile =>
     now - (projectile.resolvedAt || projectile.impactAt) < 4500);
   if (FINISHED.has(session.status)) {
+    clearDragonCombat(session);
     session.closedAt = session.closedAt || now;
     session.expiresAt = Math.min(session.expiresAt, session.closedAt + FINISHED_MS);
     session.challenges.clear();
@@ -45,6 +47,7 @@ function detachSubscriber(session, subscriber, now = Date.now()) {
 }
 
 function clearSessionTimers(session) {
+  clearDragonCombat(session);
   clearTimeout(session.expireTimer);
   clearTimeout(session.deleteTimer);
   clearTimeout(session.bossTimer);

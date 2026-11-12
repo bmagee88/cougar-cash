@@ -83,7 +83,7 @@ test("a perfect final gold extends the current run and requires its separator", 
     }
     assert.ok(records[9][1].endsWith(" "));
     assert.ok(!records[11][1].endsWith(" "));
-    const cb = callbacks();
+    const cb = {...callbacks(),random:()=>.4};
     engine.submitWords(session, host ? {role:"host"} : {role:"player",actorCode:"0"}, records, cb);
     const actual = host ? session.typingHost : session.players.get("0").typing;
     assert.equal(actual.nextWord,12);
@@ -164,15 +164,16 @@ test("gold support targets living wounded players, knocked-out players, and unsh
   assert.equal(down.typing.paladinShield, 0, "the shield expires after absorbing one hit");
 });
 
-test("a full-health cleric heals the lowest-HP living ally in randomized and balanced battles", () => {
+test("a full-health cleric heals an eligible wounded living ally in both modes", () => {
   for (const balanced of [false, true]) {
     const session = sessionWithPlayers(4);
     const [cleric, down, lowest, injured] = [...session.players.values()];
     cleric.typing = rules.createTypingState(1, "cleric");
     down.hp = 0; lowest.hp = 20; injured.hp = 60;
+    if(balanced){session.balanced=true;session.clericHealingPool=25;session.clericHealingAllowance=25;}
     const attack = balanced ? { balanced: true, base: 100, earnedPower: 125, power: 100, supportPower: 25, multiplier: 1, moveId: "weak", gold: 1 }
       : { power: 30, multiplier: 1, moveId: "weak", gold: 1 };
-    engine.launchAttack(session, cleric, attack, callbacks());
+    engine.launchAttack(session, cleric, attack, {...callbacks(),random:()=>0});
     const heal = session.projectiles.find(projectile => projectile.kind === "heal");
     assert.equal(cleric.hp, 100, "the caster receives no healing at full HP");
     assert.equal(down.hp, 0, "healing cannot revive");
@@ -200,7 +201,8 @@ test("shield feedback reports the absorbed amount separately from damage", () =>
   }
 });
 
-test("rogue stacks independent dodge rolls for one incoming attack", () => {
+test("rogue stacks independent dodge rolls for one incoming attack", t => {
+  let now=1000; t.mock.method(Date,'now',()=>now);
   const session = sessionWithPlayers(1);
   const player = session.players.get("0");
   player.typing = rules.createTypingState(1, "rogue");
@@ -212,17 +214,20 @@ test("rogue stacks independent dodge rolls for one incoming attack", () => {
   const cb = { ...callbacks(), random: () => rolls.shift() };
   const attack = { power: 20, multiplier: 1, moveId: "weak" };
   engine.launchAttack(session, session.typingHost, attack, cb);
+  now=2700;
   cb.timers.shift()();
   assert.equal(session.projectiles.at(-1).evadeType, "dodge");
   assert.equal(player.typing.dodgeExtraRolls, 0);
   assert.equal(player.typing.paladinShield, 10);
+  now=3000; cb.timers.shift()(); // The complete breath lock ends before the next attack.
   engine.launchAttack(session, session.typingHost, attack, cb);
+  now=4700;
   cb.timers.shift()();
   assert.equal(player.hp, 90);
   assert.equal(player.typing.paladinShield, 0);
 });
 
-test("dodge rewards smooth word transitions at either speed and forgets older samples", () => {
+test("dodge banks proficiency gains at either speed without losing progress to slow transitions", () => {
   const fast = rules.createTypingState(42);
   const slow = rules.createTypingState(42);
   const finish = (state, gap, pace) => {
@@ -233,13 +238,22 @@ test("dodge rewards smooth word transitions at either speed and forgets older sa
   finish(fast, 40, 40); finish(slow, 300, 300);
   assert.equal(rules.dodgeChance(fast), 0, "attack-opening key gap does not count");
   finish(fast, 40, 40); finish(slow, 300, 300);
-  assert.equal(rules.dodgeChance(fast), 25);
-  assert.equal(rules.dodgeChance(slow), 25, "accuracy and absolute speed do not set dodge");
+  assert.equal(rules.dodgeChance(fast), 1);
+  assert.equal(rules.dodgeChance(slow), 1, "accuracy and absolute speed do not set dodge");
   for (let i = 0; i < 5; i++) finish(slow, 1500, 300);
-  assert.equal(rules.dodgeChance(slow), 0);
+  assert.equal(rules.dodgeChance(slow), 1);
   assert.equal(slow.dodgeSamples.length, 5);
   rules.releaseAttack(fast);
-  assert.equal(rules.dodgeChance(fast), 25, "firing an attack does not reset dodge");
+  assert.equal(rules.dodgeChance(fast), 1, "firing an attack does not reset dodge");
+  for (let i=0;i<160;i++) finish(fast,40,40);
+  assert.equal(rules.dodgeChance(fast),160,"accumulation keeps growing beyond 100 points");
+  assert.equal(rules.effectiveDodgeChance(fast),1);
+  fast.dodgeExtraRolls=2;
+  assert.equal(rules.effectiveDodgeChance(fast),1,"extra rolls never produce a chance above 100%");
+  rules.releaseAttack(slow);
+  finish(slow,300,300); // Opening word does not add a transition.
+  finish(slow,600,300); // Partial proficiency earns a smaller positive gain.
+  assert.ok(rules.dodgeChance(slow)>1 && rules.dodgeChance(slow)<2);
 });
 
 test("transition timing is validated against the word's other gaps, and retries don't add samples", () => {
@@ -294,7 +308,7 @@ test("the tenth word applies its color before release, including immediate defen
       rules.finishWord(state, index === 9 ? word.text : "!".repeat(word.text.length) + " ", 2, 400, 80000);
     }
     const attack = rules.releaseAttack(state, () => 0);
-    assert.equal(attack.base, rules.wordAt(seed, 9).text.length + 9);
+    assert.equal(attack.base, 0, "nine mashed words outweigh the final correct word and spaces");
     assert.equal(attack.orangeBonus, color === "orange" ? .1 : 0);
     assert.equal(attack.criticalChance, color === "red" ? .1 : 0);
     assert.equal(attack.critical, color === "red");
@@ -445,7 +459,7 @@ test("boss attack roll selects the advertised pattern and splits all power among
     engine.launchAttack(session, session.typingHost, { power: 90, multiplier: 1, moveId: "weak" }, cb);
     assert.equal(session.projectiles.length, count);
     assert.ok(session.projectiles.every(shot => shot.bossAttack === kind && shot.amount === 90 / count));
-    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["0", "4", "5"]);
+    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["0", "4", "8"]);
   }
 });
 
@@ -465,27 +479,35 @@ test("battle formation keeps up to 30 players on the left platform clear of the 
     assert.equal(new Set(points.map(point => `${point.x}:${point.y}`)).size,size);
     assert.ok(points.every(point => point.x >= 10 && point.x <= 55 && point.y >= 54 && point.y <= 84));
     for (let index=0;index<size;index++) {
-      if (index%4) assert.ok(Math.abs(points[index].x-points[index-1].x-12)<1e-10);
+      if (index%4) {
+        assert.ok(points[index].x<points[index-1].x);
+        assert.ok(points[index].y>points[index-1].y);
+      }
       if (index>=4) {
         assert.ok(points[index].x<points[index-4].x);
         assert.ok(points[index].y>points[index-4].y);
       }
+      assert.deepEqual(points[index],rules.proportionalPlayerPoint(index,30),"adding players must not shift occupied slots");
     }
   }
 });
 
-test("flamethrower shields apply on impact and consume once", () => {
+test("flamethrower shields apply on impact and consume once", t => {
+  let now=1000; t.mock.method(Date,'now',()=>now);
   const session = sessionWithPlayers(15);
   const cb = { ...callbacks(), random: () => .95 };
   engine.launchAttack(session, session.typingHost, { power: 150, multiplier: 1.5, moveId: "weak" }, cb);
   assert.equal(session.projectiles.length, 15);
-  assert.equal(cb.timers.length, 1, "one timer for the whole volley");
+  assert.equal(cb.timers.length, 2, "one damage timer for the whole volley and one breath-lock timer");
   const player = session.players.get("0");
   player.typing.shield = .2; // Can earn blue during flight.
+  now=2700;
   cb.timers.shift()();
   assert.equal(player.hp, 92); assert.equal(player.typing.shield, 0);
   assert.equal(session.players.get("1").hp, 90);
+  now=3000; cb.timers.shift()();
   engine.launchAttack(session, session.typingHost, { power: 150, multiplier: 1, moveId: "weak" }, cb);
+  now=4700;
   cb.timers.shift()();
   assert.equal(player.hp, 82); assert.equal(player.typing.totalTaken, 18);
 });

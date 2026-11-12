@@ -1,0 +1,25 @@
+.dragon-sprite-viewport.dragon-flame-viewport { overflow: visible; contain: none; }
+.dragon-flame-cell { position:absolute; display:block; transform-origin:0 0; background-repeat:no-repeat; background-size:500% 400%; image-rendering:pixelated; pointer-events:none; animation:dragon-flame-frames steps(1,end) 1 both; }
+@keyframes dragon-flame-frames {
+  0% { background-position:0% 0%; transform:var(--flame-transform-0); }
+  5% { background-position:25% 0%; transform:var(--flame-transform-1); }
+  10% { background-position:50% 0%; transform:var(--flame-transform-2); }
+  15% { background-position:75% 0%; transform:var(--flame-transform-3); }
+  20% { background-position:100% 0%; transform:var(--flame-transform-4); }
+  25% { background-position:0% 33.33333333333333%; transform:var(--flame-transform-5); }
+  30% { background-position:25% 33.33333333333333%; transform:var(--flame-transform-6); }
+  35% { background-position:50% 33.33333333333333%; transform:var(--flame-transform-7); }
+  40% { background-position:75% 33.33333333333333%; transform:var(--flame-transform-8); }
+  45% { background-position:100% 33.33333333333333%; transform:var(--flame-transform-9); }
+  50% { background-position:0% 66.66666666666666%; transform:var(--flame-transform-10); }
+  55% { background-position:25% 66.66666666666666%; transform:var(--flame-transform-11); }
+  60% { background-position:50% 66.66666666666666%; transform:var(--flame-transform-12); }
+  65% { background-position:75% 66.66666666666666%; transform:var(--flame-transform-13); }
+  70% { background-position:100% 66.66666666666666%; transform:var(--flame-transform-14); }
+  75% { background-position:0% 100%; transform:var(--flame-transform-15); }
+  80% { background-position:25% 100%; transform:var(--flame-transform-16); }
+  85% { background-position:50% 100%; transform:var(--flame-transform-17); }
+  90% { background-position:75% 100%; transform:var(--flame-transform-18); }
+  95%,100% { background-position:100% 100%; transform:var(--flame-transform-19); }
+}
+@media (prefers-reduced-motion:reduce) { .dragon-flame-cell { animation:none; background-position:25% 66.66666666666666%; transform:var(--flame-still-transform); } }

@@ -1,7 +1,7 @@
 .combat-actor { position:relative; display:inline-block; flex-shrink:0; overflow:visible; vertical-align:bottom; }
 .own-character-arrow { position:absolute; bottom:100%; left:50%; margin-left:-12px; margin-bottom:6px; z-index:10; line-height:0; pointer-events:none; filter:drop-shadow(0 1px 2px #000) drop-shadow(0 0 4px #4ade80); animation:own-character-pointer 1100ms ease-in-out infinite; }
 @keyframes own-character-pointer { 50% { transform:translateY(-5px); } }
-.actor-body { position:absolute; inset:0; transform-origin:50% 88%; filter:drop-shadow(0 3px 1px #0009) drop-shadow(0 0 var(--actor-glow,8px) var(--actor-color,#facc15)); }
+.actor-body { position:absolute; inset:0; transform-origin:50% 88%; filter:drop-shadow(0 3px 1px #0009); }
 .actor-viewport { position:absolute; display:block; overflow:hidden; contain:paint; }
 .actor-frames { position:absolute; display:block; inset:0; background-repeat:no-repeat; image-rendering:pixelated; transition:none; animation-name:actor-sprite-frames; animation-timing-function:steps(1,end); animation-iteration-count:1; animation-fill-mode:both; }
 .actor-frames-idle { animation-iteration-count:infinite; animation-direction:alternate; }

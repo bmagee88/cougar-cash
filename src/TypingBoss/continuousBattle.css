@@ -1,4 +1,22 @@
 .damage-flash { display: inline-block; animation: damage-flash 400ms ease-out; }
+.dragon-target-warning { position: absolute; width: 78px; height: 30px; margin: -15px -39px; z-index: 2; border: 2px solid #fb923c99; border-radius: 50%; box-shadow: 0 0 14px #f9731666; animation: dragon-target-pulse 700ms ease-in both; }
+.dragon-target-bite,.dragon-target-tailWhip { border-style: dashed; }
+.dragon-breath-stream { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 7; filter: drop-shadow(0 0 8px #f97316); animation: dragon-breath 700ms ease-out both; pointer-events: none; }
+.dragon-fire-trail { position: absolute; width: 100px; height: 32px; left: -50px; top: -16px; transform-origin: 50% 50%; }
+.dragon-fire-trail i,.dragon-fire-trail b { position: absolute; right: 50%; width: 88px; height: 32px; border-radius: 70% 20% 20% 70%; background: linear-gradient(90deg,transparent,#ef444455,#fb923cbb,#fff3bc); filter: blur(2px); }
+.dragon-fire-trail b { width: 68px; height: 12px; top: 10px; background: linear-gradient(90deg,transparent,#fde68a,#fff); }
+.dragon-player-impact { --impact-color: #fb923c; position: absolute; width: 104px; height: 104px; margin: -52px; z-index: 9; pointer-events: none; border-radius: 50%; background: radial-gradient(circle,#fff4cdcc, #f9731677 28%,transparent 68%); animation: dragon-impact-burst 850ms ease-out both; }
+.dragon-impact-blocked { --impact-color: #7dd3fc; background: radial-gradient(circle,#e0f2fecc,#38bdf855 28%,transparent 68%); }
+.dragon-player-impact i { position: absolute; inset: 12px; border: 4px solid var(--impact-color); border-radius: 50%; box-shadow: 0 0 16px var(--impact-color),inset 0 0 10px var(--impact-color); }
+.dragon-player-impact b,.dragon-player-impact em,.dragon-player-impact span { position: absolute; inset: 24px; background: var(--impact-color); clip-path: polygon(50% 0,60% 37%,100% 50%,60% 62%,50% 100%,40% 62%,0 50%,40% 37%); }
+.dragon-player-impact em { transform: rotate(32deg) scale(1.5); opacity: .65; }
+.dragon-player-impact span { transform: rotate(-28deg) scale(1.8); opacity: .4; }
+.dragon-impact-bite { clip-path: polygon(0 0,100% 0,100% 100%,0 100%); }
+.dragon-impact-tailWhip i { transform: scale(1.5,.45) rotate(-22deg); }
+@keyframes dragon-target-pulse { from { opacity: 0; transform: scale(1.25); } 40% { opacity: .8; } to { opacity: 1; transform: scale(.7); } }
+@keyframes dragon-breath { 0% { opacity: 0; stroke-dasharray: 0 2000; } 20% { opacity: .4; } 55%,85% { opacity: .9; stroke-dasharray: 2000 0; } 100% { opacity: 0; } }
+@keyframes dragon-impact-burst { 0% { opacity: 0; transform: scale(.3) rotate(-20deg); } 14% { opacity: 1; transform: scale(1.1) rotate(0); } 100% { opacity: 0; transform: scale(1.9) rotate(18deg); } }
+@media (prefers-reduced-motion: reduce) { .dragon-target-warning { animation: none; opacity: .5; } .dragon-breath-stream,.dragon-fire-trail,.dragon-player-impact { display: none; } }
 @keyframes damage-flash { from { transform: translateY(7px) scale(1.2); opacity: .3; } to { transform: translateY(0) scale(1); opacity: 1; } }
 .boss-projectile { position: absolute; inset: 0; pointer-events: none; z-index: 8; }
 .boss-projectile-art { position: absolute; transform: translate(-50%, -50%); }

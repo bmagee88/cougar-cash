@@ -10,6 +10,8 @@ const {
 const { closePawPassPool, handlePawPassRequest } = require("./pawPass");
 const { handleDictionaryLookup } = require("./wordWeb");
 const proportionalBoss = require("./proportionalBoss");
+const { requestDragonAttack, recordDragonHurt } = require("./dragonCombat");
+const { DRAGON_FLAME, dragonAttackDuration } = require("../src/TypingBoss/dragonHurtRules");
 const typingBossLifecycle = require("./typingBossLifecycle");
 
 const PORT = Number(
@@ -1259,7 +1261,7 @@ function createTypingBossSession(body) {
   const id = createTypingBossSessionId();
   const now = Date.now();
   const mode = body.mode === "proportional" ? "proportional" : "old";
-  const bossProfile = normalizeTypingBossProfile(mode === "proportional" ? "infernalDragon" : body.bossId || body.bossType);
+  const bossProfile = normalizeTypingBossProfile(body.bossId || body.bossType || (mode === "proportional" ? "infernalDragon" : undefined));
   const session = {
     id,
     mode,
@@ -1359,6 +1361,7 @@ function getTypingBossProjectileSnapshot(projectile) {
     ...(["heal", "resurrect", "buff"].includes(projectile.kind) ? { targetName: projectile.targetName } : {}),
     ...(projectile.bossAttack ? { bossAttack: projectile.bossAttack } : {}),
     startedAt: projectile.startedAt,
+    ...(projectile.animationStartedAt !== undefined ? { animationStartedAt: projectile.animationStartedAt } : {}),
     impactAt: projectile.impactAt,
     resolvedAt: projectile.resolvedAt || null,
     result,
@@ -1389,6 +1392,8 @@ function getTypingBossSnapshot(session, options = {}) {
     expiresAt: new Date(session.expiresAt).toISOString(),
     closedAt: session.closedAt ? new Date(session.closedAt).toISOString() : null,
     remainingSeconds: Math.max(0, Math.ceil((session.expiresAt - now) / 1000)),
+    serverNow: now,
+    countdownEndsAt: session.countdownEndsAt || null,
     boss: { ...session.boss },
     players: [...session.players.values()]
       .map(getTypingBossPlayerSnapshot),
@@ -1404,8 +1409,16 @@ function getTypingBossSnapshot(session, options = {}) {
     snapshot.startingPlayers = session.startingPlayers || session.players.size;
     snapshot.hpMultiplier = session.hpMultiplier || 1;
     snapshot.balanced = Boolean(session.balanced);
+    snapshot.balancedRandomColors = Boolean(session.balancedRandomColors);
+    snapshot.clericHealingPool = Math.round((session.clericHealingPool || 0)*100)/100;
+    snapshot.clericHealingAllowance = Math.round((session.clericHealingAllowance || 0)*100)/100;
     if (["victory", "defeat", "closed", "expired"].includes(session.status)) snapshot.leaderboard = proportionalBoss.leaderboard(session);
     snapshot.boss.hp = Math.round(session.boss.hp * 100) / 100;
+    // Public combat status only: never send the host's word seed, cursor or timings.
+    snapshot.boss.profile = Object.fromEntries([
+      'balanced','balancedOrangePower','balancedCritBonus','balancedGuard','balancedGuardMax',
+      'dodgeBank','dodgeSamples','dodgeExtraRolls','shield','paladinShield','gold','orange','growth',
+    ].map(key=>[key,session.typingHost[key]]).filter(([,value])=>value!==undefined));
     snapshot.boss.maxHp = session.status === "setup" ? session.players.size * 100 : session.boss.maxHp;
     snapshot.boss.hp = session.status === "setup" ? snapshot.boss.maxHp : snapshot.boss.hp;
     snapshot.log = [];
@@ -1608,6 +1621,10 @@ function requireTypingBossActive(res, session) {
     return false;
   }
 
+  if(session.countdownEndsAt>Date.now()) {
+    sendError(res,409,"The battle countdown is still running.");return false;
+  }
+
   return true;
 }
 
@@ -1657,6 +1674,7 @@ function resolveTypingBossProjectile(session, projectileId) {
       const before = session.boss.hp;
       session.boss.hp = Math.max(0, session.boss.hp - projectile.amount);
       const actualDamage = Math.round(before - session.boss.hp);
+      recordDragonHurt(session, { ...projectile, amount: actualDamage });
       const source = session.players.get(projectile.source);
       if (source) {
         source.totalDamage += actualDamage;
@@ -1817,6 +1835,12 @@ function createTypingBossProjectile(session, projectile) {
 }
 
 function triggerTypingBossAttack(session) {
+  requestDragonAttack(session, () => performTypingBossAttack(session), {
+    schedule: scheduleTypingBossTimer, broadcast: broadcastTypingBossSession,
+  });
+}
+
+function performTypingBossAttack(session) {
   if (session.status !== "active" || session.boss.hp <= 0) {
     return;
   }
@@ -1825,6 +1849,9 @@ function triggerTypingBossAttack(session) {
   const now = Date.now();
   const bossProfile = normalizeTypingBossProfile(session.boss.id);
   const move = bossProfile.moves[Math.floor(Math.random() * bossProfile.moves.length)];
+  const breath = ["small-flame", "inferno-wave", "cataclysm-breath", "scorching-roar"].includes(move.id);
+  const windup = breath ? DRAGON_FLAME.windup : 0;
+  let firstProjectile;
 
   session.boss.currentMoveLabel = move.label;
   session.boss.lastAttackAt = now;
@@ -1845,7 +1872,7 @@ function triggerTypingBossAttack(session) {
         : "regular";
     const amount = randomInt(move.damageMin, move.damageMax);
 
-    createTypingBossProjectile(session, {
+    const projectile = createTypingBossProjectile(session, {
       source: "boss",
       sourceName: session.boss.name,
       target: player.code,
@@ -1853,16 +1880,19 @@ function triggerTypingBossAttack(session) {
       bossId: session.boss.id,
       moveId: move.id,
       moveLabel: move.label,
+      ...(breath ? { bossAttack: "flamethrower", animationStartedAt: now, startedAt: now + windup } : {}),
       amount,
       willHit,
       evadeType: willHit ? null : evadeType,
-      travelMs: TYPING_BOSS_BOSS_TRAVEL_MS,
+      travelMs: windup + (breath ? DRAGON_FLAME.flight : TYPING_BOSS_BOSS_TRAVEL_MS),
     });
+    if (!firstProjectile) firstProjectile = projectile;
   });
 
   addTypingBossLog(session, `${session.boss.name} launched ${move.label}.`, "danger");
   broadcastTypingBossSession(session);
   scheduleTypingBossAttack(session);
+  return { duration: dragonAttackDuration({ moveId: move.id, ...(breath ? { bossAttack: "flamethrower" } : {}) }), kind: breath ? "flamethrower" : "fireball", id: firstProjectile?.id };
 }
 
 function closeTypingBossSessionsForShutdown() {
@@ -1887,6 +1917,10 @@ function closeTypingBossSessionsForShutdown() {
 
 async function handleCreateTypingBossSession(req, res) {
   const body = await readJson(req);
+  if (body.creationPassword !== (process.env.TYPING_BOSS_CREATION_PASSWORD || "sheep")) {
+    sendError(res, 403, "Incorrect room creation password.");
+    return;
+  }
   const session = createTypingBossSession(body);
 
   sendJson(res, 201, {
@@ -2036,7 +2070,7 @@ async function handleStartTypingBossSession(req, res, session, url) {
     return;
   }
 
-  if (session.mode === "proportional" && session.status !== "setup") {
+  if (session.status !== "setup") {
     sendError(res, 409, "This fight has already started or ended.");
     return;
   }
@@ -2054,16 +2088,23 @@ async function handleStartTypingBossSession(req, res, session, url) {
   const now = Date.now();
   if (session.mode === "proportional") {
     if (body.balanced !== undefined && typeof body.balanced !== "boolean") { sendError(res,400,"Balanced must be true or false."); return; }
+    if (body.balancedRandomColors !== undefined && typeof body.balancedRandomColors !== "boolean") { sendError(res,400,"Random colors must be true or false."); return; }
     proportionalBoss.applyWordFilters(session, body.gradeLevels, body.sentiments);
     proportionalBoss.applyHpMultiplier(session, body.hpMultiplier === undefined ? 1 : body.hpMultiplier);
-    proportionalBoss.applyBalanced(session, body.balanced);
+    proportionalBoss.applyBalanced(session, body.balanced, body.balancedRandomColors);
     session.startingPlayers = session.players.size;
-    session.startedAt = now;
+    session.startedAt = now + 5000;
   }
   session.status = "active";
-  session.boss.lastAttackAt = now;
-  session.boss.nextAttackAt = now + session.boss.attackIntervalMs;
-  addTypingBossLog(session, "The fight has begun.", "info");
+  session.countdownEndsAt = now + 5000;
+  session.boss.lastAttackAt = session.countdownEndsAt;
+  session.boss.nextAttackAt = session.countdownEndsAt + session.boss.attackIntervalMs;
+  addTypingBossLog(session, "Starting in 5 seconds.", "info");
+  scheduleTypingBossTimer(session,()=>{
+    if(session.status!=="active")return;
+    addTypingBossLog(session,"The fight has begun.","info");
+    broadcastTypingBossSession(session);
+  },5000);
   broadcastTypingBossSession(session);
   scheduleTypingBossAttack(session);
   sendJson(res, 200, { session: getTypingBossSnapshotForAuth(session, auth) });
@@ -2304,6 +2345,13 @@ async function handleSubmitTypingBossAction(req, res, session, url) {
 }
 
 async function handleTypingBossRequest(req, res, url, parts) {
+  if (req.method === "POST" && parts.length === 3 && parts[2] === "creation-access") {
+    const body = await readJson(req);
+    if (body.password !== (process.env.TYPING_BOSS_CREATION_PASSWORD || "sheep")) {
+      sendError(res, 403, "Incorrect room creation password.");
+    } else sendJson(res, 200, { allowed: true });
+    return;
+  }
   if (parts[2] !== "sessions") {
     sendError(res, 404, "Not found.");
     return;

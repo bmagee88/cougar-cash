@@ -1,0 +1,14 @@
+PASS src/TypingBoss/BattleScene.test.tsx (8.794 s)
+  √ host and client share the battlefield and density at 10 players (306 ms)
+  √ host and client share the battlefield and density at 11 players (177 ms)
+  √ host and client share the battlefield and density at 20 players (286 ms)
+  √ host and client share the battlefield and density at 21 players (81 ms)
+  √ host and client share the battlefield and density at 30 players (109 ms)
+  √ personal projectiles launch from the typing portrait exactly once while other players stay in the scene (89 ms)
+  √ the personal dragon reacts only to this player's hits while showing all dragon attacks (64 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        13.551 s
+Ran all test suites matching /BattleScene.test/i.

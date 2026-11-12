@@ -4,7 +4,8 @@ import { Link } from "react-router-dom";
 import CombatCharacter from "./CombatCharacter";
 import DragonCombatSprite from "./DragonCombatSprite";
 import { CombatAnimation, CombatPose, POSE_MS } from "./combatAnimation";
-import { TypingBossClassId, TypingBossId } from "./types";
+import { DragonHurtTier, TypingBossClassId, TypingBossId } from "./types";
+import { DRAGON_HURT, DRAGON_FLAME } from "./dragonHurtRules";
 
 const dragons: [TypingBossId, string][] = [["infernalDragon", "Ancient Red Dragon"], ["cindermaw", "Cindermaw"], ["emberWhelp", "Ember Whelp"]];
 const classes:TypingBossClassId[]=["paladin","cleric","barbarian","rogue","necromancer","monk"];
@@ -26,11 +27,12 @@ export default function AnimationPreview() {
   const play=(state:CombatPose)=>setSelection(previous=>({state,at:Date.now(),serial:previous.serial+1}));
   const [slowDragon, setSlowDragon] = useState(false);
   const [inspectDragon,setInspectDragon]=useState(false),[dragonFrame,setDragonFrame]=useState(0);
-  const [dragonSelection, setDragonSelection] = useState({ state: "bite" as CombatPose, at: Date.now(), serial: 0 });
-  const dragonDuration = POSE_MS[dragonSelection.state] * (slowDragon ? 8 : 1);
-  const dragonEvent = { id: `dragon-preview:${dragonSelection.serial}`, state: dragonSelection.state, at: dragonSelection.at, duration: dragonDuration, channel: "action" as const };
-  const dragonPose: CombatAnimation = { ...dragonEvent, action: dragonEvent };
-  const playDragon = (state: CombatPose) => setDragonSelection(previous => ({ state, at: Date.now(), serial: previous.serial + 1 }));
+  const [dragonSelection, setDragonSelection] = useState<{ state: CombatPose; at: number; serial: number; hurtTier?: DragonHurtTier }>({ state: "bite", at: Date.now(), serial: 0 });
+  const dragonDuration = (dragonSelection.hurtTier ? DRAGON_HURT[dragonSelection.hurtTier].duration : POSE_MS[dragonSelection.state]) * (slowDragon ? 8 : 1);
+  const dragonFrames = dragonSelection.hurtTier ? DRAGON_HURT[dragonSelection.hurtTier].frames : dragonSelection.state === "flamethrower" ? DRAGON_FLAME.frames : 6;
+  const dragonEvent = { id: `dragon-preview:${dragonSelection.serial}`, state: dragonSelection.state, at: dragonSelection.at, duration: dragonDuration, channel: dragonSelection.hurtTier ? "reaction" as const : "action" as const, hurtTier: dragonSelection.hurtTier };
+  const dragonPose: CombatAnimation = { ...dragonEvent, ...(dragonSelection.hurtTier ? { reaction: dragonEvent } : { action: dragonEvent }) };
+  const playDragon = (state: CombatPose, hurtTier?: DragonHurtTier) => setDragonSelection(previous => ({ state, hurtTier, at: Date.now(), serial: previous.serial + 1 }));
   return <Container maxWidth="lg" sx={{py:3}}>
     <Button component={Link} to="/typing-boss">Back to Typing Boss</Button>
     <Typography variant="h4" fontWeight={900}>Character animation preview</Typography>
@@ -54,16 +56,18 @@ export default function AnimationPreview() {
       </Paper>)}
     </Box>
     <Typography variant="h5" sx={{mt:3,mb:1,fontWeight:900}}>Dragon sprite sheets</Typography>
-    <Typography sx={{color:"text.secondary",mb:1}}>Each attack uses six drawn poses. Choose an attack to replay all three dragons.</Typography>
+    <Typography sx={{color:"text.secondary",mb:1}}>Flame breath uses 20 drawn frames. Other attacks use six. Hurt uses 3 basic, 6 power, or 10 critical frames. Choose a sequence to replay all three dragons.</Typography>
     <Stack direction="row" gap={1} flexWrap="wrap" sx={{mb:2}}>
       {([["idle", "Idle dragon"], ["bite", "Bite"], ["weakAttack", "Fireball"], ["tailWhip", "Tail whip"], ["flamethrower", "Flamethrower"]] as [CombatPose, string][]).map(([state, label]) =>
-        <Button key={state} variant={dragonSelection.state === state ? "contained" : "outlined"} onClick={() => playDragon(state)}>{label}</Button>)}
-      <FormControlLabel label="Slow preview" control={<Switch checked={slowDragon} onChange={(_event, checked) => { setInspectDragon(false); setSlowDragon(checked); playDragon(dragonSelection.state); }} />} />
-      <Button onClick={()=>{setInspectDragon(false);playDragon(dragonSelection.state);}}>Replay dragons</Button>
+        <Button key={state} variant={!dragonSelection.hurtTier && dragonSelection.state === state ? "contained" : "outlined"} onClick={() => playDragon(state)}>{label}</Button>)}
+      {(["basic", "power", "critical"] as DragonHurtTier[]).map(tier => <Button key={tier} variant={dragonSelection.hurtTier === tier ? "contained" : "outlined"}
+        onClick={() => playDragon("hit", tier)}>{tier} hurt · {DRAGON_HURT[tier].frames} frames</Button>)}
+      <FormControlLabel label="Slow preview" control={<Switch checked={slowDragon} onChange={(_event, checked) => { setInspectDragon(false); setSlowDragon(checked); playDragon(dragonSelection.state, dragonSelection.hurtTier); }} />} />
+      <Button onClick={()=>{setInspectDragon(false);playDragon(dragonSelection.state, dragonSelection.hurtTier);}}>Replay dragons</Button>
     </Stack>
     <Stack direction="row" gap={3} alignItems="center" sx={{mb:3}}>
       <FormControlLabel control={<Checkbox checked={inspectDragon} onChange={event=>setInspectDragon(event.target.checked)}/>} label="Inspect dragon frames"/>
-      <Slider aria-label="Dragon animation frame" min={1} max={6} step={1} marks disabled={!inspectDragon} value={dragonFrame+1}
+      <Slider aria-label="Dragon animation frame" min={1} max={dragonFrames} step={1} marks disabled={!inspectDragon} value={Math.min(dragonFrame+1,dragonFrames)}
         valueLabelDisplay="on" onChange={(_,value)=>setDragonFrame(Number(value)-1)} sx={{maxWidth:280}}/>
     </Stack>
     <Box sx={{display:"grid",gridTemplateColumns:{xs:"1fr",md:"repeat(3,1fr)"},gap:2}}>

@@ -15,8 +15,8 @@ export function combatFeedback(projectile: TypingBossProjectile) {
     color: COMBAT_COLORS.healing, label: `${projectile.kind === "heal" ? "HEAL" : "REVIVE"} +${amount}`,
   };
   if (projectile.kind === "buff") return { color: COMBAT_COLORS.shield,
-    label: projectile.moveId === "goldShield" ? `SHIELD +${amount}` : "BUFF" };
-  if (amount === 0 && blocked > 0) return { color: COMBAT_COLORS.shield, label: `SHIELD ${blocked}` };
+    label: projectile.moveId === "goldShield" ? `BLOCK +${amount}` : "BUFF" };
+  if (amount === 0 && blocked > 0) return { color: COMBAT_COLORS.shield, label: `BLOCK ${blocked}` };
   return { color: COMBAT_COLORS.damage, label: `−${amount}` };
 }
 

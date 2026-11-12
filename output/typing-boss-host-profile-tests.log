@@ -1,0 +1,28 @@
+PASS src/TypingBoss/ContinuousBattle.test.tsx (13.127 s)
+  √ host dragon profile sits beside typing and immediately displays its own letters and ready crit (555 ms)
+  √ barbarian gold reveals two extra words on the last letter and keeps them through the separator and pending server response (155 ms)
+  √ dragon gold reveals two extra words on the last letter and keeps them through the separator and pending server response (101 ms)
+  √ a missed extension trigger never adds preview words (85 ms)
+  √ red trigger immediately moves charge into the profile badge; new charge builds separately and firing clears ready effects (549 ms)
+  √ a missed red trigger keeps the charge and never shows ready crit effects (84 ms)
+  √ portrait letters and shield react locally, and completed words show their earned bonus (84 ms)
+  √ a perfect special charges the portrait immediately and the aura clears on attack release (391 ms)
+  √ an incorrect special word never charges the aura or announces a special bonus (84 ms)
+  √ balanced client sends verifiable key gaps and shows readiness instead of a dodge roll (383 ms)
+  √ dragon and player profile attack text grow at a two-to-one rate (48 ms)
+  √ a monk's shortened row fires on its final letter and returns to ten without gold (188 ms)
+  √ errors remain after backspace and an older backend still receives one ten-word batch (246 ms)
+  √ blue defense submits immediately, and input continues during the pending request (123 ms)
+  √ inactive typing sends nothing (29 ms)
+  √ network patches preserve unchanged players and do not replay old projectiles (2 ms)
+  √ a delayed HTTP snapshot cannot roll back a newer combat update (1 ms)
+  √ all ten words stay in one scrolling row, while each character builds damage and local charge (50 ms)
+  √ native key timestamps drive the measured mean instead of handler execution time (323 ms)
+  √ the last letter waits for a space, and that space adds damage and completes the word (49 ms)
+  √ a long rest between attacks is excluded from the next attack's timing (524 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       21 passed, 21 total
+Snapshots:   0 total
+Time:        18.37 s
+Ran all test suites matching /ContinuousBattle.test/i.

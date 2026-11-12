@@ -24,8 +24,8 @@ test("ending leaderboard shows total damage, strongest attack breakdown, and pla
   expect(screen.getByText("Green: +8% (2 stacked)")).toBeTruthy();
   expect(screen.getByText("Red: 30% crit chance")).toBeTruthy();
   expect(screen.getByText("Critical: Yes · ×2")).toBeTruthy();
-  expect(screen.getByText("Shield blocked: 48")).toBeTruthy();
-  expect(screen.getByText("Blue shield ready at release: 10%")).toBeTruthy();
+  expect(screen.getByText("Blocked: 48")).toBeTruthy();
+  expect(screen.getByText("Blue block ready at release: 10%")).toBeTruthy();
   expect(screen.getByText("Mean key gap: 200 ms")).toBeTruthy();
   expect(screen.getByText("No attacks landed this battle.")).toBeTruthy();
 });

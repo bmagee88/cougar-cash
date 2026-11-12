@@ -4,7 +4,7 @@ import { ContinuousTyping } from "./ContinuousBattle";
 import { createTypingState, initializeBalanced, typingWord, wordAt } from "./proportionalRules";
 import { submitTypingBossWords } from "./api";
 import { acceptSessionSnapshot, applySessionPatch } from "./sessionPatch";
-import { TypingBossSessionSnapshot } from "./types";
+import { TypingBossPlayer, TypingBossSessionSnapshot } from "./types";
 import { AttackProgressBar } from "./AttackProgress";
 
 declare const test: any, expect: any, jest: any, beforeEach: any;
@@ -30,11 +30,174 @@ function displayedWord(input: HTMLElement) {
   return document.getElementById(input.getAttribute("aria-describedby")!).textContent;
 }
 
+const profilePlayer = { code: "hero1234", name: "CalmFox", classId: "cleric", color: "#facc15", maxHp: 100, hp: 100, defeated: false } as TypingBossPlayer;
+test("Cleric sees Prayer and the shared pool, and an orange word deposits instead of adding Power",async()=>{
+  submit.mockImplementation(()=>new Promise(()=>{}));
+  const state=initializeBalanced(createTypingState(123,'cleric'));state.balancedHealingBank=10;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active healingPool={50} profile={{player:profilePlayer,events:[]}}/>);
+  expect(screen.getByText('Prayer +10')).toBeTruthy();expect(screen.getByText('Prayer pool 50')).toBeTruthy();
+  expect(screen.queryByText(/^Charge /)).toBeNull();
+  expect(screen.queryByLabelText(/^Power bonus:/)).toBeNull();
+  const prayerLetter=screen.getAllByTestId('typing-word')[0].querySelector('span')!;
+  expect(prayerLetter.style.color).toBe('rgb(250, 204, 21)');
+  expect(prayerLetter.style.textShadow).toBe('none');
+  typeWord(screen.getByRole('textbox'),typingWord(state).text);
+  expect(screen.getByText('Prayer +0')).toBeTruthy();
+  expect(screen.getByText(/^Prayer pool \+/)).toBeTruthy();expect(submit).toHaveBeenCalledTimes(1);
+  await act(async()=>{});
+});
+
+test('Prayer feedback changes per character while ATK stays fixed, including mistakes',()=>{
+  const state=initializeBalanced(createTypingState(123,'cleric'));
+  Object.assign(state,{characters:8,balancedPower:10,balancedHealingBank:4});
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}/>);
+  const input=screen.getByRole('textbox');
+  fireEvent.keyDown(input,{key:'!'});
+  expect(screen.getByText('Prayer +1.5')).toBeTruthy();expect(screen.getByLabelText('Attack letters: 8')).toBeTruthy();
+  fireEvent.keyDown(input,{key:'!'});
+  expect(screen.getByText('Prayer +0')).toBeTruthy();expect(screen.getByLabelText('Attack letters: 8')).toBeTruthy();
+});
+
+test("banks update with each character while red activation still waits for the completed word",async()=>{
+  submit.mockImplementation(()=>new Promise(()=>{}));
+  const state=initializeBalanced(createTypingState(123,"cleric"));Object.assign(state,{balancedCharacters:134,balancedCritCharge:10});
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}/>);
+  const input=screen.getByRole("textbox"),word=typingWord(state).text;
+  fireEvent.keyDown(input,{key:word[0]});
+  expect(screen.getByText("Crit charge +10.13%")).toBeTruthy();
+  expect(screen.getByText("Prayer +0.13")).toBeTruthy();
+  expect(screen.queryByTestId("portrait-crit-badge")).toBeNull();
+  typeWord(input,word.slice(1),false);
+  expect(screen.queryByTestId("portrait-crit-badge")).toBeNull();
+  fireEvent.keyDown(input,{key:" "});
+  expect(screen.getByTestId("portrait-crit-badge")).toBeTruthy();
+  expect(screen.getByText("Crit charge +0%")).toBeTruthy();
+  expect(submit).toHaveBeenCalledTimes(1);
+  await act(async()=>{});
+});
+
+test("host dragon profile sits beside typing and immediately displays its own letters and ready crit",async()=>{
+  submit.mockImplementation(()=>new Promise(()=>{}));
+  const state=initializeBalanced(createTypingState(123,"dragon"));Object.assign(state,{balancedCharacters:134,balancedCritCharge:10});
+  render(<ContinuousTyping sessionId="bossABC" credentials={{hostToken:"test-host"}} state={state} active hostProfile={{boss:{id:"infernalDragon",name:"Dragon",hp:100,maxHp:100,glow:"red"} as any,events:[]}}/>);
+  const portrait=screen.getByTestId("host-dragon-portrait");
+  expect(portrait.parentElement!.className).toContain("typing-input-deck");
+  const input=screen.getByRole("textbox"),word=typingWord(state).text;
+  fireEvent.keyDown(input,{key:word[0]});expect(within(portrait).getByLabelText("Dragon attack letters: 1")).toBeTruthy();
+  typeWord(input,word.slice(1));
+  expect(within(portrait).getByRole("status").textContent).toMatch(/CRIT\+/);
+  expect(screen.getByText("Crit charge +0%")).toBeTruthy();
+  await act(async()=>{});
+});
+
+test.each(["barbarian","dragon"])("%s gold reveals two extra words on the last letter and keeps them through the separator and pending server response", async (ability:any)=>{
+  submit.mockImplementation(()=>new Promise(()=>{}));
+  const state=initializeBalanced(createTypingState(123,ability));
+  state.balancedCharacters=150;
+  const view=render(<ContinuousTyping sessionId="bossABC" credentials={{code:"hero1234"}} state={state} active/>);
+  const input=screen.getByRole("textbox"),gold=typingWord(state).text;
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(10);
+  typeWord(input,gold.slice(0,-1),false);
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(10);
+  fireEvent.keyDown(input,{key:gold.slice(-1)});
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(12);
+  fireEvent.keyDown(input,{key:" "});
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(12);
+  expect(submit).toHaveBeenCalledTimes(1);
+  view.rerender(<ContinuousTyping sessionId="bossABC" credentials={{code:"hero1234"}} state={{...state}} active/>);
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(12);
+  await act(async()=>{});
+});
+
+test("a missed extension trigger never adds preview words",()=>{
+  const state=initializeBalanced(createTypingState(123,"barbarian"));state.balancedCharacters=150;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:"hero1234"}} state={state} active/>);
+  typeWord(screen.getByRole("textbox"),`!${typingWord(state).text.slice(1)}`);
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(10);
+});
+
+test("red trigger immediately moves charge into the profile badge; new charge builds separately and firing clears ready effects", async () => {
+  submit.mockImplementation(()=>new Promise(()=>{}));
+  const state=initializeBalanced(createTypingState(123,"cleric"));
+  Object.assign(state,{balancedCharacters:134,balancedCritCharge:10});
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}/>);
+  const input=screen.getByRole("textbox",{name:"Type the displayed word"});
+  expect(screen.getByText("Crit charge +10%")).toBeTruthy();
+  expect(screen.queryByTestId("portrait-crit-badge")).toBeNull();
+  typeWord(input,typingWord(state).text);
+  const badge=screen.getByTestId("portrait-crit-badge"), ready=badge.textContent;
+  expect(ready).toMatch(/CRIT\+1[0-9.]*%/);
+  expect(screen.getByTestId("portrait-crit-aura")).toBeTruthy();
+  expect(screen.getByText("Crit charge +0%")).toBeTruthy();
+  expect(submit).toHaveBeenCalledTimes(1); // Ready before any HTTP response.
+  typeWord(input,typingWord(state,1).text);
+  expect(screen.getByTestId("portrait-crit-badge").textContent).toBe(ready);
+  expect(screen.queryByText("Crit charge +0%")).toBeNull();
+  for(let i=2;i<10;i++) typeWord(input,typingWord(state,i).text,i!==9);
+  expect(screen.queryByTestId("portrait-crit-badge")).toBeNull();
+  expect(screen.queryByTestId("portrait-crit-aura")).toBeNull();
+  await act(async()=>{});
+});
+
+test("a missed red trigger keeps the charge and never shows ready crit effects",()=>{
+  const state=initializeBalanced(createTypingState(123,"cleric"));
+  Object.assign(state,{balancedCharacters:134,balancedCritCharge:10});
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}/>);
+  typeWord(screen.getByRole("textbox"),`!${typingWord(state).text.slice(1)}`);
+  expect(screen.queryByTestId("portrait-crit-badge")).toBeNull();
+  expect(screen.queryByTestId("portrait-crit-aura")).toBeNull();
+  expect(screen.queryByText("Crit charge +0%")).toBeNull();
+});
+
+test("portrait letters and shield react locally, and completed words show their earned bonus", async () => {
+  const state = createTypingState(0, "cleric");
+  while (typingWord(state).color !== "blue") state.seed++;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{ code: profilePlayer.code }} state={state} active profile={{ player: profilePlayer, events: [] }} />);
+  const input = screen.getByRole("textbox", { name: "Type the displayed word" });
+  const word = typingWord(state).text;
+  fireEvent.keyDown(input, { key: word[0] });
+  expect(screen.getByLabelText("Attack letters: 1").className).toContain("portrait-attack-pulse");
+  typeWord(input, word.slice(1));
+  expect(screen.getByTestId("portrait-shield").style.opacity).toBe(String(Math.sqrt(.1)));
+  expect(screen.getByText("Block +10%")).toBeTruthy();
+  fireEvent.animationEnd(screen.getByTestId("word-reward"));
+  expect(screen.queryByTestId("word-reward")).toBeNull();
+  await act(async () => {});
+});
+
+test("a perfect special charges the portrait immediately and the aura clears on attack release", async () => {
+  const state = createTypingState(0, "cleric");
+  while (typingWord(state).color !== "gold") state.seed++;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{ code: profilePlayer.code }} state={state} active profile={{ player: profilePlayer, events: [] }} />);
+  const input = screen.getByRole("textbox", { name: "Type the displayed word" });
+  typeWord(input, typingWord(state).text);
+  expect(screen.getByTestId("portrait-special").getAttribute("data-charged")).toBe("true");
+  expect(screen.getByText("Special charged!")).toBeTruthy();
+  for (let index = 1; index < 10; index++) typeWord(input, typingWord(state, index).text, index !== 9);
+  expect(screen.getByTestId("portrait-special").getAttribute("data-charged")).toBe("false");
+  expect(screen.getByLabelText("Attack letters: 0")).toBeTruthy();
+  await waitFor(() => expect(submit).toHaveBeenCalled());
+  await act(async () => {});
+});
+
+test("an incorrect special word never charges the aura or announces a special bonus", () => {
+  const state = createTypingState(0, "cleric");
+  while (typingWord(state).color !== "gold") state.seed++;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{ code: profilePlayer.code }} state={state} active profile={{ player: profilePlayer, events: [] }} />);
+  const input = screen.getByRole("textbox", { name: "Type the displayed word" });
+  typeWord(input, `!${typingWord(state).text.slice(1)}`);
+  expect(screen.getByTestId("portrait-special").getAttribute("data-charged")).toBe("false");
+  expect(screen.queryByText("Special charged!")).toBeNull();
+  expect(screen.getByText("Entered · no bonus")).toBeTruthy();
+});
+
 test("balanced client sends verifiable key gaps and shows readiness instead of a dodge roll", async () => {
   const state = initializeBalanced(createTypingState(123, "cleric"));
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:"hero1234"}} state={state} active />);
-  expect(screen.getByText("Dodge readiness 0%")).toBeTruthy();
+  expect(screen.getByText("Dodge 0")).toBeTruthy();
   expect(screen.getByText("Quality ×1.25")).toBeTruthy();
+  expect(screen.getByText("Block 0")).toBeTruthy();
+  expect(screen.queryByText(/^Special \d/)).toBeNull();
   const input = screen.getByRole("textbox", {name:"Type the displayed word"});
   let timestamp=0;
   for(let index=0;index<10;index++) {
@@ -52,19 +215,29 @@ test("balanced client sends verifiable key gaps and shows readiness instead of a
   expect(records.every((record:any)=>record[6].every((gap:number)=>gap===150))).toBe(true);
 });
 
+test("dragon and player profile attack text grow at a two-to-one rate", () => {
+  const state=createTypingState(123,"cleric");
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}
+    dragonProfile={{boss:{id:"infernalDragon",name:"Dragon",hp:100,maxHp:100,glow:"red",attackCharacters:1} as any,events:[]}} />);
+  fireEvent.keyDown(screen.getByRole("textbox"),{key:typingWord(state).text[0]});
+  const own=screen.getByLabelText("Attack letters: 1").querySelector("strong")!;
+  const boss=screen.getByLabelText("Dragon attack letters: 1").querySelector("strong")!;
+  expect(parseFloat(boss.style.fontSize)-21).toBeCloseTo(2*(parseFloat(own.style.fontSize)-21));
+});
+
 test("a monk's shortened row fires on its final letter and returns to ten without gold", async () => {
   const state = createTypingState(0, "monk");
   state.attackWords = 5;
   while (Array.from({ length: 5 }, (_, index) => typingWord(state, index)).some(word => word.color === "gold")) state.seed++;
   render(<ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={state} active />);
   const input = screen.getByRole("textbox", { name: "Type the displayed word" });
-  expect(screen.getByText("0/5 words this attack")).toBeTruthy();
+  expect(screen.queryByText(/words this attack/)).toBeNull();
   expect(within(screen.getByTestId("ten-word-row")).getAllByTestId("typing-word")).toHaveLength(5);
   for (let index = 0; index < 5; index++) typeWord(input, typingWord(state, index).text, index !== 4);
   await waitFor(() => expect(submit.mock.calls.flatMap((call: any) => call[2])).toHaveLength(5));
   const records = submit.mock.calls.flatMap((call: any) => call[2]);
   expect(records[4][1]).toBe(typingWord(state, 4).text);
-  expect(screen.getByText("0/10 words this attack")).toBeTruthy();
+  expect(screen.queryByText(/words this attack/)).toBeNull();
   expect(within(screen.getByTestId("ten-word-row")).getAllByTestId("typing-word")).toHaveLength(10);
 });
 
@@ -72,7 +245,7 @@ test("errors remain after backspace and an older backend still receives one ten-
   const seed = seedWithoutBlue();
   render(<ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={{ ...createTypingState(seed), dodgeSamples: undefined }} active />);
   const input = screen.getByRole("textbox", { name: "Type the displayed word" });
-  expect(screen.getByText("Dodge 0%")).toBeTruthy();
+  expect(screen.getByText("Dodge 0")).toBeTruthy();
   const first = wordAt(seed, 0).text;
   fireEvent.keyDown(input, { key: "!" });
   fireEvent.keyDown(input, { key: "Backspace" });
@@ -165,7 +338,7 @@ test("native key timestamps drive the measured mean instead of handler execution
   expect(records[0][2]).toBe(wordAt(seed, 0).text.length);
   expect(records[0]).toHaveLength(5);
   expect(records[1][5]).toBe(20);
-  expect(screen.getByText("Dodge 25%")).toBeTruthy();
+  expect(screen.getByText("Dodge 9")).toBeTruthy();
 });
 
 

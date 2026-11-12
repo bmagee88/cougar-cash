@@ -1,0 +1,8 @@
+PASS src/TypingBoss/ContinuousBattle.test.tsx (8.366 s)
+PASS src/TypingBoss/hostPortrait.test.tsx
+
+Test Suites: 2 passed, 2 total
+Tests:       28 passed, 28 total
+Snapshots:   0 total
+Time:        12.899 s
+Ran all test suites matching /hostPortrait|ContinuousBattle.test/i.

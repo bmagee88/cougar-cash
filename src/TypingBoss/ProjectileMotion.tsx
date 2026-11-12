@@ -10,29 +10,32 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
   targetOffscreen?: boolean;
 }) {
   const flight = useRef<HTMLDivElement>(null);
+  const fireGradient = React.useId().replace(/:/g, "");
   const offset = useRef(serverOffset);
   const [, redraw] = useState(0);
   const now = Date.now() + offset.current;
   const flying = projectile.result === "pending" && now < projectile.impactAt;
+  const launched = now >= projectile.startedAt;
   const visibleHit = projectile.resolvedAt && now - projectile.resolvedAt < 2200;
   const melee = projectile.bossAttack === "bite" || projectile.bossAttack === "tailWhip";
   const goldenShield = projectile.moveId === "goldShield";
 
   useEffect(() => {
-    const elapsed = Math.max(0, Date.now() + offset.current - projectile.startedAt);
+    const elapsed = Date.now() + offset.current - projectile.startedAt;
     const duration = projectile.impactAt - projectile.startedAt;
     const animation = flight.current?.animate?.([
-      { transform: `translate(${from.x}%, ${from.y}%)` },
-      { transform: `translate(${to.x}%, ${to.y}%)` },
+      { transform: `translate(${from.x}%, ${from.y}%)`, opacity: 0, offset: 0 },
+      { transform: `translate(${from.x}%, ${from.y}%)`, opacity: 1, offset: .001 },
+      { transform: `translate(${to.x}%, ${to.y}%)`, opacity: 1, offset: 1 },
     ], { duration, delay: -Math.min(duration, elapsed), easing: "cubic-bezier(.2,.6,.4,1)", fill: "both" });
     return () => animation?.cancel();
   }, [from.x, from.y, to.x, to.y, projectile.startedAt, projectile.impactAt]);
 
+  const nextWake = projectile.resolvedAt ? projectile.resolvedAt + 2200 : !launched ? projectile.startedAt : projectile.impactAt;
   useEffect(() => {
-    const target = projectile.resolvedAt ? projectile.resolvedAt + 2200 : projectile.impactAt;
-    const timer = setTimeout(() => redraw(value => value + 1), Math.max(0, target - Date.now() - offset.current) + 10);
+    const timer = setTimeout(() => redraw(value => value + 1), Math.max(0, nextWake - Date.now() - offset.current) + 10);
     return () => clearTimeout(timer);
-  }, [projectile.impactAt, projectile.resolvedAt]);
+  }, [nextWake]);
 
   const dodged = projectile.evadeType === "dodge";
   const { color, label } = combatFeedback(projectile);
@@ -41,11 +44,22 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
   const hitAge = projectile.resolvedAt ? Math.max(0, now - projectile.resolvedAt) : 0;
   const angle = Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
   return <>
-    {!melee && !goldenShield && <div ref={flight} className="boss-projectile" style={{ visibility: flying ? "visible" : "hidden", transform: `translate(${to.x}%, ${to.y}%)` }} aria-hidden="true">
+    {flying && projectile.kind === "boss" && <div className={`dragon-target-warning dragon-target-${projectile.bossAttack || "fireball"}`} aria-hidden="true"
+      style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${Math.max(0, now - projectile.startedAt)}ms` }} />}
+    {flying && launched && projectile.bossAttack === "flamethrower" && <svg className="dragon-breath-stream" data-testid="dragon-breath-stream" aria-hidden="true">
+      <defs><linearGradient id={fireGradient}><stop stopColor="#fff7c2" /><stop offset=".35" stopColor="#fbbf24" /><stop offset="1" stopColor="#ef4444" stopOpacity=".1" /></linearGradient></defs>
+      <line x1={`${from.x}%`} y1={`${from.y}%`} x2={`${to.x}%`} y2={`${to.y}%`} stroke={`url(#${fireGradient})`} strokeWidth="28" strokeLinecap="round" />
+      <line x1={`${from.x}%`} y1={`${from.y}%`} x2={`${to.x}%`} y2={`${to.y}%`} stroke="#fff4bc" strokeWidth="7" strokeLinecap="round" />
+    </svg>}
+    {!melee && !goldenShield && <div ref={flight} className="boss-projectile" style={{ visibility: flying && launched ? "visible" : "hidden", transform: `translate(${to.x}%, ${to.y}%)` }} aria-hidden="true">
       <div className="boss-projectile-art">
+        {projectile.kind === "boss" && <div className="dragon-fire-trail" style={{ transform: `rotate(${angle}deg)` }}><i /><b /></div>}
         {art ? <img src={art.src} alt="" draggable={false} style={{ width: art.size, height: art.size, objectFit: "contain", imageRendering: "pixelated", transform: `rotate(${angle}deg) scale(${projectile.moveId === "strong" ? 1.2 : 1})`, filter: `drop-shadow(0 0 7px ${art.glow})` }} /> : <div style={{ width: 20, height: 20, background: color, borderRadius: "50%" }} />}
       </div>
     </div>}
+    {visibleHit && projectile.kind === "boss" && !dodged && hitAge < 850 && <div data-testid="dragon-player-impact" aria-hidden="true"
+      className={`dragon-player-impact dragon-impact-${projectile.bossAttack || "fireball"}${projectile.blockedAmount ? " dragon-impact-blocked" : ""}`}
+      style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}><i /><b /><em /><span /></div>}
     {visibleHit && goldenShield && hitAge < 900 && <svg className="boss-golden-shield" viewBox="0 0 100 108" aria-hidden="true"
       style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}>
       <path d="M50 6Q69 19 91 22V51Q91 79 50 102Q9 79 9 51V22Q31 19 50 6Z" fill="#60a5fa50" stroke={COMBAT_COLORS.shield} strokeWidth="5" />
@@ -63,7 +77,7 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
     </div>}
     {visibleHit && crit && hitAge < 600 && <div aria-hidden="true" data-testid="critical-impact-flash" className="boss-crit-impact" style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}><i /><b /></div>}
     {visibleHit && <div className={`boss-impact${crit ? " boss-impact-crit" : ""}`} style={{ left: `${(hitPoint || to).x}%`, top: `${(hitPoint || to).y + labelOffset}%`, zIndex: 10, color, animationDelay: `-${hitAge}ms` }}>
-      {crit && <span className="boss-crit-label">{projectile.balanced ? "SKILL!" : "CRIT!"}</span>}
+      {crit && <span className="boss-crit-label">CRIT!</span>}
       {showName && projectile.kind === "damage" && `${projectile.sourceName || "Player"} `}{label}{projectile.moveId === "strong" && !dodged && " ★"}
       {targetOffscreen && <span className="boss-impact-recipient">→ {projectile.targetName || "Ally"}</span>}
       {!!projectile.blockedAmount && amount > 0 && !dodged && <span className="boss-impact-blocked" style={{ color: COMBAT_COLORS.shield }}>BLOCKED {Number(projectile.blockedAmount.toFixed(2))}</span>}

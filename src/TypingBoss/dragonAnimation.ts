@@ -5,7 +5,10 @@ export const DRAGON_ATTACK_ROWS: Partial<Record<CombatPose, number>> = {
 };
 
 export function dragonSpriteAction(pose: CombatAnimation) {
-  // Incoming hits can overlay an attack without replacing its jaw/wing/tail frames.
+  if (pose.action?.state === "flamethrower") return pose.action;
+  if (pose.state === "flamethrower") return pose;
+  if (pose.hurtTier === "power" || pose.hurtTier === "critical") return undefined;
+  // Attacks outrank basic hurt only; stronger reactions own the sprite.
   if (pose.action && DRAGON_ATTACK_ROWS[pose.action.state] !== undefined) return pose.action;
   return DRAGON_ATTACK_ROWS[pose.state] !== undefined ? pose : undefined;
 }

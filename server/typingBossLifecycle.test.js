@@ -88,9 +88,57 @@ function loadServer() {
     module:{exports:{}},process:{env:{},once(){}},console:{log(){},error(){}},Buffer,URL,
     Date,setTimeout,clearTimeout,setInterval,clearInterval};
   vm.runInNewContext(fs.readFileSync(filename,"utf8")+
-    "\nmodule.exports={createTypingBossSession,typingBossSessions,broadcastTypingBossSession,typingBossResolveTarget,getTypingBossSnapshotForAuth};",sandbox,{filename});
+    "\nmodule.exports={createTypingBossSession,typingBossSessions,broadcastTypingBossSession,typingBossResolveTarget,getTypingBossSnapshotForAuth,handleStartTypingBossSession,requireTypingBossActive};",sandbox,{filename});
   return sandbox.module.exports;
 }
+
+test('all three bosses can be selected in either mode; proportional keeps its default',t=>{
+  t.mock.timers.enable({apis:['setTimeout','setInterval']});
+  const server=loadServer();
+  for(const mode of ['proportional','old'])for(const bossId of ['emberWhelp','cindermaw','infernalDragon']) {
+    const session=server.createTypingBossSession({mode,bossId});
+    assert.equal(session.boss.id,bossId);assert.equal(session.mode,mode);
+  }
+  assert.equal(server.createTypingBossSession({mode:'proportional'}).boss.id,'infernalDragon');
+});
+
+test('Start publishes one five-second deadline, rejects early actions and prevents a repeated start',async t=>{
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),session=server.createTypingBossSession({mode:'proportional'});
+  const actor={code:'hero0001',name:'Hero',classId:'cleric',hp:100,maxHp:100,averageDps:0,totalDamage:0,totalHealing:0,
+    typing:rules.createTypingState(1,'cleric'),totalKeystrokes:0,correctKeystrokes:0,joinedAt:Date.now()};
+  session.players.set(actor.code,actor);
+  const req=()=>require('node:stream').Readable.from([JSON.stringify({hostToken:session.hostToken,balanced:true})]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  const res=response();await server.handleStartTypingBossSession(req(),res,session,new URL('http://localhost/start'));
+  assert.equal(res.status,200);assert.equal(res.body.session.countdownEndsAt,1005000);
+  assert.equal(session.startedAt,1005000);
+  const host=server.getTypingBossSnapshotForAuth(session,{role:'host'}),player=server.getTypingBossSnapshotForAuth(session,{role:'player',actorCode:actor.code});
+  assert.equal(host.countdownEndsAt,player.countdownEndsAt);
+  assert.equal(server.requireTypingBossActive(response(),session),false);
+  const engine=require('./proportionalBoss');
+  assert.throws(()=>engine.submitWords(session,{role:'player',actorCode:actor.code},[],{}),/countdown/);
+  engine.updateProgress(session,{role:'player',actorCode:actor.code},0,1,()=>{throw Error('Early progress');});
+  assert.equal(actor.typing.nextWord,0);
+  const duplicate=response();await server.handleStartTypingBossSession(req(),duplicate,session,new URL('http://localhost/start'));
+  assert.equal(duplicate.status,409);assert.equal(session.countdownEndsAt,1005000);
+  t.mock.timers.tick(4999);assert.equal(server.requireTypingBossActive(response(),session),false);
+  assert.equal(session.projectiles.length,0);
+  t.mock.timers.tick(1);assert.equal(server.requireTypingBossActive(response(),session),true);
+  assert.ok(session.log.some(entry=>entry.message==='The fight has begun.'));
+});
+
+test('closing during countdown cancels the pending start callback',async t=>{
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),session=server.createTypingBossSession({mode:'old'});
+  session.players.set('hero0001',{code:'hero0001',name:'Hero',classId:'cleric',hp:100,maxHp:100,joinedAt:Date.now(),averageDps:0,totalKeystrokes:0,correctKeystrokes:0});
+  const req=require('node:stream').Readable.from([JSON.stringify({hostToken:session.hostToken})]);
+  await server.handleStartTypingBossSession(req,{setHeader(){},writeHead(){},end(){}},session,new URL('http://localhost/start'));
+  assert.ok(session.boss.nextAttackAt>=session.countdownEndsAt+session.boss.attackIntervalMs);
+  session.status='closed';lifecycle.clearSessionTimers(session);t.mock.timers.tick(20000);
+  assert.equal(session.projectiles.length,0);
+  assert.ok(!session.log.some(entry=>entry.message==='The fight has begun.'));
+});
 
 test("server sweeps abandoned rooms and frees their registry entry after the expiry notice", t => {
   t.mock.timers.enable({apis:["Date","setTimeout","setInterval"],now:1000000});
@@ -130,7 +178,7 @@ test("Old Mode redirects a full-health heal target to a wounded survivor", t => 
   assert.equal(caster.hp,100);
 });
 
-test("personal support snapshots carry the real recipient name without sharing the ally roster", t => {
+test("shared battle snapshots include allies and recipient names but keep typing state private", t => {
   t.mock.timers.enable({apis:["setTimeout","setInterval"]});
   const server=loadServer();
   const session=server.createTypingBossSession({mode:"proportional"});
@@ -138,10 +186,20 @@ test("personal support snapshots carry the real recipient name without sharing t
     typing:rules.createTypingState(1,"cleric"),totalKeystrokes:0,correctKeystrokes:0,joinedAt:Date.now()};
   const ally={...actor,code:"hero0002",name:"Injured ally",hp:20,typing:rules.createTypingState(2,"barbarian")};
   session.players.set(actor.code,actor);session.players.set(ally.code,ally);
+  Object.assign(session.typingHost,{balanced:true,balancedOrangePower:8,balancedCritBonus:.12,gold:1,dodgeBank:150,balancedGuard:30});
   session.projectiles.push({id:"heal",source:actor.code,target:ally.code,targetName:ally.name,kind:"heal",amount:30,
     moveId:"special",moveLabel:"Golden Heal",startedAt:Date.now(),impactAt:Date.now(),resolvedAt:Date.now(),willHit:true});
   const snapshot=server.getTypingBossSnapshotForAuth(session,{role:"player",actorCode:actor.code});
-  assert.equal(snapshot.players.length,1);
+  assert.equal(snapshot.players.length,2);
+  assert.ok(snapshot.players.every(player=>!player.typing));
+  assert.equal(snapshot.hostToken,undefined);
+  assert.equal(snapshot.typing.seed,actor.typing.seed);
+  assert.equal(snapshot.boss.profile.balancedOrangePower,8);
+  assert.equal(snapshot.boss.profile.balancedCritBonus,.12);
+  assert.equal(snapshot.boss.profile.gold,1);
+  assert.equal(snapshot.boss.profile.dodgeBank,150);
+  assert.equal(snapshot.boss.profile.balancedGuard,30);
+  for(const privateField of ['seed','nextWord','intervalSum','intervalSquares','balancedPace','hostToken'])assert.equal(snapshot.boss.profile[privateField],undefined);
   assert.equal(snapshot.projectiles[0].targetName,"Injured ally");
   assert.equal(snapshot.projectiles[0].target,ally.code);
 });

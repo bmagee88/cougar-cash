@@ -1,0 +1,4 @@
+.battle-countdown { position:fixed; inset:0; z-index:1500; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; background:#050a17df; backdrop-filter:blur(3px); color:#f8fafc; font:800 20px/1.2 sans-serif; text-align:center; }
+.battle-countdown strong { font:900 clamp(100px,22vw,200px)/1 monospace; color:#fde68a; animation:battle-countdown-pop 300ms ease-out; }
+@keyframes battle-countdown-pop { from { transform:scale(1.25); opacity:.3; } to { transform:scale(1); opacity:1; } }
+@media (prefers-reduced-motion:reduce) { .battle-countdown strong { animation:none; } }
