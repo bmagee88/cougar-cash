@@ -53,9 +53,14 @@ export interface TypingBossLeaderboardEntry {
   code: string;
   name: string;
   totalDamage: number;
+  isBoss?: boolean;
+  dps?: number;
+  typingStats?: { accuracy: number; wpm: number; meanIntervalMs: number; intervalStdDevMs: number };
   strongestAttack: TypingBossAttackStats | null;
 }
 export interface TypingBossTypingState {
+  wordProtocol?: 1;
+  issuedWords?: TypingBossIssuedWord[];
   balanced?: boolean;
   balancedRandomColors?: boolean;
   balancedPower?: number;
@@ -70,11 +75,17 @@ export interface TypingBossTypingState {
   balancedSkillWord?: boolean;
   balancedOrangeBank?: number;
   balancedHealingBank?: number;
+  balancedBlockBank?: number;
   balancedHealingDeposit?: number;
   balancedOrangePower?: number;
   balancedCritCharge?: number;
   balancedCritBonus?: number;
   balancedCritAt?: number;
+  balancedOrangeAt?: number;
+  balancedBlueAt?: number;
+  balancedGreenAt?: number;
+  balancedDodgeBank?: number;
+  balancedCadenceBonus?: number;
   ability?: TypingBossClassId | "dragon";
   gold?: number;
   attackWords?: number;
@@ -98,12 +109,17 @@ export interface TypingBossTypingState {
   consistency: number;
   totalTaken: number;
   totalCharacters: number;
+  totalCorrectCharacters?: number;
+  totalIntervalCount?: number;
+  totalIntervalSum?: number;
+  totalIntervalSquares?: number;
   dodgeSamples?: number[];
   dodgeBank?: number;
   attackErrors?: number;
 }
 // index, typed word, interval count, sum, squared sum, optional Space-to-first-character gap.
-export type TypingBossWordResult = [number, string, number, number, number, (number | null)?, number[]?];
+export type TypingBossIssuedWord = {index:number;text:string;color:'blue'|'orange'|'red'|'green'|'gold'|null;ticket:string;trigger?:boolean};
+export type TypingBossWordResult = [number, string, number, number, number, (number | null)?, (number[] | null)?, {ticket:string;mistakes:number}?];
 export type TypingBossMoveId = "weak" | "strong" | "special" | "potion";
 export type TypingBossProjectileKind =
   | "damage"
@@ -198,6 +214,8 @@ export interface TypingBossLogEntry {
 }
 
 export interface TypingBossSessionSnapshot {
+  battleView?: 'personal' | 'full';
+  teamActivity?: {damage:number;healing:number;revives:number};
   countdownEndsAt?: number | null;
   clericHealingPool?: number;
   clericHealingAllowance?: number;
@@ -228,6 +246,7 @@ export interface TypingBossSessionSnapshot {
 export interface TypingBossCredentials {
   hostToken?: string;
   code?: string;
+  playerToken?: string;
 }
 
 export interface TypingBossChallenge {
@@ -271,6 +290,7 @@ export interface CreateTypingBossSessionResponse
 export interface TypingBossParticipantResponse
   extends TypingBossSessionResponse {
   code: string;
+  playerToken: string;
 }
 
 export interface TypingBossChallengeResponse

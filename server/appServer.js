@@ -13,6 +13,10 @@ const proportionalBoss = require("./proportionalBoss");
 const { requestDragonAttack, recordDragonHurt } = require("./dragonCombat");
 const { DRAGON_FLAME, dragonAttackDuration } = require("../src/TypingBoss/dragonHurtRules");
 const typingBossLifecycle = require("./typingBossLifecycle");
+const { queueBattleBroadcast } = require('./typingBossBroadcast');
+const { issuePlayerToken, playerForToken } = require('./typingBossAuth');
+const { publicTypingState } = require('./typingBossIntegrity');
+const { studentView, overviewFor, queueStudentSummary } = require('./typingBossAudience');
 
 const PORT = Number(
   process.env.APP_SERVER_PORT ||
@@ -1337,6 +1341,7 @@ function getTypingBossPlayerSnapshot(player) {
     ...(player.typing ? { attackProgress: player.attackProgress || 0 } : {}),
     ...(player.typing ? { hp: Math.round(player.hp * 100) / 100,
       totalDamage: Math.round(player.totalDamage * 100) / 100,
+      totalHealing: Math.round(player.totalHealing * 100) / 100,
       totalTaken: Math.round(player.typing.totalTaken * 100) / 100 } : {}),
   };
 }
@@ -1404,7 +1409,12 @@ function getTypingBossSnapshot(session, options = {}) {
 
   snapshot.mode = session.mode || "old";
   if (session.mode === "proportional") {
+    snapshot.battleView='full';
     snapshot.revision = session.revision;
+    // Battle summaries travel in the ending leaderboard, not every live patch.
+    delete snapshot.boss.totalDamage;
+    delete snapshot.boss.strongestAttack;
+    delete snapshot.boss.turnsTaken;
     snapshot.serverNow = now;
     snapshot.startingPlayers = session.startingPlayers || session.players.size;
     snapshot.hpMultiplier = session.hpMultiplier || 1;
@@ -1423,9 +1433,9 @@ function getTypingBossSnapshot(session, options = {}) {
     snapshot.boss.hp = session.status === "setup" ? snapshot.boss.maxHp : snapshot.boss.hp;
     snapshot.log = [];
     if (includeChallengesFor) {
-      snapshot.typing = { ...session.players.get(includeChallengesFor).typing };
+      snapshot.typing = publicTypingState(session,session.players.get(includeChallengesFor).typing);
     } else {
-      snapshot.typing = { ...session.typingHost };
+      snapshot.typing = publicTypingState(session,session.typingHost);
     }
   }
 
@@ -1439,7 +1449,7 @@ function getTypingBossSnapshot(session, options = {}) {
       .map((challenge) => challenge.id);
   }
 
-  return snapshot;
+  return session.mode==='proportional' && includeChallengesFor ? studentView(snapshot,includeChallengesFor).snapshot : snapshot;
 }
 
 function isTypingBossHostToken(session, token) {
@@ -1453,10 +1463,11 @@ function authenticateTypingBoss(session, url, body = {}) {
     return { role: "host", actorCode: "HOST" };
   }
 
-  const code = normalizeTypingBossPlayerCode(body.code || url.searchParams.get("code"));
-  if (code && session.players.has(code)) {
+  const player = playerForToken(session, body.playerToken || url.searchParams.get('playerToken'));
+  const suppliedCode = body.code || url.searchParams.get('code');
+  if (player && (!suppliedCode || normalizeTypingBossPlayerCode(suppliedCode) === player.code)) {
     typingBossLifecycle.touchSession(session);
-    return { role: "player", actorCode: code };
+    return { role: "player", actorCode: player.code };
   }
 
   return null;
@@ -1503,7 +1514,32 @@ function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
     return;
   }
   if (session.mode === "proportional") {
-    const current = getTypingBossSnapshotForAuth(session, subscriber.auth);
+    // Build the public roster/projectiles/profile once per room flush, then
+    // attach only this subscriber's private typing state. Cache never holds it.
+    let publicState = snapshotCache?.get('proportional-public');
+    if (!publicState) {
+      publicState = getTypingBossSnapshot(session);
+      delete publicState.typing;
+      snapshotCache?.set('proportional-public', publicState);
+    }
+    const playerCode = subscriber.auth?.role === 'player' ? subscriber.auth.actorCode : null;
+    let current = { ...publicState, typing: publicTypingState(session,playerCode ? session.players.get(playerCode).typing : session.typingHost),
+      ...(playerCode ? { activeChallengeIds: [] } : {}) };
+    if(playerCode) {
+      let overview=snapshotCache?.get('student-overview');
+      if(!overview){overview=overviewFor(publicState);snapshotCache?.set('student-overview',overview);}
+      subscriber.audience=subscriber.audience || {};
+      const view=studentView(current,playerCode,subscriber.audience,Date.now(),overview);
+      current=view.snapshot;
+      if(view.pendingUntil)queueStudentSummary(session,view.pendingUntil,()=>{
+        session.revision+=1;
+        const cache=new Map();
+        for(const student of [...session.subscribers].filter(item=>item.auth?.role==='player')) {
+          try{writeTypingBossEvent(student,session,cache);}
+          catch{typingBossLifecycle.detachSubscriber(session,student);student.res.destroy();}
+        }
+      },scheduleTypingBossTimer);
+    }
     const delta = subscriber.previous ? proportionalBoss.diffSnapshot(subscriber.previous, current) : null;
     if (!subscriber.previous) {
       subscriber.res.write(`event: session\ndata: ${JSON.stringify(current)}\n\n`);
@@ -1532,19 +1568,17 @@ function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
   subscriber.res.write(event);
 }
 
-function broadcastTypingBossSession(session) {
+function broadcastTypingBossSession(session, options = {}) {
   typingBossLifecycle.maintainSession(session);
   if (session.mode === "proportional") {
-    if (session.broadcastTimer) return;
-    // Coalesce simultaneous hits from a classroom into at most ten updates/second.
-    session.broadcastTimer = scheduleTypingBossTimer(session, () => {
-      session.broadcastTimer = null;
+    queueBattleBroadcast(session, () => {
       session.revision += 1;
+      const snapshotCache = new Map();
       for (const subscriber of [...session.subscribers]) {
-        try { writeTypingBossEvent(subscriber, session); }
+        try { writeTypingBossEvent(subscriber, session, snapshotCache); }
         catch { typingBossLifecycle.detachSubscriber(session, subscriber); subscriber.res.destroy(); }
       }
-    }, 100);
+    }, scheduleTypingBossTimer, options);
     return;
   }
   const snapshotCache = new Map();
@@ -1933,7 +1967,7 @@ async function handleCreateTypingBossSession(req, res) {
 function handleTypingBossEvents(req, res, session, url) {
   const auth = authenticateTypingBoss(session, url);
   if (!auth) {
-    sendError(res, 401, "A valid host token or player code is required.");
+    sendError(res, 401, "A valid host or private player token is required.");
     return;
   }
 
@@ -2007,8 +2041,10 @@ async function handleCreateTypingBossParticipant(req, res, session) {
   }
 
   const heroClass = TYPING_BOSS_CLASSES[classId] || TYPING_BOSS_CLASSES.cleric;
+  const credential = issuePlayerToken();
   const player = {
     code,
+    tokenHash: credential.hash,
     name: normalizeTypingBossPlayerName(body.name, heroClass.label),
     classId,
     hp: session.mode === "proportional" ? 100 : heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
@@ -2040,17 +2076,17 @@ async function handleCreateTypingBossParticipant(req, res, session) {
 
   sendJson(res, 201, {
     code,
+    playerToken: credential.token,
     session: getTypingBossSnapshot(session, { includeChallengesFor: code }),
   });
 }
 
 async function handleVerifyTypingBossParticipant(req, res, session) {
   const body = await readJson(req);
-  const code = normalizeTypingBossPlayerCode(body.code);
-  const player = session.players.get(code);
+  const player = playerForToken(session,body.playerToken);
 
   if (!player) {
-    sendError(res, 401, "That player code is not valid for this boss game.");
+    sendError(res, 401, "Your private player credential is missing or invalid. Join the next game.");
     return;
   }
 
@@ -2058,8 +2094,9 @@ async function handleVerifyTypingBossParticipant(req, res, session) {
   typingBossLifecycle.touchSession(session);
   broadcastTypingBossSession(session);
   sendJson(res, 200, {
-    code,
-    session: getTypingBossSnapshot(session, { includeChallengesFor: code }),
+    code: player.code,
+    playerToken: body.playerToken,
+    session: getTypingBossSnapshot(session, { includeChallengesFor: player.code }),
   });
 }
 
@@ -2130,7 +2167,7 @@ async function handleCreateTypingBossChallenge(req, res, session, url) {
   const auth = authenticateTypingBoss(session, url, body);
 
   if (!auth || auth.role !== "player") {
-    sendError(res, 403, "A valid player code is required.");
+    sendError(res, 403, "A valid private player token is required.");
     return;
   }
 
@@ -2200,7 +2237,7 @@ async function handleSubmitTypingBossAction(req, res, session, url) {
   const auth = authenticateTypingBoss(session, url, body);
 
   if (!auth || auth.role !== "player") {
-    sendError(res, 403, "A valid player code is required.");
+    sendError(res, 403, "A valid private player token is required.");
     return;
   }
 
@@ -2394,7 +2431,7 @@ async function handleTypingBossRequest(req, res, url, parts) {
   if (req.method === "GET" && parts.length === 4) {
     const auth = authenticateTypingBoss(session, url);
     if (!auth) {
-      sendError(res, 401, "A valid host token or player code is required.");
+      sendError(res, 401, "A valid host or private player token is required.");
       return;
     }
     sendJson(res, 200, { session: getTypingBossSnapshotForAuth(session, auth) });
@@ -2441,7 +2478,7 @@ async function handleTypingBossRequest(req, res, url, parts) {
   if (req.method === "POST" && parts[4] === "progress") {
     const body = await readJson(req);
     const auth = authenticateTypingBoss(session, url, body);
-    if (!auth) { sendError(res, 401, "A valid host token or player code is required."); return; }
+    if (!auth) { sendError(res, 401, "A valid host or private player token is required."); return; }
     proportionalBoss.updateProgress(session, auth, body.wordIndex, body.characters, broadcastTypingBossSession);
     sendJson(res, 200, { ok: true });
     return;
@@ -2450,7 +2487,7 @@ async function handleTypingBossRequest(req, res, url, parts) {
   if (req.method === "POST" && parts[4] === "words") {
     const body = await readJson(req);
     const auth = authenticateTypingBoss(session, url, body);
-    if (!auth) { sendError(res, 401, "A valid host token or player code is required."); return; }
+    if (!auth) { sendError(res, 401, "A valid host or private player token is required."); return; }
     if (session.mode !== "proportional") { sendError(res, 409, "Choose proportional mode for continuous words."); return; }
     const result = proportionalBoss.submitWords(session, auth, body.words, {
       schedule: scheduleTypingBossTimer, broadcast: broadcastTypingBossSession,

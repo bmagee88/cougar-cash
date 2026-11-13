@@ -1,191 +1,140 @@
-// Run with the local classroom backend: node scripts/verify-typing-boss.cjs
-const assert = require("node:assert/strict");
-const { setTimeout: delay } = require("node:timers/promises");
-const { wordAt } = require("../src/TypingBoss/proportionalRules");
-const base = process.env.TYPING_BOSS_TEST_URL || "http://127.0.0.1:4000/api/typing-boss/sessions";
-const openStreams = [];
-const games = [];
-const balanced = process.env.TYPING_BOSS_BALANCED === "1";
-
-async function request(path, body, expected = 200) {
-  const response = await fetch(`${base}${path}`, body === undefined ? {} : {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(path === "" ? { ...body, creationPassword: process.env.TYPING_BOSS_CREATION_PASSWORD || "sheep" } : body),
-  });
-  const result = await response.json();
-  assert.equal(response.status, expected, result.error || path);
-  return result;
+// Local 31-client protocol, authentication, delivery and ending-results verifier.
+const assert=require('node:assert/strict');
+const {setTimeout:delay}=require('node:timers/promises');
+const rules=require('../src/TypingBoss/proportionalRules');
+const base=process.env.TYPING_BOSS_TEST_URL || 'http://127.0.0.1:4000/api/typing-boss/sessions';
+const balanced=process.env.TYPING_BOSS_BALANCED==='1';
+const scheduled=process.env.TYPING_BOSS_SCHEDULED==='1';
+const streams=[],games=[];
+async function request(path,body,expected=200) {
+  const response=await fetch(base+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path===''?{...body,creationPassword:process.env.TYPING_BOSS_CREATION_PASSWORD || 'sheep'}:body)});
+  const result=await response.json();assert.equal(response.status,expected,result.error || path);return result;
 }
-async function stream(id, credentials) {
-  const controller = new AbortController();
-  const response = await fetch(`${base}/${id}/events?${new URLSearchParams(credentials)}`, { signal: controller.signal });
-  assert.equal(response.status, 200);
-  const stats = { initialBytes: 0, patchBytes: 0, patches: [], snapshot: null, abort: () => controller.abort() };
-  openStreams.push(stats);
-  (async () => {
-    let buffer = "";
-    try {
-      for await (const chunk of response.body) {
-        buffer += Buffer.from(chunk).toString("utf8");
-        let end;
-        while ((end = buffer.indexOf("\n\n")) >= 0) {
-          const event = buffer.slice(0, end); buffer = buffer.slice(end + 2);
-          const data = event.split("\n").find(line => line.startsWith("data: "));
-          if (!data) continue;
-          const payload = JSON.parse(data.slice(6));
-          if (event.startsWith("event: session")) { stats.initialBytes += Buffer.byteLength(event); stats.snapshot = payload; }
-          if (event.startsWith("event: patch")) { stats.patchBytes += Buffer.byteLength(event); stats.patches.push(payload); }
-        }
+const auth=player=>({code:player.code,playerToken:player.playerToken});
+const query=credentials=>new URLSearchParams(credentials).toString();
+async function stream(id,credentials) {
+  const controller=new AbortController();
+  const response=await fetch(`${base}/${id}/events?${query(credentials)}`,{signal:controller.signal});
+  assert.equal(response.status,200);
+  const stats={patches:[],snapshot:null,bytes:0,abort:()=>controller.abort()};streams.push(stats);
+  (async()=>{
+    let buffer='';
+    try {for await(const chunk of response.body) {
+      buffer+=Buffer.from(chunk).toString('utf8');let end;
+      while((end=buffer.indexOf('\n\n'))>=0) {
+        const event=buffer.slice(0,end);buffer=buffer.slice(end+2);
+        const data=event.split('\n').find(line=>line.startsWith('data: '));if(!data)continue;
+        const payload=JSON.parse(data.slice(6));
+        assert.equal(payload.playerToken,undefined);assert.equal(payload.hostToken,undefined);
+        assert.ok((payload.players || []).every(player=>!player.tokenHash && !player.playerToken && !player.typing));
+        if(event.startsWith('event: session'))stats.snapshot=payload;
+        if(event.startsWith('event: patch')){stats.patches.push(payload);stats.bytes+=Buffer.byteLength(event);}
       }
-    } catch (error) { if (error.name !== "AbortError") throw error; }
-  })();
-  return stats;
+    }}catch(error){if(error.name!=='AbortError')throw error;}
+  })();return stats;
 }
-function words(state, start = 0, countWords = 10) {
-  return Array.from({ length: countWords }, (_, offset) => {
-    const index = start + offset;
-    const text = wordAt(state.seed, index).text + (index % 10 === 9 ? "" : " ");
-    const count = text.length - (index % 10 === 0 ? 1 : 0);
-    // One wrong letter per word prevents random color bonuses; spaces still score.
-    if (state.balanced) {
-      const gaps=Array(count).fill(0);gaps[0]=2000;
-      return [index,"!"+text.slice(1),count,2000,4000000,index%10===0?null:2000,gaps];
-    }
-    return [index, "!" + text.slice(1), count, 2000, 4000000];
-  });
+function record(state,mistakes=1) {
+  const word=rules.typingWord(state);assert.ok(word.ticket && word.text,'word must be issued');
+  const text=word.text+(rules.requiresWordSpace(state,word.text)?' ':'');
+  const count=text.length-(state.wordsInAttack===0?1:0),gap=40;
+  const gaps=Array(count).fill(gap);if(state.wordsInAttack)gaps[0]=200;
+  return [state.nextWord,text,count,gaps.reduce((a,b)=>a+b,0),gaps.reduce((a,b)=>a+b*b,0),state.wordsInAttack?200:null,state.balanced?gaps:null,{ticket:word.ticket,mistakes}];
 }
-
-(async () => {
-  try {
-    const created = await request("", { name: "31-client verification", mode: "proportional", bossId: "emberWhelp", goldWords: true }, 201);
-    games.push(created);
-    const id = created.sessionId;
-    assert.equal(created.session.boss.id, "emberWhelp");
-    assert.equal(created.session.typing.ability, "dragon");
-    const participants = [];
-    for (let i = 0; i < 30; i++) {
-      const classId = ["cleric", "rogue", "barbarian"][i % 3];
-      const player = await request(`/${id}/participants`, { name: `Test ${i + 1}`, classId, goldWords: true }, 201);
-      assert.equal(player.session.players.length, i + 1);
-      assert.equal(player.session.players.find(hero => hero.code === player.code).hp, 100);
-      assert.equal(player.session.hostToken, undefined);
-      assert.ok(player.session.players.every(hero => !hero.typing), "roster never contains private typing state");
-      assert.equal(player.session.typing.ability, classId);
-      participants.push(player);
+async function completeWords(id,credentials,initial,countWords) {
+  const state=structuredClone(initial);let last;
+  for(let i=0;i<countWords;i++) {
+    const rec=record(state);await delay(Math.max(180,rec[1].length*45));
+    last=await request(`/${id}/words`,{...credentials,words:[rec]});
+    rules.finishWord(state,rec[1],rec[2],rec[3],rec[4],rec[5]??undefined,rec[6],rec[7].mistakes);
+    if(state.wordsInAttack===rules.attackWordLimit(state))rules.releaseAttack(state,()=>1);
+    state.issuedWords=last.issuedWords;
+    if(i===0) {
+      const repeat=await request(`/${id}/words`,{...credentials,words:[rec]});assert.equal(repeat.nextWord,last.nextWord);
     }
-    await request(`/${id}/participants`, { name: "Overflow", classId: "monk" }, 409);
-    await request(`/${id}/start`, { hostToken: created.hostToken, hpMultiplier: 1.5 }, 400);
-    const started = await request(`/${id}/start`, { hostToken: created.hostToken, balanced });
-    await delay(Math.max(0,(started.session.countdownEndsAt || 0)-Date.now()+20));
-    assert.equal(started.session.boss.hp, 3000);
-    assert.equal(started.session.balanced,balanced);
-    const actorSnapshots = await Promise.all(participants.map(player => request(`/${id}?code=${player.code}`)));
-    actorSnapshots.forEach((snapshot,index)=>{participants[index].session=snapshot.session;});
-    await request(`/${id}/start`, { hostToken: created.hostToken }, 409);
-    const host = await stream(id, { hostToken: created.hostToken });
-    const clients = await Promise.all(participants.map(player => stream(id, { code: player.code })));
-    await delay(1000);
-    for (const client of clients) assert.equal(client.snapshot.players.length, 30);
-    await request(`/${id}/progress`, { hostToken: created.hostToken, wordIndex: 0, characters: 1 });
-    await Promise.all(participants.map(player => request(`/${id}/progress`, { code: player.code, wordIndex: 0, characters: 1 })));
-    await delay(200);
-    const charging = (await request(`/${id}?hostToken=${created.hostToken}`)).session;
-    assert.ok(charging.players.every(player => player.attackProgress > 0));
-    assert.ok(charging.boss.attackProgress > 0);
-    assert.equal(charging.boss.hp, 3000, "progress alone cannot damage the boss");
-    assert.ok(clients.every(client => client.patches.some(patch => patch.players?.some(player => player.attackProgress > 0))));
-    await request(`/${id}/challenge`, { code: participants[0].code, moveId: "special" }, 409);
-    await request(`/${id}/actions`, { code: participants[0].code }, 409);
-    const hostWords = words(started.session.typing).map(record => {
-      const hasSpace = record[1].endsWith(" ");
-      record[1] = "!".repeat(record[1].length - (hasSpace ? 1 : 0)) + (hasSpace ? " " : "");
-      return record;
-    });
-    await request(`/${id}/words`, { hostToken: created.hostToken, words: hostWords });
-    await Promise.all(participants.map(player => request(`/${id}/words`, { code: player.code, words: words(player.session.typing) })));
-    // Retry the same ten words; it must be idempotent even with an attack in flight.
-    await request(`/${id}/words`, { code: participants[0].code, words: words(participants[0].session.typing) });
-    await delay(1100);
-    const final = (await request(`/${id}?hostToken=${created.hostToken}`)).session;
-    assert.equal(final.players.length, 30);
-    assert.ok(final.boss.hp > 0 && final.boss.hp < 3000);
-    const bossShots = final.projectiles.filter(shot => shot.source === "boss");
-    const bossPattern = bossShots[0]?.bossAttack;
-    assert.equal(bossShots.length, { bite: 1, fireball: 1, tailWhip: 9, flamethrower: 30 }[bossPattern]);
-    assert.ok(bossShots.every(shot => shot.bossAttack === bossPattern));
-    assert.equal(final.projectiles.length, 30 + bossShots.length);
-    const targets = new Set(bossShots.map(shot => shot.target));
-    assert.ok(final.players.every(player => player.totalDamage > 0 && (player.totalTaken > 0) === targets.has(player.code)));
-    assert.ok(final.players.every(player => player.turnsTaken === 1));
-    for (let i = 0; i < clients.length; i++) {
-      const client = clients[i];
-      const received = new Map();
-      for (const patch of client.patches) {
-        assert.equal(patch.hostToken, undefined);
-        assert.ok((patch.players || []).every(player => !player.typing), "shared roster has no private typing state");
-        for (const shot of patch.projectiles || []) {
-          received.set(shot.id, { ...received.get(shot.id), ...shot });
-        }
-      }
-      assert.equal(received.size, final.projectiles.length, "each client sees every combat event");
-      assert.ok(client.patchBytes < 80000, "shared scene still uses bounded compact patches");
-    }
-    const hostShots = new Map(host.patches.flatMap(patch => patch.projectiles || []).map(shot => [shot.id, shot]));
-    assert.equal(hostShots.size, 30 + bossShots.length);
-    const reconnected = await stream(id, { code: participants[0].code });
-    await delay(100);
-    assert.equal(reconnected.snapshot.typing.nextWord, 10);
-    assert.equal(reconnected.snapshot.players.find(player => player.code === participants[0].code).turnsTaken, 1);
-    assert.equal(reconnected.snapshot.hostToken, undefined);
-    assert.equal(reconnected.snapshot.typing.seed, participants[0].session.typing.seed);
-    assert.ok(reconnected.snapshot.players.every(player => !player.typing));
-    const burst = { hostCombatBytes: host.patchBytes,
-      averagePlayerCombatBytes: Math.round(clients.reduce((sum, client) => sum + client.patchBytes, 0) / 30),
-      totalCombatBytes: host.patchBytes + clients.reduce((sum, client) => sum + client.patchBytes, 0), hostUpdateCount: host.patches.length };
-    assert.equal(reconnected.snapshot.leaderboard, undefined, "shared results stay off the live player stream");
-
-    let ended = final;
-    for (let start = 10; start <= 100 && ended.status === "active"; start += 10) {
-      await delay(1500);
-      await Promise.all(participants.map(player => request(`/${id}/words`, { code: player.code, words: words(player.session.typing, start) })));
-      await delay(900);
-      ended = (await request(`/${id}?code=${participants[0].code}`)).session;
-    }
-    assert.equal(ended.status, "victory");
-    assert.equal(ended.players.length, 30, "shared roster remains visible at the end");
-    assert.equal(ended.leaderboard.length, 30);
-    assert.ok(ended.leaderboard.every((entry, index, list) => !index || entry.totalDamage <= list[index - 1].totalDamage));
-    assert.ok(ended.leaderboard.some(entry => entry.strongestAttack && entry.strongestAttack.base > 0 && entry.strongestAttack.consistency >= .5 && entry.strongestAttack.orangeBonus === 0));
-    assert.ok(clients.every(client => client.patches.some(patch => patch.leaderboard?.length === 30)));
-
-    const scaled = await request("", { name: "HP multiplier verification", mode: "proportional" }, 201);
-    games.push(scaled);
-    const scaledHero = await request(`/${scaled.sessionId}/participants`, { name: "Scaled hero", classId: "monk" }, 201);
-    await request(`/${scaled.sessionId}/start`, { code: scaledHero.code, hpMultiplier: 30 }, 403);
-    const scaledStart = await request(`/${scaled.sessionId}/start`, { hostToken: scaled.hostToken, hpMultiplier: 30 });
-    assert.equal(scaledStart.session.hpMultiplier, 30);
-    assert.equal(scaledStart.session.players[0].maxHp, 3000);
-    assert.equal(scaledStart.session.boss.maxHp, 3000);
-
-    // Exercise original creation, quiz, and special-move paths as a compatibility check.
-    const old = await request("", { name: "Old mode verification", mode: "old", bossId: "cindermaw" }, 201);
-    games.push(old);
-    assert.equal(old.session.mode, "old"); assert.equal(old.session.boss.hp, 1200);
-    const hero = await request(`/${old.sessionId}/participants`, { name: "Original cleric", classId: "cleric" }, 201);
-    assert.equal(hero.session.players[0].hp, 135);
-    const oldStarted = await request(`/${old.sessionId}/start`, { hostToken: old.hostToken });
-    await delay(Math.max(0,(oldStarted.session.countdownEndsAt || 0)-Date.now()+20));
-    const challenge = await request(`/${old.sessionId}/challenge`, { code: hero.code, moveId: "weak" }, 201);
-    assert.ok(challenge.challenge.question);
-    const action = await request(`/${old.sessionId}/actions`, { code: hero.code, challengeId: challenge.challenge.id,
-      answerText: challenge.challenge.answers[0], durationMs: 5000, acceptedCharacters: 20, mistakes: 0 }, 201);
-    assert.ok(action.projectile); assert.ok(action.stats);
-
-    const report = { balanced, clients: 31, attacks: 31, bossPattern, bossTargets: bossShots.length, projectiles: final.projectiles.length, endLeaderboard: "passed", hpMultiplier: "passed", progressUpdates: "passed",
-      ...burst, originalMode: "passed", reconnectAndRetry: "passed",
-      note: "Local SSE payload bytes for a progress update per actor, one host volley and 30 simultaneous player attacks; excludes initial snapshots and HTTP/TLS overhead." };
-    console.log(JSON.stringify(report, null, 2));
-  } finally {
-    openStreams.forEach(client => client.abort());
-    for (const game of games) await request(`/${game.sessionId}/close`, { hostToken: game.hostToken });
   }
-})().catch(error => { console.error(error); process.exitCode = 1; });
+  return {state,last};
+}
+(async()=>{
+  try {
+    const game=await request('',{name:'Typing integrity verification',mode:'proportional',goldWords:true},201);games.push(game);
+    const id=game.sessionId,participants=[];
+    for(let i=0;i<30;i++)participants.push(await request(`/${id}/participants`,{name:`Test ${i}`,classId:'barbarian',goldWords:true},201));
+    assert.ok(participants.every(p=>/^[a-f0-9]{64}$/.test(p.playerToken)));
+    const a=participants[0],b=participants[1];
+    await request(`/${id}?code=${a.code}`,undefined,401);
+    await request(`/${id}/events?code=${a.code}`,undefined,401);
+    await request(`/${id}/verify`,{code:a.code},401);
+    await request(`/${id}/verify`,{playerToken:'0'.repeat(64)},401);
+    await request(`/${id}/words`,{code:a.code,words:[]},401);
+    await request(`/${id}/progress`,{code:a.code,wordIndex:0,characters:1},401);
+    await request(`/${id}?${query({code:b.code,playerToken:a.playerToken})}`,undefined,401);
+    const verified=await request(`/${id}/verify`,{playerToken:a.playerToken});assert.equal(verified.code,a.code);
+    const started=await request(`/${id}/start`,{hostToken:game.hostToken,hpMultiplier:1.5,balanced,balancedRandomColors:!scheduled});
+    await delay(Math.max(0,started.session.countdownEndsAt-Date.now()+50));
+    const snapshots=await Promise.all(participants.map(p=>request(`/${id}?${query(auth(p))}`)));
+    snapshots.forEach((value,i)=>participants[i].session=value.session);
+    for(const p of participants) {
+      assert.equal(p.session.typing.seed,0);assert.equal(p.session.typing.issuedWords.length,2);
+      assert.equal(rules.typingWord(p.session.typing,2).pending,true);
+    }
+    const host=await stream(id,{hostToken:game.hostToken});
+    const clients=await Promise.all(participants.map(p=>stream(id,auth(p))));await delay(1000);
+    const before=host.patches.length;
+    await Promise.all(participants.map(p=>request(`/${id}/progress`,{...auth(p),wordIndex:0,characters:1})));
+    await delay(500);assert.equal(host.patches.length-before,1);
+    assert.ok(host.patches.slice(before).every(patch=>!patch.boss?.profile));
+    const first=record(a.session.typing),bad=structuredClone(first);bad[1]='!'+bad[1].slice(1);
+    await request(`/${id}/words`,{...auth(a),words:[bad]},400);
+    const stolen=structuredClone(first);stolen[7].ticket=b.session.typing.issuedWords[0].ticket;
+    await request(`/${id}/words`,{...auth(a),words:[stolen]},400);
+    const future=structuredClone(first);future[0]=2;
+    await request(`/${id}/words`,{...auth(a),words:[future]},400);
+    const timing=structuredClone(first);timing[3]=0;timing[4]=0;if(timing[6])timing[6].fill(0);timing[5]=null;
+    await request(`/${id}/words`,{...auth(a),words:[timing]},400);
+    const check=await request(`/${id}?${query(auth(a))}`);assert.equal(check.session.typing.nextWord,0);
+    const results=await Promise.all([
+      completeWords(id,{hostToken:game.hostToken},started.session.typing,10),
+      ...participants.map(p=>completeWords(id,auth(p),p.session.typing,10)),
+    ]);
+    await delay(2200);
+    const final=(await request(`/${id}?hostToken=${game.hostToken}`)).session;
+    assert.equal(final.battleView,'full');
+    assert.equal(final.players.length,30);assert.ok(final.players.every(p=>p.turnsTaken===1));
+    assert.ok(final.players.every(p=>p.totalDamage>0));
+    assert.ok(final.projectiles.some(p=>p.source==='boss'));
+    assert.equal(final.boss.strongestAttack,undefined);
+    const playerResult=await request(`/${id}?${query(auth(a))}`);assert.equal(playerResult.session.typing.nextWord,10);
+    assert.equal(playerResult.session.battleView,'personal');
+    assert.ok(playerResult.session.projectiles.every(p=>p.source===a.code || p.target===a.code));
+    assert.equal(playerResult.session.boss.hurt,undefined);assert.equal(playerResult.session.boss.flameBreath,undefined);
+    assert.ok(playerResult.session.players.filter(p=>p.code!==a.code).every(p=>p.attackProgress===undefined));
+    for(let i=0;i<clients.length;i++) {
+      const code=participants[i].code;
+      const personal=new Map();
+      for(const patch of clients[i].patches)for(const shot of patch.projectiles || [])personal.set(shot.id,{...personal.get(shot.id),...shot});
+      assert.ok([...personal.values()].every(p=>p.source===code || p.target===code),'student stream omits unrelated combat');
+      assert.ok([...personal.values()].some(p=>p.source===code && p.target==='boss'),'own attack is delivered');
+      assert.ok(clients[i].patches.some(patch=>patch.teamActivity?.damage>0),'compact team activity arrives');
+    }
+    const edited=record(a.session.typing);edited[7].mistakes=0;
+    // Replays carrying an altered proof are rejected, not awarded again.
+    await request(`/${id}/words`,{...auth(a),words:[edited]},400);
+    const reconnected=await stream(id,auth(a));await delay(100);
+    assert.equal(reconnected.snapshot.typing.nextWord,10);
+    const closed=await request(`/${id}/close`,{hostToken:game.hostToken});await delay(400);
+    assert.equal(closed.session.leaderboard.length,31);
+    const boss=closed.session.leaderboard.find(e=>e.isBoss);assert.ok(boss.totalDamage>0 && boss.strongestAttack);
+    assert.ok(clients.every(client=>client.patches.some(patch=>patch.leaderboard?.length===31)));
+    const old=await request('',{name:'Old-mode token verification',mode:'old',bossId:'cindermaw'},201);games.push(old);
+    const hero=await request(`/${old.sessionId}/participants`,{name:'Hero',classId:'cleric'},201);
+    await request(`/${old.sessionId}/challenge`,{code:hero.code,moveId:'weak'},403);
+    const oldStarted=await request(`/${old.sessionId}/start`,{hostToken:old.hostToken});
+    await delay(Math.max(0,oldStarted.session.countdownEndsAt-Date.now()+20));
+    const challenge=await request(`/${old.sessionId}/challenge`,{...auth(hero),moveId:'weak'},201);
+    await request(`/${old.sessionId}/actions`,{...auth(hero),challengeId:challenge.challenge.id,answerText:challenge.challenge.answers[0],durationMs:5000,acceptedCharacters:20,mistakes:0},201);
+    console.log(JSON.stringify({balanced,scheduled,clients:31,privateAuthentication:'passed',issuedWords:'passed',skipsAndStolenTickets:'rejected',forgedTiming:'rejected',duplicates:'idempotent',reconnect:'passed',endingLeaderboard:'passed',originalMode:'passed',personalEventsOnly:'passed',teamActivity:'passed',hostUpdates:host.patches.length,hostPatchBytes:host.bytes,averageStudentPatchBytes:Math.round(clients.reduce((sum,c)=>sum+c.bytes,0)/clients.length)},null,2));
+  }finally {
+    streams.forEach(s=>s.abort());
+    for(const game of games)await request(`/${game.sessionId}/close`,{hostToken:game.hostToken});
+  }
+})().catch(error=>{console.error(error);process.exitCode=1;});

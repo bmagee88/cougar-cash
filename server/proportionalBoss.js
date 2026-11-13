@@ -1,10 +1,12 @@
 const crypto = require("node:crypto");
+const { isDeepStrictEqual } = require('node:util');
+const integrity = require('./typingBossIntegrity');
 const { requestDragonAttack, recordDragonHurt, clearDragonCombat } = require("./dragonCombat");
 const { DRAGON_FLAME, dragonAttackDuration } = require("../src/TypingBoss/dragonHurtRules");
 const { createTypingState, typingWord, attackWordLimit, requiresWordSpace, finishWord, releaseAttack, typingAttackProgress, wordsForGrades, effectiveDodgeChance, dodgeChance, proportionalPlayerPoint, initializeBalanced } = require("../src/TypingBoss/proportionalRules");
 
 const round = value => Math.round(value * 100) / 100;
-const newState = ability => createTypingState(crypto.randomBytes(4).readUInt32LE(), ability);
+const newState = ability => ({...createTypingState(crypto.randomBytes(4).readUInt32LE(), ability),wordProtocol:1});
 
 const BOSS_ATTACK_LABELS = { bite: "Bite", fireball: "Fireball", tailWhip: "Tail Whip", flamethrower: "Flamethrower" };
 
@@ -101,7 +103,8 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
     attack.multiplier = attack.base ? attack.power / attack.base : 1;
   } else if (!attack.balanced && !host && attack.gold && attack.power > 0 && resolveGoldSupport(session, actor, attack.power, now)) return;
   if (attack.balanced && attack.power <= 0) return;
-  const attackNumber = actor.turnsTaken || 0;
+  if(host)session.boss.turnsTaken=(session.boss.turnsTaken || 0)+1;
+  const attackNumber = (host ? session.boss.turnsTaken : actor.turnsTaken) || 0;
   const bossAttack = host ? chooseBossAttack(session, random) : null;
   const targets = bossAttack ? bossAttack.targets : [session.boss];
   if (!targets.length) return;
@@ -126,8 +129,10 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
   schedule(session, () => {
     // A finished fight cancels in-flight damage.
     if (session.status !== "active") return;
+    let volleyDamage = 0, volleyBlocked = 0, landed = false;
     for (const projectile of volley) {
       const target = host ? session.players.get(projectile.target) : session.boss;
+      const wasAlive = target.hp > 0;
       let damage = target.hp > 0 ? projectile.amount : 0;
       const defense = host ? target.typing : session.typingHost;
       if (damage > 0) {
@@ -167,6 +172,9 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
       target.hp = Math.max(0, target.hp - actual);
       projectile.amount = round(actual);
       projectile.resolvedAt = Date.now();
+      volleyDamage += actual;
+      volleyBlocked += projectile.blockedAmount || 0;
+      landed = landed || wasAlive;
       if(host && session.balanced) session.clericHealingAllowance=(session.clericHealingAllowance || 0)+actual*.5;
       if (!host) recordDragonHurt(session, projectile);
       defense.totalTaken += actual;
@@ -176,6 +184,15 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
         actor.strongestAttack = { ...attack, actualDamage: actual,
           blockedDamage: Math.max(0, attack.power - damage),
           attackNumber, landedAt: projectile.resolvedAt };
+      }
+    }
+    if(host) {
+      session.boss.totalDamage=(session.boss.totalDamage || 0)+volleyDamage;
+      const previous=session.boss.strongestAttack;
+      // A group attack is one volley, not one strongest-attack candidate per target.
+      if(landed && (!previous || attack.power>previous.power || (attack.power===previous.power && volleyDamage>previous.actualDamage))) {
+        session.boss.strongestAttack={...attack,actualDamage:volleyDamage,blockedDamage:volleyBlocked,
+          attackNumber,landedAt:Date.now()};
       }
     }
     if (session.boss.hp <= 0) session.status = "victory";
@@ -192,21 +209,24 @@ function submitWords(session, auth, records, callbacks) {
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
   if (!actor || (auth.role === "player" && actor.hp <= 0)) throw new Error("You have been knocked out.");
   const state = auth.role === "host" ? actor : actor.typing;
+  const protectedTyping=state.wordProtocol===1;
   if (!Array.isArray(records) || !records.length || records.length > 20) throw new Error("Send 1–20 completed words.");
   // Validate the whole batch before mutating anything. Retries may overlap an acknowledged prefix.
   const preview = { ...state };
   let addedCharacters = 0;
   const fresh = [];
   for (const record of records) {
-    if (!Array.isArray(record) || (state.balanced ? record.length !== 7 : record.length !== 5 && record.length !== 6)) throw new Error("Invalid word result.");
+    if (!Array.isArray(record) || (protectedTyping ? record.length!==8 : state.balanced ? record.length !== 7 : record.length !== 5 && record.length !== 6)) throw new Error("Invalid word result.");
     const [index, text, count, sum, squares, rawTransition, gaps] = record;
-    const transitionMs = rawTransition === null && state.balanced ? undefined : rawTransition;
+    const transitionMs = rawTransition === null && (state.balanced || protectedTyping) ? undefined : rawTransition;
     if (!Number.isInteger(index) || index < 0) throw new Error("Invalid word index.");
+    if(protectedTyping)integrity.checkRecord(session,state,record);
     if (index < state.nextWord) continue;
     const word = typingWord(preview);
     const finalWord = !requiresWordSpace(preview, typeof text === "string" ? text : "");
     const length = word.text.length + (finalWord ? 0 : 1);
     const expectedCount = length - (preview.wordsInAttack === 0 ? 1 : 0);
+    if(protectedTyping && text!==word.text+(finalWord?'':' '))throw new Error('Complete the displayed word correctly before advancing.');
     if (index !== preview.nextWord || typeof text !== "string" || text.length !== length || (!finalWord && !text.endsWith(" ")) ||
       !Number.isInteger(count) || count < length - 1 || count > expectedCount ||
       !Number.isFinite(sum) || !Number.isFinite(squares) || sum < 0 || squares < 0 ||
@@ -232,27 +252,33 @@ function submitWords(session, auth, records, callbacks) {
           (count === length && preview.wordsInAttack !== 0 && transitionMs !== gaps[0]) ||
           (count !== length && transitionMs !== undefined)) throw new Error("Balanced key timing does not match the word.");
     }
-    finishWord(preview, text, count, sum, squares, transitionMs, gaps);
+    finishWord(preview, text, count, sum, squares, transitionMs, gaps, record[7]?.mistakes || 0);
     if (preview.wordsInAttack === attackWordLimit(preview)) releaseAttack(preview, () => 1);
     addedCharacters += text.length;
     fresh.push(record);
   }
-  if (state.totalCharacters + addedCharacters > (Date.now() - session.startedAt) * 0.03 + 60) {
+  const budget=protectedTyping ? integrity.checkBudget(session,state,addedCharacters) : null;
+  if (!protectedTyping && state.totalCharacters + addedCharacters > (Date.now() - session.startedAt) * 0.03 + 60) {
     throw new Error("Typing arrived too quickly. Try again shortly.");
   }
-  for (const [, text, count, sum, squares, transitionMs, gaps] of fresh) {
-    const result = finishWord(state, text, count, sum, squares, transitionMs === null ? undefined : transitionMs, gaps);
+  let combatChanged = false;
+  const abilityKeys = ['gold','dodgeBank','dodgeExtraRolls','balancedGuard','balancedOrangePower','balancedCritBonus','balancedHealingDeposit','shield','red','orange','green'];
+  for (const [, text, count, sum, squares, transitionMs, gaps,proof] of fresh) {
+    const before = abilityKeys.map(key => state[key] ?? 0);
+    const result = finishWord(state, text, count, sum, squares, transitionMs === null ? undefined : transitionMs, gaps,proof?.mistakes || 0);
+    if (abilityKeys.some((key,index) => (state[key] ?? 0) !== before[index])) combatChanged = true;
     if(auth.role==='player' && state.balanced && state.ability==='cleric' && state.balancedHealingDeposit>0) {
       session.clericHealingPool=(session.clericHealingPool || 0)+state.balancedHealingDeposit;
       state.balancedHealingDeposit=0;
     }
     if (auth.role === "player") {
-      actor.totalKeystrokes += text.length;
-      actor.correctKeystrokes += result.correct ? text.length : 0;
+      actor.totalKeystrokes += text.length+(proof?.mistakes || 0);
+      actor.correctKeystrokes += protectedTyping ? text.length : result.correct ? text.length : 0;
       actor.correctStreak = result.correct ? actor.correctStreak + 1 : 0;
       actor.lastSeenAt = Date.now();
     }
     if (state.wordsInAttack === attackWordLimit(state)) {
+      combatChanged = true;
       const attack = releaseAttack(state, callbacks.random);
       if (auth.role === "player") actor.turnsTaken += 1;
       launchAttack(session, actor, attack, callbacks);
@@ -260,8 +286,8 @@ function submitWords(session, auth, records, callbacks) {
       if (auth.role === "host") session.boss.attackCharacters = 0;
     }
   }
-  if (fresh.length) callbacks.broadcast(session);
-  return { nextWord: state.nextWord };
+  if (fresh.length) callbacks.broadcast(session, { progressOnly: !combatChanged });
+  return { nextWord: state.nextWord,...(protectedTyping ? {issuedWords:integrity.commit(session,state,fresh,budget)} : {}) };
 }
 
 function updateProgress(session, auth, wordIndex, characters, broadcast) {
@@ -270,6 +296,7 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
   const state = auth.role === "host" ? actor : actor?.typing;
   if (!state || (auth.role === "player" && actor.hp <= 0)) return;
+  if(state.wordProtocol===1 && wordIndex>=state.nextWord+2)return;
   if (!Number.isInteger(wordIndex) || wordIndex < state.nextWord || wordIndex >= state.nextWord - state.wordsInAttack + attackWordLimit(state) ||
       !Number.isInteger(characters) || characters < 0 || characters > typingWord(state, wordIndex).text.length) return;
   const previous = actor.progressCursor;
@@ -288,25 +315,25 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
     for (let index = state.nextWord; index < wordIndex; index++) charge += typingWord(state, index).text.length + 1;
     target.attackCharacters = charge;
   }
-  broadcast(session);
+  broadcast(session, { progressOnly: true });
 }
 
 // Nested diffs preserve unchanged player objects on the client and avoid replaying logs/FX.
 function diffSnapshot(previous, current) {
   const delta = {};
-  for (const key of ["status", "countdownEndsAt", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "balancedRandomColors", "clericHealingPool", "clericHealingAllowance", "leaderboard"]) {
+  for (const key of ["status", "battleView", "teamActivity", "countdownEndsAt", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "balancedRandomColors", "clericHealingPool", "clericHealingAllowance", "leaderboard"]) {
     if (JSON.stringify(previous[key]) !== JSON.stringify(current[key])) delta[key] = current[key];
   }
   if (current.typing) {
     const typing = {};
     for (const key of Object.keys(current.typing)) {
-      if (current.typing[key] !== previous.typing?.[key]) typing[key] = current.typing[key];
+      if (!isDeepStrictEqual(current.typing[key], previous.typing?.[key])) typing[key] = current.typing[key];
     }
     if (Object.keys(typing).length) delta.typing = typing;
   }
   const boss = {};
   for (const key of Object.keys(current.boss)) {
-    if (current.boss[key] !== previous.boss[key]) boss[key] = current.boss[key];
+    if (!isDeepStrictEqual(current.boss[key], previous.boss[key])) boss[key] = current.boss[key];
   }
   if (Object.keys(boss).length) delta.boss = boss;
   const oldPlayers = new Map(previous.players.map(player => [player.code, player]));
@@ -339,10 +366,10 @@ function diffSnapshot(previous, current) {
 
 function applyHpMultiplier(session, multiplier = 1) {
   if (session.status !== "setup") throw new Error("HP can only be changed before the battle starts.");
-  if (!Number.isInteger(multiplier) || multiplier < 1 || multiplier > 100) throw new Error("Choose an HP multiplier from 1 to 100.");
+  if (!Number.isFinite(multiplier) || multiplier < 1 || multiplier > 1.5) throw new Error("Choose an HP multiplier from 1 to 1.5.");
   session.hpMultiplier = multiplier;
-  for (const player of session.players.values()) player.hp = player.maxHp = 100 * multiplier;
-  session.boss.hp = session.boss.maxHp = 100 * multiplier * session.players.size;
+  for (const player of session.players.values()) player.hp = player.maxHp = round(100 * multiplier);
+  session.boss.hp = session.boss.maxHp = round(100 * multiplier * session.players.size);
 }
 
 function applyBalanced(session, value = false, randomColors = true) {
@@ -369,10 +396,25 @@ function applyBalanced(session, value = false, randomColors = true) {
 }
 
 function leaderboard(session) {
-  return [...session.players.values()]
+  const end = session.closedAt ?? Date.now();
+  const seconds = Math.max(1, (end - (session.startedAt ?? end)) / 1000);
+  const stats = (state, totalDamage, fallback = {}) => {
+    const count=state.totalIntervalCount || 0, mean=count ? state.totalIntervalSum/count : 0;
+    const total=state.totalCharacters || fallback.totalKeystrokes || 0;
+    const correct=state.totalCorrectCharacters ?? fallback.correctKeystrokes ?? 0;
+    return { dps:round(totalDamage/seconds),typingStats:{
+      accuracy:total ? correct/total : 0,wpm:round(correct/5/(seconds/60)),
+      meanIntervalMs:round(mean),intervalStdDevMs:count ? round(Math.sqrt(Math.max(0,state.totalIntervalSquares/count-mean*mean))) : 0,
+    } };
+  };
+  const players = [...session.players.values()]
     .sort((a, b) => b.totalDamage - a.totalDamage || a.code.localeCompare(b.code))
     .map((player, index) => ({ rank: index + 1, code: player.code, name: player.name,
-      totalDamage: round(player.totalDamage), strongestAttack: player.strongestAttack ? { ...player.strongestAttack } : null }));
+      totalDamage: round(player.totalDamage),...stats(player.typing,player.totalDamage,player),
+      strongestAttack: player.strongestAttack ? { ...player.strongestAttack } : null }));
+  const bossDamage=session.boss.totalDamage ?? [...session.players.values()].reduce((total,player)=>total+(player.typing.totalTaken || 0),0);
+  return [...players,{rank:0,code:'boss',isBoss:true,name:session.boss.name,totalDamage:round(bossDamage),
+    ...stats(session.typingHost,bossDamage),strongestAttack:session.boss.strongestAttack ? {...session.boss.strongestAttack} : null}];
 }
 
 module.exports = { newState, submitWords, diffSnapshot, launchAttack, applyHpMultiplier, applyBalanced, leaderboard, updateProgress };

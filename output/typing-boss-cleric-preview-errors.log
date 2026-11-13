@@ -5,3 +5,42 @@ Browserslist: browsers data (caniuse-lite) is 21 months old. Please run:
 (Use `node --trace-deprecation ...` to show where the warning was created)
 (node:13712) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
 (node:13712) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+ERROR in src/TypingBoss/ContinuousBattle.tsx:225:28
+TS2657: JSX expressions must have one parent element.
+    223 |       <Typography variant="body2">{current.balanced && current.ability==='cleric' && word.color==='orange' ? 'Prayer words add no ATK. Each wrong character subtracts 2.5 Prayer, stopping at zero. Complete the word perfectly to deposit saved Prayer into the Prayer pool.' : `Wrong letters subtract ${current.balanced ? 2.5 : 2} base power each before attack bonuses. Penalties last for this attack; power cannot fall below zero. The next attack starts clean.`}</Typography>
+    224 |       {current.balanced && current.balancedRandomColors && <Typography variant="body2">Random colors: white 40%, orange 20%, blue 18%, green 15%, crit 4%, special 3%. Charge and crit banks still accumulate; perfect colored words activate bonuses. Colors are fixed for each generated word.</Typography>}
+  > 225 |       {current.balanced && <Typography variant="body2" sx={{mt:1}}>White words build ATK. Orange words build Charge (yellow Prayer for Clerics); blue builds Block; red builds crit; green earns Dodge from smooth word transitions. Each character builds only its color category. Perfect colored words confirm their bonus immediately. Blue Block never waits for attack release. Special words activate class abilities. White mistakes subtract ATK; other mistakes reduce only their own bank, stopping at zero.</Typography>
+        |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 226 |       <Typography variant="body2" sx={{ mt: 1 }}>
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 227 |         Click the words to focus. Press space between words; the final word fires on its last letter. Correct letters and spaces add damage. Errors stay; backspace is disabled.
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 228 |         Rest between attacks is free. {!current.balanced && "Rhythm allows 200 ms of timing variation."}
+        | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  > 229 |       </Typography>
+        | ^^^^^^^^^^^^^^^^^^^^
+    230 |       {current.dodgeSamples && <Typography variant="body2" sx={{ mt: 1 }}>
+    231 |         Start each new word promptly after Space to bank up to 1 Dodge point per transition, with no storage cap. Smooth transitions earn more; slower transitions never remove saved dodge. Banked points give up to a 100% dodge chance. A successful dodge avoids the entire incoming hit, spends 100 points (minimum zero), and keeps your Block. Rest between attacks does not count.
+    232 |       </Typography>}
+
+ERROR in src/TypingBoss/ContinuousBattle.tsx:230:7
+TS1005: '}' expected.
+    228 |         Rest between attacks is free. {!current.balanced && "Rhythm allows 200 ms of timing variation."}
+    229 |       </Typography>
+  > 230 |       {current.dodgeSamples && <Typography variant="body2" sx={{ mt: 1 }}>
+        |       ^
+    231 |         Start each new word promptly after Space to bank up to 1 Dodge point per transition, with no storage cap. Smooth transitions earn more; slower transitions never remove saved dodge. Banked points give up to a 100% dodge chance. A successful dodge avoids the entire incoming hit, spends 100 points (minimum zero), and keeps your Block. Rest between attacks does not count.
+    232 |       </Typography>}
+    233 |       {!current.balanced && <Typography variant="body2" sx={{ mt: 1 }}>
+
+ERROR in src/TypingBoss/TypingBossApp.tsx:3341:234
+TS2322: Type '{ key: string; sessionId: string; countdownEndsAt: number; serverNow: number; healingPool: number; teamActivity: { damage: number; healing: number; revives: number; }; credentials: { code: string; playerToken: string; }; state: TypingBossTypingState; active: boolean; profile: { ...; }; dragonProfile: { ...; }; }' is not assignable to type 'IntrinsicAttributes & { sessionId: string; credentials: TypingBossCredentials; state: TypingBossTypingState; ... 6 more ...; serverNow?: number; }'.
+  Property 'teamActivity' does not exist on type 'IntrinsicAttributes & { sessionId: string; credentials: TypingBossCredentials; state: TypingBossTypingState; ... 6 more ...; serverNow?: number; }'.
+    3339 |     <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} />
+    3340 |     <Box ref={rootRef} data-testid="personal-typing-stage" sx={{ position: "relative" }}>
+  > 3341 |       <ContinuousTyping key={`${session.id}:${session.typing!.seed}:${session.typing!.balanced}`} sessionId={session.id} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} teamActivity={session.teamActivity} credentials={{ code, playerToken }} state={session.typing!} active={active}
+         |                                                                                                                                                                                                                                          ^^^^^^^^^^^^
+    3342 |         profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef }}
+    3343 |         dragonProfile={{ boss: personalBoss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
+    3344 |     {layout && <Box data-testid="portrait-projectile-layer" sx={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 8 }}>
+

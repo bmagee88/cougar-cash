@@ -43,6 +43,7 @@ function maintainSession(session, now = Date.now()) {
 function detachSubscriber(session, subscriber, now = Date.now()) {
   clearInterval(subscriber.pingTimer);
   subscriber.previous = null;
+  subscriber.audience = null;
   if (session.subscribers.delete(subscriber) && !session.subscribers.size) touchSession(session, now);
 }
 
@@ -54,6 +55,8 @@ function clearSessionTimers(session) {
   for (const timer of session.timers) clearTimeout(timer);
   session.timers.clear();
   session.broadcastTimer = null;
+  session.progressBroadcastTimer = null;
+  session.studentSummaryTimer = null;
 }
 
 function removeSession(registry, session) {

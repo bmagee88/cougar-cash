@@ -308,7 +308,7 @@ test("the tenth word applies its color before release, including immediate defen
       rules.finishWord(state, index === 9 ? word.text : "!".repeat(word.text.length) + " ", 2, 400, 80000);
     }
     const attack = rules.releaseAttack(state, () => 0);
-    assert.equal(attack.base, 0, "nine mashed words outweigh the final correct word and spaces");
+    assert.equal(attack.base, 9 + rules.wordAt(seed,9).text.length, "only matching characters earn power; errors cannot remove it");
     assert.equal(attack.orangeBonus, color === "orange" ? .1 : 0);
     assert.equal(attack.criticalChance, color === "red" ? .1 : 0);
     assert.equal(attack.critical, color === "red");
@@ -344,7 +344,7 @@ test("word generation uses the exact Home Row Run pool, deterministically, with 
   for (const color of ["blue", "orange", "red", "green"]) assert.ok(colors[color] > 1300 && colors[color] < 1700);
 });
 
-test("consistency depends on timing variation, with 1.5x and 0.5x limits", () => {
+test("consistency depends on timing variation, with 1.5x and 1x limits", () => {
   assert.equal(rules.consistencyMultiplier(10, 2000, 400000), 1.5);
   assert.equal(rules.consistencyMultiplier(10, 1000, 100000), 1.5);
   assert.equal(rules.consistencyMultiplier(10, 1000, 1000000), 1);
@@ -441,14 +441,14 @@ test("attack bonuses reset on release, while shields persist until the next hit"
   assert.equal(state.shield, .2);
 });
 
-test("power animation uses the actual multiplier, including critical hits below 2x", () => {
+test("power animation uses the actual multiplier and never weakens critical hits for timing", () => {
   const strong = rules.createTypingState(1);
   Object.assign(strong, { characters: 40, orange: 1 });
   assert.equal(rules.releaseAttack(strong, () => 1).moveId, "strong");
   const weak = rules.createTypingState(1);
   Object.assign(weak, { characters: 40, red: 1, intervalCount: 10, intervalSum: 1000, intervalSquares: 2000000 });
   const attack = rules.releaseAttack(weak, () => 0);
-  assert.equal(attack.critical, true); assert.equal(attack.multiplier, 1); assert.equal(attack.moveId, "weak");
+  assert.equal(attack.critical, true); assert.equal(attack.multiplier, 2); assert.equal(attack.moveId, "strong");
 });
 
 test("boss attack roll selects the advertised pattern and splits all power among its targets", () => {
@@ -570,13 +570,24 @@ test("patches contain changed players and events without resending static roster
   assert.equal(engine.diffSnapshot(current, current), null);
 });
 
+test('identical rebuilt dragon profiles and typing arrays never produce redundant patches', () => {
+  const before = { status:'active', boss:{hp:100,profile:{balanced:true,balancedCritBonus:.1,dodgeSamples:[10]}},
+    typing:{seed:1,balancedPace:[100,120]}, players:[],projectiles:[] };
+  const after = structuredClone(before);
+  assert.equal(engine.diffSnapshot(before,after),null);
+  after.boss.profile.balancedCritBonus=.2;
+  const patch=engine.diffSnapshot(before,after);
+  assert.equal(patch.boss.profile.balancedCritBonus,.2);
+  assert.equal(patch.typing,undefined);
+});
+
 test("HP multiplier scales both sides equally and rejects invalid or late changes", () => {
   const session = sessionWithPlayers(10); session.status = "setup";
-  engine.applyHpMultiplier(session, 30);
-  assert.equal(session.boss.hp, 30000);
-  assert.ok([...session.players.values()].every(player => player.hp === 3000 && player.maxHp === 3000));
-  for (const value of [0, 101, 1.5, "30", null, NaN]) assert.throws(() => engine.applyHpMultiplier(session, value));
-  assert.equal(session.boss.hp, 30000);
+  engine.applyHpMultiplier(session, 1.5);
+  assert.equal(session.boss.hp, 1500);
+  assert.ok([...session.players.values()].every(player => player.hp === 150 && player.maxHp === 150));
+  for (const value of [0, .99, 1.51, 3, "1.5", null, NaN, Infinity]) assert.throws(() => engine.applyHpMultiplier(session, value));
+  assert.equal(session.boss.hp, 1500);
   session.status = "active";
   assert.throws(() => engine.applyHpMultiplier(session, 2));
 });
@@ -631,11 +642,46 @@ test("end-of-game leaderboard is included in a patch without resending the live 
   assert.equal(patch.players, undefined);
 });
 
+test('boss results count group damage once, honor defenses and overkill, and preserve volley strength',()=>{
+  const session=sessionWithPlayers(3),cb=callbacks();
+  Object.assign(session,{balanced:true,bossAttackIndex:9});
+  session.players.get('0').typing.shield=.5;
+  session.players.get('1').typing.dodgeBank=100;
+  session.players.get('2').hp=5;
+  engine.launchAttack(session,session.typingHost,{base:60,power:90,multiplier:1.5,moveId:'weak'}, {...cb,random:()=>0});
+  cb.timers.shift()();
+  assert.equal(session.boss.totalDamage,20);
+  assert.equal(session.boss.strongestAttack.power,90);
+  assert.equal(session.boss.strongestAttack.actualDamage,20);
+  assert.equal(session.boss.strongestAttack.blockedDamage,15);
+  session.startedAt=1000;session.closedAt=61000;
+  const entries=engine.leaderboard(session),boss=entries.find(entry=>entry.isBoss);
+  assert.equal(entries.length,4);assert.equal(boss.name,'Ancient Red Dragon');
+  assert.equal(boss.totalDamage,20);assert.equal(boss.dps,.33);
+  assert.equal(boss.strongestAttack.attackNumber,1);
+  assert.deepEqual(entries.filter(entry=>!entry.isBoss).map(entry=>entry.rank),[1,2,3]);
+});
 
-test("200ms tolerance gives the requested fast sequence full rhythm and penalizes long pauses", () => {
+test('battle typing accuracy and timing survive attack releases, with frozen end-of-battle DPS and WPM',()=>{
+  const session=sessionWithPlayers(1),player=session.players.get('0'),state=player.typing;
+  const word=rules.typingWord(state),text='!'+word.text.slice(1)+' ',n=text.length-1;
+  rules.finishWord(state,text,n,n*100,n*10000,undefined,Array(n).fill(100));
+  rules.releaseAttack(state,()=>1);
+  session.startedAt=1000;session.closedAt=61000;player.totalDamage=120;
+  const entry=engine.leaderboard(session)[0];
+  assert.equal(entry.dps,2);
+  assert.equal(entry.typingStats.accuracy,(text.length-1)/text.length);
+  assert.equal(entry.typingStats.wpm,Math.round((text.length-1)/5*100)/100);
+  assert.equal(entry.typingStats.meanIntervalMs,100);
+  assert.equal(entry.typingStats.intervalStdDevMs,0);
+  assert.deepEqual(engine.leaderboard(session)[0],entry);
+});
+
+
+test("200ms tolerance gives the requested fast sequence full rhythm and leaves base damage intact during long pauses", () => {
   const score = gaps => rules.consistencyMultiplier(gaps.length, gaps.reduce((a,b) => a+b, 0), gaps.reduce((a,b) => a+b*b, 0));
   assert.equal(score([30,20,45,2,4,190,150,4]), 1.5);
-  assert.equal(score([2,4,500,6,450,300,10000,3,4,2]), .5);
+  assert.equal(score([2,4,500,6,450,300,10000,3,4,2]), 1);
   assert.equal(score([1000,1002,998,1000]), 1.5);
   assert.equal(score([10,12,8,10]), 1.5);
   assert.equal(score([100,500]), 1.5); // SD exactly 200ms.

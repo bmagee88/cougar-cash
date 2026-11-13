@@ -104,12 +104,12 @@ export default function TypingPortrait({ player, events, serverNow, anchorRef, s
     <div className="portrait-special" data-testid="portrait-special" data-charged={special}
       style={{ opacity: special ? 1 : 0 }} aria-hidden="true"><i /><i /><i /></div>
     <div className="portrait-dodge" data-testid="portrait-dodge" style={{ opacity: Math.sqrt(defense.dodge) }}
-      title={`Dodge: ${Math.round(defense.dodge * 100)}%`} aria-hidden="true" />
+      title={state.balanced && !state.balancedRandomColors ? 'Active Dodge' : `Dodge: ${Math.round(defense.dodge * 100)}%`} aria-hidden="true" />
     <div className="portrait-character"><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} /></div>
     <div className="portrait-shield" data-testid="portrait-shield" style={{ opacity: Math.sqrt(defense.shield) }}
-      title={`Block: ${Math.round(defense.shield * 100)}%`} aria-hidden="true" />
+      title={state.balanced && !state.balancedRandomColors ? 'Active Block' : `Block: ${Math.round(defense.shield * 100)}%`} aria-hidden="true" />
     <div key={pulse} className={`portrait-attack${pulse ? " portrait-attack-pulse" : ""}`} data-testid="portrait-attack"
-      title="Attack charge after error penalties" aria-label={`Attack letters: ${letters}`}>
+      title="Earned attack charge" aria-label={`Attack letters: ${letters}`}>
       <span>ATK</span><strong style={{ fontSize: `${21 + Math.min(22, letters * .12)}px` }}>{letters}</strong>
       <PortraitPower state={state}/>
     </div>

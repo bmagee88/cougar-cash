@@ -36,7 +36,7 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "test:typing-boss": "node --test server/proportionalBoss.test.js server/balancedBoss.test.js server/homeRowWordBank.test.js server/typingBossLifecycle.test.js server/dragonCombat.test.js server/typingPenalty.test.js server/clericHealing.test.js",
+    "test:typing-boss": "node --test server/proportionalBoss.test.js server/balancedBoss.test.js server/homeRowWordBank.test.js server/typingBossLifecycle.test.js server/typingBossBroadcast.test.js server/typingBossAudience.test.js server/typingBossAuth.test.js server/typingBossIntegrity.test.js server/dragonCombat.test.js server/typingPenalty.test.js server/clericHealing.test.js",
     "test:typing-boss-ui": "react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest",
     "test:fishing": "react-scripts test --watchAll=false --runInBand --testPathPattern=FishingTypingGame",
     "simulate:fishing": "node scripts/simulate-fishing.cjs",

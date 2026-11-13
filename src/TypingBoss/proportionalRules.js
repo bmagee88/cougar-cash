@@ -1,6 +1,6 @@
 // Shared, deterministic rules. Only the seed and word index travel over the wire.
 const { wordsByLength, entriesByLength, filterWordsByLength } = require("../typingProject/resources/homeRowWordBank");
-const { initializeBalanced, balancedWordColor, recordBalancedWord, releaseBalancedAttack } = require("./balancedRules");
+const { initializeBalanced, balancedWordColor, balancedTrigger, recordBalancedWord, releaseBalancedAttack } = require("./balancedRules");
 const WORDS = Object.keys(wordsByLength)
   .filter(key => !isNaN(Number(key)))
   .flatMap(key => wordsByLength[key]);
@@ -47,6 +47,11 @@ function wordAt(seed, index, gradeMask, sentimentMask, goldEnabled = false) {
 }
 
 function typingWord(state, index = state.nextWord) {
+  if(state.issuedWords) {
+    const issued=state.issuedWords.find(word=>word.index===index);
+    if(!issued)return {text:'',color:null,pending:true};
+    return state.balanced && !state.balancedRandomColors ? {...issued,color:index===state.nextWord ? balancedWordColor(state) : null,trigger:index===state.nextWord && Boolean(balancedTrigger(state))} : issued;
+  }
   const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask, Boolean(state.ability));
   if(state.balanced && state.balancedRandomColors) {
     const roll=randomAt(state.seed,index,42)*100;
@@ -57,13 +62,14 @@ function typingWord(state, index = state.nextWord) {
     }
     return {...word,color};
   }
-  return state.balanced ? { ...word, color: index === state.nextWord ? balancedWordColor(state) : null } : word;
+  return state.balanced ? { ...word, color: index === state.nextWord ? balancedWordColor(state) : null, trigger:index===state.nextWord && Boolean(balancedTrigger(state)) } : word;
 }
 
 const attackWordLimit = state => state.attackWords ?? 10;
 const isLastAttackWord = state => state.wordsInAttack + 1 === attackWordLimit(state);
 const extendsAttack = state => state.ability === "barbarian" || state.ability === "dragon";
 function requiresWordSpace(state, text) {
+  if(state.balanced && !state.balancedRandomColors)return false;
   const word = typingWord(state);
   // A perfect final gold extends the run, so it still needs a word separator.
   return !isLastAttackWord(state) || (extendsAttack(state) && word.color === "gold" && text.slice(0, word.text.length) === word.text);
@@ -75,7 +81,7 @@ function consistencyMultiplier(count, sum, sumSquares) {
   if (count < 2 || sum <= 0) return 1;
   const mean = sum / count;
   const deviation = Math.sqrt(Math.max(0, sumSquares / count - mean * mean));
-  return Math.max(0.5, Math.min(1.5, 1.5 - Math.max(0, deviation - 200) / Math.max(200, mean)));
+  return Math.max(1, Math.min(1.5, 1.5 - Math.max(0, deviation - 200) / Math.max(200, mean)));
 }
 
 function attackProgress(seed, wordIndex, characters, gradeMask, sentimentMask) {
@@ -84,6 +90,7 @@ function attackProgress(seed, wordIndex, characters, gradeMask, sentimentMask) {
 }
 
 function typingAttackProgress(state, characters, cursor = state.nextWord) {
+  if(state.wordProtocol===1)return Math.min(100,Math.max(0,100*(state.wordsInAttack+cursor-state.nextWord+characters/Math.max(1,typingWord(state,cursor).text.length))/attackWordLimit(state)));
   const start = state.nextWord - state.wordsInAttack;
   const end = start + attackWordLimit(state);
   let completed = characters;
@@ -122,14 +129,21 @@ function effectiveDodgeChance(state) {
   return 1 - (1 - Math.min(100,dodgeChance(state)) / 100) ** (1 + (state.dodgeExtraRolls || 0));
 }
 
-function finishWord(state, text, count, sum, squares, transitionMs, gaps) {
+function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistakes=0) {
   const word = typingWord(state);
-  const correct = text === word.text + (requiresWordSpace(state, text) ? " " : "");
-  const prayerWord=state.balanced && state.ability==='cleric' && word.color==='orange';
+  const correct = mistakes===0 && text === word.text + (requiresWordSpace(state, text) ? " " : "");
+  const scheduled=state.balanced && !state.balancedRandomColors;
+  const resourceWord=state.balanced && !scheduled && word.color!==null;
   const errors = [...text].filter((letter,index)=>letter !== (word.text + " ")[index]).length;
-  state.attackErrors = (state.attackErrors || 0) + (prayerWord?0:errors);
+  state.attackErrors = (state.attackErrors || 0) + (resourceWord?0:errors) + mistakes;
+  // Green earnings are pending until a glowing green trigger activates them.
+  if(scheduled && word.color==='green' && correct && state.wordsInAttack!==0 && count>1 && Number.isFinite(transitionMs)) {
+    const pace=Math.max(40,(sum-transitionMs)/(count-1));
+    const smoothness=Math.max(0,Math.min(1,(2.5-transitionMs/pace)/1.25));
+    state.balancedDodgeBank=(state.balancedDodgeBank || 0)+smoothness*.5;
+  }
   if (state.balanced) recordBalancedWord(state, text, word.text + " ", gaps || [], correct, word.color);
-  if (state.dodgeSamples && state.wordsInAttack !== 0 && count > 1 && Number.isFinite(transitionMs)) {
+  if (!scheduled && (!state.balanced || (word.color==='green' && correct)) && state.dodgeSamples && state.wordsInAttack !== 0 && count > 1 && Number.isFinite(transitionMs)) {
     // Compare Space → first character with the rest of that word's key gaps.
     const pace = Math.max(40, (sum - transitionMs) / (count - 1));
     const ratio = transitionMs / pace;
@@ -141,8 +155,12 @@ function finishWord(state, text, count, sum, squares, transitionMs, gaps) {
   }
   state.nextWord += 1;
   state.wordsInAttack += 1;
-  if(!prayerWord)state.characters += [...text].reduce((total, letter, index) => total + (letter === (word.text + " ")[index] ? 1 : 0), 0);
-  state.totalCharacters += text.length;
+  if(!resourceWord)state.characters += [...text].reduce((total, letter, index) => total + (letter === (word.text + " ")[index] ? 1 : 0), 0);
+  state.totalCharacters += text.length + mistakes;
+  state.totalCorrectCharacters = (state.totalCorrectCharacters || 0) + [...text].filter((letter,index) => letter === (word.text + ' ')[index]).length;
+  state.totalIntervalCount = (state.totalIntervalCount || 0) + count;
+  state.totalIntervalSum = (state.totalIntervalSum || 0) + sum;
+  state.totalIntervalSquares = (state.totalIntervalSquares || 0) + squares;
   state.intervalCount += count;
   state.intervalSum += sum;
   state.intervalSquares += squares;
@@ -168,7 +186,7 @@ function releaseAttack(state, random = Math.random) {
   const critical = random() < state.red;
   const gold = state.gold || 0;
   const multiplier = consistency * (1 + state.orange + state.growth) * (critical ? 2 : 1);
-  const base = Math.max(0,state.characters - 2 * (state.attackErrors || 0));
+  const base = Math.max(0,state.characters);
   const attack = { base, power: base * multiplier,
     orangeBonus: state.orange, greenBonus: state.growth, greenStacks: state.green, criticalChance: state.red,
     blueShield: state.shield,

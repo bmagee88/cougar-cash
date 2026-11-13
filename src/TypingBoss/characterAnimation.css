@@ -5,6 +5,11 @@
 .actor-viewport { position:absolute; display:block; overflow:hidden; contain:paint; }
 .actor-frames { position:absolute; display:block; inset:0; background-repeat:no-repeat; image-rendering:pixelated; transition:none; animation-name:actor-sprite-frames; animation-timing-function:steps(1,end); animation-iteration-count:1; animation-fill-mode:both; }
 .actor-frames-idle { animation-iteration-count:infinite; animation-direction:alternate; }
+/* Save continuous sprite work in crowded scenes; attacks and reactions retain
+   their full animations, and personal portraits remain animated. */
+.typing-battle-crowd .actor-frames-idle { animation:none; }
+.typing-battle-overview *, .typing-battle-overview *::before, .typing-battle-overview *::after { animation:none!important; transition:none!important; }
+.typing-battle-overview .dragon-pose-defeated { filter:grayscale(1) brightness(.45); opacity:.65; }
 .actor-frames-held { animation:none; }
 .combat-actor-inspecting .actor-body { animation:none!important; }
 .combat-actor-inspecting .actor-effect,.combat-actor-inspecting .actor-action-cue { display:none; }
