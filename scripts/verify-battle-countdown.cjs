@@ -1,3 +1,5 @@
+const creationPassword=process.env.TYPING_BOSS_CREATION_PASSWORD;
+if(!creationPassword)throw new Error('Set TYPING_BOSS_CREATION_PASSWORD to the password configured on the backend, or run the isolated verifier.');
 const assert=require('node:assert/strict'),{setTimeout:delay}=require('node:timers/promises');
 const rules=require('../src/TypingBoss/proportionalRules');
 const base=process.env.TYPING_BOSS_TEST_URL || 'http://127.0.0.1:4003/api/typing-boss/sessions';
@@ -9,7 +11,7 @@ async function call(path,body,status=200){
   for(const mode of ['proportional','old']) {
     let game;
     try {
-      game=await call('',{name:'Countdown test',mode,creationPassword:process.env.TYPING_BOSS_CREATION_PASSWORD || 'sheep'},201);
+      game=await call('',{name:'Countdown test',mode,creationPassword},201);
       const id=game.sessionId,player=await call(`/${id}/participants`,{name:'TestFox',classId:'cleric'},201);
       const started=(await call(`/${id}/start`,{hostToken:game.hostToken,balanced:true,balancedRandomColors:false})).session;
       const deadline=started.countdownEndsAt;

@@ -1,5 +1,16 @@
 const {test}=require('node:test'),assert=require('node:assert/strict');
-const {issuePlayerToken,playerForToken}=require('./typingBossAuth');
+const {issuePlayerToken,playerForToken,checkCreationPassword}=require('./typingBossAuth');
+const crypto=require('node:crypto');
+test('room creation requires an explicitly configured backend password',()=>{
+  const password=crypto.randomBytes(24).toString('hex');
+  assert.equal(checkCreationPassword(undefined,''),null);
+  assert.equal(checkCreationPassword('',null),null);
+  assert.equal(checkCreationPassword(password,'   '),null);
+  assert.equal(checkCreationPassword(undefined,password),false);
+  assert.equal(checkCreationPassword('',password),false);
+  assert.equal(checkCreationPassword(crypto.randomBytes(24).toString('hex'),password),false);
+  assert.equal(checkCreationPassword(password,password),true);
+});
 test('private tokens are independent from public IDs and scoped to their room',()=>{
   const a=issuePlayerToken(),b=issuePlayerToken();
   const alice={code:'heroAAAA',tokenHash:a.hash},bob={code:'heroBBBB',tokenHash:b.hash};

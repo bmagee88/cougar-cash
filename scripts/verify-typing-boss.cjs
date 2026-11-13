@@ -1,3 +1,5 @@
+const creationPassword=process.env.TYPING_BOSS_CREATION_PASSWORD;
+if(!creationPassword)throw new Error('Set TYPING_BOSS_CREATION_PASSWORD to the password configured on the backend, or run the isolated verifier.');
 // Local 31-client protocol, authentication, delivery and ending-results verifier.
 const assert=require('node:assert/strict');
 const {setTimeout:delay}=require('node:timers/promises');
@@ -7,7 +9,7 @@ const balanced=process.env.TYPING_BOSS_BALANCED==='1';
 const scheduled=process.env.TYPING_BOSS_SCHEDULED==='1';
 const streams=[],games=[];
 async function request(path,body,expected=200) {
-  const response=await fetch(base+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path===''?{...body,creationPassword:process.env.TYPING_BOSS_CREATION_PASSWORD || 'sheep'}:body)});
+  const response=await fetch(base+path,body===undefined?{}:{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(path===''?{...body,creationPassword}:body)});
   const result=await response.json();assert.equal(response.status,expected,result.error || path);return result;
 }
 const auth=player=>({code:player.code,playerToken:player.playerToken});

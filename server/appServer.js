@@ -14,7 +14,7 @@ const { requestDragonAttack, recordDragonHurt } = require("./dragonCombat");
 const { DRAGON_FLAME, dragonAttackDuration } = require("../src/TypingBoss/dragonHurtRules");
 const typingBossLifecycle = require("./typingBossLifecycle");
 const { queueBattleBroadcast } = require('./typingBossBroadcast');
-const { issuePlayerToken, playerForToken } = require('./typingBossAuth');
+const { issuePlayerToken, playerForToken, checkCreationPassword } = require('./typingBossAuth');
 const { publicTypingState } = require('./typingBossIntegrity');
 const { studentView, overviewFor, queueStudentSummary } = require('./typingBossAudience');
 
@@ -1949,12 +1949,22 @@ function closeTypingBossSessionsForShutdown() {
   }
 }
 
+function requireTypingBossCreationPassword(res,value) {
+  const allowed=checkCreationPassword(value);
+  if(allowed===null) {
+    sendError(res,503,'Room creation is not configured. Set TYPING_BOSS_CREATION_PASSWORD on the backend.');
+    return false;
+  }
+  if(!allowed) {
+    sendError(res, 403, "Incorrect room creation password.");
+    return false;
+  }
+  return true;
+}
+
 async function handleCreateTypingBossSession(req, res) {
   const body = await readJson(req);
-  if (body.creationPassword !== (process.env.TYPING_BOSS_CREATION_PASSWORD || "sheep")) {
-    sendError(res, 403, "Incorrect room creation password.");
-    return;
-  }
+  if(!requireTypingBossCreationPassword(res,body.creationPassword))return;
   const session = createTypingBossSession(body);
 
   sendJson(res, 201, {
@@ -2384,9 +2394,7 @@ async function handleSubmitTypingBossAction(req, res, session, url) {
 async function handleTypingBossRequest(req, res, url, parts) {
   if (req.method === "POST" && parts.length === 3 && parts[2] === "creation-access") {
     const body = await readJson(req);
-    if (body.password !== (process.env.TYPING_BOSS_CREATION_PASSWORD || "sheep")) {
-      sendError(res, 403, "Incorrect room creation password.");
-    } else sendJson(res, 200, { allowed: true });
+    if(requireTypingBossCreationPassword(res,body.password))sendJson(res,200,{allowed:true});
     return;
   }
   if (parts[2] !== "sessions") {

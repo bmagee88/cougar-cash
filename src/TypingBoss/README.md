@@ -289,7 +289,7 @@ While breath is active, incoming hits apply damage immediately on impact. Basic 
 
 ## Room creation access
 
-Room creation requires the password on both the unlock endpoint and the session creation POST. The server defaults to the configured classroom password and supports a `TYPING_BOSS_CREATION_PASSWORD` environment override. The browser keeps the entered password only in component memory and sends it with creation requests; refreshing locks the creation page again. Joining remains public. The password field displays two masking dots for each real character. Joining existing rooms requires no creation password.
+Room creation requires the password on both the unlock endpoint and the session creation POST. The backend requires `TYPING_BOSS_CREATION_PASSWORD`; there is no built-in password. Missing configuration blocks creation with HTTP 503. Set a unique password on the backend service (Render), not in the Netlify frontend environment. Do not reuse vocabulary words or commit a password in source/tests. The isolated verifier creates a throwaway password in process memory. The browser keeps the entered password only in component memory and sends it with creation requests; refreshing locks the creation page again. Joining remains public. The password field displays two masking dots for each real character. Joining existing rooms requires no creation password.
 
 
 See [Performance and integrity findings](PERFORMANCE-AND-INTEGRITY.md) for the current exploit boundaries, non-damage alternatives and presentation recommendations.
@@ -305,3 +305,6 @@ Student proportional screens keep the volcanic scenery, formation and resting/de
 A short local team-activity cue beside the typing profiles reports new actual team damage, healing or revivals from compact cumulative summaries. Initial snapshots do not replay historical team cues. No animation frames are broadcast. The host classroom display continues to animate the whole encounter. Interest filtering and summary throttling change presentation/delivery only: simulation, damage accounting and final leaderboards remain authoritative and complete.
 
 `server/typingBossAudience.test.js` checks personal event selection, summary throttling/trailing delivery, own-hit immediacy, revivals, terminal refreshes and nonmutation of host/simulation data. UI tests check frozen overviews, personal-only dragon reactions, support endpoints and team cue expiry. The 31-client verifier checks both audiences and reports host and average student SSE patch bytes; these are workload-specific measurements, not a device FPS benchmark.
+
+
+If Netlify reports the value of `TYPING_BOSS_CREATION_PASSWORD` in repository or vocabulary files, remove that variable from the Netlify site environment and set a new unique value on the backend. Redeploy both services. Existing vocabulary content is public and should not be removed to conceal a reused password. Leave secret scanning enabled; do not add a password to a scan omission list.
