@@ -1,0 +1,55 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest
+
+PASS src/TypingBoss/ContinuousBattle.test.tsx (14.496 s)
+  ● Console
+
+    console.error
+      An update to ContinuousTyping inside a test was not wrapped in act(...).
+      
+      When testing, code that causes React state updates should be wrapped into act(...):
+      
+      act(() => {
+        /* fire events that update state */
+      });
+      /* assert on the output */
+      
+      This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act
+
+      92 |       acknowledged.current = Math.max(acknowledged.current, result.nextWord);
+      93 |       queue.current = queue.current.filter(record => record[0] >= result.nextWord);
+    > 94 |       setError("");
+         |       ^
+      95 |     } catch (caught) {
+      96 |       if (!mounted.current || !activeRef.current) return;
+      97 |       setError(caught instanceof Error ? caught.message : "Your words are waiting to reconnect.");
+
+      at node_modules/react-dom/cjs/react-dom-client.development.js:15751:19
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at warnIfUpdatesNotWrappedWithActDEV (node_modules/react-dom/cjs/react-dom-client.development.js:15750:9)
+      at scheduleUpdateOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:14311:11)
+      at dispatchSetStateInternal (node_modules/react-dom/cjs/react-dom-client.development.js:7208:13)
+      at setError (node_modules/react-dom/cjs/react-dom-client.development.js:7161:7)
+      at flush (src/TypingBoss/ContinuousBattle.tsx:94:7)
+
+PASS src/TypingBoss/BattleScene.test.tsx
+PASS src/TypingBoss/HostBattleLog.test.tsx
+PASS src/TypingBoss/combatAnimation.test.tsx
+PASS src/TypingBoss/BattleLeaderboard.test.tsx
+PASS src/TypingBoss/RoomCreationGate.test.tsx
+PASS src/TypingBoss/BattleCountdown.test.tsx
+PASS src/TypingBoss/dragonFlame.test.tsx
+PASS src/TypingBoss/hostPortrait.test.tsx
+PASS src/TypingBoss/dragonHurt.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+PASS src/TypingBoss/joinNames.test.ts
+PASS src/TypingBoss/typingFeedback.test.ts
+PASS src/TypingBoss/credentials.test.ts
+
+Test Suites: 15 passed, 15 total
+Tests:       123 passed, 123 total
+Snapshots:   0 total
+Time:        29.965 s
+Ran all test suites matching /TypingBoss/i.

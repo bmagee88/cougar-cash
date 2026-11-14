@@ -1,0 +1,18 @@
+{
+  "balanced": false,
+  "scheduled": false,
+  "clients": 31,
+  "privateAuthentication": "passed",
+  "issuedWords": "passed",
+  "skipsAndStolenTickets": "rejected",
+  "forgedTiming": "rejected",
+  "duplicates": "idempotent",
+  "reconnect": "passed",
+  "endingLeaderboard": "passed",
+  "originalMode": "passed",
+  "personalEventsOnly": "passed",
+  "teamActivity": "passed",
+  "hostUpdates": 21,
+  "hostPatchBytes": 58270,
+  "averageStudentPatchBytes": 35976
+}

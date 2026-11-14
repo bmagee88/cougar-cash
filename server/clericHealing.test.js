@@ -13,25 +13,27 @@ function attack(p,gold=1) {
   return r.releaseAttack(p.typing);
 }
 test('Prayer words route all typing power into Prayer, and never increase attack or crit',()=>{
-  const s=r.initializeBalanced(r.createTypingState(123,'cleric'));
+  const s=r.initializeBalanced(r.createTypingState(123,'cleric'));s.balancedRandomColors=true;
+  while(r.typingWord(s).color!=='orange')s.seed++;
   Object.assign(s,{balancedPower:10,characters:8,balancedHealingBank:5,balancedCritCharge:7});
   const word=r.typingWord(s),text=word.text+' ',n=text.length-1,gaps=Array(n).fill(150);
   r.finishWord(s,text,n,n*150,n*22500,undefined,gaps);
   assert.equal(s.balancedPower,10);assert.equal(s.characters,8);assert.equal(s.balancedCritCharge,7);
   assert.equal(s.balancedHealingBank,0);assert.equal(s.balancedHealingDeposit,5+text.length*1.25);
 });
-test('Prayer mistakes reduce the private bank to zero, without attack penalties or a shared-pool deposit',()=>{
+test('Prayer mistakes preserve the private bank and cannot make a shared-pool deposit',()=>{
   const {previewBalancedWord}=require('../src/TypingBoss/balancedRules');
-  const s=r.initializeBalanced(r.createTypingState(123,'cleric'));
+  const s=r.initializeBalanced(r.createTypingState(123,'cleric'));s.balancedRandomColors=true;
+  while(r.typingWord(s).color!=='orange')s.seed++;
   Object.assign(s,{balancedPower:10,characters:8,balancedHealingBank:4});
   const expected=r.typingWord(s).text+' ';
   const first=previewBalancedWord(s,'!',expected,[],'orange');
-  assert.equal(first.balancedHealingBank,1.5);assert.equal(first.balancedPower,10);
+  assert.equal(first.balancedHealingBank,4);assert.equal(first.balancedPower,10);
   const second=previewBalancedWord(s,'!!',expected,[150],'orange');
-  assert.equal(second.balancedHealingBank,0);assert.equal(s.balancedHealingBank,4,'preview cannot mutate confirmed bank');
+  assert.equal(second.balancedHealingBank,4);assert.equal(s.balancedHealingBank,4,'preview cannot mutate confirmed bank');
   const text='!'.repeat(expected.length),n=text.length-1;
   r.finishWord(s,text,n,n*150,n*22500,undefined,Array(n).fill(150));
-  assert.equal(s.balancedHealingBank,0);assert.equal(s.balancedHealingDeposit,0);
+  assert.equal(s.balancedHealingBank,4);assert.equal(s.balancedHealingDeposit,0);
   assert.equal(s.balancedPower,10);assert.equal(s.characters,8);assert.equal(s.attackErrors,0);
 });
 test('orange deposits Healing immediately, once, without adding cleric damage power',()=>{
@@ -83,4 +85,16 @@ test('blocked boss damage does not create healing allowance',()=>{
   assert.equal(s.clericHealingAllowance,0);
   engine.launchAttack(s,player,attack(player),cb);
   assert.equal(player.hp,50);assert.equal(s.clericHealingPool,100);
+});
+test('a confirmed blue trigger grants usable Block before any attack release',()=>{
+  const {s,cb,jobs,player}=room();
+  Object.assign(player.typing,{balancedRandomColors:false,balancedCharacters:140,balancedOrangeAt:240,balancedCritAt:268});
+  const text=r.typingWord(player.typing).text,n=text.length-1,gaps=Array(n).fill(150);
+  engine.submitWords(s,{role:'player',actorCode:'0'},[[0,text,n,n*150,n*22500,null,gaps]],cb);
+  const block=text.length*.625;
+  assert.equal(player.typing.balancedGuard,block);
+  assert.equal(player.typing.wordsInAttack,1);assert.equal(player.typing.balancedPower,text.length);
+  assert.equal(jobs.length,0,'no player attack has fired');
+  engine.launchAttack(s,s.typingHost,{power:20,multiplier:1,moveId:'weak',balanced:true},cb);jobs.shift()();
+  assert.equal(player.hp,100-Math.max(0,20-block));
 });

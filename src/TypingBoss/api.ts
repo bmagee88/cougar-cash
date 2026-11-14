@@ -8,6 +8,7 @@ import {
   TypingBossMode,
   TypingBossWordResult,
   TypingBossParticipantResponse,
+  TypingBossIssuedWord,
   TypingBossSessionResponse,
 } from "./types";
 
@@ -109,7 +110,7 @@ async function apiFetch<T>(
 function credentialsBody(credentials: TypingBossCredentials) {
   return credentials.hostToken
     ? { hostToken: credentials.hostToken }
-    : { code: credentials.code };
+    : { code: credentials.code, playerToken: credentials.playerToken };
 }
 
 export function getTypingBossEventSourceUrl(
@@ -119,6 +120,7 @@ export function getTypingBossEventSourceUrl(
   return withQuery(`/api/typing-boss/sessions/${sessionId}/events`, {
     hostToken: credentials.hostToken,
     code: credentials.code,
+    playerToken: credentials.playerToken,
   });
 }
 
@@ -141,7 +143,7 @@ export async function createTypingBossSession(name: string, bossId: TypingBossId
 }
 
 export function submitTypingBossWords(sessionId: string, credentials: TypingBossCredentials, words: TypingBossWordResult[]) {
-  return apiFetch<{ nextWord: number }>(`/api/typing-boss/sessions/${sessionId}/words`, {
+  return apiFetch<{ nextWord: number;issuedWords?:TypingBossIssuedWord[] }>(`/api/typing-boss/sessions/${sessionId}/words`, {
     method: "POST", json: { ...credentialsBody(credentials), words },
   });
 }
@@ -159,32 +161,35 @@ export function getTypingBossSession(
   const query = new URLSearchParams();
   if (credentials.hostToken) query.set("hostToken", credentials.hostToken);
   if (credentials.code) query.set("code", credentials.code);
+  if (credentials.playerToken) query.set('playerToken', credentials.playerToken);
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}${suffix}`
   );
 }
 
-export function createTypingBossParticipant(
+export async function createTypingBossParticipant(
   sessionId: string,
   name: string,
   classId: TypingBossClassId
 ) {
-  return apiFetch<TypingBossParticipantResponse>(
+  const result = await apiFetch<TypingBossParticipantResponse>(
     `/api/typing-boss/sessions/${sessionId}/participants`,
     {
       method: "POST",
       json: { name, classId, goldWords: true },
     }
   );
+  if(!/^[a-f0-9]{64}$/.test(result.playerToken || ''))throw new Error('Update the Typing Boss backend before joining this game. Private player credentials are required.');
+  return result;
 }
 
-export function verifyTypingBossParticipant(sessionId: string, code: string) {
+export function verifyTypingBossParticipant(sessionId: string, playerToken: string) {
   return apiFetch<TypingBossParticipantResponse>(
     `/api/typing-boss/sessions/${sessionId}/verify`,
     {
       method: "POST",
-      json: { code },
+      json: { playerToken },
     }
   );
 }
@@ -226,7 +231,7 @@ export function createTypingBossChallenge(
     `/api/typing-boss/sessions/${sessionId}/challenge`,
     {
       method: "POST",
-      json: { code, moveId, targetCode },
+      json: { playerToken: code, moveId, targetCode },
     }
   );
 }
@@ -247,7 +252,7 @@ export function submitTypingBossAction(
     {
       method: "POST",
       json: {
-        ...credentialsBody({ code }),
+        ...credentialsBody({ playerToken: code }),
         ...payload,
       },
     }

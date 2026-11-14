@@ -5,11 +5,11 @@ import { projectileEndpoints } from "./combatFeedback";
 
 declare const test: any, expect: any;
 
-test("correct characters increase attack and wrong characters immediately subtract two", () => {
+test("correct characters increase attack and wrong characters preserve earned power", () => {
   const state = { ...createTypingState(1), characters: 9 };
   const word = typingWord(state).text;
   expect(chargedLetters(state, word.slice(0, 2))).toBe(11);
-  expect(chargedLetters(state, `!${word.slice(1, 2)}`)).toBe(8);
+  expect(chargedLetters(state, `!${word.slice(1, 2)}`)).toBe(10);
   expect(chargedLetters(state, `${word} `)).toBe(10 + word.length);
 });
 

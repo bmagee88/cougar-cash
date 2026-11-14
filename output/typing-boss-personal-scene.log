@@ -1,0 +1,16 @@
+PASS src/TypingBoss/BattleScene.test.tsx (24.537 s)
+  √ host and quiet student overview share the formation at 10 players (963 ms)
+  √ host and quiet student overview share the formation at 11 players (749 ms)
+  √ host and quiet student overview share the formation at 20 players (1071 ms)
+  √ host and quiet student overview share the formation at 21 players (319 ms)
+  √ host and quiet student overview share the formation at 30 players (405 ms)
+  √ only personal projectiles animate beside the profiles while the overview stays still (254 ms)
+  √ the student dragon profile reacts only to their hits and relevant incoming attacks (181 ms)
+  √ roster HP and charge updates reuse portrait geometry, while new formation slots remeasure (216 ms)
+  √ joining another room resets typing even though both private-seed placeholders are zero (147 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        32.405 s
+Ran all test suites matching /TypingBoss\\BattleScene.test/i.

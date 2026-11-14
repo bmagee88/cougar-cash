@@ -1,4 +1,7 @@
 .damage-flash { display: inline-block; animation: damage-flash 400ms ease-out; }
+.typing-team-cue-active { animation:typing-team-cue 1400ms ease-out both; }
+@keyframes typing-team-cue { 0% {opacity:0;} 12%,80% {opacity:1;} 100% {opacity:0;} }
+@media (prefers-reduced-motion:reduce) { .typing-team-cue-active {animation:none;} }
 .dragon-target-warning { position: absolute; width: 78px; height: 30px; margin: -15px -39px; z-index: 2; border: 2px solid #fb923c99; border-radius: 50%; box-shadow: 0 0 14px #f9731666; animation: dragon-target-pulse 700ms ease-in both; }
 .dragon-target-bite,.dragon-target-tailWhip { border-style: dashed; }
 .dragon-breath-stream { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; z-index: 7; filter: drop-shadow(0 0 8px #f97316); animation: dragon-breath 700ms ease-out both; pointer-events: none; }

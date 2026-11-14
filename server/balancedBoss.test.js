@@ -3,6 +3,10 @@ const assert = require("node:assert/strict");
 const r = require("../src/TypingBoss/proportionalRules");
 const engine = require("./proportionalBoss");
 const balanced = ability => r.initializeBalanced(r.createTypingState(123, ability));
+function trigger(state,color,position) {
+  Object.assign(state,{balancedOrangeAt:1e9,balancedCritAt:1e9,balancedBlueAt:1e9,balancedSpecialAt:1e9,balancedGreenAt:1e9,balancedCharacters:position});
+  state[color==='gold'?'balancedSpecialAt':color==='red'?'balancedCritAt':`balanced${color[0].toUpperCase()+color.slice(1)}At`]=position;
+}
 const noDice = () => { throw new Error("Balanced combat must not roll dice"); };
 test("balanced random colors default on, can be disabled before Start and lock during combat",()=>{
   const s=session();engine.applyBalanced(s,true);
@@ -36,9 +40,9 @@ test("random orange words still cash in Charge and random red words cash in save
 });
 test("partial-word bank preview matches committed earnings without activating bonuses or mutating state",()=>{
   const {previewBalancedWord}=require('../src/TypingBoss/balancedRules');
-  const state=balanced('cleric');Object.assign(state,{balancedCharacters:134,balancedCritCharge:10});
-  const original=structuredClone(state),word=r.typingWord(state),text=word.text+' ',gaps=Array(text.length-1).fill(150);
-  const preview=previewBalancedWord(state,text,word.text+' ',gaps);
+  const state=balanced('cleric');trigger(state,"red",134);state.balancedCritCharge=10;
+  const original=structuredClone(state),word=r.typingWord(state),text=word.text,gaps=Array(text.length-1).fill(150);
+  const preview=previewBalancedWord(state,text,word.text+' ',gaps,word.color);
   assert.deepEqual(state,original);
   assert.equal(preview.balancedCritBonus,0);
   r.finishWord(state,text,gaps.length,gaps.length*150,gaps.length*22500,undefined,gaps);
@@ -62,27 +66,33 @@ function record(state, pace=150, wrong=false) {
   return [state.nextWord,text,gaps.length,gaps.reduce((a,b)=>a+b,0),gaps.reduce((a,b)=>a+b*b,0),state.wordsInAttack?gaps[0]:null,gaps];
 }
 function finish(state, rec) {r.finishWord(state,rec[1],rec[2],rec[3],rec[4],rec[5]??undefined,rec[6]);}
-test("balanced power per correct character is identical for short and long runs at fast or slow steady pace",()=>{
-  for(const length of [1,5,10,20,40]) for(const pace of [20,150,1000]) {
-    const state=balanced();
-    state.attackWords=length;
-    for(let i=0;i<length;i++) finish(state,record(state,pace));
+test("all scheduled colors build base ATK and steady typing adds a cadence multiplier",()=>{
+  for(const pace of [20,150,1000]) {
+    const state=balanced();let letters=0;
+    for(let i=0;i<10;i++) {const rec=record(state,pace);letters+=rec[1].length;finish(state,rec);}
+    assert.equal(state.balancedPower,letters);
+    assert.ok(Math.abs(state.balancedCadenceBonus-letters*.0025)<1e-10);
     const attack=r.releaseAttack(state,noDice);
-    assert.equal(attack.earnedPower,attack.base*1.25);
-    assert.ok(Math.abs(attack.power+attack.supportPower+attack.guardPower-(attack.orangePower||0)-(attack.criticalPower||0)-attack.earnedPower)<1e-8);
-    assert.equal(attack.criticalChance,0);
-    assert.ok(attack.consistency>=1 && attack.consistency<=1.25);
+    assert.ok(Math.abs(attack.earnedPower-letters*(1+letters*.0025))<1e-10);
+    assert.equal(state.balancedCadenceBonus,0);
+    assert.equal(state.balancedPower,0);
   }
 });
-test("hesitation lowers earned power while incorrect letters reduce power once",()=>{
-  const steady=balanced(), hesitant=balanced(), error=balanced();
-  const good=record(steady);
-  const paused=record(hesitant);
-  paused[6][1]=10000;paused[3]=paused[6].reduce((a,b)=>a+b,0);paused[4]=paused[6].reduce((a,b)=>a+b*b,0);
-  finish(steady,good);finish(hesitant,paused);finish(error,record(error,150,true));
-  assert.ok(hesitant.balancedPower<steady.balancedPower);
-  assert.equal(steady.balancedPower-error.balancedPower,3.75);
+
+test("cadence uses each word's running deviation, ignores transitions, and resets its pace per word",()=>{
+  const {previewBalancedWord}=require('../src/TypingBoss/balancedRules');
+  const state=balanced();state.wordsInAttack=1;
+  const steady=previewBalancedWord(state,'abcdef','abcdef',[10000,100,100,100,100,100],null);
+  const slow=previewBalancedWord(state,'abcdef','abcdef',[10,900,900,900,900,900],null);
+  const jitter=previewBalancedWord(state,'abcdef','abcdef',[100,10,1000,10,1000,10],null);
+  assert.equal(steady.balancedCadenceBonus,slow.balancedCadenceBonus);
+  assert.ok(jitter.balancedCadenceBonus<steady.balancedCadenceBonus);
+  const one=previewBalancedWord(state,'a','abcdef',[10000],null);
+  assert.ok(one.balancedCadenceBonus>0,'first correct letter starts earning immediately');
+  assert.ok(steady.balancedCadenceBonus>one.balancedCadenceBonus);
+  assert.equal(state.balancedCadenceBonus,0,'preview cannot commit rewards');
 });
+
 test("every class conserves its 80/20 power allocation and defensive overflow becomes damage",()=>{
   for(const ability of ["cleric","barbarian","paladin","rogue","necromancer","monk","dragon"]) {
     const state=balanced(ability);
@@ -91,28 +101,31 @@ test("every class conserves its 80/20 power allocation and defensive overflow be
     assert.equal(attack.power+attack.supportPower+attack.guardPower,130+attack.criticalPower);
     assert.ok(attack.guardPower<=10);
     assert.equal(attack.critical,true);
-    assert.equal(state.dodgeExtraRolls,0);
+    assert.equal(state.dodgeExtraRolls,ability==='rogue'?1:0);
     assert.equal(attack.power+attack.supportPower+attack.guardPower-attack.orangePower-attack.criticalPower,attack.base*1.25,"color power is additive, separate from the class reserve");
   }
 });
 
-test("orange and red banks fund exactly 10% each across short, long, and extended attacks",()=>{
-  for(const ability of ["barbarian","paladin","rogue","necromancer","monk","dragon"]) {
-    for(const length of [1,10,30]) {
-      const state=balanced(ability);
-      let base=0,orange=0,crit=0;
-      for(let index=0;index<300;index++) {
-        if(!state.wordsInAttack)state.attackWords=length;
-        finish(state,record(state,150,index%13===0));
-        if(state.wordsInAttack===r.attackWordLimit(state) || index===299) {
-          const attack=r.releaseAttack(state,noDice);
-          base+=attack.earnedPower;orange+=ability==="cleric"?attack.healingDeposit:attack.orangePower;crit+=attack.criticalBonus*100;
-          assert.equal(attack.critical,attack.criticalPower>0);
-        }
-      }
-      assert.ok(Math.abs(orange+(ability==="cleric"?state.balancedHealingBank:state.balancedOrangeBank)-base*.1)<1e-7,`${ability}/${length}: orange budget`);
-      assert.ok(Math.abs(crit+state.balancedCritCharge-base*.1)<1e-7,`${ability}/${length}: red budget`);
-      assert.ok(orange>0 && crit>0);
+test("ordinary colors bank resources; only their perfect glowing triggers activate them",()=>{
+  for(const ability of ['cleric','barbarian','paladin','rogue','necromancer','monk','dragon']) {
+    for(const [color,position] of [['orange',0],['blue',20],['green',40],['red',80]]) {
+      const state=balanced(ability);state.balancedCharacters=position;state.wordsInAttack=1;
+      const rec=record(state);finish(state,rec);
+      assert.equal(state.balancedPower,rec[1].length);
+      assert.equal(state.balancedGuard,0);assert.equal(state.balancedCritBonus,0);
+      assert.equal(state.balancedOrangePower,0);assert.equal(r.dodgeChance(state),0);
+      const bank=color==='orange'?(ability==='cleric'?'balancedHealingBank':'balancedOrangeBank'):color==='blue'?'balancedBlockBank':color==='red'?'balancedCritCharge':'balancedDodgeBank';
+      assert.ok(state[bank]>0,`${ability}/${color} bank`);
+      if(color==='blue')assert.equal(state[bank],rec[1].length*.625,'half the old shield rate');
+      if(color==='green')assert.equal(state[bank],.5,'half the old dodge rate');
+      const saved=state[bank];trigger(state,color,200);
+      assert.equal(r.typingWord(state).trigger,true);
+      finish(state,record(state,150,true));
+      assert.equal(state.balancedGuard,0);assert.equal(state.balancedCritBonus,0);assert.equal(state.balancedOrangePower,0);assert.equal(r.dodgeChance(state),0);
+      trigger(state,color,400);finish(state,record(state));
+      assert.equal(state[bank],0);
+      const active=color==='blue'?state.balancedGuard:color==='red'?state.balancedCritBonus:color==='green'?r.dodgeChance(state):ability==='cleric'?state.balancedHealingDeposit:state.balancedOrangePower;
+      assert.ok(active>0,`${ability}/${color} activation (${saved} banked)`);
     }
   }
 });
@@ -123,7 +136,7 @@ test("crit appears every 134 correct characters and missed triggers wait for the
   assert.equal(state.balancedSpecialAt,150);
   state.balancedCharacters=133;
   assert.notEqual(r.typingWord(state).color,"red");
-  Object.assign(state,{balancedCharacters:134,balancedSpecialAt:450,balancedCritCharge:12.5});
+  trigger(state,"red",134);state.balancedCritCharge=12.5;
   assert.equal(r.typingWord(state).color,"red");
   finish(state,record(state,150,true));
   assert.notEqual(r.typingWord(state).color,"red");
@@ -136,6 +149,7 @@ test("crit appears every 134 correct characters and missed triggers wait for the
   assert.ok(state.balancedCritBonus*100>bank);
   assert.equal(state.balancedCritCharge,0);
   assert.equal(state.balancedCritAt,402);
+  state.balancedPower=10;state.characters=8; // A red word enhances separately earned white ATK.
   assert.equal(r.releaseAttack(state,noDice).critical,true);
   assert.equal(r.releaseAttack(state,noDice).criticalPower,0);
 });
@@ -144,7 +158,7 @@ test("missed gold expires and returns at the next 150-character slot",()=>{
   const state=balanced("barbarian");
   state.balancedCharacters=149;
   assert.notEqual(r.typingWord(state).color,"gold");
-  Object.assign(state,{balancedCharacters:150,balancedCritAt:268});
+  trigger(state,"gold",150);
   assert.equal(r.typingWord(state).color,"gold");
   finish(state,record(state,150,true));
   assert.equal(state.gold,0);
@@ -163,11 +177,11 @@ test("host switch defaults off, validates and locks, and balanced actors share c
   engine.applyBalanced(s);
   assert.equal(s.balanced,false);
   assert.throws(()=>engine.applyBalanced(s,"true"));
-  engine.applyHpMultiplier(s,2);
+  engine.applyHpMultiplier(s,1.5);
   engine.applyBalanced(s,true);
   for(const player of s.players.values()) {
     assert.equal(player.typing.seed,s.typingHost.seed);
-    assert.equal(player.typing.balancedGuardMax,200);
+    assert.equal(player.typing.balancedGuardMax,150);
     assert.deepEqual(r.typingWord(player.typing),r.typingWord(s.typingHost));
   }
   s.status="active";
@@ -240,7 +254,7 @@ test("Cleric retains full base power instead of reserving 20 percent on gold",()
   assert.equal(player.totalDamage+(player.totalHealing || 0),125);
 });
 test("balanced batches validate actual key gaps atomically and remain retry-safe",()=>{
-  const s=session();engine.applyBalanced(s,true);s.status="active";
+  const s=session();engine.applyBalanced(s,true,false);s.status="active";
   const player=s.players.get("0");const copy={...player.typing};const rec=record(copy);
   const bad=structuredClone(rec);bad[6][0]+=100;
   const cb={schedule:()=>{},broadcast:()=>{}};
@@ -249,7 +263,39 @@ test("balanced batches validate actual key gaps atomically and remain retry-safe
   engine.submitWords(s,{role:"player",actorCode:"0"},[rec],cb);
   engine.submitWords(s,{role:"player",actorCode:"0"},[rec],cb);
   assert.equal(player.typing.nextWord,1);
-  assert.equal(player.typing.balancedPower,(rec[1].length)*1.25);
+  assert.equal(player.typing.balancedPower,rec[1].length);
+});
+
+test("scheduled client and server agree through all triggers, attack releases and duplicate submissions",()=>{
+  const s=session();engine.applyBalanced(s,true,false);s.status='active';
+  const player=s.players.get('1'),local=structuredClone(player.typing);
+  const seen=new Set(),cb={schedule:()=>{},broadcast:()=>{},random:noDice};
+  for(let i=0;i<100;i++) {
+    const word=r.typingWord(local);if(word.trigger)seen.add(word.color);
+    const rec=record(local,i%2?300:100);
+    finish(local,rec);
+    if(local.wordsInAttack===r.attackWordLimit(local))r.releaseAttack(local,noDice);
+    engine.submitWords(s,{role:'player',actorCode:'1'},[rec],cb);
+    engine.submitWords(s,{role:'player',actorCode:'1'},[rec],cb);
+    assert.deepEqual(player.typing,local);
+  }
+  assert.deepEqual([...seen].sort(),['blue','gold','green','orange','red']);
+  assert.ok(player.turnsTaken>0);
+});
+
+test("green transition earnings reward smooth word starts independently from within-word cadence",()=>{
+  const {previewBalancedWord}=require('../src/TypingBoss/balancedRules');
+  const smooth=balanced('rogue'),paused=balanced('rogue');
+  for(const state of [smooth,paused])Object.assign(state,{balancedCharacters:40,wordsInAttack:1});
+  for(const [state,transition] of [[smooth,100],[paused,1000]]) {
+    const rec=record(state,100);rec[6][0]=transition;
+    rec[3]=rec[6].reduce((a,b)=>a+b,0);rec[4]=rec[6].reduce((a,b)=>a+b*b,0);rec[5]=transition;
+    finish(state,rec);
+  }
+  assert.equal(smooth.balancedDodgeBank,.5);assert.equal(paused.balancedDodgeBank,0);
+  assert.equal(smooth.balancedCadenceBonus,paused.balancedCadenceBonus);
+  assert.equal(r.effectiveDodgeChance(smooth),0,'pending points are not an active chance');
+  assert.equal(previewBalancedWord(smooth,'a','abc',[100],'green').balancedDodgeBank,.5);
 });
 
  test("balanced crit boosts current attack by its charged percentage",()=>{

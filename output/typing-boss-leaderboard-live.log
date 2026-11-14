@@ -1,0 +1,18 @@
+{
+  "balanced": false,
+  "clients": 31,
+  "attacks": 31,
+  "bossPattern": "fireball",
+  "bossTargets": 1,
+  "projectiles": 31,
+  "endLeaderboard": "passed",
+  "hpMultiplier": "passed",
+  "progressUpdates": "passed",
+  "hostCombatBytes": 19950,
+  "averagePlayerCombatBytes": 18898,
+  "totalCombatBytes": 586875,
+  "hostUpdateCount": 4,
+  "originalMode": "passed",
+  "reconnectAndRetry": "passed",
+  "note": "Local SSE payload bytes for a progress update per actor, one host volley and 30 simultaneous player attacks; excludes initial snapshots and HTTP/TLS overhead."
+}

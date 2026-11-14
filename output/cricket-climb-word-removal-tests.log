@@ -1,0 +1,14 @@
+PASS src/CricketClimb/CricketClimb.test.jsx (12.697 s)
+PASS src/CricketClimb/engine.test.ts (11.6 s)
+PASS src/CricketClimb/grades.test.ts
+PASS src/CricketClimb/reading.test.ts
+PASS src/CricketClimb/curriculum.test.ts (7.644 s)
+PASS src/CricketClimb/progress.test.ts (12.064 s)
+PASS src/CricketClimb/math.test.ts
+PASS src/CricketClimb/audio.test.ts
+
+Test Suites: 8 passed, 8 total
+Tests:       110 passed, 110 total
+Snapshots:   0 total
+Time:        50.598 s
+Ran all test suites matching /CricketClimb/i.

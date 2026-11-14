@@ -103,7 +103,7 @@ import { collectCombatAnimations, CombatAnimation, CombatAnimationEvent, NO_ANIM
 const AnimationPreview = process.env.NODE_ENV === "development" ? React.lazy(() => import("./AnimationPreview")) : null;
 
 const SESSION_ID_PATTERN = /^boss[0-9A-F]{3}$/;
-const PLAYER_CODE_PATTERN = /^hero[0-9A-F]{4}$/;
+const PLAYER_TOKEN_PATTERN = /^[a-f0-9]{64}$/;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const PUBLIC_ASSET_BASE = (process.env.PUBLIC_URL || "").replace(/\/$/, "");
 const TYPING_BOSS_ASSETS = {
@@ -419,15 +419,7 @@ function normalizeSessionAlias(value: string) {
   return hex ? `boss${hex}` : "";
 }
 
-function normalizePlayerCode(value: string) {
-  const hex = value
-    .replace(/^hero/i, "")
-    .toUpperCase()
-    .replace(/[^0-9A-F]/g, "")
-    .slice(0, 4);
 
-  return hex ? `hero${hex}` : "";
-}
 
 function messageFromError(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong.";
@@ -675,20 +667,21 @@ function useTypingBossSessionStream(
   >("");
   const hostToken = credentials?.hostToken;
   const code = credentials?.code;
+  const playerToken = credentials?.playerToken;
 
   useEffect(() => {
-    if (!sessionId || (!hostToken && !code)) {
+    if (!sessionId || (!hostToken && !playerToken)) {
       return undefined;
     }
 
     let closed = false;
     let attempts = 0;
-    const activeCredentials = { hostToken, code };
+    const activeCredentials = { hostToken, code, playerToken };
     const source = new EventSource(
       getTypingBossEventSourceUrl(sessionId, activeCredentials)
     );
     const role = hostToken ? "host" : "player";
-    const credential = hostToken || code || "";
+    const credential = hostToken || playerToken || "";
     function rememberExpiry(incoming: TypingBossSessionSnapshot) {
       if (incoming.status === "expired") removeSavedCredential(sessionId!, role, credential);
       else saveCredential(sessionId!, role, credential, incoming.expiresAt);
@@ -759,7 +752,7 @@ function useTypingBossSessionStream(
       closed = true;
       source.close();
     };
-  }, [code, hostToken, sessionId]);
+  }, [code, hostToken, playerToken, sessionId]);
 
   return {
     connected,
@@ -949,7 +942,7 @@ function classIcon(classId: TypingBossClassId) {
   return <BoltIcon />;
 }
 
-function PlayerCharacterSprite(props: { classId: TypingBossClassId; color: string; size?: number; highlight?: boolean; pose?: CombatAnimation; clock?: React.MutableRefObject<number> }) {
+function PlayerCharacterSprite(props: { classId: TypingBossClassId; color: string; size?: number; highlight?: boolean; pose?: CombatAnimation; clock?: React.MutableRefObject<number>; inspectFrame?:number }) {
   return <CombatCharacter {...props} />;
 }
 
@@ -1417,19 +1410,19 @@ function HostSessionPage() {
           {session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
             <FormControlLabel label="Balanced" control={<Switch checked={balanced} onChange={(_event, checked) => setBalanced(checked)} disabled={busy} inputProps={{ "aria-label": "Balanced" }} />} />
             {balanced && <FormControlLabel label="Random colors" control={<Switch checked={balancedRandomColors} onChange={(_event,checked)=>setBalancedRandomColors(checked)} disabled={busy} inputProps={{"aria-label":"Random colors"}}/>}/>}
-            {balanced && <Typography variant="body2">{balancedRandomColors ? "Color chances per word: white 40%, orange 20%, blue 18%, green 15%, crit 4%, special 3%. Banking stays active." : "Scheduled colors: special every 150 correct characters; crit every 134."}</Typography>}
+            {balanced && <Typography variant="body2">{balancedRandomColors ? "Color chances per word: white 40%, orange 20%, blue 18%, green 15%, crit 4%, special 3%. Banking stays active." : "Glowing triggers: extra attack every 120 correct letters, crit 134, Block 140, special 150, Dodge 160. Ordinary colored words bank power until their trigger."}</Typography>}
             <Typography variant="body2" sx={{ color:"text.secondary" }}>{balanced ? "Skill-earned power, shared words and banking. Color settings lock at Start." : "Randomized colors, critical hits, dodges, and boss patterns."}</Typography>
             <WordFilterChips value={wordFilters} onChange={setWordFilters} disabled={busy} />
             <Typography id="hp-multiplier-label" fontWeight={900}>HP multiplier: ×{hpMultiplier}</Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
               Players start with {(100 * hpMultiplier).toLocaleString()} HP each. The dragon starts with {(100 * hpMultiplier * session.players.length).toLocaleString()} HP. Damage stays the same for both sides.
             </Typography>
-            <Slider aria-labelledby="hp-multiplier-label" value={hpMultiplier} min={1} max={100} step={1}
+            <Slider aria-labelledby="hp-multiplier-label" value={hpMultiplier} min={1} max={1.5} step={0.05}
               disabled={busy} valueLabelDisplay="auto" onChange={(_event, value) => setHpMultiplier(value as number)}
-              marks={[{ value: 1, label: "1×" }, { value: 10, label: "10×" }, { value: 30, label: "30×" }, { value: 60, label: "60×" }, { value: 100, label: "100×" }]} />
+              marks={[{ value: 1, label: "1×" }, { value: 1.25, label: "1.25×" }, { value: 1.5, label: "1.5×" }]} />
           </Paper>}
           <HostBattlefield session={lobbyPreview!} />
-          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}:${balanced}:${balancedRandomColors}`} sessionId={normalizedSessionId} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected}
+          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${normalizedSessionId}:${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}:${balanced}:${balancedRandomColors}`} sessionId={normalizedSessionId} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected}
             hostProfile={{boss:lobbyPreview!.boss,events:collectCombatAnimations(session.projectiles).get("boss") || NO_ANIMATION_EVENTS,serverNow:session.serverNow}} />}
         </> : <Grid container spacing={2}>
           <Grid item xs={12} lg={8}>
@@ -1499,7 +1492,7 @@ function JoinPage() {
         name,
         classId
       );
-      saveCredential(normalizedSessionId, "player", response.code, response.session.expiresAt);
+      saveCredential(normalizedSessionId, "player", response.playerToken, response.session.expiresAt);
       navigate(`/typing-boss/play/${normalizedSessionId}`);
     } catch (caught) {
       setError(messageFromError(caught));
@@ -1657,13 +1650,12 @@ function JoinPage() {
 function PlayerSessionPage() {
   const { sessionId } = useParams();
   const normalizedSessionId = normalizeSessionAlias(sessionId || "");
-  const [savedCode, setSavedCode] = useState(() =>
+  const [playerToken, setPlayerToken] = useState(() =>
     normalizedSessionId
-      ? normalizePlayerCode(
-          readSavedCredential(normalizedSessionId, "player")
-        )
+      ? readSavedCredential(normalizedSessionId, "player")
       : ""
   );
+  const [playerCode,setPlayerCode] = useState("");
   const [verified, setVerified] = useState(false);
   const [verifyError, setVerifyError] = useState("");
   const [statsOpen, setStatsOpen] = useState(false);
@@ -1675,27 +1667,28 @@ function PlayerSessionPage() {
     terminalReason,
   } = useTypingBossSessionStream(
     normalizedSessionId,
-    verified && savedCode ? { code: savedCode } : null
+    verified && playerToken ? { playerToken, code:playerCode } : null
   );
 
   useEffect(() => {
-    if (!normalizedSessionId || !savedCode) return;
+    if (!normalizedSessionId || !playerToken) return;
 
     let cancelled = false;
     setVerified(false);
     setVerifyError("");
-    verifyTypingBossParticipant(normalizedSessionId, savedCode)
+    verifyTypingBossParticipant(normalizedSessionId, playerToken)
       .then(response => {
         if (!cancelled) {
-          saveCredential(normalizedSessionId, "player", savedCode, response.session.expiresAt);
+          saveCredential(normalizedSessionId, "player", playerToken, response.session.expiresAt);
+          setPlayerCode(response.code);
           setVerified(true);
         }
       })
       .catch((caught) => {
         if (cancelled) return;
         if ([401, 403, 404, 410].includes(getErrorStatus(caught) || 0)) {
-          removeSavedCredential(normalizedSessionId, "player", savedCode);
-          setSavedCode("");
+          removeSavedCredential(normalizedSessionId, "player", playerToken);
+          setPlayerToken("");
         }
         setVerifyError(messageFromError(caught));
       });
@@ -1703,7 +1696,7 @@ function PlayerSessionPage() {
     return () => {
       cancelled = true;
     };
-  }, [normalizedSessionId, savedCode]);
+  }, [normalizedSessionId, playerToken]);
 
   useEffect(() => {
     if (session?.status === "active") {
@@ -1715,7 +1708,7 @@ function PlayerSessionPage() {
     return <Navigate to="/typing-boss/join" replace />;
   }
 
-  if (!savedCode || !PLAYER_CODE_PATTERN.test(savedCode)) {
+  if (!playerToken || !PLAYER_TOKEN_PATTERN.test(playerToken)) {
     return (
       <Navigate
         to={`/typing-boss/join?session=${normalizedSessionId}`}
@@ -1744,7 +1737,7 @@ function PlayerSessionPage() {
     );
   }
 
-  const me = session.players.find((player) => player.code === savedCode);
+  const me = session.players.find((player) => player.code === playerCode);
   if (!me) {
     return (
       <Navigate
@@ -1759,13 +1752,13 @@ function PlayerSessionPage() {
       <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
       <ReconnectOverlay show={reconnecting} />
       {session.mode === "proportional" ? <Stack spacing={2}>
-        <PlayerTypingBattle session={session} me={me} code={savedCode} active={session.status === "active" && !me.defeated && !reconnecting} />
+        <PlayerTypingBattle session={session} me={me} code={playerCode} playerToken={playerToken} active={session.status === "active" && !me.defeated && !reconnecting} />
         {session.leaderboard && <BattleLeaderboard entries={session.leaderboard} />}
       </Stack> : <PlayerBattlePanel
         session={session}
         me={me}
         sessionId={normalizedSessionId}
-        code={savedCode}
+        code={playerToken}
         onOpenStats={() => setStatsOpen(true)}
       />}
       <BattleStatsModal
@@ -3238,7 +3231,7 @@ function bossChargePercent(session: TypingBossSessionSnapshot, now: number) {
   return clamp(((now - start) / Math.max(1, end - start)) * 100, 0, 100);
 }
 
-function playerHostPositions(players: TypingBossPlayer[], spawns: Point[]) {
+function playerHostPositions(players: Pick<TypingBossPlayer, 'code'>[], spawns: Point[]) {
   const positions = new Map<string, Point>();
 
   players.forEach((player, index) => {
@@ -3248,6 +3241,16 @@ function playerHostPositions(players: TypingBossPlayer[], spawns: Point[]) {
   });
 
   return positions;
+}
+
+function useBattlePositions(players: TypingBossPlayer[], spawns: Point[], proportional = true) {
+  // HP and charge updates replace roster objects, but never move formation slots.
+  const rosterKey = JSON.stringify(players.map(player => player.code));
+  return useMemo(() => {
+    const codes: string[] = JSON.parse(rosterKey);
+    return proportional ? new Map(codes.map((code,index) => [code, proportionalPlayerPoint(index,codes.length)] as [string,Point])) :
+      playerHostPositions(codes.map(code => ({code})),spawns);
+  }, [rosterKey, spawns, proportional]);
 }
 
 type ProjectileArt = {
@@ -3319,56 +3322,54 @@ function PlayerBattlefield({ session, me }: { session: TypingBossSessionSnapshot
   return <BattleScene session={session} ownCode={me.code} />;
 }
 
-export function PlayerTypingBattle({ session, me, code, active }: {
-  session: TypingBossSessionSnapshot; me: TypingBossPlayer; code: string; active: boolean;
+export function PlayerTypingBattle({ session, me, code, playerToken, active }: {
+  session: TypingBossSessionSnapshot; me: TypingBossPlayer; code: string; playerToken?:string; active: boolean;
 }) {
   const rootRef = useRef<HTMLDivElement>(null), sceneRef = useRef<HTMLDivElement>(null), profileRef = useRef<HTMLDivElement>(null), dragonRef = useRef<HTMLDivElement>(null);
   const arena = arenaForBoss(session.boss.id);
-  const positions = useMemo(() => new Map(session.players.map((player, index) =>
-    [player.code, proportionalPlayerPoint(index, session.players.length)] as [string, Point])), [session.players]);
+  const positions = useBattlePositions(session.players, arena.hostSpawns);
   const layout = usePortraitProjectileLayout(rootRef, sceneRef, profileRef, positions, arena.hostBossPoint, me.code, dragonRef);
-  const events = useMemo(() => collectCombatAnimations(session.projectiles).get(me.code) || NO_ANIMATION_EVENTS, [session.projectiles, me.code]);
-  const ownProjectiles = session.projectiles.filter(shot => shot.source === me.code || shot.target === me.code);
-  const dragonEvents = useMemo(() => collectCombatAnimations(session.projectiles).get("boss") || NO_ANIMATION_EVENTS, [session.projectiles]);
-  return <Box ref={rootRef} data-testid="personal-typing-stage" sx={{ position: "relative" }}>
-    <Stack spacing={2}>
-      <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} profileProjectilesFor={me.code} />
-      <ContinuousTyping key={`${session.typing!.seed}:${session.typing!.balanced}`} sessionId={session.id} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} credentials={{ code }} state={session.typing!} active={active}
+  const ownProjectiles = useMemo(()=>session.projectiles.filter(shot=>shot.source===me.code || shot.target===me.code),[session.projectiles,me.code]);
+  const personalAnimations=useMemo(()=>collectCombatAnimations(ownProjectiles),[ownProjectiles]);
+  const events=personalAnimations.get(me.code) || NO_ANIMATION_EVENTS;
+  const dragonEvents=personalAnimations.get('boss') || NO_ANIMATION_EVENTS;
+  const personalBoss=useMemo(()=>({...session.boss,hurt:undefined,flameBreath:undefined,queuedStrongReactions:undefined,queuedAttacks:undefined}),[session.boss]);
+  const personalPositions=useMemo(()=>layout ? new Map([[me.code,layout.positions.get(me.code)!]]) : new Map<string,Point>(),[layout,me.code]);
+  return <Stack spacing={2}>
+    <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} />
+    <Box ref={rootRef} data-testid="personal-typing-stage" sx={{ position: "relative" }}>
+      <ContinuousTyping key={`${session.id}:${session.typing!.seed}:${session.typing!.balanced}`} sessionId={session.id} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} teamActivity={session.teamActivity} credentials={{ code, playerToken }} state={session.typing!} active={active}
         profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef }}
-        dragonProfile={{ boss: session.boss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
-    </Stack>
+        dragonProfile={{ boss: personalBoss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
     {layout && <Box data-testid="portrait-projectile-layer" sx={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 8 }}>
-      <ProjectileLayer projectiles={ownProjectiles} positions={layout.positions} bossPoint={layout.bossPoint} players={session.players} serverNow={session.serverNow} personal />
+      <ProjectileLayer projectiles={ownProjectiles} positions={personalPositions} bossPoint={layout.bossPoint} players={session.players} serverNow={session.serverNow} personal />
     </Box>}
-  </Box>;
+    </Box>
+  </Stack>;
 }
 
-// Both audiences share the camera, formation, sprite sizes and combat events.
-// Personal shots can move to the portrait overlay without duplicating them here.
-export function BattleScene({ session, ownCode, sceneRef, profileProjectilesFor }: {
-  session: TypingBossSessionSnapshot; ownCode?: string; sceneRef?: React.Ref<HTMLDivElement>; profileProjectilesFor?: string;
+// Students retain the shared formation as a quiet overview; their profiles own the action.
+export function BattleScene({ session, ownCode, sceneRef }: {
+  session: TypingBossSessionSnapshot; ownCode?: string; sceneRef?: React.Ref<HTMLDivElement>;
 }) {
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.hostBossPoint;
   const clock = useCombatClock(session.serverNow);
-  const animations = useMemo(() => collectCombatAnimations(session.projectiles), [session.projectiles]);
-  const positions = useMemo(
-    () => session.mode === "proportional" ? new Map(session.players.map((player, index) =>
-      [player.code, proportionalPlayerPoint(index, session.players.length)] as [string, Point]
-    )) : playerHostPositions(session.players, arena.hostSpawns),
-    [arena.hostSpawns, session.players, session.mode]
-  );
-  const density = session.players.length > 20 ? "minimal" : session.players.length > 10 ? "compact" : "normal";
+  const quiet=Boolean(ownCode && session.mode==='proportional');
+  const animations = useMemo(() => quiet ? new Map<string,CombatAnimationEvent[]>() : collectCombatAnimations(session.projectiles), [session.projectiles,quiet]);
+  const positions = useBattlePositions(session.players, arena.hostSpawns, session.mode === 'proportional');
+  const density = session.players.length > 20 && !quiet ? "minimal" : session.players.length > 10 ? "compact" : "normal";
 
   return (
-    <Box sx={{ overflowX: "auto" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
+    <Box data-overview={quiet} className={`${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} sx={{ overflowX: "auto" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
       <BattleCountdown session={session}/>
       <BattlefieldShell sceneRef={sceneRef} minWidth={session.mode === "proportional" ? 960 : undefined} minHeight={session.mode === "proportional" ? Math.max(540, 440 + Math.ceil(session.players.length / 4) * 48) : 640}>
-        <BossNode session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
+        <BossNode quiet={quiet} session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
         {session.players.map((player) => (
           <PlayerNode
             key={player.code}
             player={player}
+            quiet={quiet}
             point={positions.get(player.code) || { x: 50, y: 80 }}
             compact={session.mode === "proportional" || session.players.length > 6}
             proportional={session.mode === "proportional"}
@@ -3379,7 +3380,7 @@ export function BattleScene({ session, ownCode, sceneRef, profileProjectilesFor 
             clock={clock}
           />
         ))}
-        <ProjectileLayer projectiles={profileProjectilesFor ? session.projectiles.filter(shot => shot.source !== profileProjectilesFor && shot.target !== profileProjectilesFor) : session.projectiles} positions={positions} bossPoint={bossPoint} players={session.players} serverNow={session.serverNow} />
+        {!quiet && <ProjectileLayer projectiles={session.projectiles} positions={positions} bossPoint={bossPoint} players={session.players} serverNow={session.serverNow} />}
       </BattlefieldShell>
     </Box>
   );
@@ -3424,14 +3425,16 @@ function BossNode({
   size,
   events,
   clock,
+  quiet=false,
 }: {
+  quiet?:boolean;
   session: TypingBossSessionSnapshot;
   point: Point;
   size: "host" | "player";
   events: readonly CombatAnimationEvent[];
   clock: React.MutableRefObject<number>;
 }) {
-  const pose = useDragonCombatAnimation(events, session.boss.hurt, session.status !== "setup" && session.boss.hp <= 0, clock, session.boss.flameBreath);
+  const pose = useDragonCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, quiet ? null : session.boss.hurt, session.status !== "setup" && session.boss.hp <= 0, clock, quiet ? null : session.boss.flameBreath);
   const dragonWidth = session.mode === "proportional" ? size === "host" ? { xs: 230, md: 300 } : { xs: 240, md: 320 } : bossBattleWidth(session.boss.id, size);
   const latestAttack = session.projectiles.filter(projectile => projectile.source === "boss").slice(-1)[0];
   return (
@@ -3457,7 +3460,7 @@ function BossNode({
         >
           {session.boss.name.toUpperCase()}
         </Typography>
-        {session.mode === "proportional" && <AttackProgressBar sessionId={session.id} actor="boss" progress={session.boss.attackProgress} label="Dragon attack progress" />}
+        {session.mode === "proportional" && !quiet && <AttackProgressBar sessionId={session.id} actor="boss" progress={session.boss.attackProgress} label="Dragon attack progress" />}
         <Box
           sx={{
             border: "2px solid #c08b32",
@@ -3488,10 +3491,10 @@ function BossNode({
         {session.mode === "proportional" ? <Typography variant="caption" sx={{ color: "#fde68a", display: "block", mt: 1 }}>
           {latestAttack?.bossAttack && <strong>{latestAttack.moveLabel} · </strong>}Host controlled · every 10 words
         </Typography> : <BossChargeBar session={session} />}
-        {!!session.boss.queuedAttacks && <Typography variant="caption" sx={{ display: "block", color: "#fbbf24", mt: .5 }}>
+        {!quiet && !!session.boss.queuedAttacks && <Typography variant="caption" sx={{ display: "block", color: "#fbbf24", mt: .5 }}>
           {session.boss.queuedAttacks} {session.boss.queuedAttacks === 1 ? "attack" : "attacks"} queued · recovering
         </Typography>}
-        {!!session.boss.queuedStrongReactions && <Typography variant="caption" sx={{ display: "block", color: "#fca5a5", mt: .5 }}>
+        {!quiet && !!session.boss.queuedStrongReactions && <Typography variant="caption" sx={{ display: "block", color: "#fca5a5", mt: .5 }}>
           {session.boss.queuedStrongReactions} strong {session.boss.queuedStrongReactions === 1 ? "reaction" : "reactions"} queued
         </Typography>}
       </Box>
@@ -3505,7 +3508,7 @@ function BossNode({
 
         }}
       >
-        <DragonCombatSprite bossId={session.boss.id} width={dragonWidth} glow={session.boss.color} pose={pose} clock={clock} />
+        <DragonCombatSprite bossId={session.boss.id} width={dragonWidth} glow={session.boss.color} pose={pose} clock={clock} inspectFrame={quiet ? 0 : undefined} />
       </Box>
     </>
   );
@@ -3535,6 +3538,7 @@ const PlayerNode = React.memo(function PlayerNode({
   player,
   point,
   compact = false,
+  quiet = false,
   highlight = false,
   events = NO_ANIMATION_EVENTS,
   clock,
@@ -3545,6 +3549,7 @@ const PlayerNode = React.memo(function PlayerNode({
   player: TypingBossPlayer;
   point: Point;
   compact?: boolean;
+  quiet?:boolean;
   highlight?: boolean;
   events?: readonly CombatAnimationEvent[];
   clock: React.MutableRefObject<number>;
@@ -3556,7 +3561,7 @@ const PlayerNode = React.memo(function PlayerNode({
   const width = formation ? "9%" : compact ? 132 : 170;
   const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
-  const pose = useCombatAnimation(events, player.defeated, clock);
+  const pose = useCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, player.defeated, clock);
   return (
     <Box
       sx={{
@@ -3568,7 +3573,7 @@ const PlayerNode = React.memo(function PlayerNode({
         zIndex: 3,
       }}
     >
-      <Stack direction={formation ? "row" : "column"} spacing={0.5} alignItems="center">
+      <Stack direction={formation && !(quiet && density === "compact") ? "row" : "column"} spacing={0.5} alignItems="center">
         <Stack
           direction="row"
           spacing={0.5}
@@ -3588,6 +3593,7 @@ const PlayerNode = React.memo(function PlayerNode({
             color={highlight ? "#67e8f9" : player.color}
             size={proportional && compact ? 32 : compact ? 62 : 86}
             highlight={highlight}
+            inspectFrame={quiet ? (player.defeated ? 5 : 0) : undefined}
             pose={pose}
             clock={clock}
           />
@@ -3647,7 +3653,7 @@ const PlayerNode = React.memo(function PlayerNode({
             )}
           </Stack>}
         </Stack>
-        {density !== "minimal" && <Box sx={{ width: density === "compact" ? "65%" : "100%", minWidth:0, flexShrink: 0, textAlign: "center" }}>
+        {density !== "minimal" && <Box sx={{ width: quiet && density === "compact" ? 32 : density === "compact" ? "65%" : "100%", minWidth:0, flexShrink: 0, textAlign: "center" }}>
           {density === "normal" && <Typography
             sx={{
               fontWeight: 950,
@@ -3662,7 +3668,7 @@ const PlayerNode = React.memo(function PlayerNode({
           >
             {player.name}
           </Typography>}
-          {proportional && <AttackProgressBar sessionId={sessionId} actor={player.code} progress={player.attackProgress} label={`${player.name} attack progress`} compact={compact} dense={density === "compact"} />}
+          {proportional && !quiet && <AttackProgressBar sessionId={sessionId} actor={player.code} progress={player.attackProgress} label={`${player.name} attack progress`} compact={compact} dense={density === "compact"} />}
           <StatBar
             value={player.hp}
             max={player.maxHp}

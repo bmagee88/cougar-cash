@@ -75,6 +75,6 @@ export function AttackProgressBar({ sessionId, actor, progress = 0, label, compa
   }, [actor, sessionId]);
   return <Box sx={{ mb: dense ? .25 : .5 }} title={`${label}: ${Math.round(local ?? progress)}%`}>
     <LinearProgress aria-label={label} variant="determinate" value={Math.min(100, Math.max(0, local ?? progress))}
-      sx={{ height: dense ? 2 : compact ? 4 : 7, borderRadius: 1, bgcolor: "#312e81", "& .MuiLinearProgress-bar": { bgcolor: "#c4b5fd", transition: "transform 100ms linear" } }} />
+      sx={{ height: dense ? 2 : compact ? 4 : 7, borderRadius: 1, bgcolor: "#312e81", "& .MuiLinearProgress-bar": { bgcolor: "#c4b5fd", transition: local === null ? "transform 400ms linear" : "transform 100ms linear", "@media (prefers-reduced-motion: reduce)": { transition: "none" } } }} />
   </Box>;
 }

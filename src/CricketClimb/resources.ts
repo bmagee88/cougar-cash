@@ -31,7 +31,7 @@ export const FOUR_LETTER_WORDS: PictureWord[] = [
 export const FIVE_LETTER_WORDS: PictureWord[] = [
   { word: "apple", picture: "🍎", kind: "noun" }, { word: "house", picture: "🏠", kind: "noun" },
   { word: "plant", picture: "🪴", kind: "noun" }, { word: "snail", picture: "🐌", kind: "noun" },
-  { word: "train", picture: "🚂", kind: "noun" }, { word: "sheep", picture: "🐑", kind: "noun" },
+  { word: "train", picture: "🚂", kind: "noun" }, { word: "wheel", picture: "🛞", kind: "noun" },
   { word: "horse", picture: "🐎", kind: "noun" }, { word: "mouse", picture: "🐁", kind: "noun" },
   { word: "whale", picture: "🐋", kind: "noun" }, { word: "tiger", picture: "🐅", kind: "noun" },
   { word: "bread", picture: "🍞", kind: "noun" }, { word: "spoon", picture: "🥄", kind: "noun" },

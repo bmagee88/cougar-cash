@@ -1,0 +1,15 @@
+{
+  "balanced": true,
+  "scheduled": true,
+  "clients": 31,
+  "privateAuthentication": "passed",
+  "issuedWords": "passed",
+  "skipsAndStolenTickets": "rejected",
+  "forgedTiming": "rejected",
+  "duplicates": "idempotent",
+  "reconnect": "passed",
+  "endingLeaderboard": "passed",
+  "originalMode": "passed",
+  "hostUpdates": 10,
+  "hostPatchBytes": 57581
+}
