@@ -5,7 +5,7 @@ import { COMPUTER_TOOLS } from "./discoveryResources";
 export const SECOND_GRADE_WORDS = [
   { word: "train", picture: "🚂" }, { word: "chair", picture: "🪑" }, { word: "brush", picture: "🖌️" },
   { word: "beach", picture: "🏖️" }, { word: "clock", picture: "🕰️" }, { word: "plant", picture: "🪴" },
-  { word: "whale", picture: "🐋" }, { word: "sheep", picture: "🐑" }, { word: "grape", picture: "🍇" },
+  { word: "whale", picture: "🐋" }, { word: "wheel", picture: "🛞" }, { word: "grape", picture: "🍇" },
   { word: "house", picture: "🏠" }, { word: "plane", picture: "✈️" }, { word: "heart", picture: "❤️" },
   { word: "cloud", picture: "☁️" }, { word: "bread", picture: "🍞" }, { word: "smile", picture: "🙂" },
   { word: "snake", picture: "🐍" }, { word: "orange", picture: "🍊" }, { word: "banana", picture: "🍌" },
@@ -21,14 +21,14 @@ export const SECOND_GRADE_SIGHT_WORDS = [
 ];
 export const SOUND_CLUSTERS = [
   { word: "train", index: 1, end: false }, { word: "chair", index: 1, end: false },
-  { word: "sheep", index: 1, end: false }, { word: "whale", index: 1, end: false },
+  { word: "wheel", index: 1, end: false }, { word: "whale", index: 1, end: false },
   { word: "snake", index: 1, end: false }, { word: "brush", index: 1, end: false },
   { word: "clock", index: 1, end: false }, { word: "plane", index: 1, end: false },
   { word: "flower", index: 1, end: false }, { word: "beach", index: 4, end: true },
   { word: "brush", index: 4, end: true }, { word: "clock", index: 4, end: true },
 ];
 export const VOWEL_TEAMS = [
-  { word: "train", indexes: [2, 3] }, { word: "chair", indexes: [2, 3] }, { word: "sheep", indexes: [2, 3] },
+  { word: "train", indexes: [2, 3] }, { word: "chair", indexes: [2, 3] }, { word: "wheel", indexes: [2, 3] },
   { word: "beach", indexes: [1, 2] }, { word: "house", indexes: [1, 2] }, { word: "heart", indexes: [1, 2] },
   { word: "cloud", indexes: [2, 3] }, { word: "bread", indexes: [2, 3] }, { word: "rainbow", indexes: [1, 2] },
 ];
