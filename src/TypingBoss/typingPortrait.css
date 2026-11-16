@@ -13,6 +13,8 @@
 .typing-portrait { position: relative; width: 142px; height: 142px; box-sizing: border-box; overflow: hidden; border: 2px solid #52718c; border-radius: 12px; background: #0c1728; box-shadow: inset 0 0 20px #030814, 0 4px 14px #0007; isolation: isolate; }
 .portrait-scenery { position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 78%,#30496777,transparent 75%),linear-gradient(180deg,#121c32 60%,#1b2b38 61%,#0b1523); }
 .portrait-character { position: absolute; z-index: 3; left: 50%; bottom: 25px; transform: translateX(-50%); }
+.portrait-recovery { position:absolute; z-index:10; top:43px; left:7px; right:7px; padding:5px; border-radius:5px; background:#081322ed; color:#bbf7d0; pointer-events:none; }
+.portrait-recovery > span { display:block; margin-bottom:4px; text-align:center; font:800 9px/1.2 sans-serif; }
 .portrait-crit-aura { position:absolute; z-index:2; inset:27px 17px 26px; pointer-events:none; filter:drop-shadow(0 0 6px #ff243e); }
 .portrait-crit-aura::before { content:''; position:absolute; inset:0; background:radial-gradient(ellipse,#ffacaa22 25%,#ff274d99 58%,#ff5640dd 72%,transparent 75%); clip-path:polygon(50% 0,59% 18%,73% 4%,73% 28%,94% 16%,86% 42%,100% 46%,87% 61%,98% 80%,74% 77%,71% 100%,52% 88%,33% 100%,26% 80%,3% 88%,14% 63%,0 48%,15% 39%,7% 17%,29% 29%,31% 5%,43% 20%); animation:portrait-crit-flare 520ms ease-in-out infinite alternate; }
 .portrait-crit-aura i { position:absolute; inset:8px 12px; border:2px solid #ff9494; border-radius:45%; transform:rotate(-15deg); opacity:.7; }
