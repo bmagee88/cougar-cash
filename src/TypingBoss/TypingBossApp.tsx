@@ -1,3 +1,4 @@
+import HostSetup from './HostSetup';
 import CharacterSelect from './CharacterSelect';
 import RecoveryBar from './RecoveryBar';
 import RecoveryNotice from './RecoveryNotice';
@@ -16,7 +17,6 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import HomeIcon from "@mui/icons-material/Home";
 import KeyboardIcon from "@mui/icons-material/Keyboard";
 import LocalFireDepartmentIcon from "@mui/icons-material/LocalFireDepartment";
-import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ShieldIcon from "@mui/icons-material/Shield";
 import {
@@ -41,11 +41,9 @@ import {
   Switch,
   IconButton,
   LinearProgress,
-  MenuItem,
   Paper,
   Slider,
   Stack,
-  TextField,
   ThemeProvider,
   Tooltip,
   Typography,
@@ -856,44 +854,6 @@ function StatusChip({ status }: { status: TypingBossStatus }) {
   );
 }
 
-function BossSprite({
-  width,
-  glow = "#ef4444",
-  bossId = "cindermaw",
-}: {
-  width: number | { xs: number; md: number };
-  glow?: string;
-  bossId?: TypingBossId;
-}) {
-  return (
-    <Box
-      component="img"
-      src={BOSS_SPRITE_ASSETS[bossId]}
-      alt=""
-      draggable={false}
-      sx={{
-        width,
-        maxWidth: "100%",
-        height: "auto",
-        display: "block",
-        imageRendering: "pixelated",
-        filter: "drop-shadow(0 18px 0 rgba(0,0,0,.22))",
-        userSelect: "none",
-      }}
-    />
-  );
-}
-
-function bossPreviewWidth(bossId: TypingBossId) {
-  if (bossId === "emberWhelp") {
-    return { xs: 170, md: 190 };
-  }
-  if (bossId === "infernalDragon") {
-    return { xs: 250, md: 300 };
-  }
-  return { xs: 220, md: 260 };
-}
-
 function bossBattleWidth(bossId: TypingBossId, size: "host" | "player") {
   if (bossId === "emberWhelp") {
     return size === "host" ? { xs: 170, md: 220 } : { xs: 190, md: 250 };
@@ -1000,9 +960,6 @@ function UnlockedCreateGamePage({ creationPassword }: { creationPassword: string
   const [mode, setMode] = useState<TypingBossMode>("proportional");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const selectedBoss =
-    BOSS_CHOICES.find((boss) => boss.id === selectedBossId) || BOSS_CHOICES[1];
-  const selectedArena = arenaForBoss(selectedBoss.id);
 
   async function handleCreate() {
     const name = gameName.trim();
@@ -1021,213 +978,9 @@ function UnlockedCreateGamePage({ creationPassword }: { creationPassword: string
     }
   }
 
-  return (
-    <PageFrame>
-      <Stack spacing={3}>
-        <Button
-          component={RouterLink}
-          to="/"
-          startIcon={<HomeIcon />}
-          sx={{ alignSelf: "flex-start", color: "text.secondary" }}
-        >
-          Home
-        </Button>
-
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", md: "minmax(0, 1fr) 420px" },
-            gap: 3,
-            alignItems: "stretch",
-          }}
-        >
-          <Box>
-            <Typography variant="h3" sx={{ fontWeight: 950, letterSpacing: 0 }}>
-              Typing Boss Battle
-            </Typography>
-            <Typography
-              sx={{
-                color: "text.secondary",
-                mt: 1,
-                maxWidth: 720,
-                fontSize: 18,
-              }}
-            >
-              {mode === "proportional" ? "Become the Ancient Dragon and battle up to 30 players. Everyone types continuously; every ten words releases an attack." : "The original battle: typing speed, quiz answers, class moves, accuracy, and streaks."}
-            </Typography>
-          </Box>
-
-          <Paper
-            elevation={0}
-            sx={{
-              border: "1px solid #31394a",
-              borderRadius: 2,
-              p: 2.5,
-            }}
-          >
-            <Stack spacing={2}>
-              <Typography variant="h6" sx={{ fontWeight: 900 }}>
-                New Game
-              </Typography>
-              <TextField select label="Battle mode" value={mode} onChange={event => setMode(event.target.value as TypingBossMode)}>
-                <MenuItem value="proportional">Proportional · Host vs players</MenuItem>
-                <MenuItem value="old">Old mode · Original battle rules</MenuItem>
-              </TextField>
-              <TextField
-                fullWidth
-                label="Game name"
-                value={gameName}
-                inputProps={{ maxLength: 64 }}
-                onChange={(event) => setGameName(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    handleCreate();
-                  }
-                }}
-              />
-              <Stack spacing={1}>
-                <Typography sx={{ fontWeight: 900 }}>Boss</Typography>
-                {BOSS_CHOICES.map((boss) => {
-                  const selected = boss.id === selectedBossId;
-                  return (
-                    <Button
-                      key={boss.id}
-                      variant={selected ? "contained" : "outlined"}
-                      onClick={() => setSelectedBossId(boss.id)}
-                      sx={{
-                        justifyContent: "stretch",
-                        borderRadius: 1,
-                        p: 1,
-                        borderColor: boss.color,
-                        bgcolor: selected ? boss.color : "transparent",
-                        color: selected ? "#111827" : "text.primary",
-                        "&:hover": {
-                          bgcolor: selected ? boss.color : `${boss.color}22`,
-                        },
-                      }}
-                    >
-                      <Stack spacing={0.5} sx={{ width: "100%" }}>
-                        <Stack
-                          direction="row"
-                          justifyContent="space-between"
-                          spacing={1}
-                        >
-                          <Typography sx={{ fontWeight: 950 }}>
-                            {boss.name}
-                          </Typography>
-                          <Typography sx={{ fontWeight: 950 }}>
-                            {mode === "proportional" ? "HOST" : boss.difficulty.toUpperCase()}
-                          </Typography>
-                        </Stack>
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            textAlign: "left",
-                            opacity: selected ? 0.9 : 0.72,
-                          }}
-                        >
-                          {mode === "proportional" ? "Host controlled · 100 HP × player count · attack every 10 words" : `Charge ${Math.round(boss.attackIntervalMs / 1000)}s | HP ${boss.hp}`}
-                        </Typography>
-                      </Stack>
-                    </Button>
-                  );
-                })}
-              </Stack>
-              {error && <Alert severity="error">{error}</Alert>}
-              <Button
-                variant="contained"
-                startIcon={<PlayArrowIcon />}
-                disabled={busy || !gameName.trim()}
-                onClick={handleCreate}
-              >
-                Create host session
-              </Button>
-              <Button
-                component={RouterLink}
-                to="/typing-boss/join"
-                variant="outlined"
-                startIcon={<PersonAddIcon />}
-              >
-                Join a game
-              </Button>
-            </Stack>
-          </Paper>
-        </Box>
-
-        <Box
-          sx={{
-            minHeight: 360,
-            border: "1px solid #31394a",
-            borderRadius: 2,
-            position: "relative",
-            overflow: "hidden",
-            bgcolor: "#10080a",
-          }}
-        >
-          <VolcanicBackdrop />
-          <Box
-            sx={{
-              position: "absolute",
-              left: {
-                xs: `${selectedArena.hostBossPoint.x - 4}%`,
-                md: `${selectedArena.hostBossPoint.x}%`,
-              },
-              top: `${selectedArena.hostBossPoint.y}%`,
-              transform: "translate(-50%, -50%)",
-
-            }}
-          >
-            <BossSprite
-              width={bossPreviewWidth(selectedBoss.id)}
-              glow={selectedBoss.color}
-              bossId={selectedBoss.id}
-            />
-          </Box>
-          <Box
-            sx={{
-              position: "absolute",
-              left: "50%",
-              top: 28,
-              transform: "translateX(-50%)",
-              width: { xs: "84%", md: 700 },
-              textAlign: "center",
-            }}
-          >
-            <Typography
-              sx={{
-                fontFamily: "'Courier New', monospace",
-                fontWeight: 950,
-                fontSize: { xs: 17, md: 26 },
-                textShadow: "0 3px 0 #000",
-              }}
-            >
-              {selectedBoss.name.toUpperCase()}
-            </Typography>
-            <Box
-              sx={{
-                mt: 0.5,
-                border: "2px solid #c08b32",
-                bgcolor: "#30080a",
-                p: 0.5,
-                boxShadow: "0 0 0 2px #120707",
-              }}
-            >
-              <StatBar
-                value={selectedBoss.hp}
-                max={selectedBoss.hp}
-                color={selectedBoss.color}
-                height={18}
-              />
-            </Box>
-            <Typography sx={{ mt: 1, color: "#facc15", fontWeight: 900 }}>
-              {mode === "proportional" ? "100 HP per player. The host types as the dragon. Classes share the same combat rules." : selectedBoss.description}
-            </Typography>
-          </Box>
-        </Box>
-      </Stack>
-    </PageFrame>
-  );
+  return <HostSetup bosses={BOSS_CHOICES.map(boss=>({...boss,image:BOSS_SPRITE_ASSETS[boss.id]}))}
+    bossId={selectedBossId} onBossChange={setSelectedBossId} mode={mode} onModeChange={setMode}
+    name={gameName} onNameChange={setGameName} onCreate={handleCreate} busy={busy} error={error}/>;
 }
 
 function HostSessionPage() {

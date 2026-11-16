@@ -1,12 +1,23 @@
 import React from "react";
 import {act,render,screen} from "@testing-library/react";
-import {DragonPortrait} from "./TypingPortrait";
+import TypingPortrait,{DragonPortrait} from "./TypingPortrait";
 import {ContinuousTyping} from "./ContinuousBattle";
 import {createTypingState,initializeBalanced} from "./proportionalRules";
 import {CombatAnimationEvent,CombatPose,POSE_MS} from "./combatAnimation";
 declare const test:any,expect:any,jest:any,afterEach:any;
 afterEach(()=>jest.useRealTimers());
 const boss={id:"infernalDragon",name:"Dragon",hp:100,maxHp:100,glow:"red",hurt:null} as any;
+
+test('own profile shows recovery above the fallen character and clears it on revival',()=>{
+  const player={code:'hero',name:'Hero',classId:'cleric',color:'gold',hp:0,maxHp:100,defeated:true,recoverAt:Date.now()+19000,recoverDurationMs:19000} as any;
+  const state=createTypingState(123,'cleric');
+  const view=render(<TypingPortrait player={player} state={state} letters={0} events={[]}/>);
+  const bar=screen.getByRole('progressbar',{name:'Hero recovery'});
+  expect(bar.closest('.portrait-recovery')?.parentElement).toBe(screen.getByTestId('typing-portrait'));
+  expect(screen.getByText('Recovering')).toBeTruthy();
+  view.rerender(<TypingPortrait player={{...player,hp:1,defeated:false,recoverAt:null}} state={state} letters={0} events={[]}/>);
+  expect(screen.queryByRole('progressbar',{name:'Hero recovery'})).toBeNull();
+});
 test("client dragon profile displays shared power, ready crit, special and defenses on the right",()=>{
   const state=initializeBalanced(createTypingState(123,'cleric'));
   const sharedBoss={...boss,attackCharacters:42,profile:{balanced:true,balancedOrangePower:8,balancedCritBonus:.12,gold:1,balancedGuard:30,balancedGuardMax:100,dodgeBank:50}};
