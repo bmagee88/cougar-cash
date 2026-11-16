@@ -1,0 +1,21 @@
+src/TypingBoss/CharacterSelect.test.tsx(16,65): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+src/TypingBoss/CharacterSelect.test.tsx(17,56): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+src/TypingBoss/CharacterSelect.test.tsx(30,59): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.

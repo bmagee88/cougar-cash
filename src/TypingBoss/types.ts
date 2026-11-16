@@ -61,6 +61,7 @@ export interface TypingBossLeaderboardEntry {
 export interface TypingBossTypingState {
   wordProtocol?: 1;
   issuedWords?: TypingBossIssuedWord[];
+  previewWords?: Omit<TypingBossIssuedWord,'ticket'>[];
   balanced?: boolean;
   balancedRandomColors?: boolean;
   balancedPower?: number;
@@ -81,6 +82,8 @@ export interface TypingBossTypingState {
   balancedCritCharge?: number;
   balancedCritBonus?: number;
   balancedCritAt?: number;
+  balancedAttacksWithoutTrigger?: number;
+  balancedTriggeredThisAttack?: boolean;
   balancedOrangeAt?: number;
   balancedBlueAt?: number;
   balancedGreenAt?: number;
@@ -155,6 +158,9 @@ export interface TypingBossPlayer {
   monkSpecialCharge: number;
   specialReady: boolean;
   defeated: boolean;
+  knockouts?: number;
+  recoverAt?: number | null;
+  recoverDurationMs?: number | null;
   typing?: TypingBossTypingState;
   totalTaken?: number;
   attackProgress?: number;
@@ -218,6 +224,8 @@ export interface TypingBossSessionSnapshot {
   teamActivity?: {damage:number;healing:number;revives:number};
   countdownEndsAt?: number | null;
   clericHealingPool?: number;
+  necroHealingPool?: number;
+  autoRevive?: boolean;
   clericHealingAllowance?: number;
   balanced?: boolean;
   balancedRandomColors?: boolean;

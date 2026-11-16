@@ -1,0 +1,5 @@
+
+> cougar-cash@0.1.0 start:backend
+> node --env-file-if-exists=.env.local server/appServer.js
+
+Cougar classroom backend listening on http://localhost:4000

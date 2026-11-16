@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: public typing previews the full attack while issuing only two actor-specific word tickets
+ok 1 - public typing previews the full attack while issuing only two actor-specific word tickets
+  ---
+  duration_ms: 5.2602
+  type: 'test'
+  ...
+# Subtest: standard requires correct text and a current ticket, with atomic rejection
+ok 2 - standard requires correct text and a current ticket, with atomic rejection
+  ---
+  duration_ms: 7.3257
+  type: 'test'
+  ...
+# Subtest: balanced requires correct text and a current ticket, with atomic rejection
+ok 3 - balanced requires correct text and a current ticket, with atomic rejection
+  ---
+  duration_ms: 3.4902
+  type: 'test'
+  ...
+# Subtest: server time rejects fabricated future timing and zero-time macro batches
+ok 4 - server time rejects fabricated future timing and zero-time macro batches
+  ---
+  duration_ms: 1.7754
+  type: 'test'
+  ...
+# Subtest: idle time has bounded arrival credit and cannot fund an unlimited instant burst
+ok 5 - idle time has bounded arrival credit and cannot fund an unlimited instant burst
+  ---
+  duration_ms: 1.1894
+  type: 'test'
+  ...
+# Subtest: correcting a mistake retains letter power, records accuracy and does not activate a perfect trigger
+ok 6 - correcting a mistake retains letter power, records accuracy and does not activate a perfect trigger
+  ---
+  duration_ms: 3.242
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 169.7109

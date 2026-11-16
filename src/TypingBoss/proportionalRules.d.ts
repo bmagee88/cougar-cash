@@ -1,11 +1,12 @@
 import { TypingBossTypingState } from "./types";
 export const WORDS: string[];
 export const BALANCED_COLOR_CHANCES: Record<string,number>;
+export const MONK_BALANCED_COLOR_CHANCES: Record<string,number>;
 export const GRADE_OPTIONS: { grade: number; count: number }[];
 export function wordsForGrades(mask?: number, sentimentMask?: number): string[];
 export function attackProgress(seed: number, wordIndex: number, characters: number, gradeMask?: number, sentimentMask?: number): number;
 type TypingWord = { text: string; color: "blue" | "orange" | "red" | "green" | "gold" | null; trigger?: boolean; pending?:boolean;ticket?:string };
-export function wordAt(seed: number, index: number, gradeMask?: number, sentimentMask?: number, goldEnabled?: boolean): TypingWord;
+export function wordAt(seed: number, index: number, gradeMask?: number, sentimentMask?: number, goldEnabled?: boolean, goldChance?:number): TypingWord;
 export function typingWord(state: TypingBossTypingState, index?: number): TypingWord;
 export function attackWordLimit(state: TypingBossTypingState): number;
 export function isLastAttackWord(state: TypingBossTypingState): boolean;

@@ -1,5 +1,6 @@
 const ABANDONED_MS = 10 * 60 * 1000;
 const { clearDragonCombat } = require('./dragonCombat');
+const {cancelRecovery}=require('./typingBossRecovery');
 const FINISHED_MS = 15 * 60 * 1000;
 const CHALLENGE_MS = 10 * 60 * 1000;
 const FINISHED = new Set(["victory", "defeat", "closed"]);
@@ -28,9 +29,10 @@ function maintainSession(session, now = Date.now()) {
   session.projectiles = session.projectiles.filter(projectile =>
     now - (projectile.resolvedAt || projectile.impactAt) < 4500);
   if (FINISHED.has(session.status)) {
+    cancelRecovery(session);
     clearDragonCombat(session);
     session.closedAt = session.closedAt || now;
-    session.expiresAt = Math.min(session.expiresAt, session.closedAt + FINISHED_MS);
+    if (session.status === "closed") session.expiresAt = Math.min(session.expiresAt, session.closedAt + FINISHED_MS);
     session.challenges.clear();
     clearTimeout(session.bossTimer);
     session.bossTimer = null;
@@ -38,6 +40,25 @@ function maintainSession(session, now = Date.now()) {
   return session.status !== "expired" && (now >= session.expiresAt ||
     (!FINISHED.has(session.status) && !session.subscribers.size &&
       now - (session.lastActivityAt ?? session.createdAt) >= ABANDONED_MS));
+}
+
+function resetForRematch(session) {
+  cancelRecovery(session);
+  clearDragonCombat(session);
+  clearTimeout(session.bossTimer);
+  for (const timer of session.timers) clearTimeout(timer);
+  session.timers.clear();
+  session.bossTimer = session.broadcastTimer = session.progressBroadcastTimer = session.studentSummaryTimer = null;
+  session.players.clear(); session.challenges.clear();
+  session.recovery=null;session.teamKnockouts=0;
+  session.projectiles = []; session.log = [];
+  session.status = "setup"; session.closedAt = null; session.countdownEndsAt = null;
+  session.startedAt = null; session.startingPlayers = 0; session.bossAttackIndex = 0;
+  session.clericHealingPool = session.clericHealingAllowance = session.necroHealingPool = 0;
+  session.lastActivityAt = Date.now();
+  for (const subscriber of session.subscribers) {
+    subscriber.previous = null; subscriber.audience = null;
+  }
 }
 
 function detachSubscriber(session, subscriber, now = Date.now()) {
@@ -48,6 +69,7 @@ function detachSubscriber(session, subscriber, now = Date.now()) {
 }
 
 function clearSessionTimers(session) {
+  cancelRecovery(session);
   clearDragonCombat(session);
   clearTimeout(session.expireTimer);
   clearTimeout(session.deleteTimer);
@@ -74,5 +96,5 @@ function removeSession(registry, session) {
   session.typingHost = null;
 }
 
-module.exports = { ABANDONED_MS, FINISHED_MS, CHALLENGE_MS, touchSession, pruneChallenges,
+module.exports = { ABANDONED_MS, FINISHED_MS, CHALLENGE_MS, resetForRematch, touchSession, pruneChallenges,
   storeChallenge, maintainSession, detachSubscriber, clearSessionTimers, removeSession };

@@ -14,11 +14,14 @@ function room(t,balanced=false) {
   security.publicTypingState(session,state);
   return {state,session,player,record:records,submit,advance(ms=3000){now+=ms;}};
 }
-test('public typing hides the seed and issues only two unseen words with actor-specific tickets',t=>{
+test('public typing previews the full attack while issuing twelve actor-specific word tickets',t=>{
   const h=room(t),view=security.publicTypingState(h.session,h.state);
-  assert.equal(view.seed,0);assert.equal(view.issuedWords.length,2);
+  assert.equal(view.seed,0);assert.equal(view.issuedWords.length,12);
   assert.equal(rules.typingWord(view).text,rules.typingWord(h.state).text);
-  assert.equal(rules.typingWord(view,2).pending,true);
+  assert.equal(rules.typingWord(view,12).pending,true);
+  assert.equal(view.previewWords.length,rules.attackWordLimit(h.state)+2);
+  assert.equal(rules.typingWord(view,9).text,rules.typingWord(h.state,9).text);
+  assert.ok(view.previewWords.every(word=>!word.ticket));
   const other=engine.newState('barbarian');other.seed=h.state.seed;
   const otherView=security.publicTypingState(h.session,other);
   assert.notEqual(view.issuedWords[0].ticket,otherView.issuedWords[0].ticket);
@@ -33,7 +36,7 @@ for(const balanced of [false,true])test(`${balanced?'balanced':'standard'} requi
   assert.throws(()=>h.submit([stolen]),/not issued/);
   assert.throws(()=>h.submit([valid,stolen]),/not issued/);assert.equal(h.state.nextWord,0);
   const result=h.submit([valid]);assert.equal(result.nextWord,1);
-  assert.equal(result.issuedWords.at(-1).index,2);
+  assert.equal(result.issuedWords.at(-1).index,12);
   const before=structuredClone(h.state);h.submit([valid]);assert.deepEqual(h.state,before);
   const edited=structuredClone(valid);edited[7].mistakes=1;
   assert.throws(()=>h.submit([edited]),/different result/);
@@ -51,7 +54,7 @@ test('idle time has bounded arrival credit and cannot fund an unlimited instant 
   assert.throws(()=>security.checkBudget(h.session,h.state,65),/too quickly/);
 });
 test('correcting a mistake retains letter power, records accuracy and does not activate a perfect trigger',t=>{
-  const h=room(t,true);Object.assign(h.state,{balancedCharacters:120,balancedOrangeAt:120,balancedOrangeBank:20});
+  const h=room(t,true);Object.assign(h.state,{balancedCharacters:120,balancedOrangeAt:120,balancedOrangeBank:20,balancedCritAt:1e9,balancedBlueAt:1e9,balancedSpecialAt:1e9,balancedGreenAt:1e9});
   const rec=h.record();rec[7].mistakes=3;h.advance();h.submit([rec]);
   assert.equal(h.state.balancedPower,rec[1].length);assert.equal(h.state.balancedOrangePower,0);
   assert.ok(h.state.balancedOrangeBank>20);assert.equal(h.state.totalCorrectCharacters,rec[1].length);

@@ -32,8 +32,11 @@ Perches vary within 10–30% down from the canopy top and stay inside crown widt
 
 Two independent solo clocks use 10–30 game-minute departure gaps. A game minute
 is two real seconds at the current 48-minute day, so each clock produces a bird
-every 20–60 real seconds. A third clock releases exactly ten birds every 24–48
-real minutes. Absolute seeded jitter makes these schedules stable across reloads,
+every 20–60 real seconds. A third clock releases a flock every 24–48
+real minutes. Each flock rolls 4d12: four independent twelve-sided dice, summed
+for 4–48 birds with a mean of 26. Natural and preview flocks use a separate seeded
+size roll, so revisiting the same flight preserves its size and route choices.
+Absolute seeded jitter makes these schedules stable across reloads,
 weather changes, and visibility changes. Gaps vary around their midpoint, with
 no missed-flight backlog. Each location has its own schedule and source trees.
 
@@ -58,7 +61,7 @@ Collected-flight IDs expire with their visits, while discovered species persist
 in the existing visitor discoveries and recorded pages preserve validated poses.
 
 `TREE_BIRD_SPECIES` gives cardinals `canFlock: false` and sparrows `canFlock: true`.
-Either species can occupy a solo stream; the ten-bird stream selects only a
+Either species can occupy a solo stream; the flock stream selects only a
 flock-capable species. Species selection uses an independent seeded value, so
 it does not consume route random draws. The expanded perch list changes the
 available destinations while preserving the three clocks, flock size, wingbeat
@@ -129,7 +132,8 @@ One sleeping timeout services all three schedules and departure cleanup. Travel
 and wing animation use CSS and the existing environment cadence, without another
 requestAnimationFrame loop. Hidden/offscreen flights unload and release the timer;
 returning resumes only current flights at their elapsed position. Reduced motion
-omits them. Natural schedules allow at most two solos and one ten-bird flock.
+omits them. Natural schedules allow at most two solos and one 4–48-bird flock
+(50 natural birds total).
 Preview flights are separate and do not consume or shift those schedules.
 Colored wingbeats, glides and braking use the same elapsed-time delays, remain
 outside sampled background animation seeking, and pause with the existing scene

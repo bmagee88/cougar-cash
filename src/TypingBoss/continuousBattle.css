@@ -60,3 +60,34 @@
 .boss-golden-shield { position: absolute; width: 104px; transform: translate(-50%, -55%); pointer-events: none; z-index: 9; filter: drop-shadow(0 0 10px #60a5fa); animation: boss-golden-shield 900ms ease-out both; }
 @keyframes boss-golden-shield { 0% { opacity: 0; transform: translate(-50%, -55%) scale(.45); } 24% { opacity: 1; transform: translate(-50%, -55%) scale(1.15); } 55% { opacity: .95; transform: translate(-50%, -55%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -65%) scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .boss-golden-shield { display: none; } }
+.battle-live-page { height:100dvh; min-height:0 !important; overflow:hidden; padding:8px 0 !important; }
+.battle-live-page > .MuiContainer-root { height:100%; min-height:0; display:flex; flex-direction:column; gap:8px; }
+.battle-live-page .battle-session-stack, .battle-live-page .player-battle-stack { flex:1; min-height:0; gap:8px; }
+.battle-live-page .battle-session-stack > *, .battle-live-page .player-battle-stack > * { margin-top:0 !important; }
+.battle-live-page .battle-scene { flex:1; min-height:0; }
+.battle-live-page .battlefield-shell { height:100% !important; min-height:0 !important; }
+.battle-live-page .battle-menu { flex:none; position:relative; z-index:30; margin:0; }
+.battle-live-page .battle-menu > .MuiAccordion-heading .MuiAccordionSummary-root { min-height:40px; }
+.battle-live-page .battle-menu .MuiAccordionSummary-content { margin:8px 0; }
+.battle-live-page .battle-menu > .MuiCollapse-root { position:absolute; top:100%; left:0; right:0; z-index:30; background:#101827; max-height:calc(100dvh - 64px); overflow:auto; box-shadow:0 8px 24px #0009; }
+.battle-live-page .continuous-typing { position:relative; flex:none; min-width:0; padding:8px; }
+.battle-live-page .continuous-typing > .MuiStack-root { gap:4px; }
+.battle-live-page .continuous-typing .MuiChip-root { height:24px; font-size:11px; }
+.battle-live-page .continuous-typing .typing-input-deck { margin-top:8px; gap:8px; }
+.battle-live-page .continuous-typing .typing-word-input { padding:8px; }
+.battle-live-page .continuous-typing > details[open] { position:absolute; bottom:100%; left:0; right:0; z-index:25; max-height:60dvh; overflow:auto; padding:12px; background:#101827; }
+.battle-live-page .personal-typing-stage { flex:none; min-width:0; }
+.battle-live-page .battle-boss-hud > .MuiTypography-root { font-size:12px; }
+.battle-live-page .battle-boss-hud > .MuiTypography-root:first-child { font-size:clamp(12px,2vw,22px); }
+@media (max-height:650px) {
+  .battle-live-page .typing-portrait { zoom:.65; }
+  .battle-live-page .typing-input-deck { grid-template-columns:93px minmax(0,1fr); }
+  .battle-live-page .typing-input-deck-dual { grid-template-columns:93px minmax(0,1fr) 93px; }
+  .battle-live-page .typing-input-deck-dual .typing-word-input { grid-row:auto; grid-column:auto; }
+  .battle-live-page .typing-input-deck-dual .typing-dragon-portrait { grid-row:auto; grid-column:auto; }
+}
+@media (max-width:600px) {
+  .battle-live-page .typing-input-deck-dual { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+  .battle-live-page .typing-input-deck-dual .typing-word-input { grid-column:1 / -1; grid-row:2; }
+  .battle-live-page .typing-input-deck-dual .typing-dragon-portrait { grid-column:2; grid-row:1; }
+}

@@ -1274,6 +1274,7 @@ function createTypingBossSession(body) {
     hostToken: randomHex(32),
     name: normalizeBoardName(body.name || body.gameName, "Typing Boss Battle"),
     status: "setup",
+    autoRevive: true,
     createdAt: now,
     expiresAt: now + TYPING_BOSS_SESSION_MS,
     lastActivityAt: now,
@@ -1338,6 +1339,9 @@ function getTypingBossPlayerSnapshot(player) {
     monkSpecialCharge: player.monkSpecialCharge || 0,
     specialReady: typingBossSpecialReady(player),
     defeated: player.hp <= 0,
+    knockouts: player.knockouts || 0,
+    recoverAt: player.hp <= 0 ? player.recoverAt || null : null,
+    recoverDurationMs: player.hp <= 0 ? player.recoverDurationMs || null : null,
     ...(player.typing ? { attackProgress: player.attackProgress || 0 } : {}),
     ...(player.typing ? { hp: Math.round(player.hp * 100) / 100,
       totalDamage: Math.round(player.totalDamage * 100) / 100,
@@ -1420,6 +1424,8 @@ function getTypingBossSnapshot(session, options = {}) {
     snapshot.hpMultiplier = session.hpMultiplier || 1;
     snapshot.balanced = Boolean(session.balanced);
     snapshot.balancedRandomColors = Boolean(session.balancedRandomColors);
+    snapshot.autoRevive = session.autoRevive !== false;
+    snapshot.necroHealingPool = session.necroHealingPool || 0;
     snapshot.clericHealingPool = Math.round((session.clericHealingPool || 0)*100)/100;
     snapshot.clericHealingAllowance = Math.round((session.clericHealingAllowance || 0)*100)/100;
     if (["victory", "defeat", "closed", "expired"].includes(session.status)) snapshot.leaderboard = proportionalBoss.leaderboard(session);
@@ -1523,7 +1529,7 @@ function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
       snapshotCache?.set('proportional-public', publicState);
     }
     const playerCode = subscriber.auth?.role === 'player' ? subscriber.auth.actorCode : null;
-    let current = { ...publicState, typing: publicTypingState(session,playerCode ? session.players.get(playerCode).typing : session.typingHost),
+    let current = { ...publicState, typing: playerCode && !session.players.has(playerCode) ? undefined : publicTypingState(session,playerCode ? session.players.get(playerCode)?.typing : session.typingHost),
       ...(playerCode ? { activeChallengeIds: [] } : {}) };
     if(playerCode) {
       let overview=snapshotCache?.get('student-overview');
@@ -2022,7 +2028,8 @@ function handleTypingBossEvents(req, res, session, url) {
 async function handleCreateTypingBossParticipant(req, res, session) {
   const body = await readJson(req);
 
-  if (session.mode === "proportional" && (session.status !== "setup" || session.players.size >= 30)) {
+  const countdownOpen = session.status === "active" && session.countdownEndsAt > Date.now();
+  if (session.mode === "proportional" && ((session.status !== "setup" && !countdownOpen) || session.players.size >= 30)) {
     sendError(res, 409, session.players.size >= 30 ? "This game already has 30 players." : "This fight has started. Join the next game.");
     return;
   }
@@ -2080,6 +2087,7 @@ async function handleCreateTypingBossParticipant(req, res, session) {
   };
 
   session.players.set(code, player);
+  if (session.mode === "proportional" && countdownOpen) proportionalBoss.addCountdownPlayer(session, player);
   typingBossLifecycle.touchSession(session);
   addTypingBossLog(session, `${player.name} joined as ${heroClass.label}.`, "info");
   broadcastTypingBossSession(session);
@@ -2134,6 +2142,8 @@ async function handleStartTypingBossSession(req, res, session, url) {
 
   const now = Date.now();
   if (session.mode === "proportional") {
+    if(body.autoRevive !== undefined && typeof body.autoRevive !== 'boolean') {sendError(res,400,'Auto revive must be true or false.');return;}
+    session.autoRevive=body.autoRevive !== false;
     if (body.balanced !== undefined && typeof body.balanced !== "boolean") { sendError(res,400,"Balanced must be true or false."); return; }
     if (body.balancedRandomColors !== undefined && typeof body.balancedRandomColors !== "boolean") { sendError(res,400,"Random colors must be true or false."); return; }
     proportionalBoss.applyWordFilters(session, body.gradeLevels, body.sentiments);
@@ -2155,6 +2165,25 @@ async function handleStartTypingBossSession(req, res, session, url) {
   broadcastTypingBossSession(session);
   scheduleTypingBossAttack(session);
   sendJson(res, 200, { session: getTypingBossSnapshotForAuth(session, auth) });
+}
+
+async function handleRematchTypingBossSession(req, res, session, url) {
+  const body = await readJson(req);
+  const auth = authenticateTypingBoss(session, url, body);
+  if (!requireTypingBossHost(res, session, auth)) return;
+  if (!["victory", "defeat"].includes(session.status) || Date.now() >= session.expiresAt) {
+    sendError(res, 409, "Only a completed battle in an open, unexpired room can be rematched.");
+    return;
+  }
+  const profile = normalizeTypingBossProfile(session.boss.id);
+  typingBossLifecycle.resetForRematch(session);
+  session.boss = {id:profile.id, name:profile.name, difficulty:profile.difficulty, color:profile.color, glow:profile.glow, attackIntervalMs:profile.attackIntervalMs, hp:profile.maxHp, maxHp:profile.maxHp,
+    lastAttackAt:Date.now(), nextAttackAt:Date.now()+profile.attackIntervalMs,
+    currentMoveLabel:profile.moves[0].label};
+  session.typingHost = session.mode === "proportional" ? proportionalBoss.newState(session.typingHost?.ability) : null;
+  addTypingBossLog(session, "Rematch: choose your characters and rejoin using the same room code.", "info");
+  broadcastTypingBossSession(session);
+  sendJson(res, 200, {session:getTypingBossSnapshotForAuth(session, auth)});
 }
 
 async function handleCloseTypingBossSession(req, res, session, url) {
@@ -2463,6 +2492,11 @@ async function handleTypingBossRequest(req, res, url, parts) {
 
   if (req.method === "POST" && parts[4] === "start") {
     await handleStartTypingBossSession(req, res, session, url);
+    return;
+  }
+
+  if (req.method === "POST" && parts[4] === "rematch") {
+    await handleRematchTypingBossSession(req, res, session, url);
     return;
   }
 

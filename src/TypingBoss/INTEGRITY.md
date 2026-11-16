@@ -20,11 +20,11 @@ New proportional rooms use word protocol version 1. The authoritative state enab
 
 ### Issued words and observed arrival limits
 
-- The actual sequence seed stays on the server. Client snapshots expose a placeholder seed and only the current and next unseen word, plus already-issued words in the current attack for display/reconnect. Unissued future positions cannot be typed or submitted.
+- The actual sequence seed stays on the server. Client snapshots expose a placeholder seed and a full attack text preview, plus two words for possible gold extensions. A sliding twelve-word buffer has submission tickets; preview-only positions cannot be typed or submitted until issued.
 - Each issued index has a cryptographically random per-actor ticket. Guessing a word, copying another actor's ticket, skipping an index, or submitting an unissued word is rejected. The same tickets survive refreshes and retries.
 - Every submitted word carries its ticket, mistake count and validated timing aggregates. Balanced words retain actual accepted-letter gaps. Client absolute timestamps are never trusted or transmitted.
 - Claimed typing time must fit server-observed time since issuance (with 150 ms tolerance). Zero/implausibly tiny aggregate timing is rejected. A server-clock token bucket refills at 30 accepted characters/second and stores at most 64 characters of arrival credit; idling cannot bank unlimited future submissions. This constrains arrival rate, not attack damage.
-- The client sends completed words promptly and can continue through its two-word buffer while a request is in flight. HTTP acknowledgements supply the next window; older stream snapshots cannot erase a newer acknowledged window. If the connection falls behind, input waits for the next issued word without inventing future text or changing power.
+- The client sends completed words promptly and can continue through its twelve-word buffer while a request is in flight. HTTP acknowledgements supply the next window; older stream snapshots cannot erase a newer acknowledged window. If the connection falls behind, input waits for the next issued word without inventing future text or changing power.
 
 ### Atomic validation and retries
 

@@ -1,3 +1,4 @@
+import RecoveryBar from './RecoveryBar';
 import React, { useEffect, useRef, useState } from "react";
 import CombatCharacter, { useCombatAnimation, useCombatClock } from "./CombatCharacter";
 import { CombatAnimationEvent } from "./combatAnimation";
@@ -105,7 +106,7 @@ export default function TypingPortrait({ player, events, serverNow, anchorRef, s
       style={{ opacity: special ? 1 : 0 }} aria-hidden="true"><i /><i /><i /></div>
     <div className="portrait-dodge" data-testid="portrait-dodge" style={{ opacity: Math.sqrt(defense.dodge) }}
       title={state.balanced && !state.balancedRandomColors ? 'Active Dodge' : `Dodge: ${Math.round(defense.dodge * 100)}%`} aria-hidden="true" />
-    <div className="portrait-character"><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} /></div>
+    <div className="portrait-character"><RecoveryBar player={player} clock={clock}/><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} /></div>
     <div className="portrait-shield" data-testid="portrait-shield" style={{ opacity: Math.sqrt(defense.shield) }}
       title={state.balanced && !state.balancedRandomColors ? 'Active Block' : `Block: ${Math.round(defense.shield * 100)}%`} aria-hidden="true" />
     <div key={pulse} className={`portrait-attack${pulse ? " portrait-attack-pulse" : ""}`} data-testid="portrait-attack"

@@ -44,3 +44,101 @@ TS2322: Type '{ key: string; sessionId: string; countdownEndsAt: number; serverN
     3343 |         dragonProfile={{ boss: personalBoss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
     3344 |     {layout && <Box data-testid="portrait-projectile-layer" sx={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 8 }}>
 
+ERROR in src/TypingBoss/TypingBossApp.tsx:1:25
+TS2307: Cannot find module './RecoveryBar' or its corresponding type declarations.
+  > 1 | import RecoveryBar from './RecoveryBar';
+      |                         ^^^^^^^^^^^^^^^
+    2 | import RecoveryNotice from './RecoveryNotice';
+    3 | import WordFilterChips, { WordFilters, filteredWordCount } from "../typingProject/components/WordFilterChips";
+    4 | import { SENTIMENTS } from "../typingProject/resources/homeRowWordBank";
+
+ERROR in src/TypingBoss/ContinuousBattle.tsx:270:7
+TS2304: Cannot find name 'keyNotice'.
+    268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+    269 |     </div>
+  > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+        |       ^^^^^^^^^
+    271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+    272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+    273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+ERROR in src/TypingBoss/ContinuousBattle.tsx:270:135
+TS2304: Cannot find name 'keyNotice'.
+    268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+    269 |     </div>
+  > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+        |                                                                                                                                       ^^^^^^^^^
+    271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+    272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+    273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+ERROR in src/TypingBoss/CharacterSelect.test.tsx:16:65
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    14 |   render(<Harness/>);
+    15 |   expect(screen.getAllByRole('button',{pressed:true})).toHaveLength(1);
+  > 16 |   fireEvent.click(screen.getByRole('button',{name:'Necromancer',exact:true}));
+       |                                                                 ^^^^^^^^^^
+    17 |   expect(screen.getByRole('button',{name:'Necromancer',exact:true}).getAttribute('aria-pressed')).toBe('true');
+    18 |   expect(within(screen.getByRole('complementary',{name:'Your hero and room'})).getByRole('heading',{name:'Necromancer'})).toBeTruthy();
+    19 |   expect((screen.getByLabelText('Session code') as HTMLInputElement).value).toBe('4A8');
+
+ERROR in src/TypingBoss/CharacterSelect.test.tsx:17:56
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    15 |   expect(screen.getAllByRole('button',{pressed:true})).toHaveLength(1);
+    16 |   fireEvent.click(screen.getByRole('button',{name:'Necromancer',exact:true}));
+  > 17 |   expect(screen.getByRole('button',{name:'Necromancer',exact:true}).getAttribute('aria-pressed')).toBe('true');
+       |                                                        ^^^^^^^^^^
+    18 |   expect(within(screen.getByRole('complementary',{name:'Your hero and room'})).getByRole('heading',{name:'Necromancer'})).toBeTruthy();
+    19 |   expect((screen.getByLabelText('Session code') as HTMLInputElement).value).toBe('4A8');
+    20 |   fireEvent.click(screen.getByRole('button',{name:'Shuffle name'}));
+
+ERROR in src/TypingBoss/CharacterSelect.test.tsx:30:59
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    28 |     onShuffle={()=>{}} onJoin={()=>{}} busy error="" canJoin/>);
+    29 |   expect((screen.getByRole('button',{name:'Joining your party...'}) as HTMLButtonElement).disabled).toBe(true);
+  > 30 |   fireEvent.click(screen.getByRole('button',{name:'Rogue',exact:true}));
+       |                                                           ^^^^^^^^^^
+    31 |   expect(onClassChange).not.toHaveBeenCalled();
+    32 | });
+    33 |
+
+ERROR in src/TypingBoss/RecoveryNotice.test.tsx:22:16
+TS2352: Conversion of type '{ defeated: true; recoverAt: number; reviveQueuePosition: number; }' to type 'TypingBossPlayer' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ defeated: true; recoverAt: number; reviveQueuePosition: number; }' is missing the following properties from type 'TypingBossPlayer': code, name, classId, classLabel, and 20 more.
+    20 | test('queued players see their position and the shared timer instead of a promise of immediate revival',()=>{
+    21 |   jest.useFakeTimers();jest.setSystemTime(1000);
+  > 22 |   const player={defeated:true,recoverAt:25000,reviveQueuePosition:2} as TypingBossPlayer;
+       |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    23 |   const view=render(<RecoveryNotice player={player} active serverNow={10000}/>);
+    24 |   expect(screen.getByText(/number 2 in the team revive queue/)).toBeTruthy();
+    25 |   expect(screen.getByText(/Next team revive in 15 seconds/)).toBeTruthy();
+
+ERROR in src/TypingBoss/RecoveryNotice.test.tsx:27:52
+TS2322: Type '{ reviveQueuePosition: number; code: string; name: string; classId: TypingBossClassId; classLabel: string; color: string; hp: number; maxHp: number; joinedAt: string; lastSeenAt: string; ... 21 more ...; attackProgress?: number; }' is not assignable to type 'TypingBossPlayer'.
+  Object literal may only specify known properties, and 'reviveQueuePosition' does not exist in type 'TypingBossPlayer'.
+    25 |   expect(screen.getByText(/Next team revive in 15 seconds/)).toBeTruthy();
+    26 |   expect(screen.queryByText(/Recovering at 1 HP in/)).toBeNull();
+  > 27 |   view.rerender(<RecoveryNotice player={{...player,reviveQueuePosition:1}} active serverNow={10000}/>);
+       |                                                    ^^^^^^^^^^^^^^^^^^^^^
+    28 |   expect(screen.getByText(/Recovering at 1 HP in 15 seconds/)).toBeTruthy();
+    29 | });
+    30 |
+

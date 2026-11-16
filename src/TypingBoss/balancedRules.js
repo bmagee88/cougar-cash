@@ -1,10 +1,14 @@
 // Orange banks additive power; red banks percentage points of crit damage.
 // A perfect red trigger applies its saved percentage to the current attack.
 const PALETTE = ["orange", "blue", "green", null, "red"];
-const TRIGGER_INTERVALS = { orange: 120, red: 134, blue: 140, gold: 150, green: 160 };
+const TRIGGER_INTERVALS = { orange: 127, red: 131, blue: 137, gold: 139, green: 149 };
+const TRIGGER_STARTS = {orange:25,red:51,blue:79,gold:109,green:137};
+const triggerInterval=(state,color)=>TRIGGER_INTERVALS[color]/(color==='gold' && state.ability==='monk' ? 2 : 1);
 const triggerField = color => color === 'gold' ? 'balancedSpecialAt' : color === 'red' ? 'balancedCritAt' : `balanced${color[0].toUpperCase()+color.slice(1)}At`;
 function balancedTrigger(state) {
   if (state.balancedRandomColors) return null;
+  const earliest=Object.keys(TRIGGER_INTERVALS).sort((a,b)=>(state[triggerField(a)] ?? TRIGGER_INTERVALS[a])-(state[triggerField(b)] ?? TRIGGER_INTERVALS[b]))[0];
+  if((state.balancedAttacksWithoutTrigger || 0)>=2 && state.wordsInAttack===0)return earliest;
   return Object.keys(TRIGGER_INTERVALS).filter(color => state.balancedCharacters >= (state[triggerField(color)] ?? TRIGGER_INTERVALS[color]))
     .sort((a,b) => (state[triggerField(a)] ?? TRIGGER_INTERVALS[a]) - (state[triggerField(b)] ?? TRIGGER_INTERVALS[b]))[0] || null;
 }
@@ -33,14 +37,15 @@ const median = values => {
 
 function initializeBalanced(state) {
   return Object.assign(state, {
-    balanced: true, balancedPower: 0, balancedCharacters: 0, balancedSpecialAt: 150,
+    balanced: true, balancedPower: 0, balancedCharacters: 0, balancedSpecialAt: TRIGGER_STARTS.gold/(state.ability==='monk' ? 2 : 1),
     balancedPace: [], balancedFlow: [], balancedGuard: 0, balancedQuality: 1.25,
     balancedDefenseWord: false, balancedSkillWord: false,
     balancedOrangeBank: 0, balancedOrangePower: 0,
     balancedHealingBank: 0, balancedHealingDeposit: 0,
     balancedBlockBank: 0,
-    balancedCritCharge: 0, balancedCritBonus: 0, balancedCritAt: 134,
-    balancedOrangeAt:120, balancedBlueAt:140, balancedGreenAt:160,
+    balancedCritCharge: 0, balancedCritBonus: 0, balancedCritAt: TRIGGER_STARTS.red,
+    balancedOrangeAt:TRIGGER_STARTS.orange, balancedBlueAt:TRIGGER_STARTS.blue, balancedGreenAt:TRIGGER_STARTS.green,
+    balancedAttacksWithoutTrigger:0, balancedTriggeredThisAttack:false,
     balancedDodgeBank:0, balancedCadenceBonus:0,
   });
 }
@@ -61,7 +66,7 @@ function recordBalancedWord(state, text, expected, gaps, correct, color, commit=
   const missingFirst = gaps.length === text.length - 1;
   const letterGaps = gaps.filter((_, i) => !(i === 0 && !missingFirst && !opening));
   const pace = [...state.balancedPace, ...letterGaps].slice(-21);
-  const threshold = Math.max(200, 2 * median(pace));
+  const threshold = Math.max(300, 2 * median(pace) + 100);
   let earned = 0, characters = 0;
   for (let i = 0; i < text.length; i++) {
     const gap = missingFirst ? (i === 0 ? undefined : gaps[i - 1]) : gaps[i];
@@ -118,7 +123,12 @@ function recordScheduledWord(state,text,expected,gaps,correct,color,commit) {
   state.balancedCadenceBonus=(state.balancedCadenceBonus || 0)+wordCadence(text,expected,gaps);
   state.balancedCharacters+=characters;
   if(bank)state[bank]=balance;
-  if(commit && trigger)state[triggerField(trigger)]=(Math.floor(state.balancedCharacters/TRIGGER_INTERVALS[trigger])+1)*TRIGGER_INTERVALS[trigger];
+  if(commit && trigger) { state.balancedTriggeredThisAttack=true; state.balancedAttacksWithoutTrigger=0; }
+  if(commit && trigger) {
+    const deadline=state[triggerField(trigger)] ?? TRIGGER_INTERVALS[trigger];
+    const interval=triggerInterval(state,trigger);
+    state[triggerField(trigger)]=deadline+Math.max(1,Math.floor((state.balancedCharacters-deadline)/interval)+1)*interval;
+  }
   if(commit && correct && trigger===color) {
     if(color==='blue') {
       const grant=Math.min(Math.max(0,(state.balancedGuardMax || 100)-(state.balancedGuard || 0)),state.balancedBlockBank);
@@ -139,7 +149,7 @@ function releaseBalancedAttack(state) {
   const earnedPower = Math.max(0,state.balancedPower)*cadence;
   const quality = state.characters ? earnedPower / state.characters : 1;
   const reserve = earnedPower * .2;
-  const support = state.gold > 0 && ["paladin", "necromancer"].includes(state.ability);
+  const support = state.gold > 0 && ["paladin"].includes(state.ability);
   const guard=0; // Blue words grant Block at word completion, never at attack release.
   const supportPower = support ? reserve : 0;
   const orangePower = state.balancedOrangePower || 0;
@@ -158,6 +168,8 @@ function releaseBalancedAttack(state) {
     moveId: critical ? "strong" : "weak", ...(state.gold ? {gold:state.gold} : {}),
   };
   const gold = state.gold || 0;
+  if(!state.balancedRandomColors)state.balancedAttacksWithoutTrigger=state.balancedTriggeredThisAttack ? 0 : (state.balancedAttacksWithoutTrigger || 0)+1;
+  state.balancedTriggeredThisAttack=false;
   Object.assign(state, {wordsInAttack:0, characters:0, attackErrors:0, intervalCount:0, intervalSum:0, intervalSquares:0,
     orange:0, red:0, green:0, growth:0, shield:0, gold:0, dodgeExtraRolls:state.ability==='rogue'?(state.dodgeExtraRolls || 0)+gold:0,
     balancedPower:0, balancedCadenceBonus:0, balancedQuality:quality, consistency:quality,
@@ -177,4 +189,4 @@ function previewBalancedWord(state,text,expected,gaps,color=null) {
   recordBalancedWord(next,text,expected,gaps,false,color,false);
   return next;
 }
-module.exports = { initializeBalanced, balancedWordColor, balancedTrigger, recordBalancedWord, releaseBalancedAttack, previewBalancedWord };
+module.exports = { TRIGGER_INTERVALS, initializeBalanced, balancedWordColor, balancedTrigger, recordBalancedWord, releaseBalancedAttack, previewBalancedWord };

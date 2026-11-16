@@ -28,8 +28,8 @@ test("abandoned rooms get a full disconnect grace period; authenticated activity
   assert.equal(lifecycle.maintainSession(session,session.expiresAt),true,"connections cannot extend the hard limit");
 });
 
-test("all finished statuses shorten retention once; reads and repeated closes never extend it", () => {
-  for (const status of ["victory","defeat","closed"]) {
+test("closed rooms shorten retention once; reads and repeated closes never extend it", () => {
+  for (const status of ["closed"]) {
     const session=room();Object.assign(session,{status,closedAt:100000});
     session.challenges.set("stale",{createdAt:100000});
     lifecycle.maintainSession(session,100000);
@@ -88,7 +88,7 @@ function loadServer() {
     module:{exports:{}},process:{env:{},once(){}},console:{log(){},error(){}},Buffer,URL,
     Date,setTimeout,clearTimeout,setInterval,clearInterval};
   vm.runInNewContext(fs.readFileSync(filename,"utf8")+
-    "\nmodule.exports={createTypingBossSession,typingBossSessions,broadcastTypingBossSession,typingBossResolveTarget,getTypingBossSnapshotForAuth,handleStartTypingBossSession,requireTypingBossActive};",sandbox,{filename});
+    "\nmodule.exports={createTypingBossSession,typingBossSessions,broadcastTypingBossSession,typingBossResolveTarget,getTypingBossSnapshotForAuth,handleStartTypingBossSession,handleRematchTypingBossSession,handleCreateTypingBossParticipant,requireTypingBossActive};",sandbox,{filename});
   return sandbox.module.exports;
 }
 
@@ -108,11 +108,12 @@ test('Start publishes one five-second deadline, rejects early actions and preven
   const actor={code:'hero0001',name:'Hero',classId:'cleric',hp:100,maxHp:100,averageDps:0,totalDamage:0,totalHealing:0,
     typing:rules.createTypingState(1,'cleric'),totalKeystrokes:0,correctKeystrokes:0,joinedAt:Date.now()};
   session.players.set(actor.code,actor);
-  const req=()=>require('node:stream').Readable.from([JSON.stringify({hostToken:session.hostToken,balanced:true})]);
+  const req=()=>require('node:stream').Readable.from([JSON.stringify({hostToken:session.hostToken,balanced:true,autoRevive:false})]);
   const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
   const res=response();await server.handleStartTypingBossSession(req(),res,session,new URL('http://localhost/start'));
   assert.equal(res.status,200);assert.equal(res.body.session.countdownEndsAt,1005000);
   assert.equal(session.startedAt,1005000);
+  assert.equal(session.autoRevive,false);assert.equal(res.body.session.autoRevive,false);
   const host=server.getTypingBossSnapshotForAuth(session,{role:'host'}),player=server.getTypingBossSnapshotForAuth(session,{role:'player',actorCode:actor.code});
   assert.equal(host.countdownEndsAt,player.countdownEndsAt);
   assert.equal(server.requireTypingBossActive(response(),session),false);
@@ -151,7 +152,7 @@ test("server sweeps abandoned rooms and frees their registry entry after the exp
   assert.equal(server.typingBossSessions.size,0);
 });
 
-test("server keeps connected games alive but expires finished games after fifteen minutes", t => {
+test("server keeps completed games available for rematches until the original two-hour deadline", t => {
   t.mock.timers.enable({apis:["Date","setTimeout","setInterval"],now:1000000});
   const server=loadServer();
   const session=server.createTypingBossSession({mode:"proportional"});
@@ -162,6 +163,8 @@ test("server keeps connected games alive but expires finished games after fiftee
   session.status="victory";session.closedAt=Date.now();
   server.broadcastTypingBossSession(session);
   t.mock.timers.tick(lifecycle.FINISHED_MS+15000);
+  assert.equal(session.status,"victory");
+  t.mock.timers.tick(session.expiresAt-Date.now());
   assert.equal(session.status,"expired");
   t.mock.timers.tick(60000);
   assert.equal(server.typingBossSessions.size,0);assert.equal(ended,1);
@@ -217,4 +220,72 @@ test("word pool cache evicts the oldest of 32 combinations, keeps hot entries an
   const regenerated=freshRules.wordsForGrades(3);
   assert.notEqual(regenerated,cold);assert.deepEqual(regenerated,cold);
   assert.deepEqual(Array.from({length:10},(_,i)=>freshRules.wordAt(123,i,3)),before);
+});
+
+test('rematches reset combat and roster, preserve room credentials and hard deadline, and reject closed rooms', async t => {
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),session=server.createTypingBossSession({mode:'proportional'});
+  const original={id:session.id,token:session.hostToken,expiresAt:session.expiresAt};
+  session.status='victory';session.boss.hp=0;session.boss.totalDamage=999;session.teamKnockouts=5;
+  session.typingHost.nextWord=999;
+  lifecycle.maintainSession(session);
+  assert.equal(session.expiresAt,original.expiresAt);
+  session.players.set('old',{code:'old'});
+  const req=token=>require('node:stream').Readable.from([JSON.stringify({hostToken:token})]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  const unauthorized=response();await server.handleRematchTypingBossSession(req('wrong'),unauthorized,session,new URL('http://localhost'));
+  assert.equal(unauthorized.status,403);assert.equal(session.status,'victory');
+  const events=[];
+  session.subscribers.add({auth:{role:'player',actorCode:'old'},res:{write(event){events.push(event);},destroy(){throw Error('Rematch must notify connected players');}}});
+  const res=response();await server.handleRematchTypingBossSession(req(session.hostToken),res,session,new URL('http://localhost'));
+  assert.equal(res.status,200);assert.equal(session.status,'setup');assert.equal(session.players.size,0);
+  assert.equal(session.id,original.id);assert.equal(session.hostToken,original.token);assert.equal(session.expiresAt,original.expiresAt);
+  assert.equal(session.boss.hp,session.boss.maxHp);assert.equal(session.boss.totalDamage,undefined);
+  assert.equal(session.typingHost.nextWord,0);assert.equal(session.teamKnockouts,0);assert.equal(session.recovery,null);
+  t.mock.timers.tick(200);
+  assert.ok(events.some(event=>event.includes('\"status\":\"setup\"')));
+  session.status='closed';const closed=response();await server.handleRematchTypingBossSession(req(session.hostToken),closed,session,new URL('http://localhost'));
+  assert.equal(closed.status,409);assert.equal(session.status,'closed');
+});
+
+test('players can join until the countdown deadline with matching rules and HP, without restarting the countdown',async t=>{
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer();
+  const req=body=>require('node:stream').Readable.from([JSON.stringify(body)]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  for(const [balanced,random] of [[true,false],[true,true],[false,true]]) {
+    const session=server.createTypingBossSession({mode:'proportional'});
+    const first=response();await server.handleCreateTypingBossParticipant(req({name:'First',classId:'paladin'}),first,session);
+    assert.equal(first.status,201);
+    const start=response();await server.handleStartTypingBossSession(req({hostToken:session.hostToken,balanced,balancedRandomColors:random,hpMultiplier:1.25,gradeLevels:[1]}),start,session,new URL('http://localhost'));
+    assert.equal(start.status,200);
+    const deadline=session.countdownEndsAt;
+    const originalPlayer=[...session.players.values()][0],originalTyping=originalPlayer.typing;
+    t.mock.timers.tick(4999);
+    const late=response();await server.handleCreateTypingBossParticipant(req({name:'Late',classId:'necromancer'}),late,session);
+    assert.equal(late.status,201);assert.ok(late.body.playerToken);
+    const joined=session.players.get(late.body.code);
+    assert.equal(joined.hp,125);assert.equal(joined.maxHp,125);
+    assert.equal(Boolean(joined.typing.balanced),balanced);
+    if(balanced){assert.equal(joined.typing.balancedRandomColors,random);assert.equal(joined.typing.ability,'necromancer');assert.equal(joined.typing.seed,session.typingHost.seed);assert.equal(joined.typing.balancedGuardMax,125);}
+    assert.equal(joined.typing.wordProtocol,1);assert.equal(joined.typing.gradeMask,session.typingHost.gradeMask);
+    assert.equal(session.startingPlayers,2);assert.equal(session.boss.hp,250);assert.equal(session.boss.maxHp,250);
+    assert.equal(session.countdownEndsAt,deadline);assert.equal(session.startedAt,deadline);
+    assert.equal(originalPlayer.typing,originalTyping);assert.equal(originalTyping.nextWord,0);
+    t.mock.timers.tick(1);
+    const tooLate=response();await server.handleCreateTypingBossParticipant(req({name:'Too late',classId:'cleric'}),tooLate,session);
+    assert.equal(tooLate.status,409);assert.equal(session.players.size,2);assert.equal(session.boss.hp,250);
+  }
+});
+
+test('countdown joining still respects the 30-player limit and closed rooms',async t=>{
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),session=server.createTypingBossSession({mode:'proportional'});
+  session.status='active';session.countdownEndsAt=Date.now()+5000;
+  for(let i=0;i<30;i++)session.players.set(String(i),{});
+  const join=async()=>{const res={setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}};
+    await server.handleCreateTypingBossParticipant(require('node:stream').Readable.from([JSON.stringify({name:'Late',classId:'cleric'})]),res,session);return res;};
+  const full=await join();assert.equal(full.status,409);assert.match(full.body.error,/30 players/);
+  session.players.clear();session.status='closed';
+  const closed=await join();assert.equal(closed.status,409);assert.equal(session.players.size,0);
 });

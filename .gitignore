@@ -19,10 +19,10 @@
 .DS_Store
 .netlify/
 .netlify-local/
+# Local environment files can contain passwords; keep examples trackable.
+.env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*.local
 
 npm-debug.log*
 yarn-debug.log*
