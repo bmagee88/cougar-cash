@@ -1,14 +1,40 @@
 import React, { createRef } from 'react';
 import { act, fireEvent, render } from '@testing-library/react';
-import { GAME_MINUTE_MS, makeTreeBirdVisit, previewTreeBirdVisit, TREE_BIRD_DIRECTIONS, TREE_BIRD_SPECIES, TREE_BIRD_SPRITE, TREE_BIRD_STREAMS, treeBirdDeparture, treeBirdDirection, treeBirdPose, treeBirdSchedule, usesSpeciesBirdArt } from '../engine/treeBirds';
+import { GAME_MINUTE_MS, makeTreeBirdVisit, previewTreeBirdVisit, TREE_BIRD_DIRECTIONS, TREE_BIRD_SPECIES, TREE_BIRD_SPRITE, TREE_BIRD_STREAMS, treeBirdDeparture, treeBirdDirection, treeBirdFlockSize, treeBirdPose, treeBirdSchedule, usesSpeciesBirdArt } from '../engine/treeBirds';
 import { WORLD } from '../engine/world';
 import { birdPlane, LOCATION_TREES, mappedTreesForLocation, treePerch } from '../scene/treeMap';
 import TreeBirds, { TreeMapOverlay } from '../scene/TreeBirds';
 import { stepAmbientAnimations } from '../scene/useSceneParallax';
 import * as insectVisitors from '../scene/ButterflyVisitors';
+import * as astronomy from '../engine/astronomy';
 
 declare const test: any, expect: any, jest: any, afterEach: any;
 afterEach(() => { jest.restoreAllMocks(); jest.useRealTimers(); });
+
+test('flock size sums four independent d12 rolls, including both endpoints',()=>{
+  const random=jest.spyOn(astronomy,'skyRandom');
+  random.mockReturnValue(0); expect(treeBirdFlockSize(123)).toBe(4); expect(random).toHaveBeenCalledTimes(4);
+  expect(new Set(random.mock.calls.map((args:number[])=>args[0])).size).toBe(4);
+  random.mockClear(); random.mockReturnValue(1-Number.EPSILON);
+  expect(treeBirdFlockSize(123)).toBe(48); expect(random).toHaveBeenCalledTimes(4);
+  random.mockReturnValueOnce(0).mockReturnValueOnce(.25).mockReturnValueOnce(.5).mockReturnValueOnce(.999);
+  expect(treeBirdFlockSize(123)).toBe(1+4+7+12);
+});
+
+test('natural and preview flocks vary per visit while keeping the same seeded roll on refresh',()=>{
+  const sizes=new Set<number>();let total=0;
+  for(let seed=1;seed<=2000;seed++){
+    const count=treeBirdFlockSize(seed);sizes.add(count);total+=count;
+    expect(count).toBeGreaterThanOrEqual(4);expect(count).toBeLessThanOrEqual(48);
+    expect(treeBirdFlockSize(seed)).toBe(count);
+  }
+  expect(sizes.size).toBeGreaterThan(30);expect(total/2000).toBeCloseTo(26,0);
+  for(let sequence=1;sequence<=20;sequence++){
+    const preview=previewTreeBirdVisit(WORLD.epoch,'cove',sequence,true);
+    expect(preview.birds).toHaveLength(treeBirdFlockSize(sequence*19397+3191));
+    expect(previewTreeBirdVisit(WORLD.epoch,'cove',sequence,true)).toEqual(preview);
+  }
+});
 
 test('collecting one painted flock bird records its current pose once, keeps its neighbors and survives visibility changes',()=>{
   jest.useFakeTimers();jest.setSystemTime(WORLD.epoch);
@@ -18,17 +44,18 @@ test('collecting one painted flock bird records its current pose once, keeps its
   const fixture=(enabled=true)=><div ref={sceneRef}><TreeBirds sceneRef={sceneRef} location="cove" reducedMotion={false} flockPreview={sequence} onObserve={enabled?observe:undefined}/></div>;
   const view=render(fixture());act(()=>jest.advanceTimersByTime(1000));
   const birds=view.getAllByRole('button',{name:'Observe sparrow'});
-  expect(birds).toHaveLength(10);
+  const count=previewTreeBirdVisit(WORLD.epoch,'cove',sequence,true).birds.length;
+  expect(birds).toHaveLength(count);
   const wing=birds[0].querySelector<HTMLElement>('.f-tree-bird-wingbeat')!;
   wing.style.backgroundPositionX='27.272727%';
   fireEvent.click(birds[0]);
   expect(observe).toHaveBeenCalledWith(birds[0],'sparrow',{direction:birds[0].parentElement?.getAttribute('data-bird-direction')??treeBirdDirection(previewTreeBirdVisit(WORLD.epoch,'cove',sequence,true).birds[0]),frame:3});
-  expect(view.getAllByRole('button',{name:'Observe sparrow'})).toHaveLength(9);
+  expect(view.getAllByRole('button',{name:'Observe sparrow'})).toHaveLength(count-1);
   fireEvent.click(birds[0]);expect(observe).toHaveBeenCalledTimes(1);
   hidden.mockReturnValue(true);fireEvent(document,new Event('visibilitychange'));
   expect(view.queryByRole('button',{name:'Observe sparrow'})).toBeNull();
   hidden.mockReturnValue(false);fireEvent(document,new Event('visibilitychange'));
-  expect(view.getAllByRole('button',{name:'Observe sparrow'})).toHaveLength(9);
+  expect(view.getAllByRole('button',{name:'Observe sparrow'})).toHaveLength(count-1);
   view.rerender(fixture(false));
   view.getAllByRole('button',{name:'Observe sparrow',hidden:true}).forEach(bird=>expect(bird).toBeDisabled());
   view.unmount();expect(jest.getTimerCount()).toBe(0);
@@ -38,8 +65,9 @@ test('distant silhouette birds have no collection controls',()=>{
   jest.useFakeTimers();jest.setSystemTime(WORLD.epoch);jest.spyOn(document,'hidden','get').mockReturnValue(false);
   const sceneRef=createRef<HTMLDivElement>(),observe=jest.fn();
   const view=render(<div ref={sceneRef}><TreeBirds sceneRef={sceneRef} location="dock" reducedMotion={false} soloPreview={1} onObserve={observe}/></div>);
-  expect(view.container.querySelector('.f-tree-bird-wing')).not.toBeNull();
-  expect(view.queryByRole('button')).toBeNull();expect(observe).not.toHaveBeenCalled();
+  const preview=view.container.querySelector('[data-bird-stream="preview-solo"]')!;
+  expect(preview.querySelector('.f-tree-bird-wing')).not.toBeNull();
+  expect(preview.querySelector('button')).toBeNull();expect(observe).not.toHaveBeenCalled();
 });
 
 test('birds cannot be collected before departure or through opaque foreground artwork',()=>{
@@ -60,14 +88,14 @@ test('birds cannot be collected before departure or through opaque foreground ar
   expect(observe).toHaveBeenCalledWith(cardinal,'cardinal',expect.objectContaining({direction:treeBirdDirection(visit.birds[0])}));
 });
 
-test('cardinals visit alone while sparrows can visit alone or in the unchanged ten-bird flock',()=>{
+test('cardinals visit alone while sparrows can visit alone or in a 4d12 flock',()=>{
   expect(TREE_BIRD_SPECIES).toEqual([{id:'cardinal',name:'Cardinal',canFlock:false},{id:'sparrow',name:'Sparrow',canFlock:true}]);
   const solos=new Set<string>();
   for(let seed=1;seed<=100;seed++){
     const solo=makeTreeBirdVisit('solo','single-a',WORLD.epoch,seed,'cove');
     solos.add(solo.birds[0].species!);
-    const flock=makeTreeBirdVisit('flock','flock',WORLD.epoch,seed,'cove',10);
-    expect(flock.birds).toHaveLength(10);
+    const flock=makeTreeBirdVisit('flock','flock',WORLD.epoch,seed,'cove');
+    expect(flock.birds).toHaveLength(treeBirdFlockSize(seed));
     flock.birds.forEach(bird=>expect(TREE_BIRD_SPECIES.find(species=>species.id===bird.species)?.canFlock).toBe(true));
     expect(new Set(flock.birds.map(bird=>bird.species))).toEqual(new Set(['sparrow']));
   }
@@ -125,7 +153,7 @@ test('close routes use species art while far crossings retain the original silho
     expect(bird.querySelector('.f-tree-bird-wingbeat')).not.toBeNull();expect(bird.querySelector('.f-tree-bird-glide')).not.toBeNull();expect(bird.querySelector('.f-tree-bird-brake')).not.toBeNull();
   }
   view.rerender(fixture(0,sequenceFor('sparrow',true)));
-  expect(view.container.querySelectorAll('[data-bird-stream="preview-flock"] [data-bird-species="sparrow"]')).toHaveLength(10);
+  expect(view.container.querySelectorAll('[data-bird-stream="preview-flock"] [data-bird-species="sparrow"]')).toHaveLength(previewTreeBirdVisit(WORLD.epoch,'cove',sequenceFor('sparrow',true),true).birds.length);
   view.rerender(fixture(1,0,'dock'));
   const far=view.container.querySelector('[data-bird-stream="preview-solo"] .f-tree-bird')!;
   expect(far).toHaveAttribute('data-bird-art','silhouette');expect(far.querySelector('.f-tree-bird-wing')).not.toBeNull();expect(far.querySelector('.f-tree-bird-species')).toBeNull();
@@ -149,8 +177,8 @@ test('each landscape maps exactly ten trees in source-art x/y and distance z; pe
   });
 });
 
-test('two independently jittered clocks keep 10–30 game-minute gaps, while the ten-bird clock keeps 24–48 real-minute gaps', () => {
-  expect(GAME_MINUTE_MS).toBe(2000); expect(TREE_BIRD_STREAMS.map(stream => stream.count)).toEqual([1, 1, 10]);
+test('two independently jittered clocks keep 10–30 game-minute gaps, while the flock clock keeps 24–48 real-minute gaps', () => {
+  expect(GAME_MINUTE_MS).toBe(2000); expect(TREE_BIRD_STREAMS.map(stream => stream.count)).toEqual([1, 1, '4d12']);
   TREE_BIRD_STREAMS.forEach(stream => {
     const gaps: number[] = [];
     for (let index = 0; index < 1000; index++) {
@@ -168,8 +196,8 @@ test('two independently jittered clocks keep 10–30 game-minute gaps, while the
 test('routes launch and land within different tree crowns, vary depth, and flocks either land or leave the frame', () => {
   const exits = new Set<boolean>(), depths = new Set<boolean>();
   for (const location of ['dock', 'cove', 'birch'] as const) for (let seed = 1; seed <= 100; seed++) {
-    const visit = makeTreeBirdVisit('test', 'flock', WORLD.epoch, seed * 19397, location, 10);
-    expect(visit.birds).toHaveLength(10); expect(new Set(visit.birds.map(bird => bird.fromTree)).size).toBe(1);
+    const visit = makeTreeBirdVisit('test', 'flock', WORLD.epoch, seed * 19397, location);
+    expect(visit.birds).toHaveLength(treeBirdFlockSize(seed*19397)); expect(new Set(visit.birds.map(bird => bird.fromTree)).size).toBe(1);
     visit.birds.forEach(route => {
       const start = treeBirdPose(route, 0), end = treeBirdPose(route, 1);
       const tree = mappedTreesForLocation(location).find(tree => tree.id === route.fromTree)!;
@@ -188,7 +216,9 @@ test('routes launch and land within different tree crowns, vary depth, and flock
       else expect(end.scale).toBeGreaterThanOrEqual(start.scale);
       exits.add(!route.toTree); depths.add(route.to.z > route.from.z);
       for (let t = 0; t <= 1; t += .05) expect(treeBirdPose(route, t).y).toBeLessThanOrEqual(Math.max(start.y, end.y) + .001);
-      expect(route.durationMs).toBeLessThan(20000); expect(route.delayMs + route.durationMs).toBeLessThan(20000);
+      const hiddenFlight=route.from.z<0||route.to.z<0;
+      expect(route.durationMs/(hiddenFlight?4:1)).toBeLessThan(20000);
+      expect(route.delayMs).toBeLessThan(48*155);
     });
   }
   expect(exits.size).toBe(2); expect(depths.size).toBe(2);
@@ -205,12 +235,15 @@ test('a bounding path rises and dips repeatedly, with exact endpoint height and 
   expect(samples[0].scale).toBeCloseTo(1.9/(.7*4.2),12);
 });
 
-test('the schedule resumes current time without catch-up bursts and never exceeds twelve natural birds', () => {
+test('the schedule resumes current time without catch-up bursts and never exceeds fifty natural birds', () => {
   for (let index = 0; index < 2400; index++) {
     const now = WORLD.epoch + index * 17999, scheduled = treeBirdSchedule(now, 'dock');
     expect(scheduled).toEqual(treeBirdSchedule(now, 'dock'));
     expect(scheduled.nextAt).toBeGreaterThan(now);
-    expect(scheduled.visits.reduce((sum, visit) => sum + visit.birds.length, 0)).toBeLessThanOrEqual(12);
+    expect(scheduled.visits.reduce((sum, visit) => sum + visit.birds.length, 0)).toBeLessThanOrEqual(50);
+    scheduled.visits.filter(visit=>visit.stream==='flock').forEach(visit=>{
+      expect(visit.birds.length).toBeGreaterThanOrEqual(4);expect(visit.birds.length).toBeLessThanOrEqual(48);
+    });
     scheduled.visits.forEach(visit => { expect(visit.startAt).toBeLessThanOrEqual(now); expect(visit.endAt).toBeGreaterThan(now); });
   }
 });
@@ -224,7 +257,7 @@ test('hidden/offscreen birds unload, returning uses elapsed progress, and every 
   try {
     const view = render(<div ref={sceneRef}><TreeBirds sceneRef={sceneRef} location="dock" reducedMotion={false}/></div>);
     const flock = view.container.querySelector('[data-bird-stream="flock"]')!;
-    expect(flock.querySelectorAll('.f-tree-bird')).toHaveLength(10); expect(jest.getTimerCount()).toBe(1);
+    expect(flock.querySelectorAll('.f-tree-bird')).toHaveLength(treeBirdSchedule(startAt+2000,'dock').visits.find(visit=>visit.stream==='flock')!.birds.length); expect(jest.getTimerCount()).toBe(1);
     const id = flock.getAttribute('data-bird-visit'), delay = (flock.querySelector('.f-tree-bird') as HTMLElement).style.getPropertyValue('--bird-delay');
     act(() => jest.advanceTimersByTime(100));
     view.rerender(<div ref={sceneRef}><TreeBirds sceneRef={sceneRef} location="dock" reducedMotion={false} showMap/></div>);

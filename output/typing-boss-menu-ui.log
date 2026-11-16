@@ -1,0 +1,11 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest --testNamePattern=password|incorrect passwords
+
+PASS src/TypingBoss/RoomCreationGate.test.tsx
+
+Test Suites: 19 skipped, 1 passed, 1 of 20 total
+Tests:       134 skipped, 2 passed, 136 total
+Snapshots:   0 total
+Time:        28.121 s, estimated 35 s
+Ran all test suites matching /TypingBoss/i with tests matching "password|incorrect passwords".

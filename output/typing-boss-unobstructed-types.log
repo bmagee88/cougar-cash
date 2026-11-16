@@ -1,0 +1,2 @@
+src/TypingBoss/ContinuousBattle.tsx(270,7): error TS2304: Cannot find name 'keyNotice'.
+src/TypingBoss/ContinuousBattle.tsx(270,135): error TS2304: Cannot find name 'keyNotice'.

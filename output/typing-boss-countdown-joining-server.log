@@ -1,0 +1,792 @@
+
+> cougar-cash@0.1.0 test:typing-boss
+> node --test server/proportionalBoss.test.js server/balancedBoss.test.js server/homeRowWordBank.test.js server/typingBossLifecycle.test.js server/typingBossBroadcast.test.js server/typingBossAudience.test.js server/typingBossAuth.test.js server/typingBossIntegrity.test.js server/dragonCombat.test.js server/typingPenalty.test.js server/clericHealing.test.js
+
+TAP version 13
+# Subtest: balanced random colors default on, can be disabled before Start and lock during combat
+ok 1 - balanced random colors default on, can be disabled before Start and lock during combat
+  ---
+  duration_ms: 5.1285
+  type: 'test'
+  ...
+# Subtest: random color map totals 100%, is stable per generated word and matches its advertised weights
+ok 2 - random color map totals 100%, is stable per generated word and matches its advertised weights
+  ---
+  duration_ms: 1030.4595
+  type: 'test'
+  ...
+# Subtest: random orange words still cash in Charge and random red words cash in saved crit
+ok 3 - random orange words still cash in Charge and random red words cash in saved crit
+  ---
+  duration_ms: 2.0567
+  type: 'test'
+  ...
+# Subtest: partial-word bank preview matches committed earnings without activating bonuses or mutating state
+ok 4 - partial-word bank preview matches committed earnings without activating bonuses or mutating state
+  ---
+  duration_ms: 3.359
+  type: 'test'
+  ...
+# Subtest: all scheduled colors build base ATK and steady typing adds a cadence multiplier
+ok 5 - all scheduled colors build base ATK and steady typing adds a cadence multiplier
+  ---
+  duration_ms: 3.7132
+  type: 'test'
+  ...
+# Subtest: cadence uses each word's running deviation, ignores transitions, and resets its pace per word
+ok 6 - cadence uses each word's running deviation, ignores transitions, and resets its pace per word
+  ---
+  duration_ms: 1.0012
+  type: 'test'
+  ...
+# Subtest: every class conserves its 80/20 power allocation and defensive overflow becomes damage
+ok 7 - every class conserves its 80/20 power allocation and defensive overflow becomes damage
+  ---
+  duration_ms: 1.2018
+  type: 'test'
+  ...
+# Subtest: ordinary colors bank resources; only their perfect glowing triggers activate them
+ok 8 - ordinary colors bank resources; only their perfect glowing triggers activate them
+  ---
+  duration_ms: 7.6175
+  type: 'test'
+  ...
+# Subtest: crit appears every 131 correct characters and missed triggers wait for their next slot
+ok 9 - crit appears every 131 correct characters and missed triggers wait for their next slot
+  ---
+  duration_ms: 1.3438
+  type: 'test'
+  ...
+# Subtest: missed gold expires and returns at the next 139-character slot
+ok 10 - missed gold expires and returns at the next 139-character slot
+  ---
+  duration_ms: 1.7806
+  type: 'test'
+  ...
+# Subtest: host switch defaults off, validates and locks, and balanced actors share content
+ok 11 - host switch defaults off, validates and locks, and balanced actors share content
+  ---
+  duration_ms: 1.6149
+  type: 'test'
+  ...
+# Subtest: both Block banks scale by the attack target count, including single and group attacks
+ok 12 - both Block banks scale by the attack target count, including single and group attacks
+  ---
+  duration_ms: 6.6922
+  type: 'test'
+  ...
+# Subtest: successful dodge clears chance, prevents the whole hit, and preserves Block; failed rolls retain chance
+ok 13 - successful dodge clears chance, prevents the whole hit, and preserves Block; failed rolls retain chance
+  ---
+  duration_ms: 1.242
+  type: 'test'
+  ...
+# Subtest: successful dodges spend 100 banked points, preserve overflow and Block, and never make chance exceed 100%
+ok 14 - successful dodges spend 100 banked points, preserve overflow and Block, and never make chance exceed 100%
+  ---
+  duration_ms: 2.7879
+  type: 'test'
+  ...
+# Subtest: Cleric gold converts full base power into shared healing
+ok 15 - Cleric gold converts full base power into shared healing
+  ---
+  duration_ms: 1.4966
+  type: 'test'
+  ...
+# Subtest: balanced batches validate actual key gaps atomically and remain retry-safe
+ok 16 - balanced batches validate actual key gaps atomically and remain retry-safe
+  ---
+  duration_ms: 2.9098
+  type: 'test'
+  ...
+# Subtest: scheduled client and server agree through all triggers, attack releases and duplicate submissions
+ok 17 - scheduled client and server agree through all triggers, attack releases and duplicate submissions
+  ---
+  duration_ms: 35.8079
+  type: 'test'
+  ...
+# Subtest: green transition earnings reward smooth word starts independently from within-word cadence
+ok 18 - green transition earnings reward smooth word starts independently from within-word cadence
+  ---
+  duration_ms: 0.9366
+  type: 'test'
+  ...
+# Subtest: balanced crit boosts current attack by its charged percentage
+ok 19 - balanced crit boosts current attack by its charged percentage
+  ---
+  duration_ms: 0.335
+  type: 'test'
+  ...
+# Subtest: scheduled prime intervals minimize exact overlaps and force a trigger by the third short attack
+ok 20 - scheduled prime intervals minimize exact overlaps and force a trigger by the third short attack
+  ---
+  duration_ms: 0.5506
+  type: 'test'
+  ...
+# (node:23124) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: Prayer words route all typing power into Prayer, and never increase attack or crit
+ok 21 - Prayer words route all typing power into Prayer, and never increase attack or crit
+  ---
+  duration_ms: 5.7425
+  type: 'test'
+  ...
+# Subtest: Prayer mistakes preserve the private bank and cannot make a shared-pool deposit
+ok 22 - Prayer mistakes preserve the private bank and cannot make a shared-pool deposit
+  ---
+  duration_ms: 1.9655
+  type: 'test'
+  ...
+# Subtest: orange deposits Healing immediately, once, without adding cleric damage power
+ok 23 - orange deposits Healing immediately, once, without adding cleric damage power
+  ---
+  duration_ms: 3.6568
+  type: 'test'
+  ...
+# Subtest: special converts full bonus-adjusted attack to healing and preserves surplus across specials
+ok 24 - special converts full bonus-adjusted attack to healing and preserves surplus across specials
+  ---
+  duration_ms: 4.1411
+  type: 'test'
+  ...
+# Subtest: five Clerics divide each special deposit by five, counting defeated Clerics too
+ok 25 - five Clerics divide each special deposit by five, counting defeated Clerics too
+  ---
+  duration_ms: 0.9381
+  type: 'test'
+  ...
+# Subtest: random wounded living target includes self and excludes defeated/full-health players
+ok 26 - random wounded living target includes self and excludes defeated/full-health players
+  ---
+  duration_ms: 0.6638
+  type: 'test'
+  ...
+# Subtest: full-health allies preserve the entire special deposit without damaging the dragon
+ok 27 - full-health allies preserve the entire special deposit without damaging the dragon
+  ---
+  duration_ms: 0.6812
+  type: 'test'
+  ...
+# Subtest: ordinary attacks still deal damage and do not spend the healing bank
+ok 28 - ordinary attacks still deal damage and do not spend the healing bank
+  ---
+  duration_ms: 2.1269
+  type: 'test'
+  ...
+# Subtest: a confirmed blue trigger grants usable Block before any attack release
+ok 29 - a confirmed blue trigger grants usable Block before any attack release
+  ---
+  duration_ms: 5.1152
+  type: 'test'
+  ...
+# Subtest: necromancer random downed target uses all power, divides by necromancers, and banks unused healing
+ok 30 - necromancer random downed target uses all power, divides by necromancers, and banks unused healing
+  ---
+  duration_ms: 1.4759
+  type: 'test'
+  ...
+# Subtest: necromancer selecting a standing player deals full damage and saves no revive charge
+ok 31 - necromancer selecting a standing player deals full damage and saves no revive charge
+  ---
+  duration_ms: 0.9656
+  type: 'test'
+  ...
+# Subtest: knockouts use the same roster-based delay each time; early revives invalidate old deadlines
+ok 32 - knockouts use the same roster-based delay each time; early revives invalidate old deadlines
+  ---
+  duration_ms: 4.2026
+  type: 'test'
+  ...
+# Subtest: dragon knockout schedules recovery while surviving allies keep the battle active
+ok 33 - dragon knockout schedules recovery while surviving allies keep the battle active
+  ---
+  duration_ms: 10.7886
+  type: 'test'
+  ...
+# Subtest: disabling auto revive schedules no recovery but leaves necromancer revival available
+ok 34 - disabling auto revive schedules no recovery but leaves necromancer revival available
+  ---
+  duration_ms: 0.6042
+  type: 'test'
+  ...
+# Subtest: recovery duration is 10 seconds plus 5 seconds per player, including downed players
+ok 35 - recovery duration is 10 seconds plus 5 seconds per player, including downed players
+  ---
+  duration_ms: 2.4476
+  type: 'test'
+  ...
+# Subtest: pain uses 3 basic, 6 power and 10 critical frames with increasing durations
+ok 36 - pain uses 3 basic, 6 power and 10 critical frames with increasing durations
+  ---
+  duration_ms: 4.2687
+  type: 'test'
+  ...
+# Subtest: higher pain interrupts lower pain; lower and equal hits cannot restart it
+ok 37 - higher pain interrupts lower pain; lower and equal hits cannot restart it
+  ---
+  duration_ms: 3.6582
+  type: 'test'
+  ...
+# Subtest: basic pain yields to a dragon attack and cannot interrupt its active frames
+ok 38 - basic pain yields to a dragon attack and cannot interrupt its active frames
+  ---
+  duration_ms: 3.9085
+  type: 'test'
+  ...
+# Subtest: a power reaction delays the projectile and its damage timer until all six frames finish
+ok 39 - a power reaction delays the projectile and its damage timer until all six frames finish
+  ---
+  duration_ms: 1.5655
+  type: 'test'
+  ...
+# Subtest: a critical extends a pending power wait, and queued attacks drain once in FIFO order
+ok 40 - a critical extends a pending power wait, and queued attacks drain once in FIFO order
+  ---
+  duration_ms: 2.5301
+  type: 'test'
+  ...
+# Subtest: misses, full shielding and support do not create a pain animation
+ok 41 - misses, full shielding and support do not create a pain animation
+  ---
+  duration_ms: 0.466
+  type: 'test'
+  ...
+# Subtest: 20-frame flame breath locks the body, queues critical before power, and delays every outgoing attack
+ok 42 - 20-frame flame breath locks the body, queues critical before power, and delays every outgoing attack
+  ---
+  duration_ms: 1.9349
+  type: 'test'
+  ...
+# Subtest: cleanup cancels flame lock, pending strong reactions, outgoing shots and stale wake-ups
+ok 43 - cleanup cancels flame lock, pending strong reactions, outgoing shots and stale wake-ups
+  ---
+  duration_ms: 0.8738
+  type: 'test'
+  ...
+# Subtest: queued attacks are discarded on lethal damage or room cleanup
+ok 44 - queued attacks are discarded on lethal damage or room cleanup
+  ---
+  duration_ms: 1.4683
+  type: 'test'
+  ...
+# Subtest: all word-bank entries have consistent, bounded grade estimates or explicit review notes
+ok 45 - all word-bank entries have consistent, bounded grade estimates or explicit review notes
+  ---
+  duration_ms: 18.315
+  type: 'test'
+  ...
+# Subtest: reviewed numeric pool keeps its audited content, order, and duplicate frequency
+ok 46 - reviewed numeric pool keeps its audited content, order, and duplicate frequency
+  ---
+  duration_ms: 5.6563
+  type: 'test'
+  ...
+# Subtest: grade and sentiment filters intersect, while multiple sentiments form a union
+ok 47 - grade and sentiment filters intersect, while multiple sentiments form a union
+  ---
+  duration_ms: 123.8873
+  type: 'test'
+  ...
+# Subtest: the classroom review exclusions cannot reappear in any bucket
+ok 48 - the classroom review exclusions cannot reappear in any bucket
+  ---
+  duration_ms: 0.7155
+  type: 'test'
+  ...
+# Subtest: gold words leave existing colors intact and require an exact word
+ok 49 - gold words leave existing colors intact and require an exact word
+  ---
+  duration_ms: 23.9
+  type: 'test'
+  ...
+# Subtest: barbarian and dragon gold have no damage multiplier or carryover
+ok 50 - barbarian and dragon gold have no damage multiplier or carryover
+  ---
+  duration_ms: 1.7712
+  type: 'test'
+  ...
+# Subtest: a perfect final gold extends the current run and requires its separator
+ok 51 - a perfect final gold extends the current run and requires its separator
+  ---
+  duration_ms: 8.0459
+  type: 'test'
+  ...
+# Subtest: monk attack size rounds upward and resets, or renews from a shortened attack
+ok 52 - monk attack size rounds upward and resets, or renews from a shortened attack
+  ---
+  duration_ms: 0.8124
+  type: 'test'
+  ...
+# Subtest: monk batch validation follows gold into two consecutive five-word attacks
+ok 53 - monk batch validation follows gold into two consecutive five-word attacks
+  ---
+  duration_ms: 4.4447
+  type: 'test'
+  ...
+# Subtest: gold support targets living wounded players, knocked-out players, and unshielded allies respectively
+ok 54 - gold support targets living wounded players, knocked-out players, and unshielded allies respectively
+  ---
+  duration_ms: 5.0047
+  type: 'test'
+  ...
+# Subtest: a full-health cleric heals an eligible wounded living ally in both modes
+ok 55 - a full-health cleric heals an eligible wounded living ally in both modes
+  ---
+  duration_ms: 1.1738
+  type: 'test'
+  ...
+# Subtest: shield feedback reports the absorbed amount separately from damage
+ok 56 - shield feedback reports the absorbed amount separately from damage
+  ---
+  duration_ms: 0.8092
+  type: 'test'
+  ...
+# Subtest: rogue stacks independent dodge rolls for one incoming attack
+ok 57 - rogue stacks independent dodge rolls for one incoming attack
+  ---
+  duration_ms: 3.3859
+  type: 'test'
+  ...
+# Subtest: dodge banks proficiency gains at either speed without losing progress to slow transitions
+ok 58 - dodge banks proficiency gains at either speed without losing progress to slow transitions
+  ---
+  duration_ms: 4.0387
+  type: 'test'
+  ...
+# Subtest: transition timing is validated against the word's other gaps, and retries don't add samples
+ok 59 - transition timing is validated against the word's other gaps, and retries don't add samples
+  ---
+  duration_ms: 2.7988
+  type: 'test'
+  ...
+# Subtest: player and dragon dodges avoid damage without consuming a shield
+ok 60 - player and dragon dodges avoid damage without consuming a shield
+  ---
+  duration_ms: 1.0789
+  type: 'test'
+  ...
+# Subtest: the tenth word applies its color before release, including immediate defense
+ok 61 - the tenth word applies its color before release, including immediate defense
+  ---
+  duration_ms: 2.3913
+  type: 'test'
+  ...
+# Subtest: word generation uses the exact Home Row Run pool, deterministically, with 30% colors
+ok 62 - word generation uses the exact Home Row Run pool, deterministically, with 30% colors
+  ---
+  duration_ms: 105.9586
+  type: 'test'
+  ...
+# Subtest: consistency depends on timing variation, with 1.5x and 1x limits
+ok 63 - consistency depends on timing variation, with 1.5x and 1x limits
+  ---
+  duration_ms: 0.2884
+  type: 'test'
+  ...
+# Subtest: fast key rolls receive jitter tolerance without penalizing typing speed
+ok 64 - fast key rolls receive jitter tolerance without penalizing typing speed
+  ---
+  duration_ms: 0.1717
+  type: 'test'
+  ...
+# Subtest: character progress covers exactly ten words and wraps at release
+ok 65 - character progress covers exactly ten words and wraps at release
+  ---
+  duration_ms: 0.4845
+  type: 'test'
+  ...
+# Subtest: progress is bounded, throttled, and cosmetic; it cannot award damage
+ok 66 - progress is bounded, throttled, and cosmetic; it cannot award damage
+  ---
+  duration_ms: 0.9975
+  type: 'test'
+  ...
+# Subtest: required spaces are timed and a reconnect can omit one unknown interval
+ok 67 - required spaces are timed and a reconnect can omit one unknown interval
+  ---
+  duration_ms: 0.4007
+  type: 'test'
+  ...
+# Subtest: colored words require zero errors, and only matching characters build attack damage
+ok 68 - colored words require zero errors, and only matching characters build attack damage
+  ---
+  duration_ms: 0.4101
+  type: 'test'
+  ...
+# Subtest: green stacks per subsequent correct word, including other colored words
+ok 69 - green stacks per subsequent correct word, including other colored words
+  ---
+  duration_ms: 0.2832
+  type: 'test'
+  ...
+# Subtest: attack bonuses reset on release, while shields persist until the next hit
+ok 70 - attack bonuses reset on release, while shields persist until the next hit
+  ---
+  duration_ms: 0.4258
+  type: 'test'
+  ...
+# Subtest: power animation uses the actual multiplier and never weakens critical hits for timing
+ok 71 - power animation uses the actual multiplier and never weakens critical hits for timing
+  ---
+  duration_ms: 0.3368
+  type: 'test'
+  ...
+# Subtest: boss attack roll selects the advertised pattern and splits all power among its targets
+ok 72 - boss attack roll selects the advertised pattern and splits all power among its targets
+  ---
+  duration_ms: 2.5746
+  type: 'test'
+  ...
+# Subtest: tail whip selects nearby formation slots and skips defeated players
+ok 73 - tail whip selects nearby formation slots and skips defeated players
+  ---
+  duration_ms: 0.6541
+  type: 'test'
+  ...
+# Subtest: battle formation reserves separate label cells for 30 fixed player slots
+ok 74 - battle formation reserves separate label cells for 30 fixed player slots
+  ---
+  duration_ms: 1.5047
+  type: 'test'
+  ...
+# Subtest: flamethrower shields apply on impact and consume once
+ok 75 - flamethrower shields apply on impact and consume once
+  ---
+  duration_ms: 2.3127
+  type: 'test'
+  ...
+# Subtest: flamethrower divides fractional damage equally among survivors
+ok 76 - flamethrower divides fractional damage equally among survivors
+  ---
+  duration_ms: 1.8079
+  type: 'test'
+  ...
+# Subtest: host can earn blue defense, and damage credit is capped at remaining HP
+ok 77 - host can earn blue defense, and damage credit is capped at remaining HP
+  ---
+  duration_ms: 0.9679
+  type: 'test'
+  ...
+# Subtest: attacks release exactly every ten words, and retried batches do not duplicate attacks
+ok 78 - attacks release exactly every ten words, and retried batches do not duplicate attacks
+  ---
+  duration_ms: 1.4669
+  type: 'test'
+  ...
+# Subtest: bad batches fail atomically; invalid timings, gaps, and old endpoints cannot award damage
+ok 79 - bad batches fail atomically; invalid timings, gaps, and old endpoints cannot award damage
+  ---
+  duration_ms: 0.8101
+  type: 'test'
+  ...
+# Subtest: patches contain changed players and events without resending static roster data
+ok 80 - patches contain changed players and events without resending static roster data
+  ---
+  duration_ms: 1.0296
+  type: 'test'
+  ...
+# Subtest: identical rebuilt dragon profiles and typing arrays never produce redundant patches
+ok 81 - identical rebuilt dragon profiles and typing arrays never produce redundant patches
+  ---
+  duration_ms: 0.8584
+  type: 'test'
+  ...
+# Subtest: HP multiplier scales both sides equally and rejects invalid or late changes
+ok 82 - HP multiplier scales both sides equally and rejects invalid or late changes
+  ---
+  duration_ms: 0.7982
+  type: 'test'
+  ...
+# Subtest: strongest landed attack preserves the bonus breakdown, shield reduction, and overkill limits
+ok 83 - strongest landed attack preserves the bonus breakdown, shield reduction, and overkill limits
+  ---
+  duration_ms: 1.1096
+  type: 'test'
+  ...
+# Subtest: a weaker attack cannot replace the strongest attack, and canceled shots do not count
+ok 84 - a weaker attack cannot replace the strongest attack, and canceled shots do not count
+  ---
+  duration_ms: 0.4534
+  type: 'test'
+  ...
+# Subtest: end-of-game leaderboard is included in a patch without resending the live roster
+ok 85 - end-of-game leaderboard is included in a patch without resending the live roster
+  ---
+  duration_ms: 0.3706
+  type: 'test'
+  ...
+# Subtest: boss results count group damage once, honor defenses and overkill, and preserve volley strength
+ok 86 - boss results count group damage once, honor defenses and overkill, and preserve volley strength
+  ---
+  duration_ms: 26.0237
+  type: 'test'
+  ...
+# Subtest: battle typing accuracy and timing survive attack releases, with frozen end-of-battle DPS and WPM
+ok 87 - battle typing accuracy and timing survive attack releases, with frozen end-of-battle DPS and WPM
+  ---
+  duration_ms: 3.1126
+  type: 'test'
+  ...
+# Subtest: 200ms tolerance gives the requested fast sequence full rhythm and leaves base damage intact during long pauses
+ok 88 - 200ms tolerance gives the requested fast sequence full rhythm and leaves base damage intact during long pauses
+  ---
+  duration_ms: 0.3146
+  type: 'test'
+  ...
+# Subtest: word submissions without the required trailing space are rejected
+ok 89 - word submissions without the required trailing space are rejected
+  ---
+  duration_ms: 0.3565
+  type: 'test'
+  ...
+# Subtest: selected grades filter every generated word and server validation uses the same pool
+ok 90 - selected grades filter every generated word and server validation uses the same pool
+  ---
+  duration_ms: 4.8287
+  type: 'test'
+  ...
+# Subtest: invalid or empty grade selections are rejected without changing the pool
+ok 91 - invalid or empty grade selections are rejected without changing the pool
+  ---
+  duration_ms: 0.8199
+  type: 'test'
+  ...
+# Subtest: sentiment selections are shared by all actors and invalid combinations are atomic
+ok 92 - sentiment selections are shared by all actors and invalid combinations are atomic
+  ---
+  duration_ms: 2.7043
+  type: 'test'
+  ...
+# Subtest: student views include only personal combat and never global boss body reactions
+ok 93 - student views include only personal combat and never global boss body reactions
+  ---
+  duration_ms: 6.6069
+  type: 'test'
+  ...
+# Subtest: remote progress does not produce patches; team health waits for the next summary boundary
+ok 94 - remote progress does not produce patches; team health waits for the next summary boundary
+  ---
+  duration_ms: 1.0979
+  type: 'test'
+  ...
+# Subtest: own HP, defense and impacts are immediate; final results flush complete latest stats
+ok 95 - own HP, defense and impacts are immediate; final results flush complete latest stats
+  ---
+  duration_ms: 0.8096
+  type: 'test'
+  ...
+# Subtest: revivals update the quiet overview and team cues exclude the viewer own contributions
+ok 96 - revivals update the quiet overview and team cues exclude the viewer own contributions
+  ---
+  duration_ms: 2.9994
+  type: 'test'
+  ...
+# Subtest: pending team updates share one trailing timer and never schedule after completion
+ok 97 - pending team updates share one trailing timer and never schedule after completion
+  ---
+  duration_ms: 0.9618
+  type: 'test'
+  ...
+# Subtest: room creation requires an explicitly configured backend password
+ok 98 - room creation requires an explicitly configured backend password
+  ---
+  duration_ms: 5.3128
+  type: 'test'
+  ...
+# Subtest: private tokens are independent from public IDs and scoped to their room
+ok 99 - private tokens are independent from public IDs and scoped to their room
+  ---
+  duration_ms: 1.4668
+  type: 'test'
+  ...
+# Subtest: thirty progress senders share one 400ms room flush
+ok 100 - thirty progress senders share one 400ms room flush
+  ---
+  duration_ms: 2.4111
+  type: 'test'
+  ...
+# Subtest: combat preempts progress and absorbs further cosmetic updates without postponing the hit
+ok 101 - combat preempts progress and absorbs further cosmetic updates without postponing the hit
+  ---
+  duration_ms: 0.8342
+  type: 'test'
+  ...
+# Subtest: public typing previews the full attack while issuing twelve actor-specific word tickets
+ok 102 - public typing previews the full attack while issuing twelve actor-specific word tickets
+  ---
+  duration_ms: 12.4698
+  type: 'test'
+  ...
+# Subtest: standard requires correct text and a current ticket, with atomic rejection
+ok 103 - standard requires correct text and a current ticket, with atomic rejection
+  ---
+  duration_ms: 9.3273
+  type: 'test'
+  ...
+# Subtest: balanced requires correct text and a current ticket, with atomic rejection
+ok 104 - balanced requires correct text and a current ticket, with atomic rejection
+  ---
+  duration_ms: 5.5015
+  type: 'test'
+  ...
+# Subtest: server time rejects fabricated future timing and zero-time macro batches
+ok 105 - server time rejects fabricated future timing and zero-time macro batches
+  ---
+  duration_ms: 18.7125
+  type: 'test'
+  ...
+# Subtest: idle time has bounded arrival credit and cannot fund an unlimited instant burst
+ok 106 - idle time has bounded arrival credit and cannot fund an unlimited instant burst
+  ---
+  duration_ms: 2.6722
+  type: 'test'
+  ...
+# Subtest: correcting a mistake retains letter power, records accuracy and does not activate a perfect trigger
+ok 107 - correcting a mistake retains letter power, records accuracy and does not activate a perfect trigger
+  ---
+  duration_ms: 3.3385
+  type: 'test'
+  ...
+# (node:17736) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: abandoned rooms get a full disconnect grace period; authenticated activity and reconnects keep them alive
+ok 108 - abandoned rooms get a full disconnect grace period; authenticated activity and reconnects keep them alive
+  ---
+  duration_ms: 5.9758
+  type: 'test'
+  ...
+# Subtest: closed rooms shorten retention once; reads and repeated closes never extend it
+ok 109 - closed rooms shorten retention once; reads and repeated closes never extend it
+  ---
+  duration_ms: 0.6615
+  type: 'test'
+  ...
+# Subtest: Old Mode retains only the latest challenge per player and expires it at ten minutes
+ok 110 - Old Mode retains only the latest challenge per player and expires it at ten minutes
+  ---
+  duration_ms: 2.0914
+  type: 'test'
+  ...
+# Subtest: combat events drain without needing a subscriber or a snapshot request
+ok 111 - combat events drain without needing a subscriber or a snapshot request
+  ---
+  duration_ms: 0.6227
+  type: 'test'
+  ...
+# Subtest: removing a room releases connections, snapshots, state and every timer
+ok 112 - removing a room releases connections, snapshots, state and every timer
+  ---
+  duration_ms: 2.6698
+  type: 'test'
+  ...
+# Subtest: all three bosses can be selected in either mode; proportional keeps its default
+ok 113 - all three bosses can be selected in either mode; proportional keeps its default
+  ---
+  duration_ms: 676.8595
+  type: 'test'
+  ...
+# Subtest: Start publishes one five-second deadline, rejects early actions and prevents a repeated start
+ok 114 - Start publishes one five-second deadline, rejects early actions and prevents a repeated start
+  ---
+  duration_ms: 31.4084
+  type: 'test'
+  ...
+# Subtest: closing during countdown cancels the pending start callback
+ok 115 - closing during countdown cancels the pending start callback
+  ---
+  duration_ms: 7.8573
+  type: 'test'
+  ...
+# Subtest: server sweeps abandoned rooms and frees their registry entry after the expiry notice
+ok 116 - server sweeps abandoned rooms and frees their registry entry after the expiry notice
+  ---
+  duration_ms: 6.7989
+  type: 'test'
+  ...
+# Subtest: server keeps completed games available for rematches until the original two-hour deadline
+ok 117 - server keeps completed games available for rematches until the original two-hour deadline
+  ---
+  duration_ms: 13.078
+  type: 'test'
+  ...
+# Subtest: Old Mode redirects a full-health heal target to a wounded survivor
+ok 118 - Old Mode redirects a full-health heal target to a wounded survivor
+  ---
+  duration_ms: 5.0154
+  type: 'test'
+  ...
+# Subtest: shared battle snapshots include allies and recipient names but keep typing state private
+ok 119 - shared battle snapshots include allies and recipient names but keep typing state private
+  ---
+  duration_ms: 4.8849
+  type: 'test'
+  ...
+# Subtest: word pool cache evicts the oldest of 32 combinations, keeps hot entries and preserves seeded content
+ok 120 - word pool cache evicts the oldest of 32 combinations, keeps hot entries and preserves seeded content
+  ---
+  duration_ms: 7.9024
+  type: 'test'
+  ...
+# Subtest: rematches reset combat and roster, preserve room credentials and hard deadline, and reject closed rooms
+ok 121 - rematches reset combat and roster, preserve room credentials and hard deadline, and reject closed rooms
+  ---
+  duration_ms: 9.6343
+  type: 'test'
+  ...
+# Subtest: players can join until the countdown deadline with matching rules and HP, without restarting the countdown
+ok 122 - players can join until the countdown deadline with matching rules and HP, without restarting the countdown
+  ---
+  duration_ms: 36.8876
+  type: 'test'
+  ...
+# Subtest: countdown joining still respects the 30-player limit and closed rooms
+ok 123 - countdown joining still respects the 30-player limit and closed rooms
+  ---
+  duration_ms: 8.433
+  type: 'test'
+  ...
+# Subtest: proportional mistakes never subtract previously earned attack
+ok 124 - proportional mistakes never subtract previously earned attack
+  ---
+  duration_ms: 4.2079
+  type: 'test'
+  ...
+# Subtest: proportional errors cannot lower the next word's earned power
+ok 125 - proportional errors cannot lower the next word's earned power
+  ---
+  duration_ms: 0.785
+  type: 'test'
+  ...
+# Subtest: balanced mistakes never subtract previously earned attack
+ok 126 - balanced mistakes never subtract previously earned attack
+  ---
+  duration_ms: 4.0538
+  type: 'test'
+  ...
+# Subtest: balanced errors cannot lower the next word's earned power
+ok 127 - balanced errors cannot lower the next word's earned power
+  ---
+  duration_ms: 0.6854
+  type: 'test'
+  ...
+# Subtest: wrong colored letters preserve earned banks while a missed trigger grants no activation
+ok 128 - wrong colored letters preserve earned banks while a missed trigger grants no activation
+  ---
+  duration_ms: 2.5584
+  type: 'test'
+  ...
+# Subtest: timing can add a reward but never reduce base damage
+ok 129 - timing can add a reward but never reduce base damage
+  ---
+  duration_ms: 0.2502
+  type: 'test'
+  ...
+1..129
+# tests 129
+# suites 0
+# pass 129
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1869.1017

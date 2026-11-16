@@ -12,7 +12,7 @@ export const GAME_MINUTE_MS = WORLD.dayMs / (24 * 60);
 export const TREE_BIRD_STREAMS = [
   { id: 'single-a', baseMs: 20 * GAME_MINUTE_MS, jitterMs: 10 * GAME_MINUTE_MS, offset: 0, count: 1 },
   { id: 'single-b', baseMs: 20 * GAME_MINUTE_MS, jitterMs: 10 * GAME_MINUTE_MS, offset: 13 * GAME_MINUTE_MS, count: 1 },
-  { id: 'flock', baseMs: 36 * 60000, jitterMs: 12 * 60000, offset: 7 * 60000, count: 10 },
+  { id: 'flock', baseMs: 36 * 60000, jitterMs: 12 * 60000, offset: 7 * 60000, count: '4d12' },
 ] as const;
 export type TreeBirdStream = typeof TREE_BIRD_STREAMS[number];
 export interface TreeBirdRoute {
@@ -32,7 +32,14 @@ export function treeBirdDeparture(stream: TreeBirdStream, index: number, locatio
   return WORLD.epoch + stream.offset + index * stream.baseMs + skyRandom(seed) * stream.jitterMs;
 }
 
-export function makeTreeBirdVisit(id: string, stream: string, startAt: number, seed: number, location: string, count = 1, endpoints?:{source:DistantTree;target:DistantTree}): TreeBirdVisit {
+/** Four independent d12 rolls on a separate seed stream preserve route choices. */
+export function treeBirdFlockSize(seed: number) {
+  let count = 0;
+  for (let die = 0; die < 4; die++) count += 1 + Math.floor(skyRandom(seed + 94613 + die * 7919) * 12);
+  return count;
+}
+
+export function makeTreeBirdVisit(id: string, stream: string, startAt: number, seed: number, location: string, count = stream === 'flock' || stream === 'preview-flock' ? treeBirdFlockSize(seed) : 1, endpoints?:{source:DistantTree;target:DistantTree}): TreeBirdVisit {
   let roll = 0; const random = () => skyRandom(seed + ++roll * 7919);
   // A separate seeded choice leaves every existing route RNG draw untouched.
   const eligible=TREE_BIRD_SPECIES.filter(species=>count===1||species.canFlock);
@@ -108,7 +115,7 @@ export function treeBirdPose(route: TreeBirdRoute, progress: number) {
     scale: Math.max(.35,Math.min(3.2,1.9/sizeDistance)), opacity: timeOpacity };
 }
 
-/** At most two solos plus one ten-bird flock; one sleeping timer services all. */
+/** At most two solos plus one 4d12 flock; one sleeping timer services all. */
 export function treeBirdSchedule(now: number, location: string) {
   const visits: TreeBirdVisit[] = [], deadlines: number[] = [];
   TREE_BIRD_STREAMS.forEach((stream, streamIndex) => {
@@ -117,7 +124,8 @@ export function treeBirdSchedule(now: number, location: string) {
       const startAt = treeBirdDeparture(stream, index, location);
       if (startAt > now) { deadlines.push(startAt); continue; }
       const seed = Math.imul(index, 19397) + locationSalt(location) + streamIndex * 77417;
-      const visit = makeTreeBirdVisit(`tree-birds-${location}-${stream.id}-${index}`, stream.id, startAt, seed, location, stream.count);
+      const count = stream.count === '4d12' ? treeBirdFlockSize(seed) : stream.count;
+      const visit = makeTreeBirdVisit(`tree-birds-${location}-${stream.id}-${index}`, stream.id, startAt, seed, location, count);
       if (now < visit.endAt) { visits.push(visit); deadlines.push(visit.endAt); }
     }
   });
@@ -125,7 +133,7 @@ export function treeBirdSchedule(now: number, location: string) {
 }
 
 export function previewTreeBirdVisit(now: number, location: string, sequence: number, flock: boolean) {
-  const visit = makeTreeBirdVisit(`tree-birds-preview-${flock ? 'flock' : 'solo'}-${sequence}`, flock ? 'preview-flock' : 'preview-solo', now, sequence * 19397 + (flock ? 3191 : 7717), location, flock ? 10 : 1);
+  const visit = makeTreeBirdVisit(`tree-birds-preview-${flock ? 'flock' : 'solo'}-${sequence}`, flock ? 'preview-flock' : 'preview-solo', now, sequence * 19397 + (flock ? 3191 : 7717), location);
   const age = (visit.endAt - visit.startAt) * .18;
   return { ...visit, startAt: now - age, endAt: visit.endAt - age };
 }

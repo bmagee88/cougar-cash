@@ -14,6 +14,7 @@ test('host and player share 5,4,3,2,1 and unblock typing together without anothe
     <ContinuousTyping sessionId="bossABC" credentials={{code:'hero'}} state={state} active countdownEndsAt={6000} serverNow={1000}/></>);
   const input=screen.getByRole('textbox') as HTMLInputElement;
   expect(input.disabled).toBe(true);
+  expect(document.activeElement).not.toBe(input);
   fireEvent.keyDown(input,{key:typingWord(state).text[0]});
   expect(screen.queryByTestId('word-reward')).toBeNull();
   for(let second=5;second>=1;second--) {
@@ -22,6 +23,7 @@ test('host and player share 5,4,3,2,1 and unblock typing together without anothe
     act(()=>jest.advanceTimersByTime(1000));
   }
   expect(screen.queryAllByRole('status')).toHaveLength(0);expect(input.disabled).toBe(false);
+  expect(document.activeElement).toBe(input);
 });
 test('late join/reconnect resumes the remaining server countdown, and closed games remove it',()=>{
   jest.useFakeTimers('modern');jest.setSystemTime(50000);

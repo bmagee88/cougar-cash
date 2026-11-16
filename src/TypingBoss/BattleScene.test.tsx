@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, within } from "@testing-library/react";
+import { act, render, screen, within } from "@testing-library/react";
 import { BattleScene, PlayerTypingBattle } from "./TypingBossApp";
 import { TypingBossSessionSnapshot } from "./types";
 import { createTypingState } from "./proportionalRules";
@@ -19,13 +19,37 @@ function room(count: number): TypingBossSessionSnapshot {
   } as TypingBossSessionSnapshot;
 }
 
+test('battlefield fits a narrow screen and resizes characters without remeasuring on combat updates',()=>{
+  const original=global.ResizeObserver;
+  let resize:any;
+  const observe=jest.fn(),disconnect=jest.fn();
+  const observer=jest.fn(callback=>{resize=callback;return {observe,disconnect};});
+  global.ResizeObserver=observer as any;
+  const bounds=jest.spyOn(HTMLElement.prototype,'getBoundingClientRect').mockReturnValue({width:360} as DOMRect);
+  try {
+    const session=room(30),view=render(<BattleScene session={session}/>);
+    const sprite=()=>view.container.querySelector('[data-testid="combat-character"]') as HTMLElement;
+    expect(view.container.querySelector('[data-formation-scale]')?.getAttribute('data-formation-scale')).toBe('0.36');
+    const scene=screen.getByRole('region',{name:'Host battle scene'});
+    expect(getComputedStyle(scene).overflow).toBe('hidden');
+    expect(getComputedStyle(scene).width).toBe('100%');
+    act(()=>resize([{contentRect:{width:1200}}]));
+    expect(sprite().style.height).toBe('32px');
+    view.rerender(<BattleScene session={{...session,boss:{...session.boss,hp:1}}}/>);
+    expect(observer).toHaveBeenCalledTimes(1);
+    view.unmount();expect(disconnect).toHaveBeenCalled();
+  } finally {bounds.mockRestore();global.ResizeObserver=original;}
+});
+
 test.each([10, 11, 20, 21, 30])("host and quiet student overview share the formation at %i players", count => {
   const session = room(count);
   const { rerender } = render(<BattleScene session={session} />);
   const host = screen.getByRole("region", { name: "Host battle scene" });
+  expect(getComputedStyle(host).overflow).toBe('hidden');
+  expect(getComputedStyle(host).width).toBe('100%');
   const sceneBefore = host.innerHTML;
   expect(screen.queryByRole("img", { name: "Your character" })).toBeNull();
-  expect(within(host).queryByText("Hero 0") !== null).toBe(count <= 10);
+  expect(within(host).queryByText("Hero 0") !== null).toBe(true);
   expect(within(host).queryAllByRole("progressbar")).toHaveLength(1 + (count <= 20 ? count : 0));
   const charge = within(host).queryByRole("progressbar", { name: "Hero 0 attack progress" });
   expect(charge ? getComputedStyle(charge).height : undefined).toBe(count > 20 ? undefined : count > 10 ? "2px" : "4px");

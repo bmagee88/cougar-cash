@@ -1464,3 +1464,984 @@ webpack compiled with 1 warning
 Files successfully emitted, waiting for typecheck results...
 Issues checking in progress...
 No issues found.
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Failed to compile.
+
+Attempted import error: 'rematchTypingBossSession' is not exported from './api' (imported as 'rematchTypingBossSession').
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+ERROR in ./src/TypingBoss/TypingBossApp.tsx 1686:47-71
+export 'rematchTypingBossSession' (imported as 'rematchTypingBossSession') was not found in './api' (possible exports: closeTypingBossSession, createTypingBossChallenge, createTypingBossParticipant, createTypingBossSession, getTypingBossEventSourceUrl, getTypingBossSession, startTypingBossSession, submitTypingBossAction, submitTypingBossProgress, submitTypingBossWords, unlockTypingBossCreation, verifyTypingBossParticipant)
+
+webpack compiled with 1 error and 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Failed to compile.
+
+Module not found: Error: Can't resolve './RecoveryBar' in 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\src\TypingBoss'
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+ERROR in ./src/TypingBoss/TypingBossApp.tsx 22:0-40
+Module not found: Error: Can't resolve './RecoveryBar' in 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\src\TypingBoss'
+
+webpack compiled with 1 error and 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Failed to compile.
+
+Module not found: Error: Can't resolve './mainMenu.css' in 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\src\TypingBoss'
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+ERROR in ./src/TypingBoss/MainMenu.tsx 8:0-24
+Module not found: Error: Can't resolve './mainMenu.css' in 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\src\TypingBoss'
+
+webpack compiled with 1 error and 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Failed to compile.
+
+Module not found: Error: Can't resolve './characterSelect.css' in 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\src\TypingBoss'
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\TypingBoss\TypingBossApp.tsx
+  Line 195:10:  'normalizeClassSelection' is defined but never used  @typescript-eslint/no-unused-vars
+
+ERROR in ./src/TypingBoss/CharacterSelect.tsx 11:0-31
+Module not found: Error: Can't resolve './characterSelect.css' in 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\src\TypingBoss'
+
+webpack compiled with 1 error and 2 warnings
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+[eslint] 
+src\TypingBoss\TypingBossApp.tsx
+  Line 195:10:  'normalizeClassSelection' is defined but never used  @typescript-eslint/no-unused-vars
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+WARNING in [eslint] 
+src\TypingBoss\TypingBossApp.tsx
+  Line 195:10:  'normalizeClassSelection' is defined but never used  @typescript-eslint/no-unused-vars
+
+webpack compiled with 2 warnings
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Compiling...
+No issues found.
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+Files successfully emitted, waiting for typecheck results...
+Issues checking in progress...
+No issues found.
+Compiling...
+Compiled with warnings.
+
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+Search for the keywords to learn more about each warning.
+To ignore, add // eslint-disable-next-line to the line before.
+
+WARNING in ./node_modules/@mediapipe/tasks-vision/vision_bundle.mjs
+Module Warning (from ./node_modules/source-map-loader/dist/cjs.js):
+Failed to parse source map from 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map' file: Error: ENOENT: no such file or directory, open 'C:\Users\Kathleen Dippyolito\Documents\Clemente Projects\cougar-cash\node_modules\@mediapipe\tasks-vision\vision_bundle_mjs.js.map'
+
+webpack compiled with 1 warning
+No issues found.

@@ -109,7 +109,7 @@ test("every class conserves its 80/20 power allocation and defensive overflow be
 test("ordinary colors bank resources; only their perfect glowing triggers activate them",()=>{
   for(const ability of ['cleric','barbarian','paladin','rogue','necromancer','monk','dragon']) {
     for(const [color,position] of [['orange',0],['blue',20],['green',40],['red',80]]) {
-      const state=balanced(ability);state.balancedCharacters=position;state.wordsInAttack=1;
+      const state=balanced(ability);Object.assign(state,{balancedOrangeAt:1e9,balancedCritAt:1e9,balancedBlueAt:1e9,balancedSpecialAt:1e9,balancedGreenAt:1e9});state.balancedCharacters=position;state.wordsInAttack=1;
       const rec=record(state);finish(state,rec);
       assert.equal(state.balancedPower,rec[1].length);
       assert.equal(state.balancedGuard,0);assert.equal(state.balancedCritBonus,0);
@@ -130,46 +130,46 @@ test("ordinary colors bank resources; only their perfect glowing triggers activa
   }
 });
 
-test("crit appears every 134 correct characters and missed triggers wait for their next slot",()=>{
+test("crit appears every 131 correct characters and missed triggers wait for their next slot",()=>{
   const state=balanced("cleric");
-  assert.equal(state.balancedCritAt,134);
-  assert.equal(state.balancedSpecialAt,150);
-  state.balancedCharacters=133;
+  assert.equal(state.balancedCritAt,51);
+  assert.equal(state.balancedSpecialAt,109);
+  state.balancedCharacters=130;
   assert.notEqual(r.typingWord(state).color,"red");
-  trigger(state,"red",134);state.balancedCritCharge=12.5;
+  trigger(state,"red",131);state.balancedCritCharge=12.5;
   assert.equal(r.typingWord(state).color,"red");
   finish(state,record(state,150,true));
   assert.notEqual(r.typingWord(state).color,"red");
-  assert.equal(state.balancedCritAt,268);
+  assert.equal(state.balancedCritAt,262);
   assert.equal(state.balancedCritBonus,0);
-  state.balancedCharacters=268;
+  state.balancedCharacters=262;
   assert.equal(r.typingWord(state).color,"red");
   const bank=state.balancedCritCharge;
   finish(state,record(state));
   assert.ok(state.balancedCritBonus*100>bank);
   assert.equal(state.balancedCritCharge,0);
-  assert.equal(state.balancedCritAt,402);
+  assert.equal(state.balancedCritAt,393);
   state.balancedPower=10;state.characters=8; // A red word enhances separately earned white ATK.
   assert.equal(r.releaseAttack(state,noDice).critical,true);
   assert.equal(r.releaseAttack(state,noDice).criticalPower,0);
 });
 
-test("missed gold expires and returns at the next 150-character slot",()=>{
+test("missed gold expires and returns at the next 139-character slot",()=>{
   const state=balanced("barbarian");
-  state.balancedCharacters=149;
+  state.balancedCharacters=138;
   assert.notEqual(r.typingWord(state).color,"gold");
-  trigger(state,"gold",150);
+  trigger(state,"gold",139);
   assert.equal(r.typingWord(state).color,"gold");
   finish(state,record(state,150,true));
   assert.equal(state.gold,0);
-  assert.equal(state.balancedSpecialAt,300);
+  assert.equal(state.balancedSpecialAt,278);
   assert.notEqual(r.typingWord(state).color,"gold");
-  state.balancedCharacters=300;
+  state.balancedCharacters=278;
   const size=state.attackWords;
   finish(state,record(state));
   assert.equal(state.gold,1);
   assert.equal(state.attackWords,size+2);
-  assert.equal(state.balancedSpecialAt,450);
+  assert.equal(state.balancedSpecialAt,417);
 });
 
 test("host switch defaults off, validates and locks, and balanced actors share content",()=>{
@@ -182,7 +182,7 @@ test("host switch defaults off, validates and locks, and balanced actors share c
   for(const player of s.players.values()) {
     assert.equal(player.typing.seed,s.typingHost.seed);
     assert.equal(player.typing.balancedGuardMax,150);
-    assert.deepEqual(r.typingWord(player.typing),r.typingWord(s.typingHost));
+    assert.equal(r.typingWord(player.typing).text,r.typingWord(s.typingHost).text);
   }
   s.status="active";
   assert.throws(()=>engine.applyBalanced(s,false),/lock/);
@@ -239,7 +239,7 @@ test("successful dodges spend 100 banked points, preserve overflow and Block, an
   }
 });
 
-test("Cleric retains full base power instead of reserving 20 percent on gold",()=>{
+test("Cleric gold converts full base power into shared healing",()=>{
   const s=session();engine.applyBalanced(s,true);s.status="active";s.boss.hp=1000;
   const player=s.players.get("0");player.hp=95;
   const timers=[];const cb={schedule:(_,fn)=>timers.push(fn),broadcast:()=>{},random:noDice};
@@ -247,11 +247,12 @@ test("Cleric retains full base power instead of reserving 20 percent on gold",()
   const attack=r.releaseAttack(player.typing);
   assert.equal(attack.power,125);assert.equal(attack.supportPower,0);
   engine.launchAttack(s,player,attack,cb);
-  assert.equal(player.hp,95);
-  assert.equal(s.projectiles[0].kind,"damage");
-  timers.shift()();
-  assert.equal(s.boss.hp,875);
-  assert.equal(player.totalDamage+(player.totalHealing || 0),125);
+  assert.equal(player.hp,100);
+  assert.equal(s.projectiles[0].kind,"heal");
+  assert.equal(timers.length,0);
+  assert.equal(s.boss.hp,1000);
+  assert.equal(player.totalHealing,5);
+  assert.equal(s.clericHealingPool,125/[...s.players.values()].filter(p=>p.classId==='cleric').length-5);
 });
 test("balanced batches validate actual key gaps atomically and remain retry-safe",()=>{
   const s=session();engine.applyBalanced(s,true,false);s.status="active";
@@ -286,7 +287,7 @@ test("scheduled client and server agree through all triggers, attack releases an
 test("green transition earnings reward smooth word starts independently from within-word cadence",()=>{
   const {previewBalancedWord}=require('../src/TypingBoss/balancedRules');
   const smooth=balanced('rogue'),paused=balanced('rogue');
-  for(const state of [smooth,paused])Object.assign(state,{balancedCharacters:40,wordsInAttack:1});
+  for(const state of [smooth,paused])Object.assign(state,{balancedCharacters:40,wordsInAttack:1,balancedOrangeAt:1e9,balancedCritAt:1e9,balancedBlueAt:1e9,balancedSpecialAt:1e9,balancedGreenAt:1e9});
   for(const [state,transition] of [[smooth,100],[paused,1000]]) {
     const rec=record(state,100);rec[6][0]=transition;
     rec[3]=rec[6].reduce((a,b)=>a+b,0);rec[4]=rec[6].reduce((a,b)=>a+b*b,0);rec[5]=transition;
@@ -308,4 +309,56 @@ test("green transition earnings reward smooth word starts independently from wit
     assert.equal(attack.power,(base+10)*1.25);
     assert.equal(state.balancedCritBonus,0);
   }
+});
+
+test('scheduled prime intervals minimize exact overlaps and force a trigger by the third short attack',()=>{
+  const {TRIGGER_INTERVALS,balancedTrigger}=require('../src/TypingBoss/balancedRules');
+  assert.deepEqual(Object.values(TRIGGER_INTERVALS),[127,131,137,139,149]);
+  const state=balanced('rogue');
+  Object.assign(state,{balancedOrangeAt:1e9,balancedCritAt:1e9,balancedBlueAt:1e9,balancedSpecialAt:1e9,balancedGreenAt:1e9});
+  for(let attack=0;attack<2;attack++){
+    state.attackWords=1;finish(state,record(state));r.releaseAttack(state,noDice);
+  }
+  assert.ok(balancedTrigger(state),'the third attack must open with a trigger even for very short words');
+  finish(state,record(state));
+  assert.equal(state.balancedAttacksWithoutTrigger,0);
+});
+
+test('Monk random colors double gold to six percent and scale all other chances proportionally',()=>{
+  const odds=r.MONK_BALANCED_COLOR_CHANCES;
+  assert.ok(Math.abs(Object.values(odds).reduce((a,b)=>a+b,0)-100)<1e-10);
+  assert.equal(odds.gold,6);
+  for(const color of ['white','orange','blue','green','red'])assert.equal(odds[color],r.BALANCED_COLOR_CHANCES[color]*94/97);
+  const monk=balanced('monk'),other=balanced('cleric');monk.balancedRandomColors=other.balancedRandomColors=true;
+  const counts={white:0,orange:0,blue:0,green:0,red:0,gold:0};
+  for(let i=0;i<30000;i++) {const word=r.typingWord(monk,i);counts[word.color || 'white']++;assert.equal(word.text,r.typingWord(other,i).text);assert.deepEqual(word,r.typingWord({...monk},i));}
+  for(const [color,chance] of Object.entries(odds))assert.ok(Math.abs(counts[color]/300-chance)<1);
+});
+
+test('Monk scheduled specials start and repeat twice as often, without changing other trigger intervals',()=>{
+  const monk=balanced('monk'),other=balanced('cleric');
+  assert.equal(monk.balancedSpecialAt,other.balancedSpecialAt/2);
+  for(const key of ['balancedOrangeAt','balancedCritAt','balancedBlueAt','balancedGreenAt'])assert.equal(monk[key],other[key]);
+  trigger(monk,'gold',200);trigger(other,'gold',200);
+  finish(monk,record(monk));finish(other,record(other));
+  assert.equal(monk.balancedSpecialAt,269.5);assert.equal(other.balancedSpecialAt,339);
+});
+
+test('random-color Quality gives the full bonus through the gentler floor and speed-based allowance',()=>{
+  const {recordBalancedWord}=require('../src/TypingBoss/balancedRules');
+  for(const pace of [100,60000/(45*5)]) {
+    const allowance=Math.max(300,2*pace+100);
+    for(const extra of [0,1]) {
+      const state=balanced('barbarian');state.balancedRandomColors=true;
+      recordBalancedWord(state,'abcdef','abcdef',[pace,pace,allowance+extra,pace,pace],true,null);
+      assert.equal(state.balancedPower,extra===0?7.5:7.25);
+    }
+  }
+});
+
+test('the gentler Quality allowance boosts orange bank earnings without adding white base attack',()=>{
+  const {recordBalancedWord}=require('../src/TypingBoss/balancedRules');
+  const state=balanced('barbarian');state.balancedRandomColors=true;
+  recordBalancedWord(state,'abcdef','abcdef',[100,100,300,100,100],true,'orange');
+  assert.equal(state.balancedOrangePower,7.5);assert.equal(state.balancedPower,0);
 });

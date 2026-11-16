@@ -1,3 +1,6 @@
+import CharacterSelect from './CharacterSelect';
+import RecoveryBar from './RecoveryBar';
+import RecoveryNotice from './RecoveryNotice';
 import WordFilterChips, { WordFilters, filteredWordCount } from "../typingProject/components/WordFilterChips";
 import { SENTIMENTS } from "../typingProject/resources/homeRowWordBank";
 import { initializeBalanced, proportionalPlayerPoint } from "./proportionalRules";
@@ -65,6 +68,7 @@ import {
 } from "react-router-dom";
 import {
   closeTypingBossSession,
+  rematchTypingBossSession,
   createTypingBossChallenge,
   createTypingBossParticipant,
   createTypingBossSession,
@@ -177,22 +181,6 @@ const CLASS_PROJECTILE_ASSETS: Record<
     strong: TYPING_BOSS_ASSETS.clericStrongAttack,
   },
 };
-
-const CLASS_ORDER: TypingBossClassId[] = [
-  "cleric",
-  "barbarian",
-  "paladin",
-  "rogue",
-  "necromancer",
-  "monk",
-];
-const CLASS_ID_SET = new Set<string>(CLASS_ORDER);
-
-function normalizeClassSelection(value: unknown): TypingBossClassId {
-  return typeof value === "string" && CLASS_ID_SET.has(value)
-    ? (value as TypingBossClassId)
-    : "cleric";
-}
 
 const CLASS_INFO: Record<
   TypingBossClassId,
@@ -685,7 +673,7 @@ function useTypingBossSessionStream(
     function rememberExpiry(incoming: TypingBossSessionSnapshot) {
       if (incoming.status === "expired") removeSavedCredential(sessionId!, role, credential);
       else saveCredential(sessionId!, role, credential, incoming.expiresAt);
-      if (["victory", "defeat", "closed", "expired"].includes(incoming.status)) source.close();
+      if (["closed", "expired"].includes(incoming.status)) source.close();
     }
 
     async function checkSessionStillExists() {
@@ -721,7 +709,7 @@ function useTypingBossSessionStream(
       if (closed) return;
       const patch = JSON.parse((event as MessageEvent<string>).data) as SessionPatch;
       if (patch.expiresAt) saveCredential(sessionId!, role, credential, patch.expiresAt);
-      if (patch.status && ["victory", "defeat", "closed", "expired"].includes(patch.status)) {
+      if (patch.status && ["closed", "expired"].includes(patch.status)) {
         if (patch.status === "expired") removeSavedCredential(sessionId!, role, credential);
         source.close();
       }
@@ -765,9 +753,9 @@ function useTypingBossSessionStream(
   };
 }
 
-function PageFrame({ children }: { children: React.ReactNode }) {
+function PageFrame({ children, wide=false, battle=false }: { children: React.ReactNode; wide?:boolean; battle?:boolean }) {
   return (
-    <Box
+    <Box className={battle ? 'battle-live-page' : undefined}
       sx={{
         minHeight: "100vh",
         bgcolor: "background.default",
@@ -775,9 +763,18 @@ function PageFrame({ children }: { children: React.ReactNode }) {
         py: { xs: 2, md: 3 },
       }}
     >
-      <Container maxWidth="xl">{children}</Container>
+      <Container maxWidth={wide ? false : "xl"}>{children}</Container>
     </Box>
   );
+}
+
+export function BattleMenu({status,children}:{status:string;children:React.ReactNode}) {
+  const [expanded,setExpanded]=useState(status==='setup');
+  useEffect(()=>{setExpanded(status==='setup');},[status]);
+  return <Accordion className="battle-menu" disableGutters expanded={expanded} onChange={(_event,value)=>setExpanded(value)}>
+    <AccordionSummary expandIcon={<ExpandMoreIcon/>}><Typography fontWeight={800}>Battle menu</Typography></AccordionSummary>
+    <AccordionDetails>{children}</AccordionDetails>
+  </Accordion>;
 }
 
 function LoadingPanel({ label }: { label: string }) {
@@ -1252,6 +1249,7 @@ function HostSessionPage() {
   );
   const [copied, setCopied] = useState(false);
   const [hpMultiplier, setHpMultiplier] = useState(1);
+  const [autoRevive, setAutoRevive] = useState(true);
   const [balanced, setBalanced] = useState(false);
   const [balancedRandomColors,setBalancedRandomColors] = useState(true);
   const [wordFilters, setWordFilters] = useState<WordFilters>({});
@@ -1324,10 +1322,11 @@ function HostSessionPage() {
   }
 
   return (
-    <PageFrame>
-      <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
+    <PageFrame wide battle={session.mode==='proportional' && session.status==='active'}>
       <ReconnectOverlay show={reconnecting} />
-      <Stack spacing={2}>
+      <Stack spacing={2} className="battle-session-stack">
+        <BattleMenu status={session.status}>
+      <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
         <Stack
           direction={{ xs: "column", md: "row" }}
           justifyContent="space-between"
@@ -1381,12 +1380,14 @@ function HostSessionPage() {
               disabled={busy || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
               onClick={() =>
                 runHostAction(() =>
-                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors)
+                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors, autoRevive)
                 )
               }
             >
               Start
             </Button>
+            {["victory", "defeat"].includes(session.status) && <Button variant="contained" disabled={busy}
+              onClick={() => runHostAction(() => rematchTypingBossSession(normalizedSessionId, hostToken))}>Rematch</Button>}
             <Button
               variant="outlined"
               color="error"
@@ -1403,14 +1404,12 @@ function HostSessionPage() {
           </Stack>
         </Stack>
 
-        {actionError && <Alert severity="error">{actionError}</Alert>}
-        {streamError && !reconnecting && <Alert severity="warning">{streamError}</Alert>}
-
-        {session.mode === "proportional" ? <>
-          {session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
+          {session.mode === "proportional" && session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
+            <FormControlLabel label="Auto revive" control={<Switch checked={autoRevive} onChange={(_event,checked)=>setAutoRevive(checked)} disabled={busy} inputProps={{'aria-label':'Auto revive'}}/>}/>
+            <Typography variant="body2">{autoRevive ? `Each KO starts its own timer right away: 10 seconds + 3 seconds per player + 3 seconds per prior team KO. Heroes downed together get their delays in random order.` : 'Automatic recovery is off. Necromancers can still revive fallen players.'}</Typography>
             <FormControlLabel label="Balanced" control={<Switch checked={balanced} onChange={(_event, checked) => setBalanced(checked)} disabled={busy} inputProps={{ "aria-label": "Balanced" }} />} />
             {balanced && <FormControlLabel label="Random colors" control={<Switch checked={balancedRandomColors} onChange={(_event,checked)=>setBalancedRandomColors(checked)} disabled={busy} inputProps={{"aria-label":"Random colors"}}/>}/>}
-            {balanced && <Typography variant="body2">{balancedRandomColors ? "Color chances per word: white 40%, orange 20%, blue 18%, green 15%, crit 4%, special 3%. Banking stays active." : "Glowing triggers: extra attack every 120 correct letters, crit 134, Block 140, special 150, Dodge 160. Ordinary colored words bank power until their trigger."}</Typography>}
+            {balanced && <Typography variant="body2">{balancedRandomColors ? "Color chances per word: white 40%, orange 20%, blue 18%, green 15%, crit 4%, special 3%. Monks get 6% specials; their other chances scale down to keep the total at 100%. Banking stays active." : "Glowing triggers: extra attack every 127 correct letters, crit 131, Block 137, special 139, Dodge 149. First triggers are staggered; a trigger appears by every third attack. Monk specials repeat twice as often. Ordinary colored words bank power until their trigger."}</Typography>}
             <Typography variant="body2" sx={{ color:"text.secondary" }}>{balanced ? "Skill-earned power, shared words and banking. Color settings lock at Start." : "Randomized colors, critical hits, dodges, and boss patterns."}</Typography>
             <WordFilterChips value={wordFilters} onChange={setWordFilters} disabled={busy} />
             <Typography id="hp-multiplier-label" fontWeight={900}>HP multiplier: ×{hpMultiplier}</Typography>
@@ -1421,8 +1420,14 @@ function HostSessionPage() {
               disabled={busy} valueLabelDisplay="auto" onChange={(_event, value) => setHpMultiplier(value as number)}
               marks={[{ value: 1, label: "1×" }, { value: 1.25, label: "1.25×" }, { value: 1.5, label: "1.5×" }]} />
           </Paper>}
+        <HostBattleLog key={session.id} session={session} />
+        </BattleMenu>
+        {actionError && <Alert severity="error">{actionError}</Alert>}
+        {streamError && !reconnecting && <Alert severity="warning">{streamError}</Alert>}
+
+        {session.mode === "proportional" ? <>
           <HostBattlefield session={lobbyPreview!} />
-          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${normalizedSessionId}:${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}:${balanced}:${balancedRandomColors}`} sessionId={normalizedSessionId} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected}
+          {filteredWordCount(wordFilters) > 0 && <ContinuousTyping key={`${normalizedSessionId}:${session.status}:${lobbyPreview!.typing!.seed}:${lobbyPreview!.typing!.gradeMask}:${lobbyPreview!.typing!.sentimentMask}:${balanced}:${balancedRandomColors}`} sessionId={normalizedSessionId} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} credentials={{ hostToken }} state={lobbyPreview!.typing!} active={session.status === "active" && connected}
             hostProfile={{boss:lobbyPreview!.boss,events:collectCombatAnimations(session.projectiles).get("boss") || NO_ANIMATION_EVENTS,serverNow:session.serverNow}} />}
         </> : <Grid container spacing={2}>
           <Grid item xs={12} lg={8}>
@@ -1435,7 +1440,6 @@ function HostSessionPage() {
             </Stack>
           </Grid>
         </Grid>}
-        <HostBattleLog key={session.id} session={session} />
       </Stack>
       <HostCodeModal
         open={codeModalOpen}
@@ -1448,6 +1452,8 @@ function HostSessionPage() {
         onClose={() => setStatsOpen(false)}
       />
       <BattleOutcomeModal
+        onRematch={() => runHostAction(() => rematchTypingBossSession(normalizedSessionId, hostToken))}
+        busy={busy}
         host
         open={
           ["victory", "defeat"].includes(session.status) &&
@@ -1501,150 +1507,10 @@ function JoinPage() {
     }
   }
 
-  return (
-    <PageFrame>
-      <Stack spacing={3}>
-        <Button
-          component={RouterLink}
-          to="/typing-boss"
-          startIcon={<HomeIcon />}
-          sx={{ alignSelf: "flex-start", color: "text.secondary" }}
-        >
-          Typing Boss
-        </Button>
-
-        <Box>
-          <Typography variant="h3" sx={{ fontWeight: 950, letterSpacing: 0 }}>
-            Join a Game
-          </Typography>
-            <Typography sx={{ color: "text.secondary", mt: 1 }}>
-            Choose your class and a friendly hero name, then enter the host’s three-character code. In proportional mode, all classes start with 100 HP, and perfect gold words activate a class ability. The move descriptions below apply to old mode.
-          </Typography>
-        </Box>
-
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={5}>
-            <Paper
-              elevation={0}
-              sx={{ border: "1px solid #31394a", borderRadius: 2, p: 2.5 }}
-            >
-              <Stack spacing={2}>
-                <TextField
-                  fullWidth
-                  label="Session code"
-                  value={sessionDigits}
-                  onChange={(event) =>
-                    setSessionDigits(
-                      event.target.value
-                        .replace(/^boss/i, "")
-                        .toUpperCase()
-                        .replace(/[^0-9A-F]/g, "")
-                        .slice(0, 3)
-                    )
-                  }
-                  helperText="The three characters shown on the host’s screen"
-                  inputProps={{ maxLength: 7, autoCapitalize: "characters" }}
-                />
-                <TextField
-                  fullWidth
-                  label="Player name"
-                  value={name}
-                  InputProps={{ readOnly: true }}
-                  helperText="A short, classroom-friendly name. Shuffle to pick another."
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      event.preventDefault();
-                      handleJoin();
-                    }
-                  }}
-                />
-                <Button variant="outlined" disabled={busy} onClick={() => setName(previous => generateJoinName(previous))}>
-                  Shuffle name
-                </Button>
-                <TextField
-                  select
-                  fullWidth
-                  label="Class"
-                  value={classId}
-                  onChange={(event) =>
-                    setClassId(normalizeClassSelection(event.target.value))
-                  }
-                >
-                  {CLASS_ORDER.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {CLASS_INFO[item].label}
-                    </MenuItem>
-                  ))}
-                </TextField>
-                {error && <Alert severity="error">{error}</Alert>}
-                <Button
-                  variant="contained"
-                  startIcon={<PersonAddIcon />}
-                  disabled={busy || !SESSION_ID_PATTERN.test(normalizedSessionId)}
-                  onClick={handleJoin}
-                >
-                  Join
-                </Button>
-              </Stack>
-            </Paper>
-          </Grid>
-
-          <Grid item xs={12} md={7}>
-            <Grid container spacing={2}>
-              {CLASS_ORDER.map((item) => {
-                const info = CLASS_INFO[item];
-                return (
-                <Grid item xs={12} sm={6} md={4} key={item}>
-                  <Paper
-                    role="button"
-                    tabIndex={0}
-                    aria-pressed={classId === item}
-                    elevation={0}
-                    onClick={() => setClassId(item)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setClassId(item);
-                      }
-                    }}
-                    sx={{
-                      border:
-                        classId === item
-                          ? "2px solid #67e8f9"
-                          : "1px solid #31394a",
-                      borderRadius: 2,
-                      p: 2,
-                      cursor: "pointer",
-                      minHeight: 238,
-                      bgcolor: `${info.color}14`,
-                    }}
-                  >
-                    <Stack spacing={1.5}>
-                      <Stack direction="row" spacing={1.5} alignItems="center">
-                        <PlayerCharacterSprite
-                          classId={item}
-                          color={info.color}
-                          size={104}
-                        />
-                        <ClassMark classId={item} size={42} />
-                      </Stack>
-                      <Typography variant="h5" sx={{ fontWeight: 950 }}>
-                        {info.label}
-                      </Typography>
-                      <Typography sx={{ color: "text.secondary" }}>
-                        {info.detail}
-                      </Typography>
-                    </Stack>
-                  </Paper>
-                </Grid>
-                );
-              })}
-            </Grid>
-          </Grid>
-        </Grid>
-      </Stack>
-    </PageFrame>
-  );
+  return <CharacterSelect classId={classId} onClassChange={setClassId} name={name}
+    onShuffle={()=>setName(previous=>generateJoinName(previous))} code={sessionDigits}
+    onCodeChange={value=>setSessionDigits(value.replace(/^boss/i,'').toUpperCase().replace(/[^0-9A-F]/g,'').slice(0,3))}
+    onJoin={handleJoin} busy={busy} error={error} canJoin={SESSION_ID_PATTERN.test(normalizedSessionId)}/>;
 }
 
 function PlayerSessionPage() {
@@ -1721,6 +1587,7 @@ function PlayerSessionPage() {
     return (
       <PageFrame>
         <Alert severity="warning">{verifyError}</Alert>
+        <Button component={RouterLink} to={`/typing-boss/join?session=${normalizedSessionId}`}>Choose a character</Button>
       </PageFrame>
     );
   }
@@ -1737,6 +1604,10 @@ function PlayerSessionPage() {
     );
   }
 
+  if (["closed", "expired"].includes(session.status)) {
+    return <PageFrame><Alert severity="info">{session.status === "closed" ? "The host closed this room." : "This room has expired."}</Alert>
+      <Button component={RouterLink} to="/typing-boss/join">Join another room</Button></PageFrame>;
+  }
   const me = session.players.find((player) => player.code === playerCode);
   if (!me) {
     return (
@@ -1748,10 +1619,10 @@ function PlayerSessionPage() {
   }
 
   return (
-    <PageFrame>
-      <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
+    <PageFrame wide battle={session.mode==='proportional' && session.status==='active'}>
+      <BattleMenu status={session.status}>      <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button></BattleMenu>
       <ReconnectOverlay show={reconnecting} />
-      {session.mode === "proportional" ? <Stack spacing={2}>
+      {session.mode === "proportional" ? <Stack spacing={2} className="battle-session-stack">
         <PlayerTypingBattle session={session} me={me} code={playerCode} playerToken={playerToken} active={session.status === "active" && !me.defeated && !reconnecting} />
         {session.leaderboard && <BattleLeaderboard entries={session.leaderboard} />}
       </Stack> : <PlayerBattlePanel
@@ -3043,7 +2914,11 @@ function BattleOutcomeModal({
   onClose,
   onStats,
   host = false,
+  onRematch,
+  busy = false,
 }: {
+  onRematch?: () => void;
+  busy?: boolean;
   open: boolean;
   session: TypingBossSessionSnapshot;
   onClose: () => void;
@@ -3076,9 +2951,9 @@ function BattleOutcomeModal({
         <Button onClick={onStats} variant="outlined">
           See Stats
         </Button>
-        <Button component={RouterLink} to="/typing-boss/join" variant="contained">
-          Join a Game
-        </Button>
+        {onRematch ? <Button onClick={onRematch} disabled={busy} variant="contained">Rematch</Button> :
+          <Typography color="text.secondary">Waiting for the host to start a rematch.</Typography>}
+        <Button onClick={onClose}>Back to battle</Button>
       </DialogActions>
     </Dialog>
   );
@@ -3335,9 +3210,11 @@ export function PlayerTypingBattle({ session, me, code, playerToken, active }: {
   const dragonEvents=personalAnimations.get('boss') || NO_ANIMATION_EVENTS;
   const personalBoss=useMemo(()=>({...session.boss,hurt:undefined,flameBreath:undefined,queuedStrongReactions:undefined,queuedAttacks:undefined}),[session.boss]);
   const personalPositions=useMemo(()=>layout ? new Map([[me.code,layout.positions.get(me.code)!]]) : new Map<string,Point>(),[layout,me.code]);
-  return <Stack spacing={2}>
+  return <Stack spacing={2} className="player-battle-stack">
+    <RecoveryNotice player={me} active={session.status==='active'} serverNow={session.serverNow}/>
+    {me.classId==='necromancer' && <Chip label={`Revival healing bank ${Math.round((session.necroHealingPool || 0)*100)/100}`} />}
     <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} />
-    <Box ref={rootRef} data-testid="personal-typing-stage" sx={{ position: "relative" }}>
+    <Box ref={rootRef} data-testid="personal-typing-stage" className="personal-typing-stage" sx={{ position: "relative" }}>
       <ContinuousTyping key={`${session.id}:${session.typing!.seed}:${session.typing!.balanced}`} sessionId={session.id} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} teamActivity={session.teamActivity} credentials={{ code, playerToken }} state={session.typing!} active={active}
         profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef }}
         dragonProfile={{ boss: personalBoss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
@@ -3358,13 +3235,25 @@ export function BattleScene({ session, ownCode, sceneRef }: {
   const quiet=Boolean(ownCode && session.mode==='proportional');
   const animations = useMemo(() => quiet ? new Map<string,CombatAnimationEvent[]>() : collectCombatAnimations(session.projectiles), [session.projectiles,quiet]);
   const positions = useBattlePositions(session.players, arena.hostSpawns, session.mode === 'proportional');
+  const stageRef=useRef<HTMLDivElement>(null),[stageWidth,setStageWidth]=useState(1000),[stageHeight,setStageHeight]=useState(1000);
+  useEffect(()=>{
+    const node=stageRef.current;
+    if(!node)return;
+    const measure=(width:number,height:number)=>{if(width>0)setStageWidth(Math.round(width));if(height>0)setStageHeight(Math.round(height));};
+    const bounds=node.getBoundingClientRect();measure(bounds.width,bounds.height);
+    if(typeof ResizeObserver==='undefined')return;
+    const observer=new ResizeObserver(entries=>measure(entries[0].contentRect.width,entries[0].contentRect.height));
+    observer.observe(node);
+    return ()=>observer.disconnect();
+  },[]);
+  const formationScale=Math.max(.12,Math.min(1,stageWidth/1000,stageHeight/1000));
   const density = session.players.length > 20 && !quiet ? "minimal" : session.players.length > 10 ? "compact" : "normal";
 
   return (
-    <Box data-overview={quiet} className={`${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} sx={{ overflowX: "auto" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
+    <Box data-overview={quiet} className={`battle-scene ${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} ref={stageRef} sx={{ width:"100%", maxWidth:"100%", minWidth:0, overflow:"hidden" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
       <BattleCountdown session={session}/>
-      <BattlefieldShell sceneRef={sceneRef} minWidth={session.mode === "proportional" ? 960 : undefined} minHeight={session.mode === "proportional" ? Math.max(540, 440 + Math.ceil(session.players.length / 4) * 48) : 640}>
-        <BossNode quiet={quiet} session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
+      <BattlefieldShell sceneRef={sceneRef} minHeight={session.mode === "proportional" ? Math.max(640,Math.min(1000,stageWidth*1.2)) : 640}>
+        <BossNode quiet={quiet} visualScale={Math.min(1,stageHeight/600,stageWidth/900)} session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
         {session.players.map((player) => (
           <PlayerNode
             key={player.code}
@@ -3373,6 +3262,7 @@ export function BattleScene({ session, ownCode, sceneRef }: {
             point={positions.get(player.code) || { x: 50, y: 80 }}
             compact={session.mode === "proportional" || session.players.length > 6}
             proportional={session.mode === "proportional"}
+            formationScale={formationScale}
             density={density}
             sessionId={session.id}
             highlight={player.code === ownCode}
@@ -3400,10 +3290,14 @@ function BattlefieldShell({
   return (
     <Box
       ref={sceneRef}
+      className="battlefield-shell"
       sx={{
         position: "relative",
         minHeight,
-        minWidth,
+        minWidth: minWidth || 0,
+        width:"100%",
+        maxWidth:"100%",
+        boxSizing:"border-box",
         height: { xs: minHeight, md: minHeight },
         border: "2px solid #120707",
         borderRadius: 2,
@@ -3426,7 +3320,9 @@ function BossNode({
   events,
   clock,
   quiet=false,
+  visualScale=1,
 }: {
+  visualScale?:number;
   quiet?:boolean;
   session: TypingBossSessionSnapshot;
   point: Point;
@@ -3435,11 +3331,11 @@ function BossNode({
   clock: React.MutableRefObject<number>;
 }) {
   const pose = useDragonCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, quiet ? null : session.boss.hurt, session.status !== "setup" && session.boss.hp <= 0, clock, quiet ? null : session.boss.flameBreath);
-  const dragonWidth = session.mode === "proportional" ? size === "host" ? { xs: 230, md: 300 } : { xs: 240, md: 320 } : bossBattleWidth(session.boss.id, size);
+  const dragonWidth = session.mode === "proportional" ? size === "host" ? { xs: 230*visualScale, md: 300*visualScale } : { xs: 240*visualScale, md: 320*visualScale } : bossBattleWidth(session.boss.id, size);
   const latestAttack = session.projectiles.filter(projectile => projectile.source === "boss").slice(-1)[0];
   return (
     <>
-      <Box
+      <Box className="battle-boss-hud"
         sx={{
           position: "absolute",
           right: "3%",
@@ -3545,7 +3441,9 @@ const PlayerNode = React.memo(function PlayerNode({
   proportional = false,
   sessionId = "",
   density = "normal",
+  formationScale = 1,
 }: {
+  formationScale?: number;
   player: TypingBossPlayer;
   point: Point;
   compact?: boolean;
@@ -3558,7 +3456,7 @@ const PlayerNode = React.memo(function PlayerNode({
   density?: "normal" | "compact" | "minimal";
 }) {
   const formation = proportional && compact;
-  const width = formation ? "9%" : compact ? 132 : 170;
+  const width = formation ? "5.8%" : compact ? 132 : 170;
   const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
   const pose = useCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, player.defeated, clock);
@@ -3573,7 +3471,8 @@ const PlayerNode = React.memo(function PlayerNode({
         zIndex: 3,
       }}
     >
-      <Stack direction={formation && !(quiet && density === "compact") ? "row" : "column"} spacing={0.5} alignItems="center">
+      <Stack data-formation-scale={formation ? formationScale : undefined} direction="column" spacing={0.5} alignItems="center"
+        sx={formation ? {width:`${100/formationScale}%`,position:'relative',left:`${(100-100/formationScale)/2}%`,transform:`scale(${formationScale})`,transformOrigin:'center'} : undefined}>
         <Stack
           direction="row"
           spacing={0.5}
@@ -3581,6 +3480,7 @@ const PlayerNode = React.memo(function PlayerNode({
           justifyContent="center"
         >
           <Box sx={{ position: "relative", flexShrink: 0 }}>
+          <RecoveryBar player={player} clock={clock}/>
           {highlight && <Box role="img" aria-label="Your character" className="own-character-arrow">
             <svg width="24" height="30" viewBox="0 0 24 30" aria-hidden="true">
               <path d="M2 2 L22 2 L12 28 Z" fill="#22c55e" stroke="#052e16" strokeWidth="2" strokeLinejoin="round" />
@@ -3653,11 +3553,11 @@ const PlayerNode = React.memo(function PlayerNode({
             )}
           </Stack>}
         </Stack>
-        {density !== "minimal" && <Box sx={{ width: quiet && density === "compact" ? 32 : density === "compact" ? "65%" : "100%", minWidth:0, flexShrink: 0, textAlign: "center" }}>
-          {density === "normal" && <Typography
+        {(proportional || density !== "minimal") && <Box sx={{ width: proportional ? "100%" : quiet && density === "compact" ? 32 : density === "compact" ? "65%" : "100%", minWidth:0, flexShrink: 0, textAlign: "center" }}>
+          {(proportional || density === "normal") && <Typography
             sx={{
               fontWeight: 950,
-              fontSize: compact ? 12 : 14,
+              fontSize: formation ? 12 : compact ? 12 : 14,
               lineHeight: formation ? 1.2 : undefined,
               overflow: "hidden",
               textOverflow: "ellipsis",
@@ -3668,7 +3568,7 @@ const PlayerNode = React.memo(function PlayerNode({
           >
             {player.name}
           </Typography>}
-          {proportional && !quiet && <AttackProgressBar sessionId={sessionId} actor={player.code} progress={player.attackProgress} label={`${player.name} attack progress`} compact={compact} dense={density === "compact"} />}
+          {proportional && !quiet && density !== "minimal" && <AttackProgressBar sessionId={sessionId} actor={player.code} progress={player.attackProgress} label={`${player.name} attack progress`} compact={compact} dense={density === "compact"} />}
           <StatBar
             value={player.hp}
             max={player.maxHp}

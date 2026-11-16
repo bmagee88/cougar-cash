@@ -1,0 +1,1109 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest
+
+FAIL src/TypingBoss/BattleScene.test.tsx (10.062 s)
+  ● only personal projectiles animate beside the profiles while the overview stays still
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/BattleScene.test.tsx:91:24)
+
+  ● the student dragon profile reacts only to their hits and relevant incoming attacks
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/BattleScene.test.tsx:110:26)
+
+  ● roster HP and charge updates reuse portrait geometry, while new formation slots remeasure
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/BattleScene.test.tsx:130:22)
+
+  ● joining another room resets typing even though both private-seed placeholders are zero
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/BattleScene.test.tsx:146:20)
+
+FAIL src/TypingBoss/ContinuousBattle.test.tsx
+  ● protected typing never advances on wrong keys, preserves ATK, and cannot claim a perfect trigger after correction
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:44:9)
+
+  ● full attack preview stays visible and waits on the required space after a word
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:68:9)
+
+  ● protected typing waits at the issued window and resumes from word acknowledgements
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:92:9)
+
+  ● ordinary blue words bank power without an active shield or defense numbers
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:103:9)
+
+  ● a perfect glowing blue trigger activates saved Block on its last letter
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:121:9)
+
+  ● cadence responds on the first letter, commits before Space, and resets after firing
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:137:9)
+
+  ● pending Dodge stays invisible until a perfect green trigger activates it
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:154:9)
+
+  ● Cleric sees Prayer and the shared pool, and an orange word deposits instead of adding Power
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:168:9)
+
+  ● Prayer mistakes preserve saved charge and ATK
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:185:9)
+
+  ● banks update with each character while red activation still waits for the completed word
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:196:9)
+
+  ● host dragon profile sits beside typing and immediately displays its own letters and ready crit
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:214:9)
+
+  ● barbarian gold reveals two extra words on the last letter and keeps them through the separator and pending server response
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at src/TypingBoss/ContinuousBattle.test.tsx:229:20
+
+  ● dragon gold reveals two extra words on the last letter and keeps them through the separator and pending server response
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at src/TypingBoss/ContinuousBattle.test.tsx:229:20
+
+  ● a missed extension trigger never adds preview words
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:246:9)
+
+  ● red trigger immediately moves charge into the profile badge; new charge builds separately and firing clears ready effects
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:255:9)
+
+  ● a missed red trigger keeps the charge and never shows ready crit effects
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:277:9)
+
+  ● portrait letters and shield react locally, and completed words show their earned bonus
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:287:9)
+
+  ● a perfect special charges the portrait immediately and the aura clears on attack release
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:303:9)
+
+  ● an incorrect special word never charges the aura or announces a special bonus
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:318:9)
+
+  ● balanced client sends verifiable key gaps and shows readiness instead of a dodge roll
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:328:9)
+
+  ● dragon and player profile attack text grow at a two-to-one rate
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:352:9)
+
+  ● a monk's shortened row fires on its final letter and returns to ten without gold
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:364:9)
+
+  ● errors remain after backspace and an older backend still receives one ten-word batch
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:378:9)
+
+  ● blue defense submits immediately, and input continues during the pending request
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:399:9)
+
+  ● inactive typing sends nothing
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:413:9)
+
+  ● all ten words stay in one scrolling row, while each character builds damage and local charge
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:442:9)
+
+  ● native key timestamps drive the measured mean instead of handler execution time
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:454:9)
+
+  ● the last letter waits for a space, and that space adds damage and completes the word
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:479:9)
+
+  ● a long rest between attacks is excluded from the next attack's timing
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/ContinuousBattle.test.tsx:491:9)
+
+PASS src/TypingBoss/HostBattleLog.test.tsx
+PASS src/TypingBoss/RoomCreationGate.test.tsx
+PASS src/TypingBoss/BattleLeaderboard.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/combatAnimation.test.tsx
+FAIL src/TypingBoss/BattleCountdown.test.tsx
+  ● host and player share 5,4,3,2,1 and unblock typing together without another network update
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/BattleCountdown.test.tsx:13:9)
+
+FAIL src/TypingBoss/hostPortrait.test.tsx
+  ● client dragon profile displays shared power, ready crit, special and defenses on the right
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/hostPortrait.test.tsx:13:20)
+
+  ● error penalty chip is removed
+
+    ReferenceError: keyNotice is not defined
+
+      268 |     {dragonProfile && <DragonPortrait {...dragonProfile} />}
+      269 |     </div>
+    > 270 |     {(keyNotice || word.pending) && <Typography role="status" sx={{mt:1,color:'#facc15'}}>{word.pending ? 'Loading the next words…' : keyNotice}</Typography>}
+          |       ^
+      271 |     <Box component="details" sx={{ mt: 1, color: "text.secondary", fontSize: 13 }}>
+      272 |       <Box component="summary" sx={{ cursor: "pointer", width: "fit-content" }}>Help</Box>
+      273 |       <Typography variant="body2">Correct letters earn attack power. Mistakes earn nothing and never subtract earned ATK or drain saved color banks. A bonus trigger still requires a fully correct word. Cadence and rhythm can add power, never reduce base damage.</Typography>
+
+      at ContinuousTyping (src/TypingBoss/ContinuousBattle.tsx:270:7)
+      at Object.react-stack-bottom-frame (node_modules/react-dom/cjs/react-dom-client.development.js:22428:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:5757:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:8018:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:9683:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:543:16)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:15052:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:14870:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:14850:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:14384:44)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:15931:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:862:34)
+      at Object.<anonymous>.process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:1151:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:47:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:188:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:287:10)
+      at Object.<anonymous> (src/TypingBoss/hostPortrait.test.tsx:45:9)
+
+PASS src/TypingBoss/TeamActivityCue.test.tsx
+PASS src/TypingBoss/dragonHurt.test.tsx
+PASS src/TypingBoss/RecoveryNotice.test.tsx
+PASS src/TypingBoss/dragonFlame.test.tsx
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+PASS src/TypingBoss/RecoveryBar.test.tsx
+PASS src/TypingBoss/typingFeedback.test.ts
+PASS src/TypingBoss/joinNames.test.ts
+PASS src/TypingBoss/credentials.test.ts
+PASS src/TypingBoss/api.test.ts
+
+Test Suites: 4 failed, 15 passed, 19 total
+Tests:       36 failed, 98 passed, 134 total
+Snapshots:   0 total
+Time:        31.981 s, estimated 32 s
+Ran all test suites matching /TypingBoss/i.

@@ -143,7 +143,7 @@ export async function createTypingBossSession(name: string, bossId: TypingBossId
 }
 
 export function submitTypingBossWords(sessionId: string, credentials: TypingBossCredentials, words: TypingBossWordResult[]) {
-  return apiFetch<{ nextWord: number;issuedWords?:TypingBossIssuedWord[] }>(`/api/typing-boss/sessions/${sessionId}/words`, {
+  return apiFetch<{ nextWord: number;issuedWords?:TypingBossIssuedWord[];previewWords?:Omit<TypingBossIssuedWord,'ticket'>[] }>(`/api/typing-boss/sessions/${sessionId}/words`, {
     method: "POST", json: { ...credentialsBody(credentials), words },
   });
 }
@@ -194,12 +194,12 @@ export function verifyTypingBossParticipant(sessionId: string, playerToken: stri
   );
 }
 
-export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true) {
+export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true, autoRevive = true) {
   const response = await apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors },
+      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors, autoRevive },
     }
   );
   if (Boolean(response.session.balanced) !== balanced) {
@@ -209,6 +209,12 @@ export async function startTypingBossSession(sessionId: string, hostToken: strin
     throw new Error("The backend did not apply Random colors. Restart or deploy the matching Typing Boss backend and create a fresh room.");
   }
   return response;
+}
+
+export function rematchTypingBossSession(sessionId: string, hostToken: string) {
+  return apiFetch<TypingBossSessionResponse>(`/api/typing-boss/sessions/${sessionId}/rematch`, {
+    method: "POST", json: { hostToken },
+  });
 }
 
 export function closeTypingBossSession(sessionId: string, hostToken: string) {

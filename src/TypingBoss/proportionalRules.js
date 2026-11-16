@@ -6,6 +6,7 @@ const WORDS = Object.keys(wordsByLength)
   .flatMap(key => wordsByLength[key]);
 const COLORS = ["blue", "orange", "red", "green"];
 const BALANCED_COLOR_CHANCES = {white:40,orange:20,blue:18,green:15,red:4,gold:3};
+const MONK_BALANCED_COLOR_CHANCES = Object.fromEntries(Object.entries(BALANCED_COLOR_CHANCES).map(([color,chance])=>[color,color==='gold' ? 6 : chance*94/97]));
 const ENTRIES = Object.keys(entriesByLength).filter(key => !isNaN(Number(key))).flatMap(key => entriesByLength[key]);
 const GRADE_OPTIONS = Array.from({ length: 13 }, (_, grade) => ({ grade,
   count: ENTRIES.filter(entry => entry.gradeLevel === grade).length }));
@@ -36,27 +37,28 @@ function randomAt(seed, index, salt) {
   return ((value ^ (value >>> 15)) >>> 0) / 4294967296;
 }
 
-function wordAt(seed, index, gradeMask, sentimentMask, goldEnabled = false) {
+function wordAt(seed, index, gradeMask, sentimentMask, goldEnabled = false, goldChance = .05) {
   const pool = wordsForGrades(gradeMask, sentimentMask);
   const roll = randomAt(seed, index, 2);
+  const regularScale=goldEnabled ? (1-goldChance)/.95 : 1;
   return {
     text: pool[Math.floor(randomAt(seed, index, 1) * pool.length)],
-    color: roll < 0.3 ? COLORS[Math.floor(randomAt(seed, index, 3) * COLORS.length)]
-      : goldEnabled && roll < 0.35 ? "gold" : null,
+    color: roll < 0.3*regularScale ? COLORS[Math.floor(randomAt(seed, index, 3) * COLORS.length)]
+      : goldEnabled && roll < 0.3*regularScale+goldChance ? "gold" : null,
   };
 }
 
 function typingWord(state, index = state.nextWord) {
   if(state.issuedWords) {
     const issued=state.issuedWords.find(word=>word.index===index);
-    if(!issued)return {text:'',color:null,pending:true};
+    if(!issued)return {...(state.previewWords?.find(word=>word.index===index) || {text:'',color:null}),pending:true};
     return state.balanced && !state.balancedRandomColors ? {...issued,color:index===state.nextWord ? balancedWordColor(state) : null,trigger:index===state.nextWord && Boolean(balancedTrigger(state))} : issued;
   }
-  const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask, Boolean(state.ability));
+  const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask, Boolean(state.ability), state.ability==='monk' ? .1 : .05);
   if(state.balanced && state.balancedRandomColors) {
     const roll=randomAt(state.seed,index,42)*100;
     let cumulative=0,color=null;
-    for(const [name,chance] of Object.entries(BALANCED_COLOR_CHANCES)) {
+    for(const [name,chance] of Object.entries(state.ability==='monk' ? MONK_BALANCED_COLOR_CHANCES : BALANCED_COLOR_CHANCES)) {
       cumulative+=chance;
       if(roll<cumulative){color=name==='white'?null:name;break;}
     }
@@ -105,10 +107,10 @@ function typingAttackProgress(state, characters, cursor = state.nextWord) {
 
 // The server and both views use the same formation, including knocked-out slots.
 function proportionalPlayerPoint(index, rosterSize) {
-  const rank=Math.floor(index/4),slot=index%4;
-  // Fill the four-person diagonal nearest the dragon, then step each new rank
-  // left. Fixed slots keep existing players still when the roster grows.
-  return { x:54-slot*2-rank*5.3, y:56+slot*8+rank*.4 };
+  const row=Math.floor(index/8),column=index%8;
+  // Keep every sprite below the 53% ground horizon. Eight columns leave
+  // percentage-width label cells separate as the battlefield fits the screen.
+  return {x:54.8-column*6.4,y:60+row*8};
 }
 
 function createTypingState(seed, ability) {
@@ -205,4 +207,4 @@ function releaseAttack(state, random = Math.random) {
   return attack;
 }
 
-module.exports = { BALANCED_COLOR_CHANCES, WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, typingWord, attackWordLimit, isLastAttackWord, requiresWordSpace, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress, typingAttackProgress, dodgeChance, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced };
+module.exports = { BALANCED_COLOR_CHANCES, MONK_BALANCED_COLOR_CHANCES, WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, typingWord, attackWordLimit, isLastAttackWord, requiresWordSpace, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress, typingAttackProgress, dodgeChance, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced };

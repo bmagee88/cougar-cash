@@ -1,7 +1,7 @@
 const crypto = require('node:crypto');
-const { typingWord } = require('../src/TypingBoss/proportionalRules');
+const { typingWord, attackWordLimit } = require('../src/TypingBoss/proportionalRules');
 const privateState = new WeakMap();
-const LOOKAHEAD = 2, BURST_CHARACTERS = 64, CHARACTERS_PER_MS = .03;
+const LOOKAHEAD = 12, BURST_CHARACTERS = 64, CHARACTERS_PER_MS = .03;
 
 function control(state,now=Date.now()) {
   if(!privateState.has(state))privateState.set(state,{leases:new Map(),receipts:new Map(),tokens:0,lastAt:now});
@@ -23,7 +23,11 @@ function issuedWords(session,state,now=Date.now()) {
 }
 function publicTypingState(session,state) {
   if(state.wordProtocol!==1)return {...state};
-  return {...state,seed:0,issuedWords:issuedWords(session,state)};
+  return {...state,seed:0,previewWords:previewWords(state),issuedWords:issuedWords(session,state)};
+}
+function previewWords(state) {
+  const start=state.nextWord-state.wordsInAttack;
+  return Array.from({length:attackWordLimit(state)+2},(_,offset)=>({index:start+offset,...typingWord(state,start+offset)}));
 }
 const fingerprint=record=>crypto.createHash('sha256').update(JSON.stringify([...record.slice(0,7),{ticket:record[7]?.ticket,mistakes:record[7]?.mistakes}])).digest('hex');
 function checkRecord(session,state,record,now=Date.now()) {
@@ -54,4 +58,4 @@ function commit(session,state,records,budget) {
   while(data.receipts.size>64)data.receipts.delete(data.receipts.keys().next().value);
   return issuedWords(session,state);
 }
-module.exports={publicTypingState,issuedWords,checkRecord,checkBudget,commit};
+module.exports={publicTypingState,previewWords,issuedWords,checkRecord,checkBudget,commit};

@@ -76,8 +76,8 @@ async function completeWords(id,credentials,initial,countWords) {
     const snapshots=await Promise.all(participants.map(p=>request(`/${id}?${query(auth(p))}`)));
     snapshots.forEach((value,i)=>participants[i].session=value.session);
     for(const p of participants) {
-      assert.equal(p.session.typing.seed,0);assert.equal(p.session.typing.issuedWords.length,2);
-      assert.equal(rules.typingWord(p.session.typing,2).pending,true);
+      assert.equal(p.session.typing.seed,0);assert.equal(p.session.typing.issuedWords.length,12);
+      assert.equal(rules.typingWord(p.session.typing,12).pending,true);
     }
     const host=await stream(id,{hostToken:game.hostToken});
     const clients=await Promise.all(participants.map(p=>stream(id,auth(p))));await delay(1000);

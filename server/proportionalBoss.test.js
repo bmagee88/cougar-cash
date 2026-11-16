@@ -178,7 +178,7 @@ test("a full-health cleric heals an eligible wounded living ally in both modes",
     assert.equal(cleric.hp, 100, "the caster receives no healing at full HP");
     assert.equal(down.hp, 0, "healing cannot revive");
     assert.equal(injured.hp, 60);
-    assert.equal(lowest.hp, balanced ? 45 : 50);
+    assert.equal(lowest.hp, balanced ? 100 : 50);
     assert.equal(heal.target, lowest.code);
     assert.equal(heal.targetName, lowest.name, "personal views can name off-screen recipients");
     assert.equal(cleric.totalHealing, heal.amount);
@@ -459,7 +459,7 @@ test("boss attack roll selects the advertised pattern and splits all power among
     engine.launchAttack(session, session.typingHost, { power: 90, multiplier: 1, moveId: "weak" }, cb);
     assert.equal(session.projectiles.length, count);
     assert.ok(session.projectiles.every(shot => shot.bossAttack === kind && shot.amount === 90 / count));
-    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["0", "4", "8"]);
+    if (kind === "tailWhip") assert.deepEqual(session.projectiles.map(shot => shot.target).sort(), ["3", "4", "5"]);
   }
 });
 
@@ -469,26 +469,21 @@ test("tail whip selects nearby formation slots and skips defeated players", () =
   const rolls = [.7, .8]; // Position 9, in the last rank.
   const cb = { ...callbacks(), random: () => rolls.shift() ?? 1 };
   engine.launchAttack(session, session.typingHost, { power: 60, multiplier: 1, moveId: "weak" }, cb);
-  assert.deepEqual(session.projectiles.map(shot => shot.target).sort((a,b)=>Number(a)-Number(b)), ["5", "9", "10"]);
+  assert.deepEqual(session.projectiles.map(shot => shot.target).sort((a,b)=>Number(a)-Number(b)), ["1", "9", "10"]);
   assert.ok(session.projectiles.every(shot => shot.amount === 20));
 });
 
-test("battle formation keeps up to 30 players on the left platform clear of the dragon and foreground", () => {
-  for (const size of [1,4,5,10,15,30]) {
-    const points = Array.from({length:size}, (_, index) => rules.proportionalPlayerPoint(index,size));
-    assert.equal(new Set(points.map(point => `${point.x}:${point.y}`)).size,size);
-    assert.ok(points.every(point => point.x >= 10 && point.x <= 55 && point.y >= 54 && point.y <= 84));
-    for (let index=0;index<size;index++) {
-      if (index%4) {
-        assert.ok(points[index].x<points[index-1].x);
-        assert.ok(points[index].y>points[index-1].y);
-      }
-      if (index>=4) {
-        assert.ok(points[index].x<points[index-4].x);
-        assert.ok(points[index].y>points[index-4].y);
-      }
-      assert.deepEqual(points[index],rules.proportionalPlayerPoint(index,30),"adding players must not shift occupied slots");
+test("battle formation reserves separate label cells for 30 fixed player slots", () => {
+  for(const size of [1,4,5,10,15,30]) {
+    const points=Array.from({length:size},(_,index)=>rules.proportionalPlayerPoint(index,size));
+    assert.equal(new Set(points.map(p=>`${p.x}:${p.y}`)).size,size);
+    assert.ok(points.every(p=>p.x>=9 && p.x<=55 && p.y>=60 && p.y<=84));
+    for(let a=0;a<size;a++)for(let b=a+1;b<size;b++) {
+      const dx=Math.abs(points[a].x-points[b].x);
+      const dy=Math.abs(points[a].y-points[b].y);
+      assert.ok(dx>=6.3 || dy>=8,'5.8%-wide character cells cannot overlap within a ground row');
     }
+    points.forEach((p,index)=>assert.deepEqual(p,rules.proportionalPlayerPoint(index,30)));
   }
 });
 
@@ -745,4 +740,11 @@ test("sentiment selections are shared by all actors and invalid combinations are
   engine.applyWordFilters(session, undefined, undefined);
   assert.equal(session.typingHost.sentimentMask, undefined);
   assert.equal(session.typingHost.gradeMask, undefined);
+});
+
+test('Monk ordinary random words double gold to ten percent and retain the same word text',()=>{
+  const monk=rules.createTypingState(123,'monk'),other=rules.createTypingState(123,'cleric');
+  let monkGold=0,otherGold=0;
+  for(let i=0;i<30000;i++){const a=rules.typingWord(monk,i),b=rules.typingWord(other,i);monkGold+=a.color==='gold';otherGold+=b.color==='gold';assert.equal(a.text,b.text);}
+  assert.ok(Math.abs(monkGold/300-.1*100)<1);assert.ok(Math.abs(otherGold/300-5)<1);
 });

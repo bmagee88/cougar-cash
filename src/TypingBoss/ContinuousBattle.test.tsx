@@ -45,14 +45,55 @@ test('protected typing never advances on wrong keys, preserves ATK, and cannot c
   const input=screen.getByRole('textbox');
   fireEvent.keyDown(input,{key:'!'});
   expect(screen.getByText('ATK 0')).toBeTruthy();expect(submit).not.toHaveBeenCalled();
-  expect(screen.getByRole('status').textContent).toMatch(/highlighted letter/);
+  expect(screen.queryByText(/highlighted letter/)).toBeNull();
+  const firstLetter=screen.getAllByTestId('typing-word')[0].querySelector('span')!;
+  expect(firstLetter.getAttribute('data-incorrect')).toBe('true');
+  expect(firstLetter.style.color).toBe('rgb(253, 164, 175)');
   fireEvent.keyDown(input,{key:word.text[0]});
+  expect(firstLetter.getAttribute('data-incorrect')).toBeNull();
   fireEvent.keyDown(input,{key:'!'});expect(screen.getByText('ATK 1')).toBeTruthy();
   typeWord(input,word.text.slice(1),false);
   expect(screen.getByText(`ATK ${word.text.length}`)).toBeTruthy();
   expect(screen.queryByTestId('portrait-crit-badge')).toBeNull();
   const record=submit.mock.calls[0][2][0];
   expect(record[1]).toBe(word.text);expect(record[7]).toEqual({ticket:'a'.repeat(32),mistakes:2});
+  await act(async()=>{});
+});
+
+test('full attack preview stays visible and waits on the required space after a word',async()=>{
+  submit.mockImplementation(()=>new Promise(()=>{}));
+  const state=initializeBalanced(createTypingState(123,'monk'));state.wordProtocol=1;
+  state.previewWords=Array.from({length:10},(_,index)=>({index,text:index===0?'cat':index===1?'dog':`word${index}`,color:null}));
+  state.issuedWords=state.previewWords.slice(0,2).map(word=>({...word,ticket:'a'.repeat(32)}));
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero1234',playerToken:'c'.repeat(64)}} state={state} active/>);
+  const input=screen.getByRole('textbox');
+  expect(screen.getAllByTestId('typing-word').map(word=>word.textContent).join(' ')).toContain('word9');
+  typeWord(input,'cat',false);
+  const space=screen.getByTestId('pending-word-space');
+  expect(space.textContent).toBe(' ');
+  expect(getComputedStyle(screen.getByTestId('ten-word-row')).transform).toBe('translate3d(-3ch, 0, 0)');
+  expect(screen.getByText('ATK 3')).toBeTruthy();
+  fireEvent.keyDown(input,{key:'d'});
+  expect(screen.getByTestId('pending-word-space')).toBeTruthy();
+  expect(screen.getByText('ATK 3')).toBeTruthy();
+  fireEvent.keyDown(input,{key:' '});
+  expect(screen.queryByTestId('pending-word-space')).toBeNull();
+  expect(getComputedStyle(screen.getByTestId('ten-word-row')).transform).toBe('translate3d(-4ch, 0, 0)');
+  fireEvent.keyDown(input,{key:'d'});
+  expect(screen.getByText('ATK 4')).toBeTruthy();
+  await act(async()=>{});
+});
+
+test('prefetched words keep typing uninterrupted during a delayed acknowledgement',async()=>{
+  submit.mockImplementation(()=>new Promise(()=>{}));
+  const state=initializeBalanced(createTypingState(123,'monk'));state.wordProtocol=1;
+  state.issuedWords=Array.from({length:12},(_,index)=>({index,text:'cat',color:null,ticket:'a'.repeat(32)}));
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero1234',playerToken:'c'.repeat(64)}} state={state} active/>);
+  const input=screen.getByRole('textbox');
+  for(let index=0;index<4;index++)typeWord(input,'cat');
+  expect(screen.getByText('ATK 12')).toBeTruthy();
+  expect(screen.queryByText(/Loading the next words/)).toBeNull();
+  expect(submit).toHaveBeenCalledTimes(1);
   await act(async()=>{});
 });
 
@@ -63,7 +104,7 @@ test('protected typing waits at the issued window and resumes from word acknowle
   state.issuedWords=[{index:0,text:'cat',color:'orange',ticket:'a'.repeat(32)},{index:1,text:'dog',color:'orange',ticket:'b'.repeat(32)}];
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero1234',playerToken:'c'.repeat(64)}} state={state} active/>);
   const input=screen.getByRole('textbox');typeWord(input,'cat');typeWord(input,'dog');
-  expect(screen.getByRole('status').textContent).toMatch(/Loading/);
+  expect(screen.queryByText(/Loading the next words/)).toBeNull();
   fireEvent.keyDown(input,{key:'!'});expect(screen.getByText('ATK 6')).toBeTruthy();
   await act(async()=>resolve({nextWord:1,issuedWords:[state.issuedWords![1],{index:2,text:'bird',color:'orange',ticket:'d'.repeat(32)}]}));
   expect(screen.queryByText(/Loading the next words/)).toBeNull();
