@@ -1,5 +1,5 @@
 const crypto = require('node:crypto');
-const { typingWord, attackWordLimit } = require('../src/TypingBoss/proportionalRules');
+const { typingWord, attackWordLimit, goldWordExtension } = require('../src/TypingBoss/proportionalRules');
 const privateState = new WeakMap();
 const LOOKAHEAD = 12, BURST_CHARACTERS = 64, CHARACTERS_PER_MS = .03;
 
@@ -27,7 +27,7 @@ function publicTypingState(session,state) {
 }
 function previewWords(state) {
   const start=state.nextWord-state.wordsInAttack;
-  return Array.from({length:attackWordLimit(state)+2},(_,offset)=>({index:start+offset,...typingWord(state,start+offset)}));
+  return Array.from({length:attackWordLimit(state)+Math.max(2,goldWordExtension(state))},(_,offset)=>({index:start+offset,...typingWord(state,start+offset)}));
 }
 const fingerprint=record=>crypto.createHash('sha256').update(JSON.stringify([...record.slice(0,7),{ticket:record[7]?.ticket,mistakes:record[7]?.mistakes}])).digest('hex');
 function checkRecord(session,state,record,now=Date.now()) {

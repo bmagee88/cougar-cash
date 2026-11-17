@@ -8,6 +8,46 @@ function trigger(state,color,position) {
   state[color==='gold'?'balancedSpecialAt':color==='red'?'balancedCritAt':`balanced${color[0].toUpperCase()+color.slice(1)}At`]=position;
 }
 const noDice = () => { throw new Error("Balanced combat must not roll dice"); };
+
+test('roster scaling divides additive power and defense gains, preserves crit and cadence, and keeps fractions',()=>{
+  for(const randomColors of [false,true]) {
+    for(const color of ['orange','blue','red',null]) {
+      const one=balanced('barbarian');one.balancedRandomColors=randomColors;
+      if(randomColors) {while(r.typingWord(one).color!==color)one.seed++;}
+      else if(color)trigger(one,color,100);
+      const ten=structuredClone(one);ten.combatDivisor=10;
+      const rec=record(one);finish(one,rec);finish(ten,rec);
+      for(const key of ['balancedPower','balancedOrangeBank','balancedOrangePower','balancedBlockBank','balancedGuard'])assert.ok(Math.abs((one[key] || 0)/10-(ten[key] || 0))<1e-10,key);
+      assert.equal(ten.balancedCritBonus,one.balancedCritBonus);
+      assert.equal(ten.balancedCritCharge,one.balancedCritCharge);
+      const a=r.releaseAttack(one,noDice),b=r.releaseAttack(ten,noDice);
+      assert.ok(Math.abs(a.power/10-b.power)<1e-10);
+      assert.ok(Math.abs(a.multiplier-b.multiplier)<1e-10);
+      assert.equal(a.consistency,b.consistency);
+    }
+  }
+});
+
+test('full roster, including knocked-out players, controls earnings while dragon keeps full power',()=>{
+  const s=session();s.players.get('0').hp=0;
+  engine.applyHpMultiplier(s,1);engine.applyBalanced(s,true,false);
+  assert.equal(s.typingHost.combatDivisor,1);
+  for(const p of s.players.values())assert.equal(p.typing.combatDivisor,6);
+});
+
+test('both green modes divide dodge gains without rounding away fractional progress',()=>{
+  for(const randomColors of [false,true]) {
+    const one=balanced('rogue');one.balancedRandomColors=randomColors;one.wordsInAttack=1;
+    if(randomColors) {while(r.typingWord(one).color!=='green')one.seed++;}
+    else trigger(one,'green',149);
+    const seven=structuredClone(one);seven.combatDivisor=7;
+    const rec=record(one);finish(one,rec);finish(seven,rec);
+    const total=s=>(s.dodgeBank || 0)+(s.balancedDodgeBank || 0);
+    assert.ok(total(one)>0);
+    assert.ok(Math.abs(total(one)/7-total(seven))<1e-12);
+    assert.notEqual(total(seven),Math.round(total(seven)*100)/100);
+  }
+});
 test("balanced random colors default on, can be disabled before Start and lock during combat",()=>{
   const s=session();engine.applyBalanced(s,true);
   assert.equal(s.balancedRandomColors,true);
@@ -239,20 +279,20 @@ test("successful dodges spend 100 banked points, preserve overflow and Block, an
   }
 });
 
-test("Cleric gold converts full base power into shared healing",()=>{
+test("Cleric gold converts roster-scaled power into shared healing",()=>{
   const s=session();engine.applyBalanced(s,true);s.status="active";s.boss.hp=1000;
   const player=s.players.get("0");player.hp=95;
   const timers=[];const cb={schedule:(_,fn)=>timers.push(fn),broadcast:()=>{},random:noDice};
-  Object.assign(player.typing,{characters:100,balancedPower:125,gold:1});
+  Object.assign(player.typing,{characters:100,balancedPower:125/s.players.size,gold:1});
   const attack=r.releaseAttack(player.typing);
-  assert.equal(attack.power,125);assert.equal(attack.supportPower,0);
+  assert.equal(attack.power,125/s.players.size);assert.equal(attack.healingPower,125/s.players.size);assert.equal(attack.supportPower,0);
   engine.launchAttack(s,player,attack,cb);
   assert.equal(player.hp,100);
   assert.equal(s.projectiles[0].kind,"heal");
   assert.equal(timers.length,0);
   assert.equal(s.boss.hp,1000);
   assert.equal(player.totalHealing,5);
-  assert.equal(s.clericHealingPool,125/[...s.players.values()].filter(p=>p.classId==='cleric').length-5);
+  assert.equal(s.clericHealingPool,125/s.players.size/[...s.players.values()].filter(p=>p.classId==='cleric').length-5);
 });
 test("balanced batches validate actual key gaps atomically and remain retry-safe",()=>{
   const s=session();engine.applyBalanced(s,true,false);s.status="active";
@@ -264,7 +304,7 @@ test("balanced batches validate actual key gaps atomically and remain retry-safe
   engine.submitWords(s,{role:"player",actorCode:"0"},[rec],cb);
   engine.submitWords(s,{role:"player",actorCode:"0"},[rec],cb);
   assert.equal(player.typing.nextWord,1);
-  assert.equal(player.typing.balancedPower,rec[1].length);
+  assert.equal(player.typing.balancedPower,rec[1].length/s.players.size);
 });
 
 test("scheduled client and server agree through all triggers, attack releases and duplicate submissions",()=>{

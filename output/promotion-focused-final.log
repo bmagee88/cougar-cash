@@ -1,0 +1,10 @@
+PASS src/TypingBoss/HostSetup.test.tsx (5.491 s)
+PASS src/TypingBoss/PromotionButton.test.tsx
+PASS src/TypingBoss/hostPortrait.test.tsx
+PASS src/TypingBoss/api.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       19 passed, 19 total
+Snapshots:   0 total
+Time:        16.103 s
+Ran all test suites matching /TypingBoss\\(api|PromotionButton|hostPortrait|HostSetup).test/i.

@@ -142,3 +142,143 @@ TS2322: Type '{ reviveQueuePosition: number; code: string; name: string; classId
     29 | });
     30 |
 
+ERROR in src/TypingBoss/ContinuousBattle.tsx:237:133
+TS2304: Cannot find name 'dodgeChance'.
+    235 |         </Box>
+    236 |       </> : <><Chip label={`Block ${Math.round(current.shield * 100)}%`} sx={{ color: colors.blue }} />
+  > 237 |       <Chip title={`Banked Dodge points · next hit: ${number(effectiveDodgeChance(current) * 100)}% chance`} label={`Dodge ${number(dodgeChance(current))}`} sx={{ color: colors.green }} /></>}
+        |                                                                                                                                     ^^^^^^^^^^^
+    238 |       {!scheduled && !!current.dodgeExtraRolls && <Chip label={`${1 + current.dodgeExtraRolls} dodge rolls`} sx={{ color: colors.gold }} />}
+    239 |       {credentials.hostToken && !!current.gold && <Chip label={`Gold ×${current.gold}`} sx={{ color: colors.gold }} />}
+    240 |       {current.red > 0 && <Chip label={`Crit ${Math.round(current.red * 100)}%`} sx={{ color: colors.red }} />}
+
+ERROR in src/TypingBoss/hostPortrait.test.tsx:20:22
+TS2549: Type 'NodeListOf<Element>' is not an array type or a string type or does not have a '[Symbol.iterator]()' method that returns an iterator.
+    18 |   expect(screen.getByLabelText('Hero HP: 1,235 / 10,000')).toBeTruthy();
+    19 |   expect(screen.getByLabelText('Dragon HP: 20,000 / 30,000')).toBeTruthy();
+  > 20 |   for(const label of view.container.querySelectorAll('.portrait-health-value'))expect(label.previousElementSibling?.className).toBe('portrait-health');
+       |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    21 |   for(const value of view.container.querySelectorAll('.portrait-fitted-number'))expect(value.getAttribute('preserveAspectRatio')).toBe('xMinYMid meet');
+    22 | });
+    23 |
+
+ERROR in src/TypingBoss/hostPortrait.test.tsx:21:22
+TS2549: Type 'NodeListOf<Element>' is not an array type or a string type or does not have a '[Symbol.iterator]()' method that returns an iterator.
+    19 |   expect(screen.getByLabelText('Dragon HP: 20,000 / 30,000')).toBeTruthy();
+    20 |   for(const label of view.container.querySelectorAll('.portrait-health-value'))expect(label.previousElementSibling?.className).toBe('portrait-health');
+  > 21 |   for(const value of view.container.querySelectorAll('.portrait-fitted-number'))expect(value.getAttribute('preserveAspectRatio')).toBe('xMinYMid meet');
+       |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    22 | });
+    23 |
+    24 | test('own profile shows recovery above the fallen character and clears it on revival',()=>{
+
+ERROR in src/TypingBoss/hostPortrait.test.tsx:20:22
+TS2549: Type 'NodeListOf<Element>' is not an array type or a string type or does not have a '[Symbol.iterator]()' method that returns an iterator.
+    18 |   expect(screen.getByLabelText('Hero HP: 1,235 / 10,000')).toBeTruthy();
+    19 |   expect(screen.getByLabelText('Dragon HP: 20,000 / 30,000')).toBeTruthy();
+  > 20 |   for(const label of view.container.querySelectorAll('.portrait-health-value'))expect(label.previousElementSibling?.className).toBe('portrait-health');
+       |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    21 |   for(const value of view.container.querySelectorAll('.portrait-fitted-number'))expect(value.getAttribute('preserveAspectRatio')).toBe('xMinYMid meet');
+    22 | });
+    23 |
+
+ERROR in src/TypingBoss/hostPortrait.test.tsx:21:22
+TS2549: Type 'NodeListOf<Element>' is not an array type or a string type or does not have a '[Symbol.iterator]()' method that returns an iterator.
+    19 |   expect(screen.getByLabelText('Dragon HP: 20,000 / 30,000')).toBeTruthy();
+    20 |   for(const label of view.container.querySelectorAll('.portrait-health-value'))expect(label.previousElementSibling?.className).toBe('portrait-health');
+  > 21 |   for(const value of view.container.querySelectorAll('.portrait-fitted-number'))expect(value.getAttribute('preserveAspectRatio')).toBe('xMinYMid meet');
+       |                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    22 | });
+    23 |
+    24 | test('own profile shows recovery above the fallen character and clears it on revival',()=>{
+
+ERROR in src/TypingBoss/ContinuousBattle.tsx:99:22
+TS2554: Expected 1 arguments, but got 0.
+     97 |   }, [state]);
+     98 |
+  >  99 |   const lastCurseKey=useRef<string>();
+        |                      ^^^^^^^^^^^^^^^^
+    100 |   const curseKey=profile?.player.curseKey;
+    101 |   const [forcedKey,setForcedKey]=useState('');
+    102 |   useEffect(()=>{
+
+ERROR in src/TypingBoss/TypingBossApp.tsx:142:7
+TS2741: Property 'kraken' is missing in type '{ emberWhelp: `${string}/assets/typing-boss/ember-whelp-sprite.png`; cindermaw: `${string}/assets/typing-boss/red-dragon-sprite.png`; infernalDragon: `${string}/assets/typing-boss/ancient-red-dragon-sprite.png`; }' but required in type 'Record<TypingBossId, string>'.
+    140 | } as const;
+    141 |
+  > 142 | const BOSS_SPRITE_ASSETS: Record<TypingBossId, string> = {
+        |       ^^^^^^^^^^^^^^^^^^
+    143 |   emberWhelp: TYPING_BOSS_ASSETS.emberWhelpBoss,
+    144 |   cindermaw: TYPING_BOSS_ASSETS.cindermawBoss,
+    145 |   infernalDragon: TYPING_BOSS_ASSETS.ancientRedDragonBoss,
+
+ERROR in src/TypingBoss/TypingBossApp.tsx:148:7
+TS2741: Property 'kraken' is missing in type '{ emberWhelp: `${string}/assets/typing-boss/fireball-whelp.png`; cindermaw: `${string}/assets/typing-boss/fireball-cindermaw.png`; infernalDragon: `${string}/assets/typing-boss/fireball-ancient-red-dragon.png`; }' but required in type 'Record<TypingBossId, string>'.
+    146 | };
+    147 |
+  > 148 | const BOSS_FIREBALL_ASSETS: Record<TypingBossId, string> = {
+        |       ^^^^^^^^^^^^^^^^^^^^
+    149 |   emberWhelp: TYPING_BOSS_ASSETS.fireballWhelp,
+    150 |   cindermaw: TYPING_BOSS_ASSETS.fireballCindermaw,
+    151 |   infernalDragon: TYPING_BOSS_ASSETS.fireballAncientRedDragon,
+
+ERROR in src/TypingBoss/TypingBossApp.tsx:295:7
+TS2741: Property 'kraken' is missing in type '{ emberWhelp: { hostBossPoint: { x: number; y: number; }; playerBossPoint: { x: number; y: number; }; hostSpawns: Point[]; playerSpawns: Point[]; }; cindermaw: { hostBossPoint: { x: number; y: number; }; playerBossPoint: { ...; }; hostSpawns: Point[]; playerSpawns: Point[]; }; infernalDragon: { ...; }; }' but required in type 'Record<TypingBossId, ArenaLayout>'.
+    293 | ];
+    294 |
+  > 295 | const BOSS_ARENAS: Record<TypingBossId, ArenaLayout> = {
+        |       ^^^^^^^^^^^
+    296 |   emberWhelp: {
+    297 |     hostBossPoint: { x: 80, y: 52 },
+    298 |     playerBossPoint: { x: 80, y: 52 },
+
+ERROR in src/TypingBoss/TypingBossApp.tsx:2897:11
+TS2741: Property 'kraken' is missing in type '{ emberWhelp: number; cindermaw: number; infernalDragon: number; }' but required in type 'Record<TypingBossId, number>'.
+    2895 |   if (projectile.kind === "boss") {
+    2896 |     const bossId = projectile.bossId || "cindermaw";
+  > 2897 |     const sizeByBoss: Record<TypingBossId, number> = {
+         |           ^^^^^^^^^^
+    2898 |       emberWhelp: 42,
+    2899 |       cindermaw: 54,
+    2900 |       infernalDragon: 68,
+
+ERROR in src/TypingBoss/ContinuousBattle.tsx:99:22
+TS2554: Expected 1 arguments, but got 0.
+     97 |   }, [state]);
+     98 |
+  >  99 |   const lastCurseKey=useRef<string>();
+        |                      ^^^^^^^^^^^^^^^^
+    100 |   const curseKey=profile?.player.curseKey;
+    101 |   const [forcedKey,setForcedKey]=useState('');
+    102 |   useEffect(()=>{
+
+ERROR in src/TypingBoss/ContinuousBattle.tsx:99:22
+TS2554: Expected 1 arguments, but got 0.
+     97 |   }, [state]);
+     98 |
+  >  99 |   const lastCurseKey=useRef<string>();
+        |                      ^^^^^^^^^^^^^^^^
+    100 |   const curseKey=profile?.player.curseKey;
+    101 |   const [forcedKey,setForcedKey]=useState('');
+    102 |   useEffect(()=>{
+
+ERROR in src/TypingBoss/ContinuousBattle.tsx:99:22
+TS2554: Expected 1 arguments, but got 0.
+     97 |   }, [state]);
+     98 |
+  >  99 |   const lastCurseKey=useRef<string>();
+        |                      ^^^^^^^^^^^^^^^^
+    100 |   const curseKey=profile?.player.curseKey;
+    101 |   const [forcedKey,setForcedKey]=useState('');
+    102 |   useEffect(()=>{
+
+ERROR in src/TypingBoss/PromotionButton.tsx:4:9
+TS2305: Module '"./api"' has no exported member 'promoteTypingBossPlayer'.
+    2 | import {Alert,Box,Button,Dialog,DialogActions,DialogContent,DialogTitle,TextField,Typography} from '@mui/material';
+    3 | import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
+  > 4 | import {promoteTypingBossPlayer} from './api';
+      |         ^^^^^^^^^^^^^^^^^^^^^^^
+    5 | import {saveDevicePromotion} from './promotion';
+    6 | export default function PromotionButton({sessionId,playerToken,promoted,disabled=false}:{sessionId:string;playerToken:string;promoted?:boolean;disabled?:boolean}) {
+    7 |   const [open,setOpen]=useState(false),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[confirmed,setConfirmed]=useState(false);
+

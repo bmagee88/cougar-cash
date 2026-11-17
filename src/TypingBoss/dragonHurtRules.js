@@ -13,6 +13,8 @@ function dragonHurtTier(hit) {
 }
 
 function dragonAttackDuration(attack) {
+  const kraken=require('./krakenAnimationRules').KRAKEN_ANIMATIONS[attack.bossAttack];
+  if(kraken)return kraken.duration;
   return attack.bossAttack === "flamethrower" ? DRAGON_FLAME.duration : attack.bossAttack === "bite" || attack.bossAttack === "tailWhip" ? 820 : attack.moveId === "strong" ? 780 : 620;
 }
 

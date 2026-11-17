@@ -1,18 +1,19 @@
+import {combatNumber} from './combatNumbers';
 import { effectiveDodgeChance, typingWord } from "./proportionalRules";
 import { TypingBossTypingState } from "./types";
 
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
 export function chargedLetters(state: TypingBossTypingState, typed: string) {
-  if(state.balanced && !state.balancedRandomColors) {
-    const expected=typingWord(state).text;
-    const correct=[...typed].filter((letter,index)=>letter===expected[index]).length;
-    return Number(Math.max(0,(state.balancedPower || 0)+correct).toFixed(2));
+  if(state.balanced) {
+    const word=typingWord(state);
+    const correct=[...typed].filter((letter,index)=>letter===(word.text+' ')[index]).length;
+    const earned=state.balancedRandomColors ? (word.color===null ? correct*1.25 : 0) : Math.min(correct,word.text.length);
+    return Math.max(0,(state.balancedPower || 0)+earned/Math.max(1,state.combatDivisor || 1));
   }
-  if(state.balanced && typingWord(state).color!==null)return Math.max(0,state.characters);
   const expected = `${typingWord(state).text} `;
   const correct=[...typed].filter((letter,index)=>letter===expected[index]).length;
-  return Math.max(0,state.characters+correct);
+  return Math.max(0,state.characters+correct)/Math.max(1,state.combatDivisor || 1);
 }
 
 export function portraitDefense(state: Partial<TypingBossTypingState>, maxHp: number) {
@@ -36,20 +37,20 @@ export function wordReward(before: TypingBossTypingState, after: TypingBossTypin
     }
     if(color==='orange' && before.ability==='cleric') {
       const gain=(after.balancedHealingDeposit || 0)-(before.balancedHealingDeposit || 0);
-      return {...base,label:gain>0?`Prayer pool +${Number(gain.toFixed(2))}`:'Perfect word',color:'#facc15',bonus:gain>0};
+      return {...base,label:gain>0?`Prayer pool +${combatNumber(gain)}`:'Perfect word',color:'#facc15',bonus:gain>0};
     }
-    if (color === "blue") return { ...base, label: `Block +${Number(((after.balancedGuard || 0)-(before.balancedGuard || 0)).toFixed(2))}`, color: "#7dd3fc", bonus: true };
+    if (color === "blue") return { ...base, label: "Block ready", color: "#7dd3fc", bonus: true };
     if (color === "red" || color === "orange") {
       const gain = color === "red" ? (after.balancedCritBonus || 0) - (before.balancedCritBonus || 0) :
         (after.balancedOrangePower || 0) - (before.balancedOrangePower || 0);
-      return { ...base, label: gain > 0 ? `${color === "red" ? "Crit" : "Power"} +${Number((color === "red" ? gain * 100 : gain).toFixed(2))}${color === "red" ? "%" : ""}` : "Perfect word",
+      return { ...base, label: gain > 0 ? `${color === "red" ? "Crit" : "Power"} +${color === "red" ? Number((gain * 100).toFixed(2)) : combatNumber(gain)}${color === "red" ? "%" : ""}` : "Perfect word",
         color: color === "red" ? "#fda4af" : "#fdba74", bonus: gain > 0 };
     }
     return { ...base, label: "Perfect word", color: "#86efac", bonus: false };
   }
   if (color === "blue") {
-    const gain = Math.round((after.shield - before.shield) * 100);
-    return { ...base, label: gain ? `Block +${gain}%` : "Block full", color: "#7dd3fc", bonus: gain > 0 };
+    const gain = after.shield - before.shield;
+    return { ...base, label: gain ? "Block ready" : "Block full", color: "#7dd3fc", bonus: gain > 0 };
   }
   if (color === "orange") return { ...base, label: "Power +10%", color: "#fdba74", bonus: true };
   if (color === "red") {

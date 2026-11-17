@@ -1,4 +1,9 @@
+import "./promotion.css";
+import {KrakenStatus} from './KrakenVisuals';
+import {useBattleCountdown} from './BattleCountdown';
+import {combatNumber} from './combatNumbers';
 import RecoveryBar from './RecoveryBar';
+import BossHealthFill from './BossHealthFill';
 import React, { useEffect, useRef, useState } from "react";
 import CombatCharacter, { useCombatAnimation, useCombatClock } from "./CombatCharacter";
 import { CombatAnimationEvent } from "./combatAnimation";
@@ -23,22 +28,30 @@ export type DragonPortraitProps = {
   anchorRef?: React.Ref<HTMLDivElement>;
 };
 
+// A fixed-width glyph box scales long values down without truncation or layout reads.
+function FittedNumber({children}:{children:string}) {
+  return <svg className="portrait-fitted-number" viewBox={`0 0 ${Math.max(1,children.length)*64} 120`} preserveAspectRatio="xMinYMid meet" aria-hidden="true">
+    <text x="0" y="96" fontSize="100" fontFamily="monospace" fill="currentColor">{children}</text>
+  </svg>;
+}
+
 function PortraitPower({state}:{state?:Partial<TypingBossTypingState>}) {
   if(!state)return null;
   if(state.balanced && state.ability==='cleric')return null;
-  const power=state.balanced ? state.balancedOrangePower || 0 : ((state.orange || 0)+(state.growth || 0))*100;
-  return <span className="portrait-power" aria-label={`Power bonus: +${Number(power.toFixed(2))}${state.balanced?'':'%'}`}>
-    +{Number(power.toFixed(2))}{state.balanced?'':'%'}
+  const power=state.balanced ? (state.balancedOrangePower || 0)*(state.promoted?2:1) : ((state.orange || 0)+(state.growth || 0))*100;
+  const label=`+${state.balanced ? combatNumber(power) : Number(power.toFixed(2))}${state.balanced?'':'%'}`;
+  return <span className="portrait-power" aria-label={`Power bonus: +${state.balanced ? combatNumber(power) : Number(power.toFixed(2))}${state.balanced?'':'%'}`}>
+    <FittedNumber>{label}</FittedNumber>
   </span>;
 }
 
-function PortraitHealth({hp,maxHp,name}:{hp:number;maxHp:number;name:string}) {
+function PortraitHealth({hp,maxHp,name,boss=false}:{hp:number;maxHp:number;name:string;boss?:boolean}) {
   const ratio=maxHp>0?Math.max(0,Math.min(1,hp/maxHp)):0;
   const color=hp<=0?'#64748b':ratio<.15?'#ef4444':ratio<.5?'#f97316':'#22c55e';
-  return <div className="portrait-health" role="progressbar" aria-label={`${name} health`}
+  return <><div className="portrait-health" role="progressbar" aria-label={`${name} health`}
     aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(ratio*100)}>
-    <span style={{width:`${ratio*100}%`,backgroundColor:color}}/>
-  </div>;
+    {boss?<BossHealthFill hp={hp} maxHp={maxHp} color={color}/>:<span style={{width:`${ratio*100}%`,backgroundColor:color}}/>}
+  </div><span className="portrait-health-value" aria-label={`${name} HP: ${combatNumber(hp)} / ${combatNumber(maxHp)}`}><FittedNumber>{`${combatNumber(hp)} / ${combatNumber(maxHp)}`}</FittedNumber></span></>;
 }
 
 // Every landed hit gets its own short impact, including hits that cannot
@@ -60,7 +73,7 @@ function HostHitFeedback({events,clock}:{events:readonly CombatAnimationEvent[];
 export function DragonPortrait({ boss, events, serverNow, anchorRef, state, letters: localLetters }: DragonPortraitProps & { state?: TypingBossTypingState; letters?: number }) {
   const clock = useCombatClock(serverNow);
   const profileState=state || boss.profile;
-  const pose = useDragonCombatAnimation(events, boss.hurt, boss.hp <= 0, clock, boss.flameBreath);
+  const pose = useDragonCombatAnimation(events, boss.hurt, boss.hp <= 0, clock, boss.id==='kraken'?boss.krakenWave:boss.flameBreath);
   const letters = localLetters ?? boss.attackCharacters ?? 0;
   const crit = profileState?.balanced ? (profileState.balancedCritBonus || 0) * 100 : 0;
   const special = (profileState?.gold || 0) > 0;
@@ -70,17 +83,17 @@ export function DragonPortrait({ boss, events, serverNow, anchorRef, state, lett
     {crit > 0 && <div className="portrait-crit-aura" aria-hidden="true"><i/><i/><i/></div>}
     {special && <div className="portrait-special" aria-hidden="true"><i/><i/><i/></div>}
     {defense && <div className="portrait-dodge" style={{opacity:Math.sqrt(defense.dodge)}} aria-hidden="true"/>}
-    <div className="portrait-dragon"><DragonCombatSprite bossId={boss.id} width={{xs:98,md:136}} glow={boss.glow} pose={pose} clock={clock} /></div>
+    <div className="portrait-dragon"><DragonCombatSprite bossId={boss.id} krakenCast={boss.krakenCast} width={{xs:98,md:136}} glow={boss.glow} pose={pose} clock={clock} /></div>
     <HostHitFeedback events={events} clock={clock}/>
     {defense && <div className="portrait-shield" style={{opacity:Math.sqrt(defense.shield)}} aria-hidden="true"/>}
-    <div className="portrait-attack" title="Dragon attack charge" aria-label={`Dragon attack letters: ${letters}`}>
-      <span>ATK</span><strong style={{ fontSize: `${21 + Math.min(22, letters * .24)}px` }}>{letters}</strong>
+    <div className="portrait-attack" title="Dragon attack charge" aria-label={`Dragon attack power: ${combatNumber(letters)}`}>
+      <span>ATK</span><strong style={{ fontSize: `${21 + Math.min(22, letters * .24)}px` }}><FittedNumber>{combatNumber(letters)}</FittedNumber></strong>
       <PortraitPower state={profileState}/>
     </div>
-    {crit > 0 && <div className="portrait-crit-badge" role="status" aria-label={`Crit ready: +${Number(crit.toFixed(2))}%`}><span>CRIT</span><strong>+{Number(crit.toFixed(2))}%</strong></div>}
+    {crit > 0 && <div className="portrait-crit-badge" role="status" aria-label={`Crit ready: +${Number(crit.toFixed(2))}%`}><span>CRIT</span><strong><FittedNumber>{`+${Number(crit.toFixed(2))}%`}</FittedNumber></strong></div>}
     {special && <span className="portrait-special-label">SPECIAL</span>}
     <span className="portrait-name" title={boss.name}>{boss.name}</span>
-    <PortraitHealth hp={boss.hp} maxHp={boss.maxHp} name={boss.name}/>
+    <PortraitHealth hp={boss.hp} maxHp={boss.maxHp} name={boss.name} boss/>
   </div>;
 }
 
@@ -90,6 +103,7 @@ export default function TypingPortrait({ player, events, serverNow, anchorRef, s
   const clock = useCombatClock(serverNow);
   const pose = useCombatAnimation(events, player.defeated, clock);
   const defense = portraitDefense(state, player.maxHp);
+  const prone=useBattleCountdown(player.proneUntil,serverNow)>0;
   const previous = useRef(letters);
   const [pulse, setPulse] = useState(0);
   useEffect(() => {
@@ -98,27 +112,29 @@ export default function TypingPortrait({ player, events, serverNow, anchorRef, s
   }, [letters]);
   const special = (state.gold || 0) > 0;
   const crit = state.balanced ? (state.balancedCritBonus || 0) * 100 : 0;
-  return <div ref={anchorRef} className={`typing-portrait${special ? " typing-portrait-charged" : ""}`}
+  return <div ref={anchorRef} className={`typing-portrait${player.promoted?" typing-portrait-promoted":""}${prone?" typing-portrait-prone":""}${special ? " typing-portrait-charged" : ""}`}
     data-testid="typing-portrait" aria-label={`${player.name} typing profile`}>
     <div className="portrait-scenery" aria-hidden="true" />
     {crit > 0 && <div className="portrait-crit-aura" data-testid="portrait-crit-aura" aria-hidden="true"><i /><i /><i /></div>}
     <div className="portrait-special" data-testid="portrait-special" data-charged={special}
       style={{ opacity: special ? 1 : 0 }} aria-hidden="true"><i /><i /><i /></div>
     <div className="portrait-dodge" data-testid="portrait-dodge" style={{ opacity: Math.sqrt(defense.dodge) }}
-      title={state.balanced && !state.balancedRandomColors ? 'Active Dodge' : `Dodge: ${Math.round(defense.dodge * 100)}%`} aria-hidden="true" />
-    <div className="portrait-character"><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} /></div>
+      title="Active Dodge" aria-hidden="true" />
+    <div className={`portrait-character${player.promoted?" promoted-character":""}`}><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} /></div>
     {player.defeated && player.recoverAt && <div className="portrait-recovery"><span>Recovering</span><RecoveryBar player={player} clock={clock} profile/></div>}
     <div className="portrait-shield" data-testid="portrait-shield" style={{ opacity: Math.sqrt(defense.shield) }}
-      title={state.balanced && !state.balancedRandomColors ? 'Active Block' : `Block: ${Math.round(defense.shield * 100)}%`} aria-hidden="true" />
+      title="Active Block" aria-hidden="true" />
     <div key={pulse} className={`portrait-attack${pulse ? " portrait-attack-pulse" : ""}`} data-testid="portrait-attack"
-      title="Earned attack charge" aria-label={`Attack letters: ${letters}`}>
-      <span>ATK</span><strong style={{ fontSize: `${21 + Math.min(22, letters * .12)}px` }}>{letters}</strong>
+      title="Earned attack charge" aria-label={`Attack power: ${combatNumber(letters)}`}>
+      <span>ATK</span><strong style={{ fontSize: `${21 + Math.min(22, letters * .12)}px` }}><FittedNumber>{combatNumber(letters)}</FittedNumber></strong>
       <PortraitPower state={state}/>
     </div>
     {special && <span className="portrait-special-label">SPECIAL</span>}
     {crit > 0 && <div className="portrait-crit-badge" data-testid="portrait-crit-badge" role="status" aria-label={`Crit ready: +${Number(crit.toFixed(2))}%`}>
-      <span>CRIT</span><strong>+{Number(crit.toFixed(2))}%</strong>
+      <span>CRIT</span><strong><FittedNumber>{`+${Number(crit.toFixed(2))}%`}</FittedNumber></strong>
     </div>}
+    {player.promoted && <span className="portrait-promotion" aria-label="Promoted hero">★</span>}
+    <KrakenStatus player={player} serverNow={serverNow}/>
     <span className="portrait-name" title={player.name}>{player.name}</span>
     <PortraitHealth hp={player.hp} maxHp={player.maxHp} name={player.name}/>
   </div>;

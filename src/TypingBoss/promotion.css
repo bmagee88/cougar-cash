@@ -1,0 +1,8 @@
+.promoted-character{isolation:isolate}
+.promoted-character>.combat-actor{filter:drop-shadow(0 0 3px #facc15) drop-shadow(0 0 1px #fff1a8)}
+.promoted-character::before,.promoted-character::after{content:'';position:absolute;z-index:-1;pointer-events:none;top:16%;bottom:12%;width:55%;background:linear-gradient(135deg,#fff9d5,#facc15 40%,#a1620777 90%);clip-path:polygon(100% 35%,0 0,13% 29%,0 30%,30% 55%,8% 62%,50% 83%,100% 100%);filter:drop-shadow(0 0 3px #facc1588)}
+.promoted-character::before{left:-30%}.promoted-character::after{right:-30%;transform:scaleX(-1)}
+.typing-portrait-promoted{border-color:#e9c66e;box-shadow:inset 0 0 18px #d4af372d,0 0 10px #facc1544}
+.portrait-promotion{position:absolute;z-index:9;right:4px;top:3px;color:#fde68a;font:bold 13px/1 monospace;text-shadow:0 0 4px #f59e0b}
+.typing-portrait-promoted .portrait-attack{right:21px}
+.boss-impact-promoted{font-weight:1000;text-shadow:0 0 3px #ffed9d,0 2px 2px #000,0 0 8px #facc15;font-size:1.2em}

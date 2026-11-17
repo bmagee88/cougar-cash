@@ -32,6 +32,7 @@ test("feedback never claims an unearned bonus for errors, capped defense, or bal
   expect(wordReward(state, state, "word", false, "gold").bonus).toBe(false);
   const full = { ...state, shield: 1 };
   expect(wordReward(full, full, "word", true, "blue")).toMatchObject({ label: "Block full", bonus: false });
+  expect(wordReward(state, {...state,shield:.1/30}, "word", true, "blue")).toMatchObject({label:"Block ready",bonus:true});
   const balanced = initializeBalanced(state);
   expect(wordReward(balanced, balanced, "word", true, "orange")).toMatchObject({ label: "Perfect word", bonus: false });
   const growth = createTypingState(1, "cleric");

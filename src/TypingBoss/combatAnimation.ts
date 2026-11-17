@@ -1,3 +1,4 @@
+import {KRAKEN_ANIMATIONS} from './krakenAnimationRules';
 import { DragonHurtTier, TypingBossProjectile } from "./types";
 import { DRAGON_FLAME } from "./dragonHurtRules";
 
@@ -14,14 +15,15 @@ export const POSE_ROW: Record<CombatPose, number> = {
   shieldCast:2, shielded:5, buffCast:2, buffed:0, evasionReady:0, reviveCast:2, reviving:6,
   dodge:4, hit:5, block:5, death:7, defeated:7, bite:1, tailWhip:1, flamethrower:1,
 };
-export type CombatAnimationEvent = { id:string; state:CombatPose; at:number; duration:number; channel:"action"|"reaction"; critical?:boolean; hurtTier?:DragonHurtTier };
-export type CombatAnimation = { state:CombatPose; id:string; at:number; duration:number; action?:CombatAnimationEvent; reaction?:CombatAnimationEvent; block?:CombatAnimationEvent; nextAt?:number; hurtTier?:DragonHurtTier };
+export type CombatAnimationEvent = { krakenAttack?:'tentacleStrike'|'tentacleSweep'|'tidalWave'; id:string; state:CombatPose; at:number; duration:number; channel:"action"|"reaction"; critical?:boolean; hurtTier?:DragonHurtTier };
+export type CombatAnimation = { krakenAttack?:'tentacleStrike'|'tentacleSweep'|'tidalWave'; state:CombatPose; id:string; at:number; duration:number; action?:CombatAnimationEvent; reaction?:CombatAnimationEvent; block?:CombatAnimationEvent; nextAt?:number; hurtTier?:DragonHurtTier };
 export const NO_ANIMATION_EVENTS: readonly CombatAnimationEvent[] = [];
 
 export function collectCombatAnimations(projectiles: readonly TypingBossProjectile[]) {
   const actors = new Map<string,CombatAnimationEvent[]>();
   const add = (actor:string, projectile:TypingBossProjectile, state:CombatPose, at:number, channel:"action"|"reaction") => {
-    const event = {id:`${projectile.id}:${channel}`,state,at,duration:POSE_MS[state],channel,critical:projectile.critical,
+    const kraken=actor==='boss' && channel==='action' && projectile.bossId==='kraken' && projectile.bossAttack && projectile.bossAttack in KRAKEN_ANIMATIONS ? projectile.bossAttack as 'tentacleStrike'|'tentacleSweep'|'tidalWave' : undefined;
+    const event = {...(kraken?{krakenAttack:kraken}:{}),id:`${projectile.id}:${channel}`,state,at,duration:kraken?KRAKEN_ANIMATIONS[kraken].duration:POSE_MS[state],channel,critical:projectile.critical,
       ...(actor === "boss" && state === "hit" ? { hurtTier: projectile.critical ? "critical" as const : projectile.moveId === "strong" ? "power" as const : "basic" as const } : {})};
     const list = actors.get(actor) || []; list.push(event); actors.set(actor,list);
   };
@@ -29,7 +31,7 @@ export function collectCombatAnimations(projectiles: readonly TypingBossProjecti
     const selfHeal = shot.kind === "heal" && shot.source === shot.target;
     const cast:CombatPose = shot.kind === "heal" ? selfHeal ? "selfHeal" : "healCast" :
       shot.kind === "resurrect" ? "reviveCast" : shot.kind === "buff" ? shot.moveId === "goldShield" ? "shieldCast" : "buffCast" :
-      shot.bossAttack === "bite" ? "bite" : shot.bossAttack === "tailWhip" ? "tailWhip" : shot.bossAttack === "flamethrower" ? "flamethrower" :
+      shot.bossAttack === "bite" || shot.bossAttack === "tentacleStrike" ? "bite" : shot.bossAttack === "tailWhip" || shot.bossAttack === "tentacleSweep" ? "tailWhip" : shot.bossAttack === "flamethrower" ? "flamethrower" :
       shot.moveId === "strong" ? "strongAttack" : "weakAttack";
     add(shot.source,shot,cast,shot.animationStartedAt ?? shot.startedAt,"action");
     if (!shot.resolvedAt || shot.result === "pending") continue;

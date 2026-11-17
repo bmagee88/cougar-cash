@@ -3,6 +3,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import { BattleScene, PlayerTypingBattle } from "./TypingBossApp";
 import { TypingBossSessionSnapshot } from "./types";
 import { createTypingState } from "./proportionalRules";
+import {DamageBoard} from './ContinuousBattle';
 
 declare const test: any, expect: any, jest: any;
 
@@ -18,6 +19,19 @@ function room(count: number): TypingBossSessionSnapshot {
     })), projectiles: [],
   } as TypingBossSessionSnapshot;
 }
+
+test('two-player balanced HP and damage use whole hundredfold display units',()=>{
+  const session=room(2);session.balanced=true;
+  session.players.forEach(player=>Object.assign(player,{totalDamage:0,totalTaken:0}));
+  Object.assign(session.players[0],{totalDamage:12.345,totalTaken:.125});
+  const view=render(<><BattleScene session={session}/><DamageBoard session={session}/></>);
+  expect(screen.getByText('20,000 / 20,000 HP')).toBeTruthy();
+  expect(screen.getByText('Dealt 1,235')).toBeTruthy();
+  expect(screen.getByText('Taken 13')).toBeTruthy();
+  expect(session.boss.hp).toBe(200);
+  expect(session.players[0].totalDamage).toBe(12.345);
+  view.unmount();
+});
 
 test('battlefield fits a narrow screen and resizes characters without remeasuring on combat updates',()=>{
   const original=global.ResizeObserver;
@@ -144,11 +158,11 @@ test('joining another room resets typing even though both private-seed placehold
   const first=room(2);first.typing={...createTypingState(0,'paladin'),nextWord:10,characters:5,wordProtocol:1,
     issuedWords:[{index:10,text:'cat',color:null,ticket:'a'.repeat(32)}]};
   const view=render(<PlayerTypingBattle session={first} me={first.players[0]} code="hero0" active={false}/>);
-  expect(screen.getByLabelText('Attack letters: 5')).toBeTruthy();
+  expect(screen.getByLabelText('Attack power: 500')).toBeTruthy();
   const second={...first,id:'bossXYZ',typing:{...createTypingState(0,'paladin'),wordProtocol:1 as const,
     issuedWords:[{index:0,text:'dog',color:null,ticket:'b'.repeat(32)}]}};
   view.rerender(<PlayerTypingBattle session={second} me={second.players[0]} code="hero0" active={false}/>);
-  expect(screen.getByLabelText('Attack letters: 0')).toBeTruthy();
+  expect(screen.getByLabelText('Attack power: 0')).toBeTruthy();
 });
 
 

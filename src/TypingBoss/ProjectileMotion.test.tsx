@@ -16,13 +16,13 @@ function display(projectile: TypingBossProjectile, targetOffscreen = false) {
 }
 
 test.each([
-  ["outgoing damage",{},"−25","rgb(248, 113, 113)"],
-  ["incoming damage",{kind:"boss",source:"boss",target:"me"},"−25","rgb(248, 113, 113)"],
-  ["healing",{kind:"heal",target:"me"},"HEAL +25","rgb(250, 204, 21)"],
-  ["revival",{kind:"resurrect",target:"me"},"REVIVE +25","rgb(250, 204, 21)"],
-  ["shield",{kind:"buff",moveId:"goldShield",target:"me"},"BLOCK +25","rgb(96, 165, 250)"],
+  ["outgoing damage",{},"−2,500","rgb(248, 113, 113)"],
+  ["incoming damage",{kind:"boss",source:"boss",target:"me"},"−2,500","rgb(248, 113, 113)"],
+  ["healing",{kind:"heal",target:"me"},"HEAL +2,500","rgb(250, 204, 21)"],
+  ["revival",{kind:"resurrect",target:"me"},"REVIVE +2,500","rgb(250, 204, 21)"],
+  ["shield",{kind:"buff",moveId:"goldShield",target:"me"},"BLOCK","rgb(96, 165, 250)"],
   ["dodge",{result:"evade",evadeType:"dodge",amount:0},"DODGED!","rgb(74, 222, 128)"],
-  ["fully shielded hit",{amount:0,blockedAmount:25},"BLOCK 25","rgb(96, 165, 250)"],
+  ["fully shielded hit",{amount:0,blockedAmount:25},"BLOCK","rgb(96, 165, 250)"],
 ])("%s uses the requested combat color", (_name: string, values: Partial<TypingBossProjectile>, label: string, color: string) => {
   display(shot(values));
   expect(screen.getByText(label).style.color).toBe(color);
@@ -30,8 +30,8 @@ test.each([
 
 test("crit damage stays red and keeps its impact flash and large type", () => {
   display(shot({critical:true,moveId:"strong"}));
-  expect(screen.getByText(/−25/).style.color).toBe("rgb(248, 113, 113)");
-  expect(screen.getByText(/−25/).className).toContain("boss-impact-crit");
+  expect(screen.getByText(/−2,500/).style.color).toBe("rgb(248, 113, 113)");
+  expect(screen.getByText(/−2,500/).className).toContain("boss-impact-crit");
   expect(screen.getByText("CRIT!")).toBeTruthy();
   expect(screen.getByTestId("critical-impact-flash")).toBeTruthy();
 });
@@ -45,10 +45,18 @@ test("dragon fire breath warns the target and uses a distinct stream; blocks get
   expect(screen.getByTestId("dragon-player-impact").className).toContain("dragon-impact-blocked");
 });
 
-test("a partial shield shows red damage and a separate blue blocked amount", () => {
+test("a partial shield shows scaled damage and a blue block cue without a number", () => {
   display(shot({amount:15,blockedAmount:10}));
-  expect(screen.getByText("BLOCKED 10").style.color).toBe("rgb(96, 165, 250)");
-  expect(screen.getByText("−15").style.color).toBe("rgb(248, 113, 113)");
+  expect(screen.getByText("BLOCKED").style.color).toBe("rgb(96, 165, 250)");
+  expect(screen.getByText("−1,500").style.color).toBe("rgb(248, 113, 113)");
+});
+
+test('Kraken melee impacts use tentacles, and its assault has multiple arms',()=>{
+  const {rerender}=display(shot({kind:'boss',source:'boss',target:'me',bossId:'kraken',bossAttack:'tentacleStrike'}));
+  expect(screen.getByTestId('kraken-tentacle-impact').querySelectorAll('path').length).toBe(2);
+  const projectile=shot({kind:'boss',source:'boss',target:'me',bossId:'kraken',bossAttack:'tentacleSweep'});
+  rerender(<ProjectileMotion projectile={projectile} from={point} to={point} art={null} serverOffset={0}/>);
+  expect(screen.getByTestId('kraken-tentacle-impact').querySelectorAll('path').length).toBe(4);
 });
 
 test("an ally heal in a personal view names its recipient and avoids the dragon and caster positions", () => {

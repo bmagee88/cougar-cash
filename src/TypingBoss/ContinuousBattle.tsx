@@ -1,7 +1,8 @@
+import {combatNumber} from './combatNumbers';
 import React, { useEffect, useRef, useState } from "react";
 import { Alert, Box, Button, Chip, LinearProgress, Paper, Stack, Typography } from "@mui/material";
 import { submitTypingBossWords } from "./api";
-import { BALANCED_COLOR_CHANCES, MONK_BALANCED_COLOR_CHANCES, attackWordLimit, consistencyMultiplier, dodgeChance, effectiveDodgeChance, finishWord, requiresWordSpace, releaseAttack, typingAttackProgress, typingWord } from "./proportionalRules";
+import { BALANCED_COLOR_CHANCES, MONK_BALANCED_COLOR_CHANCES, goldWordExtension, attackWordLimit, consistencyMultiplier, effectiveDodgeChance, finishWord, requiresWordSpace, releaseAttack, typingAttackProgress, typingWord } from "./proportionalRules";
 import { usePublishAttackProgress } from "./AttackProgress";
 import { TypingBossCredentials, TypingBossSessionSnapshot, TypingBossTypingState, TypingBossWordResult } from "./types";
 import "./continuousBattle.css";
@@ -20,7 +21,8 @@ const goldAbilityText = {
   monk: "Gold words appear twice as often for Monks. Halve the next attack's word count per gold word, rounding up. It resets to ten unless you earn gold again.",
   paladin: "Turn your attack into Block for an ally. It absorbs damage from one boss hit.",
   rogue: "Earn one extra roll per gold word for your next incoming hit.",
-  dragon: "Dragon: each perfect gold adds two words to this run. Extra words can have their own colors and must be typed to count.",
+  kraken: "Gold curses this attack’s targets for 15 seconds. The curse types your next correct key every 2–4 seconds, shifting your place in the word. Attacks repeat: 8-word Slam, 10-word Multi-tentacle Assault, 10-word Wave.",
+  dragon: "Dragon: each perfect gold adds five words to this run. Extra words can have their own colors and must be typed to count.",
 };
 const number = (value: number) => Number(value.toFixed(2)).toString();
 function mergeWordWindows(a: TypingBossTypingState['issuedWords'], b: TypingBossTypingState['issuedWords'], start:number) {
@@ -43,7 +45,7 @@ function WordRewardBurst({ reward, onDone }: { reward: WordReward; onDone: (id: 
 export function ContinuousTyping({ sessionId, credentials, state, active, profile, dragonProfile, hostProfile, healingPool=0, countdownEndsAt, serverNow, teamActivity }: {
   sessionId: string; credentials: TypingBossCredentials; state: TypingBossTypingState; active: boolean; profile?: TypingPortraitProps; dragonProfile?: DragonPortraitProps; hostProfile?: DragonPortraitProps; healingPool?:number; countdownEndsAt?:number|null; serverNow?:number;teamActivity?:TypingBossSessionSnapshot['teamActivity'];
 }) {
-  const seconds=useBattleCountdown(countdownEndsAt,serverNow),canType=active && seconds===0;
+  const seconds=useBattleCountdown(countdownEndsAt,serverNow),proneSeconds=useBattleCountdown(profile?.player.proneUntil,serverNow),canType=active && seconds===0 && proneSeconds===0;
   const model = useRef({ ...state });
   const queue = useRef<TypingBossWordResult[]>([]);
   const acknowledged = useRef(state.nextWord);
@@ -94,6 +96,34 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
     redraw(value => value + 1);
   }, [state]);
 
+  const lastCurseKey=useRef<string|undefined>(undefined);
+  const curseKey=profile?.player.curseKey;
+  const [forcedKey,setForcedKey]=useState('');
+  const pauseStarted=useRef<number|null>(null);
+  const flushAfterPause=useRef<()=>Promise<void>>(async()=>{});
+  useEffect(()=>{
+    if(!curseKey || lastCurseKey.current===curseKey.id)return;
+    lastCurseKey.current=curseKey.id;
+    if(!canType)return;
+    const word=typingWord(model.current);
+    if(word.pending)return;
+    const key=awaitingSpace.current?' ':(word.text+' ')[typed.current.length];
+    if(!key)return;
+    keyDown({key,repeat:false,ctrlKey:false,metaKey:false,altKey:false,preventDefault:()=>{},nativeEvent:{timeStamp:performance.now()}} as React.KeyboardEvent<HTMLInputElement>);
+    setForcedKey(key===' '?'space':key);
+  });
+  useEffect(()=>{if(!forcedKey)return;const timer=setTimeout(()=>setForcedKey(''),900);return ()=>clearTimeout(timer);},[forcedKey,curseKey?.id]);
+  useEffect(()=>{
+    if(proneSeconds>0) {if(pauseStarted.current===null)pauseStarted.current=performance.now();}
+    else {
+      if(pauseStarted.current!==null) {
+        if(timing.current.last!==null)timing.current.last+=performance.now()-pauseStarted.current;
+        pauseStarted.current=null;
+      }
+      if(canType && queue.current.length)void flushAfterPause.current();
+    }
+  },[proneSeconds,canType]);
+
   async function flush() {
     if (inFlight.current || !queue.current.length || !activeRef.current || !mounted.current) return;
     inFlight.current = true;
@@ -126,6 +156,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
     if (queue.current.length && !retryTimer.current && mounted.current) flush();
   }
 
+  flushAfterPause.current=flush;
   function keyDown(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === "Tab") return;
     if (event.key === "Backspace" || event.key === "Delete" || event.key === "Enter") {
@@ -205,48 +236,47 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
   }
 
   const current = model.current;
+  const damageScale=current.promoted?2:1;
   const scheduled=current.balanced && !current.balancedRandomColors;
   const word = typingWord(current);
   const live = current.balanced ? previewBalancedWord(current,typed.current,word.text+" ",timing.current.gaps,word.color) : current;
-  const multiplier = scheduled ? 1+(live.balancedCadenceBonus || 0) : current.balanced ? current.characters ? Math.max(0,current.balancedPower || 0) / current.characters : current.balancedQuality || 1.25 : consistencyMultiplier(current.intervalCount + timing.current.count,
+  const multiplier = scheduled ? 1+(live.balancedCadenceBonus || 0) : current.balanced ? current.characters ? Math.max(0,current.balancedPower || 0) * Math.max(1,current.combatDivisor || 1) / current.characters : current.balancedQuality || 1.25 : consistencyMultiplier(current.intervalCount + timing.current.count,
     current.intervalSum + timing.current.sum, current.intervalSquares + timing.current.squares);
-  const blockPreview=Math.min(current.balancedGuardMax || 100,(current.balancedGuard || 0)+(live.balancedBlockBank || 0));
-  const profileState=scheduled ? current : current.balanced ? {...current,balancedGuard:blockPreview} : current;
+  const profileState=current;
   const cycleStart = current.nextWord - current.wordsInAttack;
   // Reveal the extension on the gold word's last correct letter. The separator
-  // still commits the word normally; finishWord then owns the same two slots.
+  // still commits the word normally; finishWord then owns the same extra slots.
   // This is display-only, so snapshots/retries cannot award the ability twice.
   const previewExtension = (current.ability === "barbarian" || current.ability === "dragon") && word.color === "gold" && typed.current === word.text && timing.current.mistakes===0;
-  const rowWords = Array.from({ length: attackWordLimit(current) + (previewExtension ? 2 : 0) }, (_, offset) => typingWord(current, cycleStart + offset));
+  const rowWords = Array.from({ length: attackWordLimit(current) + (previewExtension ? goldWordExtension(current) : 0) }, (_, offset) => typingWord(current, cycleStart + offset));
   const cursor = rowWords.slice(0, current.wordsInAttack).reduce((total, item) => total + item.text.length + 1, 0) + typed.current.length - (awaitingSpace.current ? 1 : 0);
 
   return <Paper className="continuous-typing" elevation={0} sx={{ p: { xs: 2, md: 2.5 }, border: "1px solid #50627a", borderRadius: 2 }}>
     <Stack direction="row" flexWrap="wrap" gap={1}>
+      {current.promoted && <Chip label="Promoted · 2× damage" sx={{color:'#fde68a',border:'1px solid #d4af37'}}/>}
       {(scheduled || multiplier !== 1) && <Chip label={`${scheduled ? "Cadence" : current.balanced ? "Quality" : "Rhythm"} ×${multiplier.toFixed(scheduled ? 4 : 2)}`} sx={{ color: "#e9d5ff" }} />}
-      {scheduled && <Chip label={`ATK ${number(chargedLetters(current,typed.current))}`} />}
+      {scheduled && <Chip label={`ATK ${combatNumber(chargedLetters(current,typed.current)*damageScale)}`} />}
       {current.balanced ? <>
-        {!scheduled && <Chip title={`Banked Dodge points · next hit: ${number(effectiveDodgeChance(current) * 100)}% chance`} label={`Dodge ${number(dodgeChance(current))}`} sx={{ color:colors.green }} />}
-        {!scheduled && <Chip label={`Block ${number(blockPreview + (current.paladinShield || 0))}`} sx={{ color:colors.blue }} />}
-        {scheduled && <Chip label={`${current.ability==='cleric'?'Prayer ready':'Extra attack'} +${number((current.ability==='cleric'?current.balancedHealingDeposit:current.balancedOrangePower) || 0)}`} sx={{color:colors.orange}}/>}
+        {scheduled && <Chip label={`${current.ability==='cleric'?'Prayer ready':'Extra attack'} +${combatNumber(((current.ability==='cleric'?current.balancedHealingDeposit:(current.balancedOrangePower || 0)*damageScale) || 0))}`} sx={{color:colors.orange}}/>}
         {scheduled && <Chip label={`Crit +${number((current.balancedCritBonus || 0)*100)}%`} sx={{color:colors.red}}/>}
-        <Chip label={`${current.ability==='cleric'?'Prayer':'Charge'} +${number((current.ability==='cleric'?live.balancedHealingBank:live.balancedOrangeBank) || 0)}`} sx={{ color:current.ability==='cleric'?'#facc15':colors.orange }} />
-        {current.ability==='cleric' && <Chip label={`Prayer pool ${number(healingPool)}`} sx={{color:'#facc15'}}/>}
+        <Chip label={`${current.ability==='cleric'?'Prayer':'Charge'} +${combatNumber((current.ability==='cleric'?live.balancedHealingBank:live.balancedOrangeBank) || 0)}`} sx={{ color:current.ability==='cleric'?'#facc15':colors.orange }} />
+        {current.ability==='cleric' && <Chip label={`Prayer pool ${combatNumber(healingPool)}`} sx={{color:'#facc15'}}/>}
         <Box sx={{ minWidth: 110, alignSelf: "center", color: colors.red }}>
           <Typography variant="caption">Crit charge +{number(live.balancedCritCharge || 0)}%</Typography>
           {!current.balancedRandomColors && <LinearProgress aria-label="Crit power charge" variant="determinate" value={Math.max(0, Math.min(100, 100 * (1 - ((current.balancedCritAt || 131) - (live.balancedCharacters || 0)) / 131)))} sx={{ bgcolor: "#4c1525", "& .MuiLinearProgress-bar": { bgcolor: colors.red } }} />}
         </Box>
-      </> : <><Chip label={`Block ${Math.round(current.shield * 100)}%`} sx={{ color: colors.blue }} />
-      <Chip title={`Banked Dodge points · next hit: ${number(effectiveDodgeChance(current) * 100)}% chance`} label={`Dodge ${number(dodgeChance(current))}`} sx={{ color: colors.green }} /></>}
+      </> : null}
       {!scheduled && !!current.dodgeExtraRolls && <Chip label={`${1 + current.dodgeExtraRolls} dodge rolls`} sx={{ color: colors.gold }} />}
-      {!current.balanced && !!current.paladinShield && <Chip label={`Block ${number(current.paladinShield)} HP`} sx={{ color: colors.gold }} />}
       {credentials.hostToken && !!current.gold && <Chip label={`Gold ×${current.gold}`} sx={{ color: colors.gold }} />}
       {current.red > 0 && <Chip label={`Crit ${Math.round(current.red * 100)}%`} sx={{ color: colors.red }} />}
       {current.green > 0 && <Chip label={`+${current.green * 4}% per correct word`} sx={{ color: colors.green }} />}
     </Stack>
+    {proneSeconds>0 && <Alert severity="info" role="status">Knocked prone · {proneSeconds}s. Typing resumes when you stand.</Alert>}
+    {forcedKey && <span className="kraken-forced-key" role="status">Ink Hex typed “{forcedKey.toUpperCase()}”</span>}
     {teamActivity && <TeamActivityCue activity={teamActivity} />}
     <div className={profile || hostProfile ? `typing-input-deck${dragonProfile ? " typing-input-deck-dual" : ""}` : undefined}>
-    {hostProfile && <DragonPortrait {...hostProfile} state={profileState} letters={chargedLetters(current,typed.current)}/>}
-    {profile && <TypingPortrait {...profile} state={profileState} letters={chargedLetters(current, typed.current)} />}
+    {hostProfile && <DragonPortrait {...hostProfile} state={profileState} letters={(current.balanced ? live.balancedPower || 0 : chargedLetters(current,typed.current))*damageScale}/>}
+    {profile && <TypingPortrait {...profile} state={profileState} letters={(current.balanced ? live.balancedPower || 0 : chargedLetters(current, typed.current))*damageScale} />}
     <Box className="typing-word-input" onClick={() => input.current?.focus()} sx={{ mt: 2, position: "relative", cursor: active ? "text" : "default", border: `2px solid ${focused ? "#7dd3fc" : "#344256"}`, borderRadius: 2, p: 2, bgcolor: "#0b1220" }}>
       <div className="typing-word-rewards" aria-hidden="true">{rewards.map(reward => <WordRewardBurst key={reward.id} reward={reward} onDone={clearReward} />)}</div>
       <span id={wordDescriptionId} hidden>{word.text}{word.color === "gold" && " — golden ability word"}{word.trigger && word.color!=="gold" && ` — ${word.color} bonus trigger word`}{!scheduled && current.balanced && word.color === "red" && " — critical attack trigger word"}</span>
@@ -311,10 +341,10 @@ export function DamageBoard({ session, personal = false }: { session: TypingBoss
         const dealt = hits.find(hit => hit.source === player.code);
         const taken = hits.find(hit => hit.target === player.code);
         return <Box key={player.code} sx={{ border: "1px solid #344256", borderRadius: 1, px: 1.5, py: 1, minWidth: 0, bgcolor: player.defeated ? "#28151f" : "#101a2a" }}>
-          <Stack direction="row" justifyContent="space-between" gap={1}><Typography fontWeight={900} noWrap>{player.name}</Typography><Typography variant="body2" whiteSpace="nowrap">{number(player.hp)} / {number(player.maxHp)} HP</Typography></Stack>
+          <Stack direction="row" justifyContent="space-between" gap={1}><Typography fontWeight={900} noWrap>{player.name}</Typography><Typography variant="body2" whiteSpace="nowrap">{combatNumber(player.hp)} / {combatNumber(player.maxHp)} HP</Typography></Stack>
           <Stack direction="row" gap={2} sx={{ mt: 0.5 }}>
-            <Typography sx={{ color: COMBAT_COLORS.damage }}>Dealt {number(player.totalDamage)} {dealt && <strong key={dealt.id} className="damage-flash" style={{ color: combatFeedback(dealt).color }}>{combatFeedback(dealt).label}</strong>}</Typography>
-            <Typography sx={{ color: COMBAT_COLORS.damage }}>Taken {number(player.totalTaken || 0)} {taken && <strong key={taken.id} className="damage-flash" style={{ color: combatFeedback(taken).color }}>{combatFeedback(taken).label}</strong>}</Typography>
+            <Typography sx={{ color: COMBAT_COLORS.damage }}>Dealt {combatNumber(player.totalDamage)} {dealt && <strong key={dealt.id} className="damage-flash" style={{ color: combatFeedback(dealt).color }}>{combatFeedback(dealt).label}</strong>}</Typography>
+            <Typography sx={{ color: COMBAT_COLORS.damage }}>Taken {combatNumber(player.totalTaken || 0)} {taken && <strong key={taken.id} className="damage-flash" style={{ color: combatFeedback(taken).color }}>{combatFeedback(taken).label}</strong>}</Typography>
           </Stack>
         </Box>;
       })}

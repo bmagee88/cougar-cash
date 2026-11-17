@@ -137,6 +137,18 @@ whole actor off the ground; intentional dodge, death and revival movement remain
 Re-run registration after repacking dragon art. Playback is still native CSS, with
 no per-frame React updates or additional combat messages.
 
+Kraken attacks follow the same atlas playback pattern: Slam has 6 drawn frames,
+Multi-tentacle Assault has 12, and Tidal Wave and Ink Hex have 20 each. Assault
+replaces Sweep with several tentacles lashing at different heights. Shared timings
+in `krakenAnimationRules.js` align damage with the drawn strikes. Ink Hex completes
+its own cast before the accompanying attack. Overlapping Kraken attacks queue;
+Wave owns its full twenty-frame sequence before strong reactions resume. Runtime
+WebPs, PNG masters, generation prompts and registration manifest are under
+`public/assets/typing-boss/kraken`. Run `node scripts/prepare-typing-boss-kraken.cjs`
+to repack. The development `/typing-boss/kraken-preview` has replay and individual
+frame inspection. Quiet player scenery stays at rest; profile and host animations
+play locally without per-frame broadcasts.
+
 `server/dragonCombat.js` queues whole dragon attacks during power/critical hurt,
 including their projectile creation and damage timers. Waiting attacks drain once
 in FIFO order, reevaluating the current pain deadline if a critical replaces a

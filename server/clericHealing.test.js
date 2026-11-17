@@ -10,8 +10,51 @@ function room(count=3) {
 }
 function attack(p,gold=1) {
   Object.assign(p.typing,{characters:80,balancedPower:100,gold,balancedDefenseWord:false});
-  return r.releaseAttack(p.typing);
+  const result=r.releaseAttack(p.typing);
+  // These fixtures override power with a full healing amount at the call site.
+  delete result.healingPower;
+  return result;
 }
+
+test('cleric and necromancer healing uses the roster divisor and the class divisor',()=>{
+  for(const ability of ['cleric','necromancer']) {
+    const {s,cb,player}=room(5);
+    for(const p of s.players.values()) {p.classId=ability;p.typing.ability=ability;}
+    player.typing.balancedPower=50/5;player.typing.characters=50;player.typing.gold=1;
+    player.typing.balancedCritBonus=.2;player.typing.balancedOrangePower=10/5;
+    const hit=r.releaseAttack(player.typing);
+    assert.equal(hit.power,14.4);assert.equal(hit.healingPower,14.4);
+    if(ability==='cleric')player.hp=1;
+    else {player.hp=0;cb.random=()=>0;}
+    engine.launchAttack(s,player,hit,cb);
+    assert.ok(Math.abs(player.hp-(ability==='cleric'?3.88:2.88))<1e-10);
+    assert.ok(Math.abs(s.projectiles.at(-1).amount-2.88)<1e-10);
+    assert.equal(s.boss.hp,10000);
+  }
+});
+
+test('cleric orange Prayer gains follow roster scaling in both color modes',()=>{
+  const {recordBalancedWord}=require('../src/TypingBoss/balancedRules');
+  for(const randomColors of [false,true]) {
+    const solo=r.initializeBalanced(r.createTypingState(1,'cleric'));solo.balancedRandomColors=randomColors;
+    if(!randomColors)Object.assign(solo,{balancedCharacters:25,balancedOrangeAt:25});
+    const five=structuredClone(solo);five.combatDivisor=5;
+    for(const state of [solo,five])recordBalancedWord(state,'cat','cat ',[150,150],true,'orange');
+    assert.ok(Math.abs(five.balancedHealingDeposit-solo.balancedHealingDeposit/5)<1e-10);
+    assert.ok(five.balancedHealingDeposit>0);
+  }
+});
+
+test('non-balanced healing and damage both follow roster scaling',()=>{
+  for(const ability of ['cleric','necromancer']) {
+    const solo=r.createTypingState(1,ability);
+    Object.assign(solo,{characters:70,orange:.2,green:1,growth:.04,gold:1});
+    const seven={...solo,combatDivisor:7};
+    const a=r.releaseAttack(solo,()=>1),b=r.releaseAttack(seven,()=>1);
+    assert.ok(Math.abs(a.power/7-b.power)<1e-10);
+    assert.ok(Math.abs(a.healingPower/7-b.healingPower)<1e-10);
+  }
+});
 test('Prayer words route all typing power into Prayer, and never increase attack or crit',()=>{
   const s=r.initializeBalanced(r.createTypingState(123,'cleric'));s.balancedRandomColors=true;
   while(r.typingWord(s).color!=='orange')s.seed++;
@@ -92,9 +135,9 @@ test('a confirmed blue trigger grants usable Block before any attack release',()
   Object.assign(player.typing,{balancedRandomColors:false,balancedCharacters:140,balancedOrangeAt:240,balancedCritAt:268});
   const text=r.typingWord(player.typing).text,n=text.length-1,gaps=Array(n).fill(150);
   engine.submitWords(s,{role:'player',actorCode:'0'},[[0,text,n,n*150,n*22500,null,gaps]],cb);
-  const block=text.length*.625;
+  const block=text.length*.625/s.players.size;
   assert.equal(player.typing.balancedGuard,block);
-  assert.equal(player.typing.wordsInAttack,1);assert.equal(player.typing.balancedPower,text.length);
+  assert.equal(player.typing.wordsInAttack,1);assert.equal(player.typing.balancedPower,text.length/s.players.size);
   assert.equal(jobs.length,0,'no player attack has fired');
   engine.launchAttack(s,s.typingHost,{power:20,multiplier:1,moveId:'weak',balanced:true},cb);jobs.shift()();
   assert.equal(player.hp,100-Math.max(0,20-block));

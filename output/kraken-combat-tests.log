@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: Kraken repeats 8/10/10 words and gold never extends its word count
+ok 1 - Kraken repeats 8/10/10 words and gold never extends its word count
+  ---
+  duration_ms: 13.1531
+  type: 'test'
+  ...
+# Subtest: sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+ok 2 - sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+  ---
+  duration_ms: 12.6159
+  type: 'test'
+  ...
+# Subtest: single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+ok 3 - single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+  ---
+  duration_ms: 2.5754
+  type: 'test'
+  ...
+# Subtest: wave independently grants 15% prone instead of damage without redistributing the saved damage
+ok 4 - wave independently grants 15% prone instead of damage without redistributing the saved damage
+  ---
+  duration_ms: 0.8632
+  type: 'test'
+  ...
+# Subtest: curse ticks every 2-4 seconds for 15 seconds, records a server-enforced typo, and stops at expiry
+ok 5 - curse ticks every 2-4 seconds for 15 seconds, records a server-enforced typo, and stops at expiry
+  ---
+  duration_ms: 15.1439
+  type: 'test'
+  ...
+# Subtest: prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+ok 6 - prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+  ---
+  duration_ms: 1.2463
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 342.5826

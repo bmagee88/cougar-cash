@@ -9,10 +9,10 @@ function combatState(session) {
 function clearDragonCombat(session) {
   if (session.dragonCombat) { session.dragonCombat.queue.length = 0; session.dragonCombat.strongQueue.length = 0; session.dragonCombat.token++; }
   session.dragonCombat = null;
-  if (session.boss) { session.boss.queuedAttacks = 0; session.boss.queuedStrongReactions = 0; session.boss.flameBreath = null; }
+  if (session.boss) { session.boss.queuedAttacks = 0; session.boss.queuedStrongReactions = 0; session.boss.flameBreath = null; session.boss.krakenWave=null; }
 }
 
-const flameUntil = (session, now) => session.boss.flameBreath?.until > now ? session.boss.flameBreath.until : now;
+const flameUntil = (session, now) => Math.max(now,session.boss.flameBreath?.until || 0,session.boss.krakenWave?.until || 0);
 
 function wakeDragonCombat(session, callbacks, readyAt) {
   const state = session.dragonCombat;
@@ -28,7 +28,8 @@ function wakeDragonCombat(session, callbacks, readyAt) {
 
 function blockingUntil(session, now) {
   const hurt = session.boss.hurt;
-  return hurt && hurt.until > now && DRAGON_HURT[hurt.tier].rank > 1 ? hurt.until : now;
+  const hurtUntil=hurt && hurt.until > now && DRAGON_HURT[hurt.tier].rank > 1 ? hurt.until : now;
+  return session.boss.id==='kraken'?Math.max(hurtUntil,session.dragonCombat?.attackUntil || now):hurtUntil;
 }
 
 function playAttack(session, run, now, callbacks) {
@@ -40,6 +41,10 @@ function playAttack(session, run, now, callbacks) {
     session.boss.flameBreath = { id: result.id, at: now, until: now + DRAGON_FLAME.duration };
     wakeDragonCombat(session, callbacks, session.boss.flameBreath.until);
     callbacks.broadcast(session);
+  }
+  if(result?.kind==='tidalWave') {
+    session.boss.krakenWave={id:result.id,at:result.actionAt ?? now,until:now+duration,krakenAttack:'tidalWave'};
+    wakeDragonCombat(session,callbacks,session.boss.krakenWave.until);callbacks.broadcast(session);
   }
   return duration;
 }
@@ -54,6 +59,7 @@ function drainDragonAttacks(session, callbacks) {
     return;
   }
   if (session.boss.flameBreath) { session.boss.flameBreath = null; callbacks.broadcast(session); }
+  if(session.boss.krakenWave){session.boss.krakenWave=null;callbacks.broadcast(session);}
   if (!state.queue.length && !state.strongQueue.length) return;
   const readyAt = Math.max(blockingUntil(session, now), state.nextQueuedAt);
   if (readyAt > now) {

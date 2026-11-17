@@ -1,0 +1,9 @@
+PASS src/TypingBoss/HostSetup.test.tsx (9.712 s)
+  √ host can choose a dragon, name and mode before creating the lobby (630 ms)
+  √ pending room creation disables choices and shows failures (188 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       2 passed, 2 total
+Snapshots:   0 total
+Time:        14.869 s
+Ran all test suites matching /HostSetup.test/i.

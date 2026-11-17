@@ -1,3 +1,4 @@
+import {combatNumber} from './combatNumbers';
 import { TypingBossProjectile, TypingBossSessionSnapshot } from "./types";
 
 export const MAX_BATTLE_LOG_ENTRIES = 200;
@@ -17,7 +18,7 @@ function projectileEntries(projectile: TypingBossProjectile, session: TypingBoss
       projectile.multiplier && projectile.multiplier !== 1 ? `Attack multiplier ×${number(projectile.multiplier)}` : ""].filter(Boolean).join(" · ") };
   if (projectile.result === "evade") return [{ ...entry, category: "Dodge", message: `${target} dodged ${source}'s attack.` }];
   if (projectile.result === "miss") return [{ ...entry, category: "Miss", message: `${source}'s ${projectile.moveLabel || "attack"} missed ${target}.` }];
-  const amount = number(projectile.amount);
+  const amount = combatNumber(projectile.amount || 0);
   if (projectile.kind === "heal") return [{ ...entry, category: "Healing", message: `${source} healed ${target} for ${amount} HP.` }];
   if (projectile.kind === "resurrect") return [{ ...entry, category: "Healing", message: `${source} revived ${target} with ${amount} HP.` }];
   if (projectile.kind === "buff") return [{ ...entry, category: projectile.moveId === "goldShield" ? "Shield" : "Buff",
@@ -26,7 +27,7 @@ function projectileEntries(projectile: TypingBossProjectile, session: TypingBoss
   if ((projectile.amount || 0) > 0 || !projectile.blockedAmount) entries.push({ ...entry, category: "Damage",
     message: `${source} dealt ${amount} damage to ${target}.` });
   if (projectile.blockedAmount) entries.push({ ...entry, id: `${entry.id}:shield`, category: "Shield",
-    message: `${target} blocked ${number(projectile.blockedAmount)} damage from ${source}.` });
+    message: `${target} blocked ${combatNumber(projectile.blockedAmount)} damage from ${source}.` });
   return entries;
 }
 

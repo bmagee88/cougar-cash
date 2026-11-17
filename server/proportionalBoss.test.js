@@ -65,28 +65,29 @@ test("barbarian and dragon gold have no damage multiplier or carryover", () => {
 
 test("a perfect final gold extends the current run and requires its separator", () => {
   for (const ability of ["barbarian", "dragon"]) {
+    const limit=ability==='dragon'?15:12;
     const state = rules.createTypingState(0, ability);
-    while (rules.typingWord(state, 9).color !== "gold" || Array.from({length:9}, (_,i)=>rules.typingWord(state,i)).some(w=>w.color === "gold") || rules.typingWord(state,10).color === "gold" || rules.typingWord(state,11).color === "gold") state.seed++;
+    while (rules.typingWord(state, 9).color !== "gold" || Array.from({length:9}, (_,i)=>rules.typingWord(state,i)).some(w=>w.color === "gold") || Array.from({length:limit-10},(_,i)=>rules.typingWord(state,10+i)).some(w=>w.color=== "gold")) state.seed++;
     const session = sessionWithPlayers(2);
     const host = ability === "dragon";
     if (host) session.typingHost = {...state}; else session.players.get("0").typing = {...state};
     const records = [];
     let characters = 0;
-    for (let i=0; i<12; i++) {
+    for (let i=0; i<limit; i++) {
       const word = rules.typingWord(state);
       const text = word.text + (rules.requiresWordSpace(state,word.text) ? " " : "");
       const count=text.length-(state.wordsInAttack === 0 ? 1 : 0);
       records.push([i,text,count,count*200,count*40000]);
       characters += text.length;
       rules.finishWord(state,text,count,count*200,count*40000);
-      if(i === 9) { assert.equal(state.attackWords,12); assert.equal(state.characters,characters); }
+      if(i === 9) { assert.equal(state.attackWords,limit); assert.equal(state.characters,characters); }
     }
     assert.ok(records[9][1].endsWith(" "));
-    assert.ok(!records[11][1].endsWith(" "));
+    assert.ok(!records[limit-1][1].endsWith(" "));
     const cb = {...callbacks(),random:()=>.4};
     engine.submitWords(session, host ? {role:"host"} : {role:"player",actorCode:"0"}, records, cb);
     const actual = host ? session.typingHost : session.players.get("0").typing;
-    assert.equal(actual.nextWord,12);
+    assert.equal(actual.nextWord,limit);
     assert.equal(actual.attackWords,10);
     assert.equal(actual.characters,0);
     assert.equal(cb.timers.length,1, "no attack fires until the extra words are typed");
@@ -652,7 +653,7 @@ test('boss results count group damage once, honor defenses and overkill, and pre
   session.startedAt=1000;session.closedAt=61000;
   const entries=engine.leaderboard(session),boss=entries.find(entry=>entry.isBoss);
   assert.equal(entries.length,4);assert.equal(boss.name,'Ancient Red Dragon');
-  assert.equal(boss.totalDamage,20);assert.equal(boss.dps,.33);
+  assert.equal(boss.totalDamage,20);assert.equal(boss.dps,20/60);
   assert.equal(boss.strongestAttack.attackNumber,1);
   assert.deepEqual(entries.filter(entry=>!entry.isBoss).map(entry=>entry.rank),[1,2,3]);
 });

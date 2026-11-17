@@ -5,7 +5,7 @@
 .tb-host-unlocked {display:flex;align-items:center;gap:8px;flex-shrink:0;padding:10px 12px;border:1px solid #b39a652e;border-radius:4px;color:#b6ad94;font-size:8px;font-weight:700;letter-spacing:1.4px;}
 .tb-host-unlocked svg {color:#c8ad7c;font-size:15px;}
 .tb-host-layout {display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start;}
-.tb-host-arena {position:relative;min-height:300px;border:1px solid #ac8d5e55;border-radius:7px;overflow:hidden;isolation:isolate;background-image:linear-gradient(90deg,#13171beb 5%,#13171b90 42%,#13171b05 80%),linear-gradient(0deg,#101519bb,transparent 65%),var(--menu-landscape);background-size:cover;background-position:center;}
+.tb-host-arena {position:relative;min-height:300px;border:1px solid #ac8d5e55;border-radius:7px;overflow:hidden;isolation:isolate;background-image:linear-gradient(90deg,#13171beb 5%,#13171b90 42%,#13171b05 80%),linear-gradient(0deg,#101519bb,transparent 65%),var(--host-arena-landscape,var(--menu-landscape));background-size:cover;background-position:center;}
 .tb-host-arena-copy {position:relative;z-index:2;padding:28px;max-width:59%;}
 .tb-host-arena-copy > .tb-menu-card-label {font-size:8px;letter-spacing:2.5px;color:#bfa47d;}
 .tb-host-arena-copy h2 {font-size:clamp(25px,2.9vw,38px);line-height:1.1;margin:18px 0 15px;max-width:280px;}
@@ -53,3 +53,5 @@
 @media (max-width:1050px) { .tb-host-layout {grid-template-columns:minmax(0,1fr) 320px;gap:18px;} .tb-host-config {padding:20px;} .tb-host-arena-copy {padding:23px;max-width:65%;} .tb-host-arena-copy h2 {font-size:29px;} .tb-host-boss-card strong {font-size:15px;} .tb-host-boss-card > span:last-child {font-size:8px;} }
 @media (max-width:760px) { .tb-host-heading {padding:26px 0 22px;display:block;} .tb-host-unlocked {display:inline-flex;margin-top:18px;} .tb-host-layout {grid-template-columns:1fr;gap:22px;} .tb-host-arena {min-height:295px;} .tb-host-arena-copy {padding:22px;max-width:64%;} .tb-host-dragon-art {max-width:49%;bottom:30px;} .tb-host-arena-copy h2 {font-size:30px;} .tb-host-boss-cards {gap:8px;} .tb-host-picker-label > span:last-child {display:none;} .tb-host-config {padding:24px;} }
 @media (min-width:1001px) and (max-height:800px) { .tb-host-heading {padding:18px 0;} .tb-host-setup .tb-host-heading h1 {font-size:46px;margin-bottom:8px;} .tb-host-heading .tb-menu-eyebrow {margin-bottom:8px;} .tb-host-arena {min-height:270px;} .tb-host-dragon-art {max-height:240px;} .tb-host-picker-label {margin-top:16px;} .tb-host-config {gap:15px;padding:20px 22px;} .tb-host-config > .tb-menu-card-label {margin-bottom:0;} .tb-host-config h2 {font-size:26px;} .tb-host-config .MuiOutlinedInput-root {height:48px;} }
+
+.tb-host-boss-cards {grid-template-columns:repeat(auto-fit,minmax(115px,1fr));}

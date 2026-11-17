@@ -1,3 +1,4 @@
+import {combatNumber} from './combatNumbers';
 import React from "react";
 import { Box, Chip, Paper, Stack, Typography } from "@mui/material";
 import { TypingBossLeaderboardEntry } from "./types";
@@ -8,9 +9,9 @@ const num = (value: number) => Number(value.toFixed(2)).toLocaleString();
 function LeaderboardCard({ entry }: { entry: TypingBossLeaderboardEntry }) {
   const skill = entry.typingStats;
   const metrics = [
-    { label: "Total damage", value: num(entry.totalDamage), color: COMBAT_COLORS.damage },
-    { label: "DPS", value: entry.dps === undefined ? "—" : num(entry.dps), color: COMBAT_COLORS.damage },
-    { label: "Strongest attack", value: entry.strongestAttack ? `${num(entry.strongestAttack.power)} power` : "No landed attack", color: "#facc15" },
+    { label: "Total damage", value: combatNumber(entry.totalDamage), color: COMBAT_COLORS.damage },
+    { label: "DPS", value: entry.dps === undefined ? "—" : combatNumber(entry.dps), color: COMBAT_COLORS.damage },
+    { label: "Strongest attack", value: entry.strongestAttack ? `${combatNumber(entry.strongestAttack.power)} power` : "No landed attack", color: "#facc15" },
   ];
   return <Paper component="article" aria-label={`${entry.name} battle results`} variant="outlined"
     sx={{ p: 2, borderColor: entry.isBoss ? "#fb923c" : entry.rank === 1 ? "#facc15" : "#344256" }}>

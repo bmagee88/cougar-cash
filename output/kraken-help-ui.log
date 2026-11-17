@@ -1,0 +1,10 @@
+PASS src/TypingBoss/KrakenVisuals.test.tsx (12.16 s)
+  √ 20-frame Kraken cast keeps its animation timeline on unrelated rerenders (62 ms)
+  √ prone locks input for five seconds and resumes a partial word without losing a timing sample (377 ms)
+  √ curse enters the next correct letter and allows the rest of the word to complete (79 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       3 passed, 3 total
+Snapshots:   0 total
+Time:        19.071 s, estimated 24 s
+Ran all test suites matching /KrakenVisuals/i.

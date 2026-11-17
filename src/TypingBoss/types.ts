@@ -13,13 +13,15 @@ export type TypingBossClassId =
   | "rogue"
   | "necromancer"
   | "monk";
-export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon";
+export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon" | "kraken";
 export type TypingBossDifficulty = "easy" | "medium" | "hard";
 export type DragonHurtTier = "basic" | "power" | "critical";
 export interface DragonHurt { id: string; tier: DragonHurtTier; at: number; until: number }
-export interface DragonFlameBreath { id: string; at: number; until: number }
+export interface DragonFlameBreath { krakenAttack?:'tidalWave'; id: string; at: number; until: number }
 export type TypingBossMode = "old" | "proportional";
 export interface TypingBossAttackStats {
+  promotionMultiplier?:number;
+  healingPower?: number;
   orangePower?: number;
   criticalPower?: number;
   criticalBonus?: number;
@@ -59,6 +61,10 @@ export interface TypingBossLeaderboardEntry {
   strongestAttack: TypingBossAttackStats | null;
 }
 export interface TypingBossTypingState {
+  promoted?:boolean;
+  combatDivisor?: number;
+  krakenAttackIndex?: number;
+  curseMistakes?: Record<number,number>;
   wordProtocol?: 1;
   issuedWords?: TypingBossIssuedWord[];
   previewWords?: Omit<TypingBossIssuedWord,'ticket'>[];
@@ -89,7 +95,7 @@ export interface TypingBossTypingState {
   balancedGreenAt?: number;
   balancedDodgeBank?: number;
   balancedCadenceBonus?: number;
-  ability?: TypingBossClassId | "dragon";
+  ability?: TypingBossClassId | "dragon" | "kraken";
   gold?: number;
   attackWords?: number;
   nextPowerBonus?: number;
@@ -133,6 +139,10 @@ export type TypingBossProjectileKind =
 export type TypingBossProjectileResult = "pending" | "hit" | "miss" | "evade";
 
 export interface TypingBossPlayer {
+  promoted?:boolean;
+  proneUntil?:number|null;
+  curseUntil?:number|null;
+  curseKey?:{id:string;key:string;at:number;index:number}|null;
   code: string;
   name: string;
   classId: TypingBossClassId;
@@ -167,6 +177,8 @@ export interface TypingBossPlayer {
 }
 
 export interface TypingBossBoss {
+  krakenWave?:DragonFlameBreath|null;
+  krakenCast?:{id:string;at:number;until:number}|null;
   profile?: Partial<TypingBossTypingState>;
   flameBreath?: DragonFlameBreath | null;
   queuedStrongReactions?: number;
@@ -188,6 +200,7 @@ export interface TypingBossBoss {
 }
 
 export interface TypingBossProjectile {
+  promoted?:boolean;
   animationStartedAt?: number;
   balanced?: boolean;
   balancedRandomColors?: boolean;
@@ -199,13 +212,13 @@ export interface TypingBossProjectile {
   moveId?: string | null;
   bossId?: TypingBossId | null;
   moveLabel: string;
-  bossAttack?: "bite" | "fireball" | "tailWhip" | "flamethrower";
+  bossAttack?: "bite" | "fireball" | "tailWhip" | "flamethrower" | "tentacleStrike" | "tentacleSweep" | "tidalWave";
   startedAt: number;
   impactAt: number;
   resolvedAt: number | null;
   result: TypingBossProjectileResult;
   amount: number | null;
-  evadeType?: "regular" | "special" | "dodge" | null;
+  evadeType?: "regular" | "special" | "dodge" | "prone" | null;
   multiplier?: number;
   sourceName?: string;
   targetName?: string;

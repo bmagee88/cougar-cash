@@ -52,7 +52,7 @@ test("clearing history does not replay known events and later events still appea
   expect(captureBattleLog(cleared,snapshot).entries).toHaveLength(0);
   const next=captureBattleLog(cleared,session([shot(),shot({id:"new",amount:10})]));
   expect(next.entries).toHaveLength(1);
-  expect(next.entries[0].message).toBe("Player healed Ada for 10 HP.");
+  expect(next.entries[0].message).toBe("Player healed Ada for 1,000 HP.");
 });
 
 test("damage, partial blocks, dodges and game results have separate readable entries", () => {
@@ -61,8 +61,8 @@ test("damage, partial blocks, dodges and game results have separate readable ent
     shot({id:"dodge",source:"boss",target:"ally",kind:"boss",result:"evade",evadeType:"dodge",amount:0}),
   ]);
   const history=captureBattleLog(emptyBattleLog(snapshot.id),snapshot);
-  expect(history.entries.some(entry=>entry.message==="Dragon dealt 15 damage to Ada.")).toBe(true);
-  expect(history.entries.some(entry=>entry.message==="Ada blocked 10 damage from Dragon.")).toBe(true);
+  expect(history.entries.some(entry=>entry.message==="Dragon dealt 1,500 damage to Ada.")).toBe(true);
+  expect(history.entries.some(entry=>entry.message==="Ada blocked 1,000 damage from Dragon.")).toBe(true);
   expect(history.entries.some(entry=>entry.message==="Ada dodged Dragon's attack.")).toBe(true);
   expect(history.entries.find(entry=>entry.category==="Damage")!.detail).toContain("Critical hit");
   const ended=captureBattleLog(history,{...snapshot,status:"victory",closedAt:new Date(2100).toISOString()});
@@ -84,15 +84,15 @@ test("host accordion opens, filters by name or event, uses combat colors, and cl
   expect(accordion.getAttribute("aria-expanded")).toBe("false");
   fireEvent.click(accordion);
   expect(accordion.getAttribute("aria-expanded")).toBe("true");
-  expect(screen.getByText("Cleric healed Ada for 25 HP.")).toBeTruthy();
-  expect(window.getComputedStyle(screen.getByText("Cleric healed Ada for 25 HP.")).color).toBe("rgb(250, 204, 21)");
-  expect(window.getComputedStyle(screen.getByText("Cleric dealt 12 damage to Dragon.")).color).toBe("rgb(248, 113, 113)");
+  expect(screen.getByText("Cleric healed Ada for 2,500 HP.")).toBeTruthy();
+  expect(window.getComputedStyle(screen.getByText("Cleric healed Ada for 2,500 HP.")).color).toBe("rgb(250, 204, 21)");
+  expect(window.getComputedStyle(screen.getByText("Cleric dealt 1,200 damage to Dragon.")).color).toBe("rgb(248, 113, 113)");
   const filter=screen.getByRole("textbox",{name:"Filter battle log"});
   fireEvent.change(filter,{target:{value:"Ada"}});
-  expect(screen.queryByText("Cleric dealt 12 damage to Dragon.")).toBeNull();
+  expect(screen.queryByText("Cleric dealt 1,200 damage to Dragon.")).toBeNull();
   fireEvent.change(filter,{target:{value:"damage"}});
-  expect(screen.getByText("Cleric dealt 12 damage to Dragon.")).toBeTruthy();
-  expect(screen.queryByText("Cleric healed Ada for 25 HP.")).toBeNull();
+  expect(screen.getByText("Cleric dealt 1,200 damage to Dragon.")).toBeTruthy();
+  expect(screen.queryByText("Cleric healed Ada for 2,500 HP.")).toBeNull();
   fireEvent.click(screen.getByRole("button",{name:"Clear log"}));
   expect(screen.getByText("No events yet. New battle events will appear here.")).toBeTruthy();
 });

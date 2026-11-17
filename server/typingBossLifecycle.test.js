@@ -88,7 +88,7 @@ function loadServer() {
     module:{exports:{}},process:{env:{},once(){}},console:{log(){},error(){}},Buffer,URL,
     Date,setTimeout,clearTimeout,setInterval,clearInterval};
   vm.runInNewContext(fs.readFileSync(filename,"utf8")+
-    "\nmodule.exports={createTypingBossSession,typingBossSessions,broadcastTypingBossSession,typingBossResolveTarget,getTypingBossSnapshotForAuth,handleStartTypingBossSession,handleRematchTypingBossSession,handleCreateTypingBossParticipant,requireTypingBossActive};",sandbox,{filename});
+    "\nmodule.exports={createTypingBossSession,typingBossSessions,broadcastTypingBossSession,typingBossResolveTarget,getTypingBossSnapshotForAuth,handleStartTypingBossSession,handleRematchTypingBossSession,handleCreateTypingBossParticipant,handlePromoteTypingBossPlayer,handleChangeTypingBoss,requireTypingBossActive};",sandbox,{filename});
   return sandbox.module.exports;
 }
 
@@ -100,6 +100,54 @@ test('all three bosses can be selected in either mode; proportional keeps its de
     assert.equal(session.boss.id,bossId);assert.equal(session.mode,mode);
   }
   assert.equal(server.createTypingBossSession({mode:'proportional'}).boss.id,'infernalDragon');
+});
+
+test('promotion requires private credentials and the host password, persists with signed joins, and boss switching preserves promotion shares',async t=>{
+  t.mock.timers.enable({apis:['setTimeout','setInterval']});
+  const secret=require('node:crypto').randomBytes(24).toString('hex'),prior=process.env.TYPING_BOSS_CREATION_PASSWORD;
+  process.env.TYPING_BOSS_CREATION_PASSWORD=secret;
+  try {
+    const server=loadServer(),s=server.createTypingBossSession({mode:'proportional'});
+    const req=body=>({async *[Symbol.asyncIterator](){yield Buffer.from(JSON.stringify(body));}});
+    const res=()=>({status:0,body:null,setHeader(){},writeHead(n){this.status=n;},end(text){this.body=JSON.parse(text);}});
+    const join=res();await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin'}),join,s);
+    const {code,playerToken}=join.body;
+    for(const body of [{code,password:secret},{playerToken,password:'invalid-'+secret}]) {
+      const denied=res();await server.handlePromoteTypingBossPlayer(req(body),denied,s,new URL('http://localhost'));
+      assert.ok([401,403].includes(denied.status));assert.equal(Boolean(s.players.get(code).promoted),false);
+    }
+    const approved=res();await server.handlePromoteTypingBossPlayer(req({playerToken,password:secret}),approved,s,new URL('http://localhost'));
+    assert.equal(approved.status,200);assert.equal(s.players.get(code).promoted,true);assert.equal(s.boss.maxHp,200);
+    const grant=approved.body.promotionToken;
+    const duplicate=res();await server.handlePromoteTypingBossPlayer(req({playerToken,password:secret}),duplicate,s,new URL('http://localhost'));assert.equal(s.boss.maxHp,200);
+    for(const bossId of ['kraken','infernalDragon']) {
+      const changed=res();await server.handleChangeTypingBoss(req({hostToken:s.hostToken,bossId}),changed,s,new URL('http://localhost'));
+      assert.equal(changed.status,200);assert.equal(s.boss.id,bossId);assert.equal(s.boss.maxHp,200);
+      assert.equal(s.typingHost.attackWords,bossId==='kraken'?8:10);
+    }
+    s.status='active';const blocked=res();await server.handleChangeTypingBoss(req({hostToken:s.hostToken,bossId:'kraken'}),blocked,s,new URL('http://localhost'));assert.equal(blocked.status,409);
+    const next=server.createTypingBossSession({mode:'proportional'}),remembered=res();
+    await server.handleCreateTypingBossParticipant(req({name:'New hero',classId:'cleric',promotionToken:grant}),remembered,next);
+    assert.equal([...next.players.values()][0].promoted,true);assert.equal([...next.players.values()][0].typing.promoted,true);
+    const forged=res();await server.handleCreateTypingBossParticipant(req({name:'Normal hero',classId:'monk',promoted:true,promotionToken:'true'}),forged,next);
+    assert.equal(next.players.get(forged.body.code).promoted,false);
+  }finally{if(prior===undefined)delete process.env.TYPING_BOSS_CREATION_PASSWORD;else process.env.TYPING_BOSS_CREATION_PASSWORD=prior;}
+});
+
+test('Kraken creates an eight-word host, keeps its identity on rematch, and publishes personal controls',async t=>{
+  t.mock.timers.enable({apis:['setTimeout','setInterval']});
+  const server=loadServer(),session=server.createTypingBossSession({mode:'proportional',bossId:'kraken'});
+  assert.equal(session.boss.id,'kraken');assert.equal(session.typingHost.ability,'kraken');assert.equal(rules.attackWordLimit(session.typingHost),8);
+  assert.throws(()=>server.createTypingBossSession({mode:'old',bossId:'kraken'}),/Host vs/);
+  const req=body=>({async *[Symbol.asyncIterator](){yield Buffer.from(JSON.stringify(body));}});
+  const res={setHeader(){},writeHead(){},end(){}};
+  await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin'}),res,session);
+  const p=[...session.players.values()][0];p.hp=99.125;p.proneUntil=Date.now()+5000;p.curseUntil=Date.now()+15000;p.curseKey={id:'tick',key:'z',at:Date.now(),index:0};
+  const snap=server.getTypingBossSnapshotForAuth(session,{role:'player',actorCode:p.code});
+  assert.equal(snap.players[0].hp,99.13);assert.equal(p.hp,99.125);assert.equal(snap.players[0].proneUntil,p.proneUntil);assert.equal(snap.players[0].curseKey.key,'z');
+  session.status='victory';session.closedAt=Date.now();
+  await server.handleRematchTypingBossSession(req({hostToken:session.hostToken}),res,session,new URL('http://localhost'));
+  assert.equal(session.status,'setup');assert.equal(session.boss.id,'kraken');assert.equal(session.typingHost.ability,'kraken');assert.equal(session.typingHost.attackWords,8);
 });
 
 test('Start publishes one five-second deadline, rejects early actions and prevents a repeated start',async t=>{

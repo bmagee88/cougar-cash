@@ -17,7 +17,8 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
   const flying = projectile.result === "pending" && now < projectile.impactAt;
   const launched = now >= projectile.startedAt;
   const visibleHit = projectile.resolvedAt && now - projectile.resolvedAt < 2200;
-  const melee = projectile.bossAttack === "bite" || projectile.bossAttack === "tailWhip";
+  const melee = projectile.bossAttack === "bite" || projectile.bossAttack === "tailWhip" || projectile.bossAttack==='tentacleStrike' || projectile.bossAttack==='tentacleSweep';
+  const water=projectile.bossAttack==='tidalWave';
   const goldenShield = projectile.moveId === "goldShield";
 
   useEffect(() => {
@@ -37,9 +38,9 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
     return () => clearTimeout(timer);
   }, [nextWake]);
 
-  const dodged = projectile.evadeType === "dodge";
+  const dodged = projectile.evadeType === "dodge" || projectile.evadeType === "prone";
   const { color, label } = combatFeedback(projectile);
-  const amount = Number((projectile.amount || 0).toFixed(2));
+  const amount = projectile.amount || 0;
   const crit = projectile.critical && amount > 0 && !["miss", "evade"].includes(projectile.result);
   const hitAge = projectile.resolvedAt ? Math.max(0, now - projectile.resolvedAt) : 0;
   const angle = Math.atan2(to.y - from.y, to.x - from.x) * 180 / Math.PI;
@@ -51,7 +52,8 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
       <line x1={`${from.x}%`} y1={`${from.y}%`} x2={`${to.x}%`} y2={`${to.y}%`} stroke={`url(#${fireGradient})`} strokeWidth="28" strokeLinecap="round" />
       <line x1={`${from.x}%`} y1={`${from.y}%`} x2={`${to.x}%`} y2={`${to.y}%`} stroke="#fff4bc" strokeWidth="7" strokeLinecap="round" />
     </svg>}
-    {!melee && !goldenShield && <div ref={flight} className="boss-projectile" style={{ visibility: flying && launched ? "visible" : "hidden", transform: `translate(${to.x}%, ${to.y}%)` }} aria-hidden="true">
+    {water && flying && launched && <div className="kraken-tidal-wave" aria-hidden="true" style={{left:`${Math.min(from.x,to.x)}%`,top:`${Math.min(from.y,to.y)}%`,width:`${Math.max(12,Math.abs(to.x-from.x))}%`,animationDuration:`${projectile.impactAt-projectile.startedAt}ms`,animationDelay:`-${Math.max(0,now-projectile.startedAt)}ms`}}><svg viewBox="0 0 240 75"><path d="M0 55Q25 5 55 40T110 35T165 30T240 40V75H0Z" fill="#0e7490aa" stroke="#67e8f9" strokeWidth="3"/></svg></div>}
+    {!melee && !water && !goldenShield && <div ref={flight} className="boss-projectile" style={{ visibility: flying && launched ? "visible" : "hidden", transform: `translate(${to.x}%, ${to.y}%)` }} aria-hidden="true">
       <div className="boss-projectile-art">
         {projectile.kind === "boss" && <div className="dragon-fire-trail" style={{ transform: `rotate(${angle}deg)` }}><i /><b /></div>}
         {art ? <img src={art.src} alt="" draggable={false} style={{ width: art.size, height: art.size, objectFit: "contain", imageRendering: "pixelated", transform: `rotate(${angle}deg) scale(${projectile.moveId === "strong" ? 1.2 : 1})`, filter: `drop-shadow(0 0 7px ${art.glow})` }} /> : <div style={{ width: 20, height: 20, background: color, borderRadius: "50%" }} />}
@@ -66,9 +68,13 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
       <path d="M50 17Q65 27 80 30V51Q80 72 50 91Q20 72 20 51V30Q35 27 50 17Z" fill="none" stroke="#dbeafe" strokeWidth="2" />
       <path d="M50 32L55 48L70 53L55 58L50 75L45 58L30 53L45 48Z" fill="#eff6ff" />
     </svg>}
-    {visibleHit && melee && hitAge < 420 && <div className={`boss-melee-effect ${projectile.bossAttack === "bite" ? "boss-bite-effect" : "boss-tail-effect"}`}
+    {visibleHit && melee && hitAge < 420 && <div className={`boss-melee-effect ${projectile.bossId==='kraken'?'kraken-tentacle-impact ':''}${projectile.bossAttack === "bite" ? "boss-bite-effect" : "boss-tail-effect"}`}
       aria-hidden="true" style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}>
-      {projectile.bossAttack === "bite" ? <svg viewBox="0 0 92 80">
+      {projectile.bossId==='kraken'?<svg data-testid="kraken-tentacle-impact" viewBox="0 0 100 80" fill="none" strokeLinecap="round">
+        <path d="M6 66Q23 72 37 47T80 19Q98 18 86 32" stroke="#7c3aed" strokeWidth="13"/>
+        <path d="M6 66Q23 72 37 47T80 19Q98 18 86 32" stroke="#5eead4" strokeWidth="3" strokeDasharray="2 7"/>
+        {projectile.bossAttack==='tentacleSweep' && <><path d="M8 36Q30 49 55 29T91 8M19 77Q47 69 63 49T95 39" stroke="#8b5cf6" strokeWidth="10"/><path d="M8 36Q30 49 55 29T91 8M19 77Q47 69 63 49T95 39" stroke="#67e8f9" strokeWidth="2" strokeDasharray="2 6"/></>}
+      </svg>:projectile.bossAttack === "bite" ? <svg viewBox="0 0 92 80">
         <path className="boss-bite-upper" d="M4 33Q46 2 88 33L81 46L72 34L65 49L55 35L46 49L36 35L27 49L19 34L11 46Z" />
         <path className="boss-bite-lower" d="M4 57Q46 88 88 57L81 44L72 56L65 41L55 55L46 41L36 55L27 41L19 56L11 44Z" />
       </svg> : <svg viewBox="0 0 100 76">
@@ -76,11 +82,11 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
       </svg>}
     </div>}
     {visibleHit && crit && hitAge < 600 && <div aria-hidden="true" data-testid="critical-impact-flash" className="boss-crit-impact" style={{ left: `${to.x}%`, top: `${to.y}%`, animationDelay: `-${hitAge}ms` }}><i /><b /></div>}
-    {visibleHit && <div className={`boss-impact${crit ? " boss-impact-crit" : ""}`} style={{ left: `${(hitPoint || to).x}%`, top: `${(hitPoint || to).y + labelOffset}%`, zIndex: 10, color, animationDelay: `-${hitAge}ms` }}>
+    {visibleHit && <div className={`boss-impact${projectile.promoted?" boss-impact-promoted":""}${crit ? " boss-impact-crit" : ""}`} style={{ left: `${(hitPoint || to).x}%`, top: `${(hitPoint || to).y + labelOffset}%`, zIndex: 10, color, animationDelay: `-${hitAge}ms` }}>
       {crit && <span className="boss-crit-label">CRIT!</span>}
       {showName && projectile.kind === "damage" && `${projectile.sourceName || "Player"} `}{label}{projectile.moveId === "strong" && !dodged && " ★"}
       {targetOffscreen && <span className="boss-impact-recipient">→ {projectile.targetName || "Ally"}</span>}
-      {!!projectile.blockedAmount && amount > 0 && !dodged && <span className="boss-impact-blocked" style={{ color: COMBAT_COLORS.shield }}>BLOCKED {Number(projectile.blockedAmount.toFixed(2))}</span>}
+      {!!projectile.blockedAmount && amount > 0 && !dodged && <span className="boss-impact-blocked" style={{ color: COMBAT_COLORS.shield }}>BLOCKED</span>}
     </div>}
   </>;
 }
