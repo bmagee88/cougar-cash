@@ -101,6 +101,8 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
   const [forcedKey,setForcedKey]=useState('');
   const pauseStarted=useRef<number|null>(null);
   const flushAfterPause=useRef<()=>Promise<void>>(async()=>{});
+  const keyDownRef=useRef(keyDown);
+  keyDownRef.current=keyDown;
   useEffect(()=>{
     if(!curseKey || lastCurseKey.current===curseKey.id)return;
     lastCurseKey.current=curseKey.id;
@@ -109,9 +111,9 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
     if(word.pending)return;
     const key=awaitingSpace.current?' ':(word.text+' ')[typed.current.length];
     if(!key)return;
-    keyDown({key,repeat:false,ctrlKey:false,metaKey:false,altKey:false,preventDefault:()=>{},nativeEvent:{timeStamp:performance.now()}} as React.KeyboardEvent<HTMLInputElement>);
+    keyDownRef.current({key,repeat:false,ctrlKey:false,metaKey:false,altKey:false,preventDefault:()=>{},nativeEvent:{timeStamp:performance.now()}} as React.KeyboardEvent<HTMLInputElement>);
     setForcedKey(key===' '?'space':key);
-  });
+  },[curseKey,canType]);
   useEffect(()=>{if(!forcedKey)return;const timer=setTimeout(()=>setForcedKey(''),900);return ()=>clearTimeout(timer);},[forcedKey,curseKey?.id]);
   useEffect(()=>{
     if(proneSeconds>0) {if(pauseStarted.current===null)pauseStarted.current=performance.now();}
