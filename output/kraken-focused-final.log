@@ -1,0 +1,150 @@
+TAP version 13
+# Subtest: Kraken repeats 8/10/10 words and gold never extends its word count
+ok 1 - Kraken repeats 8/10/10 words and gold never extends its word count
+  ---
+  duration_ms: 12.6977
+  type: 'test'
+  ...
+# Subtest: sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+ok 2 - sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+  ---
+  duration_ms: 7.065
+  type: 'test'
+  ...
+# Subtest: single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+ok 3 - single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+  ---
+  duration_ms: 2.9627
+  type: 'test'
+  ...
+# Subtest: wave independently grants 15% prone instead of damage without redistributing the saved damage
+ok 4 - wave independently grants 15% prone instead of damage without redistributing the saved damage
+  ---
+  duration_ms: 0.8779
+  type: 'test'
+  ...
+# Subtest: curse ticks every 2-4 seconds for 15 seconds, records a server-enforced typo, and stops at expiry
+ok 5 - curse ticks every 2-4 seconds for 15 seconds, records a server-enforced typo, and stops at expiry
+  ---
+  duration_ms: 2.5738
+  type: 'test'
+  ...
+# Subtest: prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+ok 6 - prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+  ---
+  duration_ms: 1.0001
+  type: 'test'
+  ...
+# (node:6768) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: abandoned rooms get a full disconnect grace period; authenticated activity and reconnects keep them alive
+ok 7 - abandoned rooms get a full disconnect grace period; authenticated activity and reconnects keep them alive
+  ---
+  duration_ms: 4.4633
+  type: 'test'
+  ...
+# Subtest: closed rooms shorten retention once; reads and repeated closes never extend it
+ok 8 - closed rooms shorten retention once; reads and repeated closes never extend it
+  ---
+  duration_ms: 2.8093
+  type: 'test'
+  ...
+# Subtest: Old Mode retains only the latest challenge per player and expires it at ten minutes
+ok 9 - Old Mode retains only the latest challenge per player and expires it at ten minutes
+  ---
+  duration_ms: 4.7976
+  type: 'test'
+  ...
+# Subtest: combat events drain without needing a subscriber or a snapshot request
+ok 10 - combat events drain without needing a subscriber or a snapshot request
+  ---
+  duration_ms: 3.4213
+  type: 'test'
+  ...
+# Subtest: removing a room releases connections, snapshots, state and every timer
+ok 11 - removing a room releases connections, snapshots, state and every timer
+  ---
+  duration_ms: 1.8846
+  type: 'test'
+  ...
+# Subtest: all three bosses can be selected in either mode; proportional keeps its default
+ok 12 - all three bosses can be selected in either mode; proportional keeps its default
+  ---
+  duration_ms: 797.4911
+  type: 'test'
+  ...
+# Subtest: Kraken creates an eight-word host, keeps its identity on rematch, and publishes personal controls
+ok 13 - Kraken creates an eight-word host, keeps its identity on rematch, and publishes personal controls
+  ---
+  duration_ms: 15.8761
+  type: 'test'
+  ...
+# Subtest: Start publishes one five-second deadline, rejects early actions and prevents a repeated start
+ok 14 - Start publishes one five-second deadline, rejects early actions and prevents a repeated start
+  ---
+  duration_ms: 20.9401
+  type: 'test'
+  ...
+# Subtest: closing during countdown cancels the pending start callback
+ok 15 - closing during countdown cancels the pending start callback
+  ---
+  duration_ms: 9.2259
+  type: 'test'
+  ...
+# Subtest: server sweeps abandoned rooms and frees their registry entry after the expiry notice
+ok 16 - server sweeps abandoned rooms and frees their registry entry after the expiry notice
+  ---
+  duration_ms: 6.9133
+  type: 'test'
+  ...
+# Subtest: server keeps completed games available for rematches until the original two-hour deadline
+ok 17 - server keeps completed games available for rematches until the original two-hour deadline
+  ---
+  duration_ms: 21.1252
+  type: 'test'
+  ...
+# Subtest: Old Mode redirects a full-health heal target to a wounded survivor
+ok 18 - Old Mode redirects a full-health heal target to a wounded survivor
+  ---
+  duration_ms: 5.0161
+  type: 'test'
+  ...
+# Subtest: shared battle snapshots include allies and recipient names but keep typing state private
+ok 19 - shared battle snapshots include allies and recipient names but keep typing state private
+  ---
+  duration_ms: 18.7518
+  type: 'test'
+  ...
+# Subtest: word pool cache evicts the oldest of 32 combinations, keeps hot entries and preserves seeded content
+ok 20 - word pool cache evicts the oldest of 32 combinations, keeps hot entries and preserves seeded content
+  ---
+  duration_ms: 15.611
+  type: 'test'
+  ...
+# Subtest: rematches reset combat and roster, preserve room credentials and hard deadline, and reject closed rooms
+ok 21 - rematches reset combat and roster, preserve room credentials and hard deadline, and reject closed rooms
+  ---
+  duration_ms: 12.8918
+  type: 'test'
+  ...
+# Subtest: players can join until the countdown deadline with matching rules and HP, without restarting the countdown
+ok 22 - players can join until the countdown deadline with matching rules and HP, without restarting the countdown
+  ---
+  duration_ms: 79.6887
+  type: 'test'
+  ...
+# Subtest: countdown joining still respects the 30-player limit and closed rooms
+ok 23 - countdown joining still respects the 30-player limit and closed rooms
+  ---
+  duration_ms: 8.0829
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1399.1242

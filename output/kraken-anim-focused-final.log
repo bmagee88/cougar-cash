@@ -1,0 +1,9 @@
+PASS src/TypingBoss/KrakenVisuals.test.tsx (23.058 s)
+PASS src/TypingBoss/KrakenAnimation.test.tsx (5.581 s)
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+
+Test Suites: 3 passed, 3 total
+Tests:       24 passed, 24 total
+Snapshots:   0 total
+Time:        42.633 s
+Ran all test suites matching /Kraken|ProjectileMotion/i.

@@ -1,3 +1,4 @@
+import {readDevicePromotion} from './promotion';
 import {
   CreateTypingBossSessionResponse,
   TypingBossActionResponse,
@@ -86,25 +87,44 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
 async function apiFetch<T>(
   path: string,
-  options: RequestInit & { json?: unknown } = {}
+  options: RequestInit & { json?: unknown; timeoutMs?: number } = {}
 ) {
-  const { json, headers, ...rest } = options;
-  let response: Response;
+  const { json, headers, timeoutMs, ...rest } = options;
+  const controller = timeoutMs ? new AbortController() : undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const request = async () => {
+    let response: Response;
+    try {
+      response = await fetch(withBase(path), {
+        ...rest,
+        ...(controller ? { signal: controller.signal } : {}),
+        headers: {
+          ...(json === undefined ? {} : { "Content-Type": "application/json" }),
+          ...headers,
+        },
+        body: json === undefined ? rest.body : JSON.stringify(json),
+      });
+    } catch {
+      throw new Error(describeNetworkFailure(path));
+    }
+    return parseResponse<T>(response);
+  };
 
   try {
-    response = await fetch(withBase(path), {
-      ...rest,
-      headers: {
-        ...(json === undefined ? {} : { "Content-Type": "application/json" }),
-        ...headers,
-      },
-      body: json === undefined ? rest.body : JSON.stringify(json),
-    });
-  } catch {
-    throw new Error(describeNetworkFailure(path));
+    if (!timeoutMs) return await request();
+    return await Promise.race([
+      request(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`The Typing Boss backend did not respond within ${timeoutMs / 1000} seconds (${withBase(path)}). Please try again. If this keeps happening, check the Render service status and logs.`));
+          controller?.abort();
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    controller?.abort();
   }
-
-  return parseResponse<T>(response);
 }
 
 function credentialsBody(credentials: TypingBossCredentials) {
@@ -125,7 +145,7 @@ export function getTypingBossEventSourceUrl(
 }
 
 export function unlockTypingBossCreation(password: string) {
-  return apiFetch<{ allowed: boolean }>("/api/typing-boss/creation-access", { method: "POST", json: { password } });
+  return apiFetch<{ allowed: boolean }>("/api/typing-boss/creation-access", { method: "POST", json: { password }, timeoutMs: 30000 });
 }
 
 export async function createTypingBossSession(name: string, bossId: TypingBossId, mode: TypingBossMode = "proportional", creationPassword?: string) {
@@ -177,7 +197,7 @@ export async function createTypingBossParticipant(
     `/api/typing-boss/sessions/${sessionId}/participants`,
     {
       method: "POST",
-      json: { name, classId, goldWords: true },
+      json: { name, classId, goldWords: true, promotionToken:readDevicePromotion() || undefined },
     }
   );
   if(!/^[a-f0-9]{64}$/.test(result.playerToken || ''))throw new Error('Update the Typing Boss backend before joining this game. Private player credentials are required.');
@@ -263,4 +283,11 @@ export function submitTypingBossAction(
       },
     }
   );
+}
+
+export function promoteTypingBossPlayer(sessionId:string,playerToken:string,password:string) {
+  return apiFetch<{promotionToken:string;session:TypingBossSessionResponse['session']}>(`/api/typing-boss/sessions/${sessionId}/promote`,{method:'POST',json:{playerToken,password},timeoutMs:30000});
+}
+export function changeTypingBoss(sessionId:string,hostToken:string,bossId:TypingBossId) {
+  return apiFetch<TypingBossSessionResponse>(`/api/typing-boss/sessions/${sessionId}/boss`,{method:'POST',json:{hostToken,bossId}});
 }

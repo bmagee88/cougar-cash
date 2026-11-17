@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: Kraken repeats 8/10/10 words and gold never extends its word count
+ok 1 - Kraken repeats 8/10/10 words and gold never extends its word count
+  ---
+  duration_ms: 6.7737
+  type: 'test'
+  ...
+# Subtest: sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+ok 2 - sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+  ---
+  duration_ms: 10.1611
+  type: 'test'
+  ...
+# Subtest: single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+ok 3 - single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+  ---
+  duration_ms: 3.5618
+  type: 'test'
+  ...
+# Subtest: wave independently grants 15% prone instead of damage without redistributing the saved damage
+ok 4 - wave independently grants 15% prone instead of damage without redistributing the saved damage
+  ---
+  duration_ms: 2.4529
+  type: 'test'
+  ...
+# Subtest: curse ticks every 2-4 seconds for 15 seconds, sends a correct-key pulse without penalizing accuracy, and stops at expiry
+ok 5 - curse ticks every 2-4 seconds for 15 seconds, sends a correct-key pulse without penalizing accuracy, and stops at expiry
+  ---
+  duration_ms: 3.1575
+  type: 'test'
+  ...
+# Subtest: prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+ok 6 - prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+  ---
+  duration_ms: 0.9933
+  type: 'test'
+  ...
+# Subtest: Kraken attacks wait for the previous drawn recovery without overlapping clips or awarding twice
+ok 7 - Kraken attacks wait for the previous drawn recovery without overlapping clips or awarding twice
+  ---
+  duration_ms: 3.1466
+  type: 'test'
+  ...
+# Subtest: a full 20-frame wave completes before critical recoil and the next queued attack
+ok 8 - a full 20-frame wave completes before critical recoil and the next queued attack
+  ---
+  duration_ms: 2.0031
+  type: 'test'
+  ...
+# Subtest: Ink Hex gets its own 20-frame cast before the regular attack and its damage
+ok 9 - Ink Hex gets its own 20-frame cast before the regular attack and its damage
+  ---
+  duration_ms: 1.4746
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 230.8006

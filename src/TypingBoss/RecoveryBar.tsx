@@ -16,7 +16,7 @@ export default function RecoveryBar({player,clock,profile=false}:{player:TypingB
     return ()=>animation?.cancel();
   },[deadline,player.recoverDurationMs,clock]);
   if(!deadline)return null;
-  return <div role="progressbar" aria-label={`${player.name} recovery`} aria-valuetext="Recovering to 1 HP"
+  return <div role="progressbar" aria-label={`${player.name} recovery`} aria-valuetext="Recovering to 100 HP"
     style={{position:profile?'relative':'absolute',bottom:profile?undefined:'calc(100% + 5px)',left:profile?undefined:'50%',transform:profile?undefined:'translateX(-50%)',width:'100%',maxWidth:profile?undefined:72,height:7,
       background:'#142033',border:'1px solid #86efac',borderRadius:4,overflow:'hidden',zIndex:6}}>
     <div ref={fill} style={{width:'100%',height:'100%',background:'#86efac',transform:'scaleX(0)',transformOrigin:'left'}}/>

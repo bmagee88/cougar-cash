@@ -7,5 +7,5 @@ export default function RecoveryNotice({player, active, serverNow}:{player:Typin
   const seconds=useBattleCountdown(player.recoverAt,serverNow);
   if(!active || !player.defeated)return null;
   if(!player.recoverAt)return <Alert severity="info">Knocked out. Auto revive is off. A Necromancer can revive you.</Alert>;
-  return <Alert severity="info">Knocked out. Recovering at 1 HP in {seconds} seconds. A Necromancer may revive you sooner.</Alert>;
+  return <Alert severity="info">Knocked out. Recovering at 100 HP in {seconds} seconds. A Necromancer may revive you sooner.</Alert>;
 }

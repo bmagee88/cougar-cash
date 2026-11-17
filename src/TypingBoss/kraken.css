@@ -1,0 +1,23 @@
+.kraken-arena,.kraken-arena img,.kraken-arena-foreground{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;user-select:none}
+.kraken-arena{z-index:0;background:#061322}.kraken-arena-foreground{z-index:4}
+.kraken-sprite{position:relative;isolation:isolate;transform-origin:50% 90%}
+.kraken-sprite>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated;pointer-events:none}
+.kraken-pose-defeated{filter:grayscale(.8);opacity:.5;transform:scaleY(.7)}
+.kraken-curse-symbol{position:absolute;z-index:11;top:42px;left:50%;width:30px;height:30px;color:#c4b5fd;filter:drop-shadow(0 0 4px #8b5cf6);animation:kraken-hex 2200ms linear infinite;pointer-events:none}
+.kraken-curse-symbol svg{width:100%;height:100%}.kraken-prone-label{position:absolute;z-index:11;top:58px;left:4px;right:4px;text-align:center;color:#a5f3fc;font:bold 10px/1.5 monospace;background:#071728e6;border-radius:3px}
+.typing-portrait-prone .portrait-character{transform:translateX(-50%) rotate(85deg);transform-origin:50% 85%}
+.kraken-forced-key{display:block;color:#ddd6fe;font:bold 13px/1.6 monospace}
+@keyframes kraken-hex{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.kraken-sprite,.kraken-curse-symbol{animation:none}}
+
+
+.kraken-tidal-wave{position:absolute;z-index:9;pointer-events:none;color:#67e8f9;animation:kraken-wave-roll 700ms ease-out both}.kraken-tidal-wave svg{width:100%;height:65px}.boss-melee-effect.kraken-tentacle-impact{filter:drop-shadow(0 0 6px #2dd4bf)}
+@keyframes kraken-wave-roll{from{opacity:0;transform:translateX(15%) scaleY(.5)}40%{opacity:1}to{opacity:.6;transform:translateX(-8%) scaleY(1)}}
+
+[data-prone="true"]>.combat-actor{transform:rotate(85deg);transform-origin:50% 85%}
+
+.kraken-preview .battlefield-shell{min-height:0!important;height:auto!important;aspect-ratio:1672 / 941}
+
+/* The cleaned creature is smooth artwork, independent of the pixel-art scenery. */
+.kraken-sprite>img{image-rendering:auto}
+

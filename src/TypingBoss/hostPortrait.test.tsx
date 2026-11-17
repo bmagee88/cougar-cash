@@ -8,6 +8,28 @@ declare const test:any,expect:any,jest:any,afterEach:any;
 afterEach(()=>jest.useRealTimers());
 const boss={id:"infernalDragon",name:"Dragon",hp:100,maxHp:100,glow:"red",hurt:null} as any;
 
+test('promoted profiles show doubled offensive numbers and upgraded appearance without changing HP or crit percent',()=>{
+  const state=initializeBalanced(createTypingState(123,'barbarian'));Object.assign(state,{promoted:true,balancedPower:10,balancedOrangePower:5,balancedCritBonus:.12});
+  const player={code:'hero',name:'Hero',classId:'barbarian',color:'red',hp:100,maxHp:100,promoted:true} as any;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero'}} state={state} active={false} profile={{player,events:[]}}/>);
+  expect(screen.getByLabelText('Attack power: 2,000')).toBeTruthy();expect(screen.getByLabelText('Power bonus: +1,000')).toBeTruthy();
+  expect(screen.getByLabelText('Crit ready: +12%')).toBeTruthy();expect(screen.getByLabelText('Hero HP: 10,000 / 10,000')).toBeTruthy();
+  expect(screen.getByTestId('typing-portrait').className).toContain('typing-portrait-promoted');expect(screen.getByLabelText('Promoted hero')).toBeTruthy();
+});
+
+test('profiles retain complete large attack and bonus values and expose current/max HP below the bar',()=>{
+  const state=initializeBalanced(createTypingState(123,'barbarian'));
+  state.balancedOrangePower=12345.67;state.balancedCritBonus=123.45;
+  const player={code:'hero',name:'Hero',classId:'barbarian',color:'red',hp:12.345,maxHp:100,defeated:false} as any;
+  const view=render(<><TypingPortrait player={player} state={state} letters={123456.78} events={[]}/><DragonPortrait boss={{...boss,hp:200,maxHp:300}} state={state} letters={123456.78} events={[]}/></>);
+  expect(screen.getByLabelText('Attack power: 12,345,678')).toBeTruthy();
+  expect(screen.getAllByLabelText('Power bonus: +1,234,567')).toHaveLength(2);
+  expect(screen.getByLabelText('Hero HP: 1,235 / 10,000')).toBeTruthy();
+  expect(screen.getByLabelText('Dragon HP: 20,000 / 30,000')).toBeTruthy();
+  view.container.querySelectorAll('.portrait-health-value').forEach(label=>expect(label.previousElementSibling?.className).toBe('portrait-health'));
+  view.container.querySelectorAll('.portrait-fitted-number').forEach(value=>expect(value.getAttribute('preserveAspectRatio')).toBe('xMinYMid meet'));
+});
+
 test('own profile shows recovery above the fallen character and clears it on revival',()=>{
   const player={code:'hero',name:'Hero',classId:'cleric',color:'gold',hp:0,maxHp:100,defeated:true,recoverAt:Date.now()+19000,recoverDurationMs:19000} as any;
   const state=createTypingState(123,'cleric');
@@ -26,8 +48,8 @@ test("client dragon profile displays shared power, ready crit, special and defen
     dragonProfile={{boss:sharedBoss,events:[]}}/>);
   const dragon=screen.getByTestId('dragon-portrait');
   expect(dragon.parentElement!.lastElementChild).toBe(dragon);
-  expect(screen.getByLabelText('Dragon attack letters: 42')).toBeTruthy();
-  expect(screen.getByLabelText('Power bonus: +8')).toBeTruthy();
+  expect(screen.getByLabelText('Dragon attack power: 4,200')).toBeTruthy();
+  expect(screen.getByLabelText('Power bonus: +800')).toBeTruthy();
   expect(screen.getByLabelText('Crit ready: +12%')).toBeTruthy();
   expect(dragon.querySelector('.portrait-special')).toBeTruthy();
   expect((dragon.querySelector('.portrait-shield') as HTMLElement).style.opacity).not.toBe('0');

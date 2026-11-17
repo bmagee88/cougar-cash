@@ -1,3 +1,4 @@
+import {KrakenSprite} from './KrakenVisuals';
 import React, { useMemo, useRef, useState } from "react";
 import { Box } from "@mui/material";
 import { CombatAnimation } from "./combatAnimation";
@@ -17,8 +18,8 @@ const DRAGONS = {
   emberWhelp: { atlas: "ember-whelp-attacks", fallback: "ember-whelp-sprite.png" },
 };
 
-export default function DragonCombatSprite({ bossId, width, pose, clock: providedClock, inspectFrame }: {
-  bossId: TypingBossId;
+function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame }: {
+  bossId: Exclude<TypingBossId,'kraken'>;
   width: number | { xs: number; md: number };
   glow: string;
   pose: CombatAnimation;
@@ -80,4 +81,8 @@ export default function DragonCombatSprite({ bossId, width, pose, clock: provide
       }} /></span> : <img className="dragon-static-fallback" src={`${ASSETS}/${config.fallback}`} alt="" aria-hidden="true" draggable={false} />}
     <CombatEffects pose={pose} clock={clock} />
   </Box>;
+}
+
+export default function DragonCombatSprite(props:{bossId:TypingBossId;width:number|{xs:number;md:number};glow:string;pose:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;krakenCast?:{id:string;at:number;until:number}|null}) {
+  return props.bossId==='kraken'?<KrakenSprite width={props.width} pose={props.pose} clock={props.clock} cast={props.krakenCast} quiet={props.inspectFrame===0}/>:<DragonSprite {...props} bossId={props.bossId}/>;
 }

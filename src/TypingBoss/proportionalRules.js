@@ -69,7 +69,8 @@ function typingWord(state, index = state.nextWord) {
 
 const attackWordLimit = state => state.attackWords ?? 10;
 const isLastAttackWord = state => state.wordsInAttack + 1 === attackWordLimit(state);
-const extendsAttack = state => state.ability === "barbarian" || state.ability === "dragon";
+const goldWordExtension = state => state.ability === "dragon" ? 5 : state.ability === "barbarian" ? 2 : 0;
+const extendsAttack = state => goldWordExtension(state)>0;
 function requiresWordSpace(state, text) {
   if(state.balanced && !state.balancedRandomColors)return false;
   const word = typingWord(state);
@@ -118,7 +119,7 @@ function createTypingState(seed, ability) {
     intervalCount: 0, intervalSum: 0, intervalSquares: 0,
     orange: 0, red: 0, green: 0, growth: 0, shield: 0,
     consistency: 1, totalTaken: 0, totalCharacters: 0, dodgeSamples: [],
-    ...(ability ? { ability, gold: 0, attackWords: 10, dodgeExtraRolls: 0, paladinShield: 0 } : {}) };
+    ...(ability ? { ability, gold: 0, attackWords: ability==='kraken'?8:10, ...(ability==='kraken'?{krakenAttackIndex:0}:{}), dodgeExtraRolls: 0, paladinShield: 0 } : {}) };
 }
 
 function dodgeChance(state) {
@@ -132,6 +133,8 @@ function effectiveDodgeChance(state) {
 }
 
 function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistakes=0) {
+  mistakes=Math.max(mistakes,state.curseMistakes?.[state.nextWord] || 0);
+  if(state.curseMistakes)state.curseMistakes=Object.fromEntries(Object.entries(state.curseMistakes).filter(([index])=>Number(index)>state.nextWord));
   const word = typingWord(state);
   const correct = mistakes===0 && text === word.text + (requiresWordSpace(state, text) ? " " : "");
   const scheduled=state.balanced && !state.balancedRandomColors;
@@ -142,7 +145,7 @@ function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistak
   if(scheduled && word.color==='green' && correct && state.wordsInAttack!==0 && count>1 && Number.isFinite(transitionMs)) {
     const pace=Math.max(40,(sum-transitionMs)/(count-1));
     const smoothness=Math.max(0,Math.min(1,(2.5-transitionMs/pace)/1.25));
-    state.balancedDodgeBank=(state.balancedDodgeBank || 0)+smoothness*.5;
+    state.balancedDodgeBank=(state.balancedDodgeBank || 0)+smoothness*.5/Math.max(1,state.combatDivisor || 1);
   }
   if (state.balanced) recordBalancedWord(state, text, word.text + " ", gaps || [], correct, word.color);
   if (!scheduled && (!state.balanced || (word.color==='green' && correct)) && state.dodgeSamples && state.wordsInAttack !== 0 && count > 1 && Number.isFinite(transitionMs)) {
@@ -152,7 +155,7 @@ function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistak
     const score = Math.round(25 * Math.max(0, Math.min(1, (2.5 - ratio) / 1.25)));
     // Bank up to one point per proficient transition, without a storage cap. A slower
     // transition earns less without taking away previously earned dodge.
-    state.dodgeBank = Math.round((dodgeChance(state) + score / 25) * 100) / 100;
+    state.dodgeBank = dodgeChance(state) + score / 25 / Math.max(1,state.combatDivisor || 1);
     state.dodgeSamples = [...state.dodgeSamples.slice(-4), score];
   }
   state.nextWord += 1;
@@ -169,27 +172,28 @@ function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistak
   if (correct) {
     if (!state.balanced) {
       state.growth += state.green * 0.04;
-      if (word.color === "blue") state.shield = Math.min(1, state.shield + 0.1);
+      if (word.color === "blue") state.shield = Math.min(1, state.shield + 0.1/Math.max(1,state.combatDivisor || 1));
       if (word.color === "orange") state.orange += 0.1;
       if (word.color === "red") state.red = Math.min(1, state.red + 0.1);
       if (word.color === "green") state.green += 1;
     }
     if (word.color === "gold") {
       state.gold += 1;
-      if (extendsAttack(state)) state.attackWords = attackWordLimit(state) + 2;
+      if (extendsAttack(state)) state.attackWords = attackWordLimit(state) + goldWordExtension(state);
     }
   }
   return { correct, color: word.color };
 }
 
-function releaseAttack(state, random = Math.random) {
+function releaseStandardAttack(state, random = Math.random) {
   if (state.balanced) return releaseBalancedAttack(state);
   const consistency = consistencyMultiplier(state.intervalCount, state.intervalSum, state.intervalSquares);
   const critical = random() < state.red;
   const gold = state.gold || 0;
   const multiplier = consistency * (1 + state.orange + state.growth) * (critical ? 2 : 1);
-  const base = Math.max(0,state.characters);
+  const base = Math.max(0,state.characters)/Math.max(1,state.combatDivisor || 1);
   const attack = { base, power: base * multiplier,
+    ...(['cleric','necromancer'].includes(state.ability) ? {healingPower:base*multiplier} : {}),
     orangeBonus: state.orange, greenBonus: state.growth, greenStacks: state.green, criticalChance: state.red,
     blueShield: state.shield,
     meanIntervalMs: state.intervalCount ? state.intervalSum / state.intervalCount : 0,
@@ -207,4 +211,14 @@ function releaseAttack(state, random = Math.random) {
   return attack;
 }
 
-module.exports = { BALANCED_COLOR_CHANCES, MONK_BALANCED_COLOR_CHANCES, WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, typingWord, attackWordLimit, isLastAttackWord, requiresWordSpace, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress, typingAttackProgress, dodgeChance, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced };
+function releaseAttack(state,random=Math.random) {
+  const index=state.krakenAttackIndex || 0;
+  const attack=releaseStandardAttack(state,random);
+  if(state.ability==='kraken') {
+    attack.krakenAttackIndex=index;state.krakenAttackIndex=index+1;
+    state.attackWords=state.krakenAttackIndex%3===0?8:10;
+  }
+  return attack;
+}
+
+module.exports = { goldWordExtension, BALANCED_COLOR_CHANCES, MONK_BALANCED_COLOR_CHANCES, WORDS, GRADE_OPTIONS, wordsForGrades, wordAt, typingWord, attackWordLimit, isLastAttackWord, requiresWordSpace, consistencyMultiplier, createTypingState, finishWord, releaseAttack, attackProgress, typingAttackProgress, dodgeChance, effectiveDodgeChance, proportionalPlayerPoint, initializeBalanced };

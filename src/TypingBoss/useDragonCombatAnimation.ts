@@ -25,7 +25,7 @@ function legacyHurt(events: readonly CombatAnimationEvent[], now: number): Drago
 export function selectDragonCombatAnimation(events: readonly CombatAnimationEvent[], authoritativeHurt: DragonHurt | null | undefined, now: number, defeated = false, flameBreath?: DragonFlameBreath | null): CombatAnimation {
   if (defeated) return selectCombatAnimation(events, now, true);
   const flame = flameBreath && flameBreath.at <= now && now < flameBreath.until ? {
-    id: `${flameBreath.id}:action`, state: "flamethrower" as const, at: flameBreath.at,
+    id: `${flameBreath.id}:action`, state: flameBreath.krakenAttack ? 'weakAttack' as const : 'flamethrower' as const,...(flameBreath.krakenAttack?{krakenAttack:flameBreath.krakenAttack}:{}), at: flameBreath.at,
     duration: flameBreath.until - flameBreath.at, channel: "action" as const,
   } : events.filter(event => event.state === "flamethrower" && event.channel === "action" && event.at <= now && now < event.at + event.duration)
     .sort((a,b) => b.at - a.at)[0];

@@ -1,0 +1,11 @@
+PASS src/TypingBoss/typingFeedback.test.ts
+  √ correct characters increase attack and wrong characters preserve earned power (3 ms)
+  √ portrait defenses grow with real values and clear when their stored defense is consumed (2 ms)
+  √ feedback never claims an unearned bonus for errors, capped defense, or balanced orange words (2 ms)
+  √ profile projectile routing accounts for scrolling and preserves actual support recipients (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        5.478 s
+Ran all test suites matching /TypingBoss\\typingFeedback.test/i.

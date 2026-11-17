@@ -51,9 +51,9 @@ test('protected typing never advances on wrong keys, preserves ATK, and cannot c
   expect(firstLetter.style.color).toBe('rgb(253, 164, 175)');
   fireEvent.keyDown(input,{key:word.text[0]});
   expect(firstLetter.getAttribute('data-incorrect')).toBeNull();
-  fireEvent.keyDown(input,{key:'!'});expect(screen.getByText('ATK 1')).toBeTruthy();
+  fireEvent.keyDown(input,{key:'!'});expect(screen.getByText('ATK 100')).toBeTruthy();
   typeWord(input,word.text.slice(1),false);
-  expect(screen.getByText(`ATK ${word.text.length}`)).toBeTruthy();
+  expect(screen.getByText(`ATK ${(word.text.length*100).toLocaleString('en-US')}`)).toBeTruthy();
   expect(screen.queryByTestId('portrait-crit-badge')).toBeNull();
   const record=submit.mock.calls[0][2][0];
   expect(record[1]).toBe(word.text);expect(record[7]).toEqual({ticket:'a'.repeat(32),mistakes:2});
@@ -72,15 +72,15 @@ test('full attack preview stays visible and waits on the required space after a 
   const space=screen.getByTestId('pending-word-space');
   expect(space.textContent).toBe(' ');
   expect(getComputedStyle(screen.getByTestId('ten-word-row')).transform).toBe('translate3d(-3ch, 0, 0)');
-  expect(screen.getByText('ATK 3')).toBeTruthy();
+  expect(screen.getByText('ATK 300')).toBeTruthy();
   fireEvent.keyDown(input,{key:'d'});
   expect(screen.getByTestId('pending-word-space')).toBeTruthy();
-  expect(screen.getByText('ATK 3')).toBeTruthy();
+  expect(screen.getByText('ATK 300')).toBeTruthy();
   fireEvent.keyDown(input,{key:' '});
   expect(screen.queryByTestId('pending-word-space')).toBeNull();
   expect(getComputedStyle(screen.getByTestId('ten-word-row')).transform).toBe('translate3d(-4ch, 0, 0)');
   fireEvent.keyDown(input,{key:'d'});
-  expect(screen.getByText('ATK 4')).toBeTruthy();
+  expect(screen.getByText('ATK 400')).toBeTruthy();
   await act(async()=>{});
 });
 
@@ -91,7 +91,7 @@ test('prefetched words keep typing uninterrupted during a delayed acknowledgemen
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero1234',playerToken:'c'.repeat(64)}} state={state} active/>);
   const input=screen.getByRole('textbox');
   for(let index=0;index<4;index++)typeWord(input,'cat');
-  expect(screen.getByText('ATK 12')).toBeTruthy();
+  expect(screen.getByText('ATK 1,200')).toBeTruthy();
   expect(screen.queryByText(/Loading the next words/)).toBeNull();
   expect(submit).toHaveBeenCalledTimes(1);
   await act(async()=>{});
@@ -105,7 +105,7 @@ test('protected typing waits at the issued window and resumes from word acknowle
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero1234',playerToken:'c'.repeat(64)}} state={state} active/>);
   const input=screen.getByRole('textbox');typeWord(input,'cat');typeWord(input,'dog');
   expect(screen.queryByText(/Loading the next words/)).toBeNull();
-  fireEvent.keyDown(input,{key:'!'});expect(screen.getByText('ATK 6')).toBeTruthy();
+  fireEvent.keyDown(input,{key:'!'});expect(screen.getByText('ATK 600')).toBeTruthy();
   await act(async()=>resolve({nextWord:1,issuedWords:[state.issuedWords![1],{index:2,text:'bird',color:'orange',ticket:'d'.repeat(32)}]}));
   expect(screen.queryByText(/Loading the next words/)).toBeNull();
   expect(submit).toHaveBeenCalledTimes(2);
@@ -116,10 +116,10 @@ test('ordinary blue words bank power without an active shield or defense numbers
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}/>);
   const input=screen.getByRole('textbox'),word=typingWord(state).text;
   fireEvent.keyDown(input,{key:word[0]});
-  expect(screen.getByLabelText('Attack letters: 1')).toBeTruthy();
+  expect(screen.getByLabelText('Attack power: 100')).toBeTruthy();
   expect(screen.getByTestId('portrait-shield').style.opacity).toBe('0');
   typeWord(input,word.slice(1),false);
-  expect(screen.getByLabelText(`Attack letters: ${word.length}`)).toBeTruthy();
+  expect(screen.getByLabelText(`Attack power: ${(word.length*100).toLocaleString('en-US')}`)).toBeTruthy();
   expect(screen.queryByText(/^Block [0-9]/)).toBeNull();
   expect(screen.queryByText(/^Dodge [0-9]/)).toBeNull();
   expect(screen.getByTestId('portrait-shield').style.opacity).toBe('0');
@@ -179,7 +179,7 @@ test("Cleric sees Prayer and the shared pool, and an orange word deposits instea
   submit.mockImplementation(()=>new Promise(()=>{}));
   const state=initializeBalanced(createTypingState(123,'cleric'));scheduledTrigger(state,'orange',120);state.balancedHealingBank=10;
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active healingPool={50} profile={{player:profilePlayer,events:[]}}/>);
-  expect(screen.getByText('Prayer +10')).toBeTruthy();expect(screen.getByText('Prayer pool 50')).toBeTruthy();
+  expect(screen.getByText('Prayer +1,000')).toBeTruthy();expect(screen.getByText('Prayer pool 5,000')).toBeTruthy();
   expect(screen.queryByText(/^Charge /)).toBeNull();
   expect(screen.queryByLabelText(/^Power bonus:/)).toBeNull();
   const prayerLetter=screen.getAllByTestId('typing-word')[0].querySelector('span')!;
@@ -198,9 +198,9 @@ test('Prayer mistakes preserve saved charge and ATK',()=>{
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}/>);
   const input=screen.getByRole('textbox');
   fireEvent.keyDown(input,{key:'!'});
-  expect(screen.getByText('Prayer +4')).toBeTruthy();expect(screen.getByLabelText('Attack letters: 8')).toBeTruthy();
+  expect(screen.getByText('Prayer +400')).toBeTruthy();expect(screen.getByLabelText('Attack power: 1,000')).toBeTruthy();
   fireEvent.keyDown(input,{key:'!'});
-  expect(screen.getByText('Prayer +4')).toBeTruthy();expect(screen.getByLabelText('Attack letters: 8')).toBeTruthy();
+  expect(screen.getByText('Prayer +400')).toBeTruthy();expect(screen.getByLabelText('Attack power: 1,000')).toBeTruthy();
 });
 
 test("banks update with each character while red activation still waits for the completed word",async()=>{
@@ -228,14 +228,14 @@ test("host dragon profile sits beside typing and immediately displays its own le
   const portrait=screen.getByTestId("host-dragon-portrait");
   expect(portrait.parentElement!.className).toContain("typing-input-deck");
   const input=screen.getByRole("textbox"),word=typingWord(state).text;
-  fireEvent.keyDown(input,{key:word[0]});expect(within(portrait).getByLabelText("Dragon attack letters: 1")).toBeTruthy();
+  fireEvent.keyDown(input,{key:word[0]});expect(within(portrait).getByLabelText("Dragon attack power: 100")).toBeTruthy();
   typeWord(input,word.slice(1));
   expect(within(portrait).getByRole("status").textContent).toMatch(/CRIT\+/);
   expect(screen.getByText("Crit charge +0%")).toBeTruthy();
   await act(async()=>{});
 });
 
-test.each(["barbarian","dragon"])("%s gold reveals two extra words on the last letter and keeps them through the separator and pending server response", async (ability:any)=>{
+test.each(["barbarian","dragon"])("%s gold reveals its class-specific extra words on the last letter and keeps them through the separator and pending server response", async (ability:any)=>{
   submit.mockImplementation(()=>new Promise(()=>{}));
   const state=initializeBalanced(createTypingState(123,ability));
   scheduledTrigger(state,"gold",150);
@@ -245,12 +245,12 @@ test.each(["barbarian","dragon"])("%s gold reveals two extra words on the last l
   typeWord(input,gold.slice(0,-1),false);
   expect(screen.getAllByTestId("typing-word")).toHaveLength(10);
   fireEvent.keyDown(input,{key:gold.slice(-1)});
-  expect(screen.getAllByTestId("typing-word")).toHaveLength(12);
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(ability==='dragon'?15:12);
   fireEvent.keyDown(input,{key:" "});
-  expect(screen.getAllByTestId("typing-word")).toHaveLength(12);
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(ability==='dragon'?15:12);
   expect(submit).toHaveBeenCalledTimes(1);
   view.rerender(<ContinuousTyping sessionId="bossABC" credentials={{code:"hero1234"}} state={{...state}} active/>);
-  expect(screen.getAllByTestId("typing-word")).toHaveLength(12);
+  expect(screen.getAllByTestId("typing-word")).toHaveLength(ability==='dragon'?15:12);
   await act(async()=>{});
 });
 
@@ -301,10 +301,10 @@ test("portrait letters and shield react locally, and completed words show their 
   const input = screen.getByRole("textbox", { name: "Type the displayed word" });
   const word = typingWord(state).text;
   fireEvent.keyDown(input, { key: word[0] });
-  expect(screen.getByLabelText("Attack letters: 1").className).toContain("portrait-attack-pulse");
+  expect(screen.getByLabelText("Attack power: 100").className).toContain("portrait-attack-pulse");
   typeWord(input, word.slice(1));
   expect(screen.getByTestId("portrait-shield").style.opacity).toBe(String(Math.sqrt(.1)));
-  expect(screen.getByText("Block +10%")).toBeTruthy();
+  expect(screen.getByText("Block ready")).toBeTruthy();
   fireEvent.animationEnd(screen.getByTestId("word-reward"));
   expect(screen.queryByTestId("word-reward")).toBeNull();
   await act(async () => {});
@@ -320,7 +320,7 @@ test("a perfect special charges the portrait immediately and the aura clears on 
   expect(screen.getByText("Special charged!")).toBeTruthy();
   for (let index = 1; index < 10; index++) typeWord(input, typingWord(state, index).text, index !== 9);
   expect(screen.getByTestId("portrait-special").getAttribute("data-charged")).toBe("false");
-  expect(screen.getByLabelText("Attack letters: 0")).toBeTruthy();
+  expect(screen.getByLabelText("Attack power: 0")).toBeTruthy();
   await waitFor(() => expect(submit).toHaveBeenCalled());
   await act(async () => {});
 });
@@ -365,8 +365,8 @@ test("dragon and player profile attack text grow at a two-to-one rate", () => {
   render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code}} state={state} active profile={{player:profilePlayer,events:[]}}
     dragonProfile={{boss:{id:"infernalDragon",name:"Dragon",hp:100,maxHp:100,glow:"red",attackCharacters:1} as any,events:[]}} />);
   fireEvent.keyDown(screen.getByRole("textbox"),{key:typingWord(state).text[0]});
-  const own=screen.getByLabelText("Attack letters: 1").querySelector("strong")!;
-  const boss=screen.getByLabelText("Dragon attack letters: 1").querySelector("strong")!;
+  const own=screen.getByLabelText("Attack power: 100").querySelector("strong")!;
+  const boss=screen.getByLabelText("Dragon attack power: 100").querySelector("strong")!;
   expect(parseFloat(boss.style.fontSize)-21).toBeCloseTo(2*(parseFloat(own.style.fontSize)-21));
 });
 
@@ -390,7 +390,7 @@ test("errors remain after backspace and an older backend still receives one ten-
   const seed = seedWithoutBlue();
   render(<ContinuousTyping sessionId="bossABC" credentials={{ code: "hero1234" }} state={{ ...createTypingState(seed), dodgeSamples: undefined }} active />);
   const input = screen.getByRole("textbox", { name: "Type the displayed word" });
-  expect(screen.getByText("Dodge 0")).toBeTruthy();
+  expect(screen.queryByText(/^Dodge [0-9]/)).toBeNull();
   const first = wordAt(seed, 0).text;
   fireEvent.keyDown(input, { key: "!" });
   fireEvent.keyDown(input, { key: "Backspace" });
@@ -483,7 +483,7 @@ test("native key timestamps drive the measured mean instead of handler execution
   expect(records[0][2]).toBe(wordAt(seed, 0).text.length);
   expect(records[0]).toHaveLength(5);
   expect(records[1][5]).toBe(20);
-  expect(screen.getByText("Dodge 9")).toBeTruthy();
+  expect(screen.queryByText(/^Dodge [0-9]/)).toBeNull();
 });
 
 

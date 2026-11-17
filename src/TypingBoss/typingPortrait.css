@@ -61,3 +61,21 @@
 @media (max-width: 600px) { .typing-input-deck { grid-template-columns: 104px minmax(0,1fr); gap: 9px; } .typing-portrait { width: 104px; height: 122px; } .typing-input-deck-dual { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .typing-input-deck-dual .typing-word-input { grid-column: 1 / -1; grid-row: 2; } .typing-input-deck-dual .typing-dragon-portrait { justify-self: end; grid-column: 2; grid-row: 1; } .portrait-attack strong { font-size: 18px; } .portrait-dragon { bottom: 0; } .typing-word-reward { font-size: 10px; gap: 4px; } }
 @media (prefers-reduced-motion: reduce) { .portrait-attack strong { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .portrait-attack-pulse,.typing-portrait-charged .portrait-special::before,.typing-portrait-charged .portrait-special i,.typing-word-reward { animation: none; } .portrait-dodge,.portrait-shield,.portrait-special { transition: none; } }
+
+/* Numeric rows reserve their own width; full values shrink instead of clipping. */
+.portrait-attack { right:7px; display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:4px; row-gap:0; align-items:center; min-width:0; }
+.portrait-attack > strong { display:block; min-width:0; line-height:1; }
+.portrait-attack > strong .portrait-fitted-number { height:min(1.2em,32px); }
+.portrait-fitted-number { display:block; width:100%; height:1.2em; overflow:visible; }
+.portrait-power { grid-column:1 / -1; display:block; min-width:0; line-height:1; }
+.portrait-health { bottom:15px; }
+.portrait-health-value { position:absolute; z-index:7; bottom:2px; left:8px; right:8px; color:#e2e8f0; font:700 9px/1 monospace; text-shadow:0 1px 2px #000; }
+.portrait-health-value .portrait-fitted-number { height:10px; }
+.portrait-name { bottom:24px; }
+.portrait-character { bottom:36px; }
+.portrait-dragon { bottom:18px; }
+.portrait-dodge { bottom:33px; }
+.portrait-special-label { bottom:39px; }
+.portrait-crit-badge { top:auto; bottom:40px; }
+.portrait-crit-badge strong { display:block; width:100%; min-width:0; }
+@keyframes portrait-attack-pulse { 0% { opacity:.8; } 28% { opacity:1; color:#ffb4a2; } 100% { opacity:1; } }

@@ -1,0 +1,16 @@
+PASS src/TypingBoss/hostPortrait.test.tsx (6.809 s)
+  √ profiles retain complete large attack and bonus values and expose current/max HP below the bar (135 ms)
+  √ own profile shows recovery above the fallen character and clears it on revival (62 ms)
+  √ client dragon profile displays shared power, ready crit, special and defenses on the right (101 ms)
+  √ host profile animates bite without rendering a projectile (6 ms)
+  √ host profile animates weakAttack without rendering a projectile (6 ms)
+  √ host profile animates tailWhip without rendering a projectile (6 ms)
+  √ host profile animates flamethrower without rendering a projectile (5 ms)
+  √ every hit has independent feedback while flame remains uninterrupted; impacts expire locally (14 ms)
+  √ error penalty chip is removed (32 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        10.625 s
+Ran all test suites matching /TypingBoss\\hostPortrait.test/i.

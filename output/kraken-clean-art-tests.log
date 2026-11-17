@@ -1,0 +1,9 @@
+PASS src/TypingBoss/HostSetup.test.tsx (8.608 s)
+PASS src/TypingBoss/KrakenVisuals.test.tsx
+PASS src/TypingBoss/hostPortrait.test.tsx
+
+Test Suites: 3 passed, 3 total
+Tests:       15 passed, 15 total
+Snapshots:   0 total
+Time:        17.197 s
+Ran all test suites matching /TypingBoss\\(KrakenVisuals|HostSetup|hostPortrait).test/i.

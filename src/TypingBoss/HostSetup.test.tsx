@@ -14,9 +14,10 @@ test('host can choose a dragon, name and mode before creating the lobby',()=>{
       onCreate={()=>create({bossId,mode,name})} busy={false} error=""/>;
   }
   render(<Harness/>);
-  fireEvent.click(screen.getByRole('button',{name:'Ancient Red Dragon'}));
+  fireEvent.change(screen.getByLabelText('Boss type'),{target:{value:'infernalDragon'}});
+  expect(screen.getByRole('button',{name:'Ancient Red Dragon'}).getAttribute('aria-pressed')).toBe('true');
   fireEvent.click(screen.getByRole('button',{name:/Classic quiz battle/}));
-  expect(screen.getByText(/1,550 HP · 12 second charge/)).toBeTruthy();
+  expect(screen.getByText(/155,000 HP · 12 second charge/)).toBeTruthy();
   fireEvent.change(screen.getByLabelText('Game name'),{target:{value:'Friday raid'}});
   fireEvent.click(screen.getByRole('button',{name:'Create lobby'}));
   expect(create).toHaveBeenCalledWith({bossId:'infernalDragon',mode:'old',name:'Friday raid'});

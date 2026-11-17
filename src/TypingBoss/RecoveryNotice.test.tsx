@@ -22,9 +22,9 @@ test('each fallen player shows their own immediately running countdown',()=>{
   const a={defeated:true,recoverAt:29000} as TypingBossPlayer;
   const b={defeated:true,recoverAt:32000} as TypingBossPlayer;
   render(<><RecoveryNotice player={a} active serverNow={10000}/><RecoveryNotice player={b} active serverNow={10000}/></>);
-  expect(screen.getByText(/Recovering at 1 HP in 19 seconds/)).toBeTruthy();
-  expect(screen.getByText(/Recovering at 1 HP in 22 seconds/)).toBeTruthy();
+  expect(screen.getByText(/Recovering at 100 HP in 19 seconds/)).toBeTruthy();
+  expect(screen.getByText(/Recovering at 100 HP in 22 seconds/)).toBeTruthy();
   act(()=>jest.advanceTimersByTime(5000));
-  expect(screen.getByText(/Recovering at 1 HP in 14 seconds/)).toBeTruthy();
-  expect(screen.getByText(/Recovering at 1 HP in 17 seconds/)).toBeTruthy();
+  expect(screen.getByText(/Recovering at 100 HP in 14 seconds/)).toBeTruthy();
+  expect(screen.getByText(/Recovering at 100 HP in 17 seconds/)).toBeTruthy();
 });

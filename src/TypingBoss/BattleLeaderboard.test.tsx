@@ -21,14 +21,14 @@ test("ending leaderboard includes the boss and only combat totals plus typing sk
   render(<BattleLeaderboard entries={entries} />);
   const ada=within(screen.getByRole('article',{name:'Ada battle results'}));
   expect(ada.getByText('#1 Ada')).toBeTruthy();
-  expect(ada.getByText('500')).toBeTruthy();expect(ada.getByText('12.5')).toBeTruthy();
-  expect(ada.getByText('192 power')).toBeTruthy();
+  expect(ada.getByText('50,000')).toBeTruthy();expect(ada.getByText('1,250')).toBeTruthy();
+  expect(ada.getByText('19,200 power')).toBeTruthy();
   expect(ada.getByText('Accuracy: 96%')).toBeTruthy();expect(ada.getByText('WPM: 42')).toBeTruthy();
   expect(ada.getByText('Mean key gap: 200 ms')).toBeTruthy();
   expect(ada.getByText('Timing variation: 25 ms')).toBeTruthy();
   const boss=within(screen.getByRole('article',{name:'Ancient Red Dragon battle results'}));
-  expect(boss.getByText('Boss')).toBeTruthy();expect(boss.getByText('300')).toBeTruthy();
-  expect(boss.getByText('7.5')).toBeTruthy();expect(boss.getByText('WPM: 60')).toBeTruthy();
+  expect(boss.getByText('Boss')).toBeTruthy();expect(boss.getByText('30,000')).toBeTruthy();
+  expect(boss.getByText('750')).toBeTruthy();expect(boss.getByText('WPM: 60')).toBeTruthy();
   expect(screen.getAllByRole('article')[0]).toBe(screen.getByRole('article',{name:'Ancient Red Dragon battle results'}));
   expect(within(screen.getByRole('article',{name:'Ben battle results'})).getByText('No landed attack')).toBeTruthy();
   for(const removed of [/Orange:/,/Green:/,/Red:/,/Blocked:/,/Blue block/,/Magnitude:/,/Support used:/,/Total multiplier:/,/Critical:/,/attack #/]) {
