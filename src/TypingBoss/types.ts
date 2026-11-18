@@ -4,6 +4,7 @@ export type TypingBossStatus =
   | "closed"
   | "expired"
   | "victory"
+  | "draw"
   | "defeat";
 
 export type TypingBossClassId =
@@ -236,6 +237,10 @@ export interface TypingBossSessionSnapshot {
   battleView?: 'personal' | 'full';
   teamActivity?: {damage:number;healing:number;revives:number};
   countdownEndsAt?: number | null;
+  timeLimitSeconds?: number | null;
+  battleEndsAt?: number | null;
+  endReason?: 'time-limit' | null;
+  timedResult?: {bossHpPercent: number; teamHpPercent: number} | null;
   clericHealingPool?: number;
   necroHealingPool?: number;
   autoRevive?: boolean;

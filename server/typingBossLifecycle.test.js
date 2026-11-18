@@ -92,6 +92,115 @@ function loadServer() {
   return sandbox.module.exports;
 }
 
+test('timed results compare combined team HP percentages, handle ties, and preserve earlier results', () => {
+  for (const [teamHp, expected] of [[76, 'victory'], [74, 'defeat'], [75, 'draw']]) {
+    const session = {...room(), status:'active', battleEndsAt:5000,
+      boss:{hp:150, maxHp:300}, players:new Map([['a',{hp:teamHp,maxHp:100}],['b',{hp:0,maxHp:50}]])};
+    assert.equal(lifecycle.finishTimedBattle(session,4999),false);
+    assert.equal(session.status,'active');
+    assert.equal(lifecycle.finishTimedBattle(session,5100),true);
+    assert.equal(session.status,expected);
+    assert.equal(session.closedAt,5000);
+    assert.equal(session.endReason,'time-limit');
+    assert.equal(session.timedResult.bossHpPercent,50);
+    assert.equal(session.timedResult.teamHpPercent,teamHp/150*100);
+    session.boss.hp=0;
+    assert.equal(lifecycle.finishTimedBattle(session,6000),false);
+    assert.equal(session.status,expected);
+  }
+  const won = {...room(),status:'victory',battleEndsAt:5000};
+  assert.equal(lifecycle.finishTimedBattle(won,6000),false);
+  assert.equal(won.endReason,undefined);
+});
+
+test('time limits start after the countdown, publish results, and clear on rematch', async t => {
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer();
+  const req=body=>require('node:stream').Readable.from([JSON.stringify(body)]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  for (const duration of [undefined,180,300,420,270,null]) {
+    const session=server.createTypingBossSession({mode:'proportional'});
+    const join=response();await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin'}),join,session);
+    const start=response();await server.handleStartTypingBossSession(req({hostToken:session.hostToken,timeLimitSeconds:duration}),start,session,new URL('http://localhost'));
+    assert.equal(start.status,200);
+    const seconds=duration===undefined?300:duration;
+    assert.equal(start.body.session.timeLimitSeconds,seconds);
+    assert.equal(session.battleEndsAt,seconds===null?null:session.countdownEndsAt+seconds*1000);
+    if (seconds===null) {
+      t.mock.timers.tick(500000);
+      assert.equal(session.status,'active');
+      continue;
+    }
+    session.boss.hp=session.boss.maxHp*.6;
+    [...session.players.values()][0].hp=80;
+    const events=[];
+    session.subscribers.add({auth:{role:'player',actorCode:join.body.code},res:{write(event){events.push(event);},destroy(){throw Error('Must publish timed results');}}});
+    t.mock.timers.tick(5000+seconds*1000-1);
+    assert.equal(session.status,'active');
+    t.mock.timers.tick(1);
+    assert.equal(session.status,'victory');
+    assert.equal(session.endReason,'time-limit');
+    t.mock.timers.tick(200);
+    assert.ok(events.some(event=>event.includes('"endReason":"time-limit"') && event.includes('"leaderboard"')));
+    const rematch=response();await server.handleRematchTypingBossSession(req({hostToken:session.hostToken}),rematch,session,new URL('http://localhost'));
+    assert.equal(rematch.status,200);
+    assert.equal(session.battleEndsAt,null);
+    assert.equal(session.timedResult,null);
+    assert.equal(session.endReason,null);
+    assert.equal(session.timeLimitSeconds,seconds);
+  }
+});
+
+test('invalid durations cannot start a battle or change its setup', async t => {
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),session=server.createTypingBossSession({mode:'proportional'});
+  const req=body=>require('node:stream').Readable.from([JSON.stringify(body)]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin'}),response(),session);
+  for (const duration of [0,-1,59,7201,180.5,'300',true]) {
+    const res=response();await server.handleStartTypingBossSession(req({hostToken:session.hostToken,timeLimitSeconds:duration}),res,session,new URL('http://localhost'));
+    assert.equal(res.status,400);assert.equal(session.status,'setup');assert.equal(session.battleEndsAt,null);
+  }
+});
+
+test('timed draws allow rematches and in-flight hits cannot change the final HP result', async t => {
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),engine=require('./proportionalBoss');
+  const session=server.createTypingBossSession({mode:'proportional'});
+  const req=body=>require('node:stream').Readable.from([JSON.stringify(body)]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin'}),response(),session);
+  await server.handleStartTypingBossSession(req({hostToken:session.hostToken,timeLimitSeconds:60}),response(),session,new URL('http://localhost'));
+  t.mock.timers.tick(64500);
+  const player=[...session.players.values()][0];
+  player.hp=50;session.boss.hp=50;
+  const pending=[];
+  engine.launchAttack(session,player,{power:100,multiplier:1},{schedule:(_s,callback)=>pending.push(callback),broadcast:()=>{}});
+  t.mock.timers.tick(500);
+  assert.equal(session.status,'draw');
+  assert.deepEqual(session.timedResult,{bossHpPercent:50,teamHpPercent:50});
+  for (const impact of pending) impact();
+  assert.equal(session.boss.hp,50);assert.equal(session.status,'draw');
+  assert.throws(()=>engine.submitWords(session,{role:'player',actorCode:player.code},[],{broadcast(){}}),/not active/);
+  const rematch=response();await server.handleRematchTypingBossSession(req({hostToken:session.hostToken}),rematch,session,new URL('http://localhost'));
+  assert.equal(rematch.status,200);assert.equal(session.status,'setup');
+});
+
+test('classic quiz battles share the timer and HP-percentage result', async t => {
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),session=server.createTypingBossSession({mode:'old'});
+  const req=body=>require('node:stream').Readable.from([JSON.stringify(body)]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin'}),response(),session);
+  await server.handleStartTypingBossSession(req({hostToken:session.hostToken,timeLimitSeconds:60}),response(),session,new URL('http://localhost'));
+  clearTimeout(session.bossTimer);
+  const player=[...session.players.values()][0];player.hp=player.maxHp*.2;
+  session.boss.hp=session.boss.maxHp*.8;
+  t.mock.timers.tick(65000);
+  assert.equal(session.status,'defeat');
+  assert.equal(session.endReason,'time-limit');
+});
+
 test('all three bosses can be selected in either mode; proportional keeps its default',t=>{
   t.mock.timers.enable({apis:['setTimeout','setInterval']});
   const server=loadServer();

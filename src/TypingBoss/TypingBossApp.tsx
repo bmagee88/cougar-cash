@@ -14,6 +14,8 @@ import { initializeBalanced, proportionalPlayerPoint } from "./proportionalRules
 import { generateJoinName, shortJoinCode } from "./joinNames";
 import { VolcanicBackdrop, VolcanicForeground } from "./VolcanicScenery";
 import BattleCountdown,{useBattleCountdown} from "./BattleCountdown";
+import BattleTimer from './BattleTimer';
+import TimeLimitSettings, {timeLimitSeconds} from './TimeLimitSettings';
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
@@ -122,21 +124,21 @@ const TYPING_BOSS_ASSETS = {
   cindermawBoss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/red-dragon-sprite.png`,
   ancientRedDragonBoss: `${PUBLIC_ASSET_BASE}/assets/typing-boss/ancient-red-dragon-sprite.png`,
   cleric: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-sprite.png`,
-  barbarian: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-sprite.png`,
+  barbarian: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-school-portrait.png`,
   paladin: `${PUBLIC_ASSET_BASE}/assets/typing-boss/paladin-sprite.png`,
-  rogue: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-sprite.png`,
+  rogue: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-school-portrait.png`,
   necromancer: `${PUBLIC_ASSET_BASE}/assets/typing-boss/necromancer-sprite.png`,
   monk: `${PUBLIC_ASSET_BASE}/assets/typing-boss/monk-sprite.png`,
   clericIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-idle-sprite.png`,
-  barbarianIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-idle-sprite.png`,
+  barbarianIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/characters/barbarian-school-idle.webp`,
   paladinIdleAnimation: `${PUBLIC_ASSET_BASE}/assets/typing-boss/paladin-idle-sprite.png`,
   clericAnimationSheet: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-animation-sheet.png`,
-  barbarianWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-weak-attack-sprite.png`,
-  barbarianStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/player-strong-attack-sprite.png`,
+  barbarianWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-school-burst.png`,
+  barbarianStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/barbarian-school-burst-strong.png`,
   clericWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-weak-attack-sprite.png`,
   clericStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/cleric-strong-attack-sprite.png`,
-  rogueWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-weak-attack-sprite.png`,
-  rogueStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-strong-attack-sprite.png`,
+  rogueWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-school-star.png`,
+  rogueStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/rogue-school-star-strong.png`,
   necromancerWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/necromancer-weak-attack-sprite.png`,
   necromancerStrongAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/necromancer-strong-attack-sprite.png`,
   paladinWeakAttack: `${PUBLIC_ASSET_BASE}/assets/typing-boss/paladin-weak-attack-sprite.png`,
@@ -849,6 +851,7 @@ function StatusChip({ status }: { status: TypingBossStatus }) {
     expired: { bg: "#34212a", color: "#fda4af" },
     victory: { bg: "#14313a", color: "#67e8f9" },
     defeat: { bg: "#391f1f", color: "#fca5a5" },
+    draw: { bg: "#3b2f18", color: "#fde68a" },
   };
 
   return (
@@ -1017,6 +1020,9 @@ function HostSessionPage() {
   const [copied, setCopied] = useState(false);
   const [hpMultiplier, setHpMultiplier] = useState(1);
   const [autoRevive, setAutoRevive] = useState(true);
+  const [timePreset, setTimePreset] = useState('300');
+  const [customMinutes, setCustomMinutes] = useState('10');
+  const selectedTimeLimit = timeLimitSeconds(timePreset, customMinutes);
   const [balanced, setBalanced] = useState(false);
   const [balancedRandomColors,setBalancedRandomColors] = useState(true);
   const [wordFilters, setWordFilters] = useState<WordFilters>({});
@@ -1032,6 +1038,13 @@ function HostSessionPage() {
   const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [outcomeDismissed, setOutcomeDismissed] = useState(false);
+
+  useEffect(() => {
+    if (session?.timeLimitSeconds === undefined) return;
+    const seconds = session.timeLimitSeconds;
+    setTimePreset(seconds === null ? 'unlimited' : [180, 300, 420].includes(seconds) ? String(seconds) : 'custom');
+    if (seconds !== null) setCustomMinutes(String(seconds / 60));
+  }, [session?.timeLimitSeconds]);
 
   useEffect(() => {
     if (session?.status === "active") {
@@ -1148,16 +1161,16 @@ function HostSessionPage() {
             <Button
               variant="contained"
               startIcon={<PlayArrowIcon />}
-              disabled={busy || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
+              disabled={busy || Number.isNaN(selectedTimeLimit) || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
               onClick={() =>
                 runHostAction(() =>
-                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors, autoRevive)
+                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors, autoRevive, selectedTimeLimit)
                 )
               }
             >
               Start
             </Button>
-            {["victory", "defeat"].includes(session.status) && <Button variant="contained" disabled={busy}
+            {["victory", "defeat", "draw"].includes(session.status) && <Button variant="contained" disabled={busy}
               onClick={() => runHostAction(() => rematchTypingBossSession(normalizedSessionId, hostToken))}>Rematch</Button>}
             <Button
               variant="outlined"
@@ -1175,6 +1188,10 @@ function HostSessionPage() {
           </Stack>
         </Stack>
 
+          {session.status === 'setup' && <Paper variant="outlined" sx={{p: 2.5}}>
+            <TimeLimitSettings preset={timePreset} customMinutes={customMinutes} onPresetChange={setTimePreset}
+              onCustomChange={setCustomMinutes} disabled={busy} />
+          </Paper>}
           {session.mode === "proportional" && session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
             <FormControlLabel label="Auto revive" control={<Switch checked={autoRevive} onChange={(_event,checked)=>setAutoRevive(checked)} disabled={busy} inputProps={{'aria-label':'Auto revive'}}/>}/>
             <Typography variant="body2">{autoRevive ? `Each KO starts its own timer right away: 10 seconds + 3 seconds per player + 3 seconds per prior team KO. Heroes downed together get their delays in random order.` : 'Automatic recovery is off. Necromancers can still revive fallen players.'}</Typography>
@@ -1195,6 +1212,8 @@ function HostSessionPage() {
         </BattleMenu>
         {actionError && <Alert severity="error">{actionError}</Alert>}
         {streamError && !reconnecting && <Alert severity="warning">{streamError}</Alert>}
+
+        <BattleTimer session={session} />
 
         {session.mode === "proportional" ? <>
           <HostBattlefield session={lobbyPreview!} />
@@ -1227,7 +1246,7 @@ function HostSessionPage() {
         busy={busy}
         host
         open={
-          ["victory", "defeat"].includes(session.status) &&
+          ["victory", "defeat", "draw"].includes(session.status) &&
           !outcomeDismissed &&
           !statsOpen
         }
@@ -1394,6 +1413,7 @@ function PlayerSessionPage() {
       <BattleMenu status={session.status}><Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
         {session.mode==='proportional' && <PromotionButton sessionId={normalizedSessionId} playerToken={playerToken} promoted={me.promoted} disabled={!['setup','active'].includes(session.status)}/>}</BattleMenu>
       <ReconnectOverlay show={reconnecting} />
+      <BattleTimer session={session} />
       {session.mode === "proportional" ? <Stack spacing={2} className="battle-session-stack">
         <PlayerTypingBattle session={session} me={me} code={playerCode} playerToken={playerToken} active={session.status === "active" && !me.defeated && !reconnecting} />
         {session.leaderboard && <BattleLeaderboard entries={session.leaderboard} />}
@@ -1412,7 +1432,7 @@ function PlayerSessionPage() {
       />
       <BattleOutcomeModal
         open={
-          ["victory", "defeat"].includes(session.status) &&
+          ["victory", "defeat", "draw"].includes(session.status) &&
           !outcomeDismissed &&
           !statsOpen
         }
@@ -2698,22 +2718,23 @@ function BattleOutcomeModal({
   host?: boolean;
 }) {
   const victory = session.mode === "proportional" && host ? session.status === "defeat" : session.status === "victory";
+  const draw = session.status === 'draw';
   return (
     <Dialog open={open} onClose={onClose} maxWidth={session.mode === "proportional" ? "md" : "sm"} fullWidth>
       <DialogTitle
         sx={{
           fontWeight: 950,
-          color: victory ? "#67e8f9" : "#fb7185",
+          color: draw ? '#fde68a' : victory ? "#67e8f9" : "#fb7185",
           textAlign: "center",
           fontSize: { xs: 30, md: 42 },
           letterSpacing: 0,
         }}
       >
-        {victory ? "VICTORY" : "DEFEAT"}
+        {draw ? 'DRAW' : victory ? "VICTORY" : "DEFEAT"}
       </DialogTitle>
       <DialogContent>
         <Typography sx={{ textAlign: "center", color: "text.secondary" }}>
-          {session.mode === "proportional" && host ? victory ? "Your dragon defeated the party." : "The players defeated your dragon." : victory
+          {session.endReason === 'time-limit' ? `Time is up! Team HP: ${session.timedResult?.teamHpPercent.toFixed(1)}% · Boss HP: ${session.timedResult?.bossHpPercent.toFixed(1)}%. ${draw ? 'Both sides finished with the same HP percentage.' : session.status === 'victory' ? 'The team wins with the higher remaining HP percentage.' : 'The boss wins with the higher remaining HP percentage.'}` : session.mode === "proportional" && host ? victory ? "Your dragon defeated the party." : "The players defeated your dragon." : victory
             ? `${session.boss.name} has fallen.`
             : "The party was knocked out."}
         </Typography>

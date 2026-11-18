@@ -1,4 +1,5 @@
 const {bossContributions,promotedAttack}=require('./typingBossPromotion');
+const {finishTimedBattle}=require('./typingBossLifecycle');
 const krakenCombat=require('./krakenCombat');
 const {KRAKEN_ANIMATIONS}=require('../src/TypingBoss/krakenAnimationRules');
 const crypto = require("node:crypto");
@@ -84,6 +85,8 @@ function launchAttack(session, actor, attack, callbacks) {
 }
 
 function launchAttackNow(session, actor, attack, { schedule, broadcast, random = Math.random }) {
+  if (finishTimedBattle(session)) { broadcast(session); return false; }
+  if (session.status !== 'active') return false;
   const now = Date.now();
   const host = actor === session.typingHost;
   if(attack.balanced && !host && actor.typing.ability==='cleric') {
@@ -163,6 +166,7 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
   }));
   session.projectiles.push(...volley);
   schedule(session, () => {
+    if (finishTimedBattle(session)) { broadcast(session); return; }
     // A finished fight cancels in-flight damage.
     if (session.status !== "active") return;
     let volleyDamage = 0, volleyBlocked = 0, landed = false;
@@ -249,6 +253,7 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
 }
 
 function submitWords(session, auth, records, callbacks) {
+  if (finishTimedBattle(session)) callbacks.broadcast(session);
   if(session.countdownEndsAt>Date.now())throw new Error("The battle countdown is still running.");
   if (session.status !== "active") throw new Error("The fight is not active.");
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
@@ -367,7 +372,7 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
 // Nested diffs preserve unchanged player objects on the client and avoid replaying logs/FX.
 function diffSnapshot(previous, current) {
   const delta = {};
-  for (const key of ["status", "battleView", "teamActivity", "countdownEndsAt", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "balancedRandomColors", "clericHealingPool", "clericHealingAllowance", "necroHealingPool", "autoRevive", "leaderboard"]) {
+  for (const key of ["status", "battleView", "teamActivity", "countdownEndsAt", "timeLimitSeconds", "battleEndsAt", "endReason", "timedResult", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "balancedRandomColors", "clericHealingPool", "clericHealingAllowance", "necroHealingPool", "autoRevive", "leaderboard"]) {
     if (JSON.stringify(previous[key]) !== JSON.stringify(current[key])) delta[key] = current[key];
   }
   if (current.typing) {

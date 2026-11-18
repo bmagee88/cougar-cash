@@ -14,7 +14,7 @@ function overviewFor(snapshot) {
 
 function studentView(snapshot,code,cache={},now=Date.now(),candidate=overviewFor(snapshot)) {
   const bucket=Math.floor(now/SUMMARY_MS);
-  const terminal=['victory','defeat','closed','expired'].includes(snapshot.status);
+  const terminal=['victory','defeat','draw','closed','expired'].includes(snapshot.status);
   const force=!cache.overview || cache.status!==snapshot.status || cache.overview.roster!==candidate.roster || terminal;
   const changed=cache.overview?.signature!==candidate.signature;
   let pendingUntil;

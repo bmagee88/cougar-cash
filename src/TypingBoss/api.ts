@@ -214,12 +214,12 @@ export function verifyTypingBossParticipant(sessionId: string, playerToken: stri
   );
 }
 
-export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true, autoRevive = true) {
+export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true, autoRevive = true, timeLimitSeconds: number | null = 300) {
   const response = await apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors, autoRevive },
+      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors, autoRevive, timeLimitSeconds },
     }
   );
   if (Boolean(response.session.balanced) !== balanced) {

@@ -1278,6 +1278,10 @@ function createTypingBossSession(body) {
     name: normalizeBoardName(body.name || body.gameName, "Typing Boss Battle"),
     status: "setup",
     autoRevive: true,
+    timeLimitSeconds: 300,
+    battleEndsAt: null,
+    endReason: null,
+    timedResult: null,
     createdAt: now,
     expiresAt: now + TYPING_BOSS_SESSION_MS,
     lastActivityAt: now,
@@ -1411,6 +1415,10 @@ function getTypingBossSnapshot(session, options = {}) {
     remainingSeconds: Math.max(0, Math.ceil((session.expiresAt - now) / 1000)),
     serverNow: now,
     countdownEndsAt: session.countdownEndsAt || null,
+    timeLimitSeconds: session.timeLimitSeconds ?? null,
+    battleEndsAt: session.battleEndsAt || null,
+    endReason: session.endReason || null,
+    timedResult: session.timedResult || null,
     boss: { ...session.boss },
     players: [...session.players.values()]
       .map(getTypingBossPlayerSnapshot),
@@ -1436,7 +1444,7 @@ function getTypingBossSnapshot(session, options = {}) {
     snapshot.necroHealingPool = session.necroHealingPool || 0;
     snapshot.clericHealingPool = Math.round((session.clericHealingPool || 0)*100)/100;
     snapshot.clericHealingAllowance = Math.round((session.clericHealingAllowance || 0)*100)/100;
-    if (["victory", "defeat", "closed", "expired"].includes(session.status)) snapshot.leaderboard = proportionalBoss.leaderboard(session);
+    if (["victory", "defeat", "draw", "closed", "expired"].includes(session.status)) snapshot.leaderboard = proportionalBoss.leaderboard(session);
     snapshot.boss.hp = Math.round(session.boss.hp * 100) / 100;
     // Public combat status only: never send the host's word seed, cursor or timings.
     snapshot.boss.profile = Object.fromEntries([
@@ -1700,6 +1708,8 @@ function scheduleTypingBossAttack(session) {
 }
 
 function resolveTypingBossProjectile(session, projectileId) {
+  if (typingBossLifecycle.finishTimedBattle(session)) broadcastTypingBossSession(session);
+  if (session.status !== 'active') return;
   const projectile = session.projectiles.find((item) => item.id === projectileId);
   if (!projectile || projectile.resolvedAt || session.status === "expired") {
     return;
@@ -2042,7 +2052,7 @@ async function handleCreateTypingBossParticipant(req, res, session) {
     return;
   }
 
-  if (session.status === "closed" || session.status === "victory" || session.status === "defeat") {
+  if (["closed", "victory", "defeat", "draw"].includes(session.status)) {
     sendError(res, 409, "This boss game is no longer accepting players.");
     return;
   }
@@ -2151,6 +2161,11 @@ async function handleStartTypingBossSession(req, res, session, url) {
   }
 
   const now = Date.now();
+  const timeLimitSeconds = body.timeLimitSeconds === undefined ? 300 : body.timeLimitSeconds;
+  if (timeLimitSeconds !== null && (!Number.isInteger(timeLimitSeconds) || timeLimitSeconds < 60 || timeLimitSeconds > 7200)) {
+    sendError(res, 400, 'Choose Unlimited or a time limit from 1 to 120 minutes.');
+    return;
+  }
   if (session.mode === "proportional") {
     if(body.autoRevive !== undefined && typeof body.autoRevive !== 'boolean') {sendError(res,400,'Auto revive must be true or false.');return;}
     session.autoRevive=body.autoRevive !== false;
@@ -2164,6 +2179,18 @@ async function handleStartTypingBossSession(req, res, session, url) {
   }
   session.status = "active";
   session.countdownEndsAt = now + 5000;
+  session.timeLimitSeconds = timeLimitSeconds;
+  session.battleEndsAt = timeLimitSeconds === null ? null : session.countdownEndsAt + timeLimitSeconds * 1000;
+  session.endReason = session.timedResult = null;
+  if (session.battleEndsAt) {
+    session.battleTimer = scheduleTypingBossTimer(session, () => {
+      session.battleTimer = null;
+      if (typingBossLifecycle.finishTimedBattle(session) || session.endReason === 'time-limit') {
+        addTypingBossLog(session, 'Time is up. The battle was decided by remaining HP percentages.', 'info');
+        broadcastTypingBossSession(session);
+      }
+    }, session.battleEndsAt - now);
+  }
   session.boss.lastAttackAt = session.countdownEndsAt;
   session.boss.nextAttackAt = session.countdownEndsAt + session.boss.attackIntervalMs;
   addTypingBossLog(session, "Starting in 5 seconds.", "info");
@@ -2181,7 +2208,7 @@ async function handleRematchTypingBossSession(req, res, session, url) {
   const body = await readJson(req);
   const auth = authenticateTypingBoss(session, url, body);
   if (!requireTypingBossHost(res, session, auth)) return;
-  if (!["victory", "defeat"].includes(session.status) || Date.now() >= session.expiresAt) {
+  if (!["victory", "defeat", "draw"].includes(session.status) || Date.now() >= session.expiresAt) {
     sendError(res, 409, "Only a completed battle in an open, unexpired room can be rematched.");
     return;
   }

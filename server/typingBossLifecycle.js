@@ -3,7 +3,23 @@ const { clearDragonCombat } = require('./dragonCombat');
 const {cancelRecovery}=require('./typingBossRecovery');
 const FINISHED_MS = 15 * 60 * 1000;
 const CHALLENGE_MS = 10 * 60 * 1000;
-const FINISHED = new Set(["victory", "defeat", "closed"]);
+const FINISHED = new Set(["victory", "defeat", "draw", "closed"]);
+
+function finishTimedBattle(session, now = Date.now()) {
+  if (session.status !== 'active' || !session.battleEndsAt || now < session.battleEndsAt) return false;
+  const players = [...session.players.values()];
+  const teamMaxHp = players.reduce((total, player) => total + player.maxHp, 0);
+  const teamHp = players.reduce((total, player) => total + Math.max(0, player.hp), 0);
+  const team = teamMaxHp > 0 ? teamHp / teamMaxHp : 0;
+  const boss = session.boss.maxHp > 0 ? Math.max(0, session.boss.hp) / session.boss.maxHp : 0;
+  session.status = Math.abs(team - boss) < 1e-10 ? 'draw' : team > boss ? 'victory' : 'defeat';
+  session.endReason = 'time-limit';
+  session.timedResult = {bossHpPercent: boss * 100, teamHpPercent: team * 100};
+  session.closedAt = session.battleEndsAt;
+  cancelRecovery(session);
+  clearDragonCombat(session);
+  return true;
+}
 
 function touchSession(session, now = Date.now()) {
   if (session.status === "setup" || session.status === "active") session.lastActivityAt = now;
@@ -25,6 +41,7 @@ function storeChallenge(session, challenge, now = Date.now()) {
 }
 
 function maintainSession(session, now = Date.now()) {
+  finishTimedBattle(session, now);
   pruneChallenges(session, now);
   session.projectiles = session.projectiles.filter(projectile =>
     now - (projectile.resolvedAt || projectile.impactAt) < 4500);
@@ -36,6 +53,11 @@ function maintainSession(session, now = Date.now()) {
     session.challenges.clear();
     clearTimeout(session.bossTimer);
     session.bossTimer = null;
+    if (session.endReason !== 'time-limit') {
+      clearTimeout(session.battleTimer);
+      session.timers.delete(session.battleTimer);
+      session.battleTimer = null;
+    }
   }
   return session.status !== "expired" && (now >= session.expiresAt ||
     (!FINISHED.has(session.status) && !session.subscribers.size &&
@@ -53,6 +75,7 @@ function resetForRematch(session) {
   session.recovery=null;session.teamKnockouts=0;
   session.projectiles = []; session.log = [];
   session.status = "setup"; session.closedAt = null; session.countdownEndsAt = null;
+  session.battleEndsAt = session.battleTimer = session.endReason = session.timedResult = null;
   session.startedAt = null; session.startingPlayers = 0; session.bossAttackIndex = 0;
   session.clericHealingPool = session.clericHealingAllowance = session.necroHealingPool = 0;
   session.lastActivityAt = Date.now();
@@ -96,5 +119,5 @@ function removeSession(registry, session) {
   session.typingHost = null;
 }
 
-module.exports = { ABANDONED_MS, FINISHED_MS, CHALLENGE_MS, resetForRematch, touchSession, pruneChallenges,
+module.exports = { ABANDONED_MS, FINISHED_MS, CHALLENGE_MS, finishTimedBattle, resetForRematch, touchSession, pruneChallenges,
   storeChallenge, maintainSession, detachSubscriber, clearSessionTimers, removeSession };
