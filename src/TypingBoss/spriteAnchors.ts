@@ -7,8 +7,8 @@ export function combatAtlasFilename(classId:TypingBossClassId) { return registra
 
 export function spriteFrameOffsets(classId: TypingBossClassId, row: number, combatAtlas=false) {
   const config=registration[classId];
-  // Keep the three approved legacy idle strips. They have their own cell geometry.
-  if(!combatAtlas&&["paladin","cleric","barbarian"].includes(classId))return [0,0,0,0,0,0];
+  // Legacy strips and centered school-art idle strips have their own cell geometry.
+  if(!combatAtlas&&["paladin","cleric","barbarian","rogue"].includes(classId))return [0,0,0,0,0,0];
   const width=combatAtlas?config.cellWidth:96;
   const padding=combatAtlas?0:(config.cellWidth-96)/2;
   const stable=row===0||row===2||row===3||(row===1&&config.repairedWeapon);

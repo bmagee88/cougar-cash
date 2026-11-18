@@ -22,6 +22,12 @@ const labels=["idle / receiving buff","weapon / power","support cast","receiving
           if(alpha>=230){opaque++;if(y>=72+verticalPadding&&y<91+verticalPadding){sum+=x;count++;}}
           if(alpha>=128&&(x===0||x===width-1||y===0||y===height-1))edgePixels++;
         }
+        // Short crouching school-art poses can sit above the standing foot band.
+        if(!count && opaque>=120) {
+          let bottom=0;
+          for(let y=0;y<height;y++)for(let x=0;x<width;x++)if(data[((row*height+y)*info.width+frame*width+x)*4+3]>=230)bottom=y;
+          for(let y=Math.max(0,bottom-18);y<=bottom;y++)for(let x=0;x<width;x++)if(data[((row*height+y)*info.width+frame*width+x)*4+3]>=230){sum+=x;count++;}
+        }
         if(!count||opaque<120)throw new Error(`Missing character: ${id} ${row} ${frame}`);
         anchors.push(Number((sum/count).toFixed(4)));
         frames.push({frame:frame+1,opaquePixels:opaque,edgePixels});

@@ -605,41 +605,41 @@
   },
   {
     "id": "barbarian",
-    "filename": "barbarian-combat.webp",
+    "filename": "barbarian-combat-v3.webp",
     "clips": [
       {
         "row": 0,
         "action": "idle / receiving buff",
-        "rawHorizontalDrift": 18.788,
+        "rawHorizontalDrift": 16.894,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1909,
+            "opaquePixels": 2162,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1926,
+            "opaquePixels": 2156,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1907,
+            "opaquePixels": 2131,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 1894,
+            "opaquePixels": 2149,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1896,
+            "opaquePixels": 2092,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1920,
+            "opaquePixels": 2117,
             "edgePixels": 0
           }
         ]
@@ -647,36 +647,36 @@
       {
         "row": 1,
         "action": "weapon / power",
-        "rawHorizontalDrift": 18.526,
+        "rawHorizontalDrift": 18.652,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1911,
+            "opaquePixels": 2057,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1889,
+            "opaquePixels": 2202,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 2049,
+            "opaquePixels": 2001,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 1937,
+            "opaquePixels": 2308,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1751,
+            "opaquePixels": 2342,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1932,
+            "opaquePixels": 2250,
             "edgePixels": 0
           }
         ]
@@ -684,36 +684,36 @@
       {
         "row": 2,
         "action": "support cast",
-        "rawHorizontalDrift": 21.147,
+        "rawHorizontalDrift": 18.86,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1866,
+            "opaquePixels": 2022,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1842,
+            "opaquePixels": 2150,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1847,
+            "opaquePixels": 2247,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2011,
+            "opaquePixels": 2384,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1756,
+            "opaquePixels": 2532,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1873,
+            "opaquePixels": 2022,
             "edgePixels": 0
           }
         ]
@@ -721,36 +721,36 @@
       {
         "row": 3,
         "action": "receiving healing",
-        "rawHorizontalDrift": 18.474,
+        "rawHorizontalDrift": 17.181,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1883,
+            "opaquePixels": 2042,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1922,
+            "opaquePixels": 2381,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1868,
+            "opaquePixels": 4156,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 1905,
+            "opaquePixels": 5710,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1875,
+            "opaquePixels": 2881,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1884,
+            "opaquePixels": 2067,
             "edgePixels": 0
           }
         ]
@@ -758,36 +758,36 @@
       {
         "row": 4,
         "action": "dodge",
-        "rawHorizontalDrift": 18.281,
+        "rawHorizontalDrift": 17.139,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1869,
+            "opaquePixels": 2096,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1751,
+            "opaquePixels": 2120,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1649,
+            "opaquePixels": 2038,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 1716,
+            "opaquePixels": 2199,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1815,
+            "opaquePixels": 2037,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1886,
+            "opaquePixels": 2096,
             "edgePixels": 0
           }
         ]
@@ -795,36 +795,36 @@
       {
         "row": 5,
         "action": "hit / block / receiving shield",
-        "rawHorizontalDrift": 19.331,
+        "rawHorizontalDrift": 17.96,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1862,
+            "opaquePixels": 2041,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1781,
+            "opaquePixels": 2049,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1622,
+            "opaquePixels": 2026,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 1569,
+            "opaquePixels": 1926,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1800,
+            "opaquePixels": 2000,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1864,
+            "opaquePixels": 2044,
             "edgePixels": 0
           }
         ]
@@ -832,36 +832,36 @@
       {
         "row": 6,
         "action": "being revived",
-        "rawHorizontalDrift": 18.695,
+        "rawHorizontalDrift": 17.784,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1204,
+            "opaquePixels": 1703,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1457,
+            "opaquePixels": 1975,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1502,
+            "opaquePixels": 2035,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 1706,
+            "opaquePixels": 2012,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1819,
+            "opaquePixels": 2075,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1816,
+            "opaquePixels": 1983,
             "edgePixels": 0
           }
         ]
@@ -869,36 +869,36 @@
       {
         "row": 7,
         "action": "death / knocked out",
-        "rawHorizontalDrift": 24.82,
+        "rawHorizontalDrift": 26.181,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1837,
+            "opaquePixels": 2127,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1911,
+            "opaquePixels": 2141,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1710,
+            "opaquePixels": 1935,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 1488,
+            "opaquePixels": 1939,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1449,
+            "opaquePixels": 1777,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1293,
+            "opaquePixels": 1627,
             "edgePixels": 0
           }
         ]
@@ -907,41 +907,41 @@
   },
   {
     "id": "rogue",
-    "filename": "rogue-combat-v2.webp",
+    "filename": "rogue-combat-v3.webp",
     "clips": [
       {
         "row": 0,
         "action": "idle / receiving buff",
-        "rawHorizontalDrift": 16.023,
+        "rawHorizontalDrift": 9.988,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 2489,
+            "opaquePixels": 2194,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 2499,
+            "opaquePixels": 2202,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 2486,
+            "opaquePixels": 2325,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2493,
+            "opaquePixels": 2332,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 2443,
+            "opaquePixels": 2199,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 2495,
+            "opaquePixels": 2161,
             "edgePixels": 0
           }
         ]
@@ -949,36 +949,36 @@
       {
         "row": 1,
         "action": "weapon / power",
-        "rawHorizontalDrift": 6.806,
+        "rawHorizontalDrift": 11.808,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 2721,
+            "opaquePixels": 2142,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 2992,
+            "opaquePixels": 2655,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 3196,
+            "opaquePixels": 3082,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 3070,
+            "opaquePixels": 3358,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 2885,
+            "opaquePixels": 3178,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 2708,
+            "opaquePixels": 2297,
             "edgePixels": 0
           }
         ]
@@ -986,36 +986,36 @@
       {
         "row": 2,
         "action": "support cast",
-        "rawHorizontalDrift": 20.827,
+        "rawHorizontalDrift": 14.242,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 2464,
+            "opaquePixels": 2232,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 2603,
+            "opaquePixels": 2666,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 2742,
+            "opaquePixels": 3057,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2850,
+            "opaquePixels": 3956,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 2203,
+            "opaquePixels": 3206,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 2483,
+            "opaquePixels": 2295,
             "edgePixels": 0
           }
         ]
@@ -1023,36 +1023,36 @@
       {
         "row": 3,
         "action": "receiving healing",
-        "rawHorizontalDrift": 15.839,
+        "rawHorizontalDrift": 11.234,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 2481,
+            "opaquePixels": 2268,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 2391,
+            "opaquePixels": 2614,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 2414,
+            "opaquePixels": 3122,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2417,
+            "opaquePixels": 3856,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 2393,
+            "opaquePixels": 2804,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 2479,
+            "opaquePixels": 2313,
             "edgePixels": 0
           }
         ]
@@ -1060,36 +1060,36 @@
       {
         "row": 4,
         "action": "dodge",
-        "rawHorizontalDrift": 16.224,
+        "rawHorizontalDrift": 14.587,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 2425,
+            "opaquePixels": 2303,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 2253,
+            "opaquePixels": 2316,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 2420,
+            "opaquePixels": 2717,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2328,
+            "opaquePixels": 2253,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 2297,
+            "opaquePixels": 2417,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 2452,
+            "opaquePixels": 2376,
             "edgePixels": 0
           }
         ]
@@ -1097,36 +1097,36 @@
       {
         "row": 5,
         "action": "hit / block / receiving shield",
-        "rawHorizontalDrift": 18.269,
+        "rawHorizontalDrift": 7.952,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 2435,
+            "opaquePixels": 2298,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 2338,
+            "opaquePixels": 2228,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 2475,
+            "opaquePixels": 2339,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2370,
+            "opaquePixels": 2538,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 2407,
+            "opaquePixels": 2609,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 2465,
+            "opaquePixels": 2570,
             "edgePixels": 0
           }
         ]
@@ -1134,36 +1134,36 @@
       {
         "row": 6,
         "action": "being revived",
-        "rawHorizontalDrift": 13.04,
+        "rawHorizontalDrift": 14.843,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 1806,
+            "opaquePixels": 2357,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 1814,
+            "opaquePixels": 2556,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 1905,
+            "opaquePixels": 2829,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2124,
+            "opaquePixels": 2612,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 2164,
+            "opaquePixels": 2147,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 2460,
+            "opaquePixels": 1926,
             "edgePixels": 0
           }
         ]
@@ -1171,36 +1171,36 @@
       {
         "row": 7,
         "action": "death / knocked out",
-        "rawHorizontalDrift": 25.022,
+        "rawHorizontalDrift": 17.073,
         "frames": [
           {
             "frame": 1,
-            "opaquePixels": 2498,
+            "opaquePixels": 1659,
             "edgePixels": 0
           },
           {
             "frame": 2,
-            "opaquePixels": 2560,
+            "opaquePixels": 1789,
             "edgePixels": 0
           },
           {
             "frame": 3,
-            "opaquePixels": 2276,
+            "opaquePixels": 1672,
             "edgePixels": 0
           },
           {
             "frame": 4,
-            "opaquePixels": 2027,
+            "opaquePixels": 1913,
             "edgePixels": 0
           },
           {
             "frame": 5,
-            "opaquePixels": 1667,
+            "opaquePixels": 1813,
             "edgePixels": 0
           },
           {
             "frame": 6,
-            "opaquePixels": 1564,
+            "opaquePixels": 1751,
             "edgePixels": 0
           }
         ]

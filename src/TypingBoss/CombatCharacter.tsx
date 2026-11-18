@@ -7,9 +7,9 @@ import "./characterAnimation.css";
 const ASSETS = `${(process.env.PUBLIC_URL || "").replace(/\/$/, "")}/assets/typing-boss`;
 const idle = {
   cleric:{src:`${ASSETS}/cleric-idle-sprite.png`,aspect:1},
-  barbarian:{src:`${ASSETS}/barbarian-idle-sprite.png`,aspect:32/34},
+  barbarian:{src:`${ASSETS}/characters/barbarian-school-idle.webp`,aspect:1},
   paladin:{src:`${ASSETS}/paladin-idle-sprite.png`,aspect:48/64},
-  rogue:{src:`${ASSETS}/characters/rogue-idle.webp`,aspect:1},
+  rogue:{src:`${ASSETS}/characters/rogue-school-idle.webp`,aspect:1},
   necromancer:{src:`${ASSETS}/characters/necromancer-idle.webp`,aspect:1},
   monk:{src:`${ASSETS}/characters/monk-idle.webp`,aspect:1},
 };
