@@ -43,12 +43,14 @@ test('battlefield fits a narrow screen and resizes characters without remeasurin
   try {
     const session=room(30),view=render(<BattleScene session={session}/>);
     const sprite=()=>view.container.querySelector('[data-testid="combat-character"]') as HTMLElement;
-    expect(view.container.querySelector('[data-formation-scale]')?.getAttribute('data-formation-scale')).toBe('0.36');
+    expect(view.container.querySelector('[data-world-scale]')?.getAttribute('data-world-scale')).toBe('0.36');
     const scene=screen.getByRole('region',{name:'Host battle scene'});
     expect(getComputedStyle(scene).overflow).toBe('hidden');
     expect(getComputedStyle(scene).width).toBe('100%');
     act(()=>resize([{contentRect:{width:1200}}]));
-    expect(sprite().style.height).toBe('32px');
+    expect(sprite().style.height).toBe('64px');
+    act(()=>resize([{contentRect:{width:2000,height:1200}}]));
+    expect(view.container.querySelector('[data-world-scale]')?.getAttribute('data-world-scale')).toBe('2');
     view.rerender(<BattleScene session={{...session,boss:{...session.boss,hp:1}}}/>);
     expect(observer).toHaveBeenCalledTimes(1);
     view.unmount();expect(disconnect).toHaveBeenCalled();

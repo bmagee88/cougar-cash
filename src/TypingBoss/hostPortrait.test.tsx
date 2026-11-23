@@ -30,15 +30,15 @@ test('profiles retain complete large attack and bonus values and expose current/
   view.container.querySelectorAll('.portrait-fitted-number').forEach(value=>expect(value.getAttribute('preserveAspectRatio')).toBe('xMinYMid meet'));
 });
 
-test('own profile shows recovery above the fallen character and clears it on revival',()=>{
-  const player={code:'hero',name:'Hero',classId:'cleric',color:'gold',hp:0,maxHp:100,defeated:true,recoverAt:Date.now()+19000,recoverDurationMs:19000} as any;
+test('own profile shows Second Wind above the active character and clears it on recovery',()=>{
+  const player={code:'hero',name:'Hero',classId:'cleric',color:'gold',hp:0,maxHp:100,defeated:false,secondWindWordsRemaining:3} as any;
   const state=createTypingState(123,'cleric');
   const view=render(<TypingPortrait player={player} state={state} letters={0} events={[]}/>);
-  const bar=screen.getByRole('progressbar',{name:'Hero recovery'});
+  const bar=screen.getByRole('progressbar',{name:'Hero Second Wind'});
   expect(bar.closest('.portrait-recovery')?.parentElement).toBe(screen.getByTestId('typing-portrait'));
-  expect(screen.getByText('Recovering')).toBeTruthy();
-  view.rerender(<TypingPortrait player={{...player,hp:1,defeated:false,recoverAt:null}} state={state} letters={0} events={[]}/>);
-  expect(screen.queryByRole('progressbar',{name:'Hero recovery'})).toBeNull();
+  expect(screen.getByText('Second Wind')).toBeTruthy();
+  view.rerender(<TypingPortrait player={{...player,hp:40,secondWindWordsRemaining:0}} state={state} letters={0} events={[]}/>);
+  expect(screen.queryByRole('progressbar',{name:'Hero Second Wind'})).toBeNull();
 });
 test("client dragon profile displays shared power, ready crit, special and defenses on the right",()=>{
   const state=initializeBalanced(createTypingState(123,'cleric'));

@@ -11,6 +11,7 @@ import TypingPortrait, { DragonPortrait, DragonPortraitProps, TypingPortraitProp
 import { chargedLetters, WordReward, wordReward } from "./typingFeedback";
 import { previewBalancedWord } from "./balancedRules";
 import {useBattleCountdown} from "./BattleCountdown";
+import {useTypingActivity} from './InactivityWarning';
 import TeamActivityCue from './TeamActivityCue';
 
 const colors = { blue: "#7dd3fc", orange: "#fdba74", red: "#ff6b6b", green: "#86efac", gold: "#fde047" };
@@ -45,7 +46,7 @@ function WordRewardBurst({ reward, onDone }: { reward: WordReward; onDone: (id: 
 export function ContinuousTyping({ sessionId, credentials, state, active, profile, dragonProfile, hostProfile, healingPool=0, countdownEndsAt, serverNow, teamActivity }: {
   sessionId: string; credentials: TypingBossCredentials; state: TypingBossTypingState; active: boolean; profile?: TypingPortraitProps; dragonProfile?: DragonPortraitProps; hostProfile?: DragonPortraitProps; healingPool?:number; countdownEndsAt?:number|null; serverNow?:number;teamActivity?:TypingBossSessionSnapshot['teamActivity'];
 }) {
-  const seconds=useBattleCountdown(countdownEndsAt,serverNow),proneSeconds=useBattleCountdown(profile?.player.proneUntil,serverNow),canType=active && seconds===0 && proneSeconds===0;
+  const seconds=useBattleCountdown(countdownEndsAt,serverNow),proneSeconds=useBattleCountdown(profile?.player.proneUntil,serverNow),canType=active && !profile?.player.timedOut && seconds===0 && proneSeconds===0;
   const model = useRef({ ...state });
   const queue = useRef<TypingBossWordResult[]>([]);
   const acknowledged = useRef(state.nextWord);
@@ -59,6 +60,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
   const completedText = useRef<Record<number, string>>({});
   const timing = useRef({ count: 0, sum: 0, squares: 0, mistakes:0, last: null as number | null, transitionMs: undefined as number | undefined, gaps: [] as number[] });
   const publishProgress = usePublishAttackProgress(sessionId, credentials, canType);
+  const recordActivity=useTypingActivity(sessionId,credentials,canType);
   const [, redraw] = useState(0);
   const [error, setError] = useState("");
   const [focused, setFocused] = useState(false);
@@ -68,7 +70,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
   const credentialsRef = useRef(credentials);
   credentialsRef.current = credentials;
   const activeRef = useRef(canType);
-  activeRef.current = canType;
+  activeRef.current = canType && !profile?.player.timedOut;
 
   useEffect(() => {
     if (canType) input.current?.focus({ preventScroll: true });
@@ -98,7 +100,6 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
 
   const lastCurseKey=useRef<string|undefined>(undefined);
   const curseKey=profile?.player.curseKey;
-  const [forcedKey,setForcedKey]=useState('');
   const pauseStarted=useRef<number|null>(null);
   const flushAfterPause=useRef<()=>Promise<void>>(async()=>{});
   const keyDownRef=useRef(keyDown);
@@ -111,10 +112,8 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
     if(word.pending)return;
     const key=awaitingSpace.current?' ':(word.text+' ')[typed.current.length];
     if(!key)return;
-    keyDownRef.current({key,repeat:false,ctrlKey:false,metaKey:false,altKey:false,preventDefault:()=>{},nativeEvent:{timeStamp:performance.now()}} as React.KeyboardEvent<HTMLInputElement>);
-    setForcedKey(key===' '?'space':key);
+    keyDownRef.current({key,repeat:false,ctrlKey:false,metaKey:false,altKey:false,preventDefault:()=>{},nativeEvent:{timeStamp:performance.now()}} as React.KeyboardEvent<HTMLInputElement>,true);
   },[curseKey,canType]);
-  useEffect(()=>{if(!forcedKey)return;const timer=setTimeout(()=>setForcedKey(''),900);return ()=>clearTimeout(timer);},[forcedKey,curseKey?.id]);
   useEffect(()=>{
     if(proneSeconds>0) {if(pauseStarted.current===null)pauseStarted.current=performance.now();}
     else {
@@ -159,12 +158,13 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
   }
 
   flushAfterPause.current=flush;
-  function keyDown(event: React.KeyboardEvent<HTMLInputElement>) {
+  function keyDown(event: React.KeyboardEvent<HTMLInputElement>,automated=false) {
     if (event.key === "Tab") return;
     if (event.key === "Backspace" || event.key === "Delete" || event.key === "Enter") {
       event.preventDefault(); return;
     }
     if (!canType || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.key.length !== 1) return;
+    if(!automated)recordActivity();
     event.preventDefault();
     const current = model.current;
     const scheduled=current.balanced && !current.balancedRandomColors;
@@ -231,7 +231,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
       if(scheduled)awaitingSpace.current=!released;
       typed.current = "";
       currentTiming.count = 0; currentTiming.sum = 0; currentTiming.squares = 0; currentTiming.mistakes=0; currentTiming.transitionMs = undefined; currentTiming.gaps = [];
-      if (current.wordProtocol===1 || scheduled || released || effectiveDodgeChance(current) !== previousDodge || (result.correct && result.color === "gold") || (current.balanced && result.correct && (result.color === "red" || result.color === "blue" || (result.color==='orange' && current.ability==='cleric'))) || (!current.balanced && result.correct && result.color === "blue") || queue.current.length >= 20) flush();
+      if ((profile?.player.secondWindWordsRemaining || 0)>0 || current.wordProtocol===1 || scheduled || released || effectiveDodgeChance(current) !== previousDodge || (result.correct && result.color === "gold") || (current.balanced && result.correct && (result.color === "red" || result.color === "blue" || (result.color==='orange' && current.ability==='cleric'))) || (!current.balanced && result.correct && result.color === "blue") || queue.current.length >= 20) flush();
     }
     publishProgress(current.nextWord, typed.current.length, typingAttackProgress(current, typed.current.length), released);
     redraw(value => value + 1);
@@ -274,7 +274,6 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
       {current.green > 0 && <Chip label={`+${current.green * 4}% per correct word`} sx={{ color: colors.green }} />}
     </Stack>
     {proneSeconds>0 && <Alert severity="info" role="status">Knocked prone · {proneSeconds}s. Typing resumes when you stand.</Alert>}
-    {forcedKey && <span className="kraken-forced-key" role="status">Ink Hex typed “{forcedKey.toUpperCase()}”</span>}
     {teamActivity && <TeamActivityCue activity={teamActivity} />}
     <div className={profile || hostProfile ? `typing-input-deck${dragonProfile ? " typing-input-deck-dual" : ""}` : undefined}>
     {hostProfile && <DragonPortrait {...hostProfile} state={profileState} letters={(current.balanced ? live.balancedPower || 0 : chargedLetters(current,typed.current))*damageScale}/>}
@@ -282,7 +281,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
     <Box className="typing-word-input" onClick={() => input.current?.focus()} sx={{ mt: 2, position: "relative", cursor: active ? "text" : "default", border: `2px solid ${focused ? "#7dd3fc" : "#344256"}`, borderRadius: 2, p: 2, bgcolor: "#0b1220" }}>
       <div className="typing-word-rewards" aria-hidden="true">{rewards.map(reward => <WordRewardBurst key={reward.id} reward={reward} onDone={clearReward} />)}</div>
       <span id={wordDescriptionId} hidden>{word.text}{word.color === "gold" && " — golden ability word"}{word.trigger && word.color!=="gold" && ` — ${word.color} bonus trigger word`}{!scheduled && current.balanced && word.color === "red" && " — critical attack trigger word"}</span>
-      <Box sx={{ overflow: "hidden", my: 1, fontSize: { xs: 28, md: 36 }, fontFamily: "monospace", lineHeight: 1.5 }}>
+      <Box className="typing-word-window" sx={{ overflow: "hidden", my: 1, fontSize: { xs: 28, md: 36 }, fontFamily: "monospace", lineHeight: 1.5 }}>
         <Box key={cycleStart} data-testid="ten-word-row" aria-hidden="true" sx={{ whiteSpace: "pre", letterSpacing: 0, width: "max-content", transform: `translate3d(-${cursor}ch, 0, 0)`, transition: "transform 60ms linear", "@media (prefers-reduced-motion: reduce)": { transition: "none" } }}>
           {rowWords.map((item, offset) => {
             const index = cycleStart + offset;
@@ -320,7 +319,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
       {!current.balanced && <Typography variant="body2" sx={{ mt: 1 }}>
         30% colored words: perfect blue words block 10% of the next hit; orange adds 10% attack; red adds 10% crit chance; green adds 4% per following correct word.
         Bonuses stack. Attack bonuses reset when you fire; Block lasts until hit.
-        {credentials.hostToken && " Dragon attacks: 60% Bite or Fireball targets one player, 30% Tail Whip targets a nearby group, and 10% Flamethrower targets everyone still standing. Damage splits evenly among targets before defenses."}
+        {credentials.hostToken && " Dragon attacks: 50% Tail Whip targets a nearby group, 40% Bite or Fireball targets one player, and 10% Flamethrower targets everyone standing. Damage splits evenly among targets before defenses."}
       </Typography>}
       {current.ability && <Typography variant="body2" sx={{ mt: 1 }}>
         {current.balanced ? "Master earned gold words to activate your class ability." : `Gold words appear ${current.ability==='monk'?10:5}% of the time. Type them perfectly to earn your ability.`} {current.balanced && current.ability==='cleric' ? "Prayer replaces Charge. Yellow words build Prayer and ATK in scheduled mode; mistakes preserve saved Prayer. Perfect yellow triggers deposit the saved amount into the shared Prayer pool. On attack release, a gold special turns ATK including bonuses into shared healing, divided by all Clerics in the battle. It heals one random wounded living player from the accumulated pool, spending only their missing HP and saving the rest. That special deals no damage to the dragon." : current.balanced && ["paladin","necromancer","rogue"].includes(current.ability) ? "Necromancer gold picks a random player: a downed target is revived using full ATK divided by the Necromancer count, with leftover healing saved. A standing target means normal boss damage, with no saved revive charge. Paladin gives an ally Block using the 20% support budget. Rogue specials add extra dodge rolls." : goldAbilityText[current.ability]} {scheduled ? "Gold extensions commit on the last letter." : "A gold word extending a run needs Space even if it was previously the last word."}

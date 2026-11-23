@@ -3,7 +3,7 @@ import {act,fireEvent,render,screen} from '@testing-library/react';
 import {KrakenSprite} from './KrakenVisuals';
 import {ContinuousTyping} from './ContinuousBattle';
 import {createTypingState,initializeBalanced} from './proportionalRules';
-import {submitTypingBossWords} from './api';
+import {submitTypingBossWords,submitTypingBossActivity} from './api';
 declare const test:any,expect:any,jest:any,afterEach:any;
 jest.mock('./api');
 afterEach(()=>{jest.useRealTimers();jest.clearAllMocks();});
@@ -36,8 +36,9 @@ test('prone locks input for five seconds and resumes a partial word without losi
 test('curse enters the next correct letter and allows the rest of the word to complete',()=>{
   jest.useFakeTimers();jest.setSystemTime(1000);(submitTypingBossWords as any).mockImplementation(()=>new Promise(()=>{}));
   const s=state();
-  render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero'}} state={s} active profile={{player:{...player,curseUntil:16000,curseKey:{id:'key',key:'z',at:1000,index:0}},events:[]}}/>);
-  expect(screen.getByText(/Ink Hex typed/)).toBeTruthy();expect(screen.getByLabelText(/Ink Hex: 15 seconds/)).toBeTruthy();
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero',playerToken:'private'}} state={s} active profile={{player:{...player,curseUntil:16000,curseKey:{id:'key',key:'z',at:1000,index:0}},events:[]}}/>);
+  expect(submitTypingBossActivity).not.toHaveBeenCalled();
+  expect(screen.queryByText(/Ink Hex typed/)).toBeNull();expect(screen.getByLabelText(/Ink Hex: 15 seconds/)).toBeTruthy();
   const input=screen.getByRole('textbox');for(const key of 'at')fireEvent.keyDown(input,{key});
   expect((submitTypingBossWords as any).mock.calls[0][2][0][7].mistakes).toBe(0);
   expect(screen.getByTestId('portrait-special').getAttribute('data-charged')).toBe('true');

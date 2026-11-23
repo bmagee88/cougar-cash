@@ -1,4 +1,4 @@
-const {issuePromotionToken,verifyPromotionToken,promotePlayer}=require('./typingBossPromotion');
+const {issuePromotionToken,verifyPromotionToken,promotePlayer,setPlayerPromotion}=require('./typingBossPromotion');
 const crypto = require("crypto");
 const https = require("https");
 const http = require("http");
@@ -14,6 +14,7 @@ const proportionalBoss = require("./proportionalBoss");
 const { requestDragonAttack, recordDragonHurt } = require("./dragonCombat");
 const { DRAGON_FLAME, dragonAttackDuration } = require("../src/TypingBoss/dragonHurtRules");
 const typingBossLifecycle = require("./typingBossLifecycle");
+const {recordTypingActivity,timeoutInactivePlayers}=require('./typingBossInactivity');
 const { queueBattleBroadcast } = require('./typingBossBroadcast');
 const { issuePlayerToken, playerForToken, checkCreationPassword } = require('./typingBossAuth');
 const { publicTypingState } = require('./typingBossIntegrity');
@@ -1277,7 +1278,8 @@ function createTypingBossSession(body) {
     hostToken: randomHex(32),
     name: normalizeBoardName(body.name || body.gameName, "Typing Boss Battle"),
     status: "setup",
-    autoRevive: true,
+    teamMode: mode === 'proportional',
+    teamHealth: mode === 'proportional' ? {hp:100,maxHp:100} : null,
     timeLimitSeconds: 300,
     battleEndsAt: null,
     endReason: null,
@@ -1290,8 +1292,8 @@ function createTypingBossSession(body) {
       id: bossProfile.id,
       name: bossProfile.name,
       difficulty: bossProfile.difficulty,
-      hp: bossProfile.maxHp,
-      maxHp: bossProfile.maxHp,
+      hp: mode === 'proportional' ? 100 : bossProfile.maxHp,
+      maxHp: mode === 'proportional' ? 100 : bossProfile.maxHp,
       attackIntervalMs: bossProfile.attackIntervalMs,
       lastAttackAt: now,
       nextAttackAt: now + bossProfile.attackIntervalMs,
@@ -1346,7 +1348,11 @@ function getTypingBossPlayerSnapshot(player) {
     monkSpecialCharge: player.monkSpecialCharge || 0,
     specialReady: typingBossSpecialReady(player),
     promoted:Boolean(player.promoted),
-    defeated: player.hp <= 0,
+    defeated: Boolean(player.timedOut) || (player.hp <= 0 && !(player.secondWindWordsRemaining>0) && !player.sharedHealth),
+    timedOut: Boolean(player.timedOut),
+    secondWindWordsRemaining: player.secondWindWordsRemaining || 0,
+    protectedUntil: player.protectedUntil || null,
+    lastTypingAt: player.lastTypingAt || null,
     proneUntil:player.hp>0 ? player.proneUntil || null : null,
     curseUntil:player.hp>0 ? player.curseUntil || null : null,
     curseKey:player.hp>0 ? player.curseKey || null : null,
@@ -1367,7 +1373,7 @@ function getTypingBossProjectileSnapshot(projectile) {
     ? "pending"
     : projectile.willHit
     ? "hit"
-    : projectile.evadeType === "special" || projectile.evadeType === "dodge" || projectile.evadeType === "prone"
+    : projectile.evadeType === "special" || projectile.evadeType === "dodge" || projectile.evadeType === "prone" || projectile.evadeType === 'secondWind'
     ? "evade"
     : "miss";
   return {
@@ -1440,7 +1446,8 @@ function getTypingBossSnapshot(session, options = {}) {
     snapshot.hpMultiplier = session.hpMultiplier || 1;
     snapshot.balanced = Boolean(session.balanced);
     snapshot.balancedRandomColors = Boolean(session.balancedRandomColors);
-    snapshot.autoRevive = session.autoRevive !== false;
+    snapshot.teamMode = Boolean(session.teamMode);
+    snapshot.teamHealth = session.teamHealth ? {...session.teamHealth} : null;
     snapshot.necroHealingPool = session.necroHealingPool || 0;
     snapshot.clericHealingPool = Math.round((session.clericHealingPool || 0)*100)/100;
     snapshot.clericHealingAllowance = Math.round((session.clericHealingAllowance || 0)*100)/100;
@@ -1451,7 +1458,7 @@ function getTypingBossSnapshot(session, options = {}) {
       'balanced','balancedOrangePower','balancedCritBonus','balancedGuard','balancedGuardMax',
       'dodgeBank','dodgeSamples','dodgeExtraRolls','shield','paladinShield','gold','orange','growth',
     ].map(key=>[key,session.typingHost[key]]).filter(([,value])=>value!==undefined));
-    snapshot.boss.maxHp = session.status === "setup" ? session.players.size * 100 : session.boss.maxHp;
+    snapshot.boss.maxHp = session.status === "setup" ? (session.teamMode?Math.max(1,session.players.size):session.players.size) * 100 * (session.hpMultiplier || 1) : session.boss.maxHp;
     snapshot.boss.hp = session.status === "setup" ? snapshot.boss.maxHp : snapshot.boss.hp;
     snapshot.log = [];
     if (includeChallengesFor) {
@@ -1636,6 +1643,7 @@ function expireTypingBossSession(session) {
 }
 
 function refreshTypingBossSessionStatus(session) {
+  if(timeoutInactivePlayers(session).length)broadcastTypingBossSession(session);
   if (typingBossLifecycle.maintainSession(session)) {
     expireTypingBossSession(session);
   }
@@ -2107,6 +2115,7 @@ async function handleCreateTypingBossParticipant(req, res, session) {
 
   if(player.typing)player.typing.promoted=Boolean(player.promoted);
   session.players.set(code, player);
+  if (session.mode === 'proportional' && session.status === 'setup' && session.teamMode) proportionalBoss.applyHpMultiplier(session,session.hpMultiplier || 1);
   if (session.mode === "proportional" && countdownOpen) proportionalBoss.addCountdownPlayer(session, player);
   typingBossLifecycle.touchSession(session);
   addTypingBossLog(session, `${player.name} joined as ${heroClass.label}.`, "info");
@@ -2167,8 +2176,8 @@ async function handleStartTypingBossSession(req, res, session, url) {
     return;
   }
   if (session.mode === "proportional") {
-    if(body.autoRevive !== undefined && typeof body.autoRevive !== 'boolean') {sendError(res,400,'Auto revive must be true or false.');return;}
-    session.autoRevive=body.autoRevive !== false;
+    if(body.teamMode !== undefined && typeof body.teamMode !== 'boolean') {sendError(res,400,'Team mode must be true or false.');return;}
+    session.teamMode=body.teamMode !== false;
     if (body.balanced !== undefined && typeof body.balanced !== "boolean") { sendError(res,400,"Balanced must be true or false."); return; }
     if (body.balancedRandomColors !== undefined && typeof body.balancedRandomColors !== "boolean") { sendError(res,400,"Random colors must be true or false."); return; }
     proportionalBoss.applyWordFilters(session, body.gradeLevels, body.sentiments);
@@ -2179,6 +2188,12 @@ async function handleStartTypingBossSession(req, res, session, url) {
   }
   session.status = "active";
   session.countdownEndsAt = now + 5000;
+  if(session.mode==='proportional') {
+    session.inactivityTimer=setInterval(()=>{
+      if(timeoutInactivePlayers(session).length)broadcastTypingBossSession(session);
+    },1000);
+    session.inactivityTimer.unref?.();
+  }
   session.timeLimitSeconds = timeLimitSeconds;
   session.battleEndsAt = timeLimitSeconds === null ? null : session.countdownEndsAt + timeLimitSeconds * 1000;
   session.endReason = session.timedResult = null;
@@ -2246,6 +2261,18 @@ async function handlePromoteTypingBossPlayer(req,res,session,url) {
   const player=session.players.get(auth.actorCode);
   promotePlayer(session,player);broadcastTypingBossSession(session);
   sendJson(res,200,{promotionToken:issuePromotionToken(),session:getTypingBossSnapshotForAuth(session,auth)});
+}
+
+async function handleHostPlayerPromotion(req,res,session,url) {
+  const body=await readJson(req),auth=authenticateTypingBoss(session,url,body);
+  if(!requireTypingBossHost(res,session,auth))return;
+  if(session.mode!=='proportional' || !['setup','active'].includes(session.status)){sendError(res,409,'Promotion requires an open Host vs. Players battle.');return;}
+  if(typeof body.promoted!=='boolean'){sendError(res,400,'Choose a promotion status.');return;}
+  const player=session.players.get(body.playerCode);
+  if(!player){sendError(res,404,'Player not found.');return;}
+  setPlayerPromotion(session,player,body.promoted);
+  broadcastTypingBossSession(session);
+  sendJson(res,200,{session:getTypingBossSnapshotForAuth(session,auth)});
 }
 
 async function handleChangeTypingBoss(req,res,session,url) {
@@ -2556,6 +2583,7 @@ async function handleTypingBossRequest(req, res, url, parts) {
   }
 
   if(req.method==='POST' && parts[4]==='promote'){await handlePromoteTypingBossPlayer(req,res,session,url);return;}
+  if(req.method==='POST' && parts[4]==='player-promotion'){await handleHostPlayerPromotion(req,res,session,url);return;}
   if(req.method==='POST' && parts[4]==='boss'){await handleChangeTypingBoss(req,res,session,url);return;}
 
   if (req.method === "POST" && parts[4] === "start") {
@@ -2585,6 +2613,12 @@ async function handleTypingBossRequest(req, res, url, parts) {
     return;
   }
 
+  if (req.method === 'POST' && parts[4] === 'activity') {
+    const body=await readJson(req),auth=authenticateTypingBoss(session,url,body);
+    if(!auth || auth.role!=='player'){sendError(res,401,'A private player token is required.');return;}
+    if(session.mode==='proportional' && recordTypingActivity(session,session.players.get(auth.actorCode)))broadcastTypingBossSession(session,{progressOnly:true});
+    sendJson(res,200,{ok:true});return;
+  }
   if (req.method === "POST" && parts[4] === "progress") {
     const body = await readJson(req);
     const auth = authenticateTypingBoss(session, url, body);

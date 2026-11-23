@@ -4,8 +4,11 @@ import {useBattleCountdown} from './BattleCountdown';
 import {TypingBossPlayer} from './types';
 
 export default function RecoveryNotice({player, active, serverNow}:{player:TypingBossPlayer;active:boolean;serverNow?:number}) {
-  const seconds=useBattleCountdown(player.recoverAt,serverNow);
-  if(!active || !player.defeated)return null;
-  if(!player.recoverAt)return <Alert severity="info">Knocked out. Auto revive is off. A Necromancer can revive you.</Alert>;
-  return <Alert severity="info">Knocked out. Recovering at 100 HP in {seconds} seconds. A Necromancer may revive you sooner.</Alert>;
+  const protection=useBattleCountdown(active?player.protectedUntil:null,serverNow);
+  if(!active || player.timedOut)return null;
+  if((player.secondWindWordsRemaining || 0)>0)return <Alert severity="info">
+    Second Wind · Keep typing at 75% attack damage. Complete {player.secondWindWordsRemaining} more {player.secondWindWordsRemaining===1?'word':'words'} to return with 40% HP.
+  </Alert>;
+  if(protection>0)return <Alert severity="success">Second Wind restored · Protected for {protection}s.</Alert>;
+  return null;
 }

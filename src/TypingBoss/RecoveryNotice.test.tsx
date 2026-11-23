@@ -4,27 +4,23 @@ import RecoveryNotice from './RecoveryNotice';
 import {TypingBossPlayer} from './types';
 declare const test:any,expect:any,jest:any,afterEach:any;
 afterEach(()=>jest.useRealTimers());
-test('recovery countdown uses the server clock and disappears on early revival or room closure',()=>{
-  jest.useFakeTimers();jest.setSystemTime(1000);
-  const player={defeated:true,recoverAt:25000} as TypingBossPlayer;
-  const view=render(<RecoveryNotice player={player} active serverNow={10000}/>);
-  expect(screen.getByText(/in 15 seconds/)).toBeTruthy();
-  act(()=>jest.advanceTimersByTime(5000));
-  expect(screen.getByText(/in 10 seconds/)).toBeTruthy();
-  view.rerender(<RecoveryNotice player={{...player,defeated:false,recoverAt:null}} active serverNow={15000}/>);
-  expect(screen.queryByRole('alert')).toBeNull();
-  view.rerender(<RecoveryNotice player={player} active={false} serverNow={15000}/>);
+
+test('Second Wind shows accepted-word progress while the player remains able to type',()=>{
+  const player={defeated:false,secondWindWordsRemaining:3} as TypingBossPlayer;
+  const view=render(<RecoveryNotice player={player} active/>);
+  expect(screen.getByRole('alert').textContent).toContain('75% attack damage');
+  expect(screen.getByRole('alert').textContent).toContain('3 more words');
+  view.rerender(<RecoveryNotice player={{...player,secondWindWordsRemaining:1}} active/>);
+  expect(screen.getByRole('alert').textContent).toContain('1 more word');
+  view.rerender(<RecoveryNotice player={player} active={false}/>);
   expect(screen.queryByRole('alert')).toBeNull();
 });
 
-test('each fallen player shows their own immediately running countdown',()=>{
+test('the five-second protection notice uses the server clock and expires locally',()=>{
   jest.useFakeTimers();jest.setSystemTime(1000);
-  const a={defeated:true,recoverAt:29000} as TypingBossPlayer;
-  const b={defeated:true,recoverAt:32000} as TypingBossPlayer;
-  render(<><RecoveryNotice player={a} active serverNow={10000}/><RecoveryNotice player={b} active serverNow={10000}/></>);
-  expect(screen.getByText(/Recovering at 100 HP in 19 seconds/)).toBeTruthy();
-  expect(screen.getByText(/Recovering at 100 HP in 22 seconds/)).toBeTruthy();
+  const player={defeated:false,secondWindWordsRemaining:0,protectedUntil:15000} as TypingBossPlayer;
+  render(<RecoveryNotice player={player} active serverNow={10000}/>);
+  expect(screen.getByRole('alert').textContent).toContain('Protected for 5s');
   act(()=>jest.advanceTimersByTime(5000));
-  expect(screen.getByText(/Recovering at 100 HP in 14 seconds/)).toBeTruthy();
-  expect(screen.getByText(/Recovering at 100 HP in 17 seconds/)).toBeTruthy();
+  expect(screen.queryByRole('alert')).toBeNull();
 });

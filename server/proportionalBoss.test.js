@@ -453,7 +453,7 @@ test("power animation uses the actual multiplier and never weakens critical hits
 });
 
 test("boss attack roll selects the advertised pattern and splits all power among its targets", () => {
-  for (const [roll, kind, count] of [[0, "bite", 1], [.299, "bite", 1], [.3, "fireball", 1], [.599, "fireball", 1], [.6, "tailWhip", 3], [.899, "tailWhip", 3], [.9, "flamethrower", 10], [.999, "flamethrower", 10]]) {
+  for (const [roll, kind, count] of [[0, "bite", 1], [.199, "bite", 1], [.2, "fireball", 1], [.399, "fireball", 1], [.4, "tailWhip", 3], [.899, "tailWhip", 3], [.9, "flamethrower", 10], [.999, "flamethrower", 10]]) {
     const session = sessionWithPlayers(10);
     const rolls = [roll, .49]; // Select position 4, at the start of the second rank.
     const cb = { ...callbacks(), random: () => rolls.shift() ?? 1 };

@@ -35,6 +35,17 @@ function scheduledTrigger(state:any,color:string,position:number) {
   state[color==='gold'?'balancedSpecialAt':color==='red'?'balancedCritAt':`balanced${color[0].toUpperCase()+color.slice(1)}At`]=position;
 }
 const profilePlayer = { code: "hero1234", name: "CalmFox", classId: "cleric", color: "#facc15", maxHp: 100, hp: 100, defeated: false } as TypingBossPlayer;
+
+test('retreated player typing stays disabled and submits no words',()=>{
+  const state=createTypingState(123);state.wordProtocol=1;
+  state.issuedWords=[{index:0,text:'cat',color:null,ticket:'a'.repeat(32)}];
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:profilePlayer.code,playerToken:'c'.repeat(64)}} state={state} active profile={{player:{...profilePlayer,timedOut:true,defeated:true},events:[]}}/>);
+  const input=screen.getByRole('textbox') as HTMLInputElement;
+  expect(input.disabled).toBe(true);
+  for(const key of 'cat ')fireEvent.keyDown(input,{key});
+  expect(submit).not.toHaveBeenCalled();
+});
+
 test('protected typing never advances on wrong keys, preserves ATK, and cannot claim a perfect trigger after correction',async()=>{
   submit.mockImplementation(()=>new Promise(()=>{}));
   const state=initializeBalanced(createTypingState(123,'cleric'));

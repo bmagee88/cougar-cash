@@ -50,14 +50,14 @@
 .typing-portrait-charged .portrait-special i:nth-child(3) { animation-delay: -320ms; }
 .portrait-special-label { position: absolute; z-index: 6; bottom: 28px; left: 0; right: 0; text-align: center; color: #fef3c7; font: 900 9px/1 monospace; letter-spacing: .08em; text-shadow: 0 0 6px #f59e0b,0 1px 2px #000; }
 .typing-word-rewards { position: absolute; z-index: 3; inset: 0; pointer-events: none; }
-.typing-word-reward { position: absolute; left: 12px; top: 0; display: flex; gap: 8px; align-items: center; max-width: calc(100% - 24px); padding: 5px 10px; border: 1px solid currentColor; border-radius: 8px; background: #0b1528f5; box-shadow: 0 0 12px #0009; font: 800 12px/1.4 sans-serif; animation: typing-word-reward 1050ms ease-out both; }
+.typing-word-reward { position: absolute; left: 12px; bottom: calc(100% + 8px); display: flex; gap: 8px; align-items: center; max-width: calc(100% - 24px); padding: 5px 10px; border: 1px solid currentColor; border-radius: 8px; background: #0b1528f5; box-shadow: 0 0 12px #0009; font: 800 12px/1.4 sans-serif; animation: typing-word-reward 1050ms ease-out both; }
 .typing-word-reward strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .typing-word-reward span { white-space: nowrap; }
 .typing-word-reward[data-bonus='true'] { text-shadow: 0 0 7px currentColor; }
 @keyframes portrait-attack-pulse { 0% { transform: scale(1); } 28% { transform: scale(1.18); color: #ffb4a2; } 100% { transform: scale(1); } }
 @keyframes portrait-charge { from { transform: scale(.93, .95); opacity: .75; } to { transform: scale(1.06,1.04); opacity: 1; } }
 @keyframes portrait-energy { from { transform: scaleY(.7) skew(-7deg); opacity: .65; } to { transform: scaleY(1.08) skew(5deg); opacity: 1; } }
-@keyframes typing-word-reward { 0% { transform: translateY(19px) scale(.92); opacity: 0; } 15%,65% { transform: translateY(-4px) scale(1); opacity: 1; } 100% { transform: translateY(-26px) scale(1.03); opacity: 0; } }
+@keyframes typing-word-reward { 0% { transform: translateY(0) scale(.92); opacity: 0; } 15%,65% { transform: translateY(-4px) scale(1); opacity: 1; } 100% { transform: translateY(-26px) scale(1.03); opacity: 0; } }
 @media (max-width: 600px) { .typing-input-deck { grid-template-columns: 104px minmax(0,1fr); gap: 9px; } .typing-portrait { width: 104px; height: 122px; } .typing-input-deck-dual { grid-template-columns: minmax(0,1fr) minmax(0,1fr); } .typing-input-deck-dual .typing-word-input { grid-column: 1 / -1; grid-row: 2; } .typing-input-deck-dual .typing-dragon-portrait { justify-self: end; grid-column: 2; grid-row: 1; } .portrait-attack strong { font-size: 18px; } .portrait-dragon { bottom: 0; } .typing-word-reward { font-size: 10px; gap: 4px; } }
 @media (prefers-reduced-motion: reduce) { .portrait-attack strong { transition: none; } }
 @media (prefers-reduced-motion: reduce) { .portrait-attack-pulse,.typing-portrait-charged .portrait-special::before,.typing-portrait-charged .portrait-special i,.typing-word-reward { animation: none; } .portrait-dodge,.portrait-shield,.portrait-special { transition: none; } }

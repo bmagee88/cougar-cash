@@ -17,10 +17,17 @@ async function packHero(id, source) {
   const atlas = await sharp({create:{width:768,height:768,channels:4,background:{r:0,g:0,b:0,alpha:0}}})
     .composite(cells).png().toBuffer();
   await sharp(atlas).webp({lossless:true}).toFile(path.join(root, 'characters', `${id}-combat-v3.webp`));
+  await packIdle(id,atlas);
+}
+
+async function packIdle(id,atlas) {
   const frames = [];
   for (let column=0; column<6; column++) {
-    const frame = await sharp(atlas).extract({left:column*128, top:0, width:128, height:96})
-      .resize(96,96,{fit:'contain',background:{r:0,g:0,b:0,alpha:0}}).png().toBuffer();
+    const crop=await sharp(atlas).extract({left:column*128,top:0,width:128,height:96}).png().toBuffer();
+    const figure=await sharp(crop).trim().resize(80,80,{fit:'inside',kernel:'nearest'}).png().toBuffer();
+    const size=await sharp(figure).metadata();
+    const frame=await sharp({create:{width:96,height:96,channels:4,background:{r:0,g:0,b:0,alpha:0}}})
+      .composite([{input:figure,left:Math.round((96-size.width)/2),top:88-size.height}]).png().toBuffer();
     frames.push({input:frame,left:column*96,top:0});
     if (!column) await fs.writeFile(path.join(root, `${id}-school-portrait.png`), frame);
   }
@@ -38,7 +45,8 @@ async function packProjectiles(source) {
 
 (async()=>{
   const [kind,source] = process.argv.slice(2);
-  if (!source || !['rogue','barbarian','projectiles'].includes(kind)) throw Error('Usage: node scripts/pack-school-hero-art.cjs rogue|barbarian|projectiles source.png');
+  if (!source || !['rogue','barbarian','projectiles','rogue-idle','barbarian-idle'].includes(kind)) throw Error('Usage: node scripts/pack-school-hero-art.cjs rogue|barbarian|projectiles|rogue-idle|barbarian-idle source.png');
   if (kind==='projectiles') await packProjectiles(source);
+  else if(kind.endsWith('-idle'))await packIdle(kind.replace('-idle',''),source);
   else await packHero(kind,source);
 })().catch(error=>{console.error(error);process.exitCode=1;});

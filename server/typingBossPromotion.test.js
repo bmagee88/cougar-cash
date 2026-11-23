@@ -25,6 +25,25 @@ test('promoted countdown joins contribute twice while the combat divisor stays t
   const join={code:'new',classId:'paladin',promoted:true,typing:r.createTypingState(1,'paladin')};s.players.set(join.code,join);
   engine.addCountdownPlayer(s,join);assert.equal(s.boss.hp,600);assert.equal(join.hp,100);assert.equal(join.typing.combatDivisor,4);assert.equal(join.typing.promoted,true);
 });
+
+test('host can demote during combat, preserving boss HP percentage and restoring normal attacks',()=>{
+  const {s,p}=room();s.status='active';promotion.promotePlayer(s,p);
+  s.boss.hp=200;
+  assert.equal(promotion.setPlayerPromotion(s,p,false),true);
+  assert.equal(p.promoted,false);assert.equal(p.typing.promoted,false);
+  assert.equal(s.boss.hp,150);assert.equal(s.boss.maxHp,300);
+  assert.equal(promotion.promotedAttack(p,{power:10}).power,10);
+  assert.equal(promotion.setPlayerPromotion(s,p,false),false);
+  s.status='defeat';assert.throws(()=>promotion.setPlayerPromotion(s,p,true),/open/);
+});
+
+test('promotion toggles do not change Team HP or an inactive player contribution',()=>{
+  for(const options of [{teamMode:true},{timedOut:true}]) {
+    const {s,p}=room();s.status='active';s.teamMode=Boolean(options.teamMode);p.timedOut=Boolean(options.timedOut);
+    promotion.setPlayerPromotion(s,p,true);promotion.setPlayerPromotion(s,p,false);
+    assert.equal(s.boss.hp,300);assert.equal(s.boss.maxHp,300);assert.equal(p.promoted,false);
+  }
+});
 test('promotion doubles final offensive damage, including bonuses, and marks stronger impacts',()=>{
   const {s,p,jobs,cb}=room();s.status='active';
   engine.launchAttack(s,p,{power:20,base:10,multiplier:2,criticalPower:5,orangePower:5,moveId:'weak',balanced:true},cb);jobs.shift()();

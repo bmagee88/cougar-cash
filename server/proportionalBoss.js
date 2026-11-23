@@ -3,7 +3,9 @@ const {finishTimedBattle}=require('./typingBossLifecycle');
 const krakenCombat=require('./krakenCombat');
 const {KRAKEN_ANIMATIONS}=require('../src/TypingBoss/krakenAnimationRules');
 const crypto = require("node:crypto");
-const {knockOutMany,syncRecovery} = require("./typingBossRecovery");
+const {knockOutMany,syncRecovery,advanceSecondWind} = require("./typingBossRecovery");
+const {changePlayerHealth,resetTeamHealth,activePlayers} = require('./typingBossHealth');
+const {damageMultiplier,teamStartingHp,SECOND_WIND_DAMAGE} = require('../src/TypingBoss/battleRules');
 const { isDeepStrictEqual } = require('node:util');
 const integrity = require('./typingBossIntegrity');
 const { requestDragonAttack, recordDragonHurt, clearDragonCombat } = require("./dragonCombat");
@@ -19,11 +21,11 @@ function chooseBossAttack(session, random, attack={}) {
   if(session.boss.id==='kraken')return krakenCombat.plan(session,attack,random);
   const roster = [...session.players.values()];
   const living = roster.map((player, index) => ({ player, point: proportionalPlayerPoint(index, roster.length) }))
-    .filter(({ player }) => player.hp > 0);
-  const order = ["bite", "fireball", "tailWhip", "bite", "fireball", "tailWhip", "bite", "fireball", "tailWhip", "flamethrower"];
+    .filter(({ player }) => player.hp > 0 && !player.timedOut);
+  const order = ["bite", "fireball", "tailWhip", "tailWhip", "tailWhip", "bite", "tailWhip", "fireball", "tailWhip", "flamethrower"];
   const step = session.bossAttackIndex || 0;
   const roll = session.balanced ? 0 : random();
-  const kind = session.balanced ? order[step % order.length] : roll < .3 ? "bite" : roll < .6 ? "fireball" : roll < .9 ? "tailWhip" : "flamethrower";
+  const kind = session.balanced ? order[step % order.length] : roll < .2 ? "bite" : roll < .4 ? "fireball" : roll < .9 ? "tailWhip" : "flamethrower";
   if (session.balanced) session.bossAttackIndex = step + 1;
   if (kind === "flamethrower" || !living.length) return { kind, targets: living.map(({ player }) => player) };
   const anchor = living[session.balanced ? step % living.length : Math.floor(random() * living.length)];
@@ -35,7 +37,7 @@ function chooseBossAttack(session, random, attack={}) {
 }
 
 function resolveGoldSupport(session, actor, power, now, callbacks) {
-  const roster = [...session.players.values()];
+  const roster = activePlayers(session);
   const byHp = (a, b) => a.hp - b.hp;
   let target, kind, moveLabel, amount;
   switch (actor.typing.ability) {
@@ -44,10 +46,18 @@ function resolveGoldSupport(session, actor, power, now, callbacks) {
       if (!target) return false;
       kind = "heal"; moveLabel = "Golden Heal";
       amount = Math.min(target.maxHp - target.hp, power);
-      target.hp += amount;
+      changePlayerHealth(session,target,amount);
       actor.totalHealing = (actor.totalHealing || 0) + amount;
       break;
     case "necromancer":
+      if(session.teamMode) {
+        target=roster.find(player=>player.hp<player.maxHp);
+        if(!target)return false;
+        kind='heal';moveLabel='Team Renewal';
+        amount=changePlayerHealth(session,target,power);
+        actor.totalHealing=(actor.totalHealing || 0)+amount;
+        break;
+      }
       target = roster.find(player => player.hp <= 0);
       if (!target) return false;
       kind = "resurrect"; moveLabel = "Golden Revival";
@@ -89,17 +99,18 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
   if (session.status !== 'active') return false;
   const now = Date.now();
   const host = actor === session.typingHost;
+  if(!host && (session.players.get(actor.code)!==actor || actor.timedOut))return false;
   if(attack.balanced && !host && actor.typing.ability==='cleric') {
     session.clericHealingPool=(session.clericHealingPool || 0)+(attack.healingDeposit || 0);
     if(attack.gold && attack.power>0) {
-      const clerics=Math.max(1,[...session.players.values()].filter(p=>p.classId==='cleric').length);
+      const clerics=Math.max(1,activePlayers(session).filter(p=>p.classId==='cleric').length);
       session.clericHealingPool+=(attack.healingPower ?? attack.power)/clerics;
       const available=session.clericHealingPool;
-      const wounded=[...session.players.values()].filter(p=>p.hp>0 && p.hp<p.maxHp);
+      const wounded=activePlayers(session).filter(p=>p.hp>0 && p.hp<p.maxHp);
       if(available>0 && wounded.length) {
         const target=wounded[wounded.length===1 ? 0 : Math.min(wounded.length-1,Math.floor(random()*wounded.length))];
         const amount=Math.min(available,target.maxHp-target.hp);
-        target.hp+=amount;actor.totalHealing=(actor.totalHealing || 0)+amount;
+        changePlayerHealth(session,target,amount);actor.totalHealing=(actor.totalHealing || 0)+amount;
         session.clericHealingPool-=amount;
         session.projectiles.push({id:crypto.randomBytes(8).toString('hex'),source:actor.code,sourceName:actor.name,
           target:target.code,targetName:target.name,kind:'heal',moveId:'special',moveLabel:'Prayer Heal',
@@ -110,7 +121,11 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
     }
   }
   if (attack.balanced && !host && actor.typing.ability==='necromancer' && attack.gold) {
-    const roster=[...session.players.values()];
+    if(session.teamMode) {
+      const used=resolveGoldSupport(session,actor,attack.healingPower ?? attack.power,now,{schedule,broadcast});
+      if(used){broadcast(session);return;}
+    }
+    const roster=activePlayers(session);
     const target=roster[Math.min(roster.length-1,Math.floor(random()*roster.length))];
     if(target && target.hp<=0) {
       const necros=Math.max(1,roster.filter(p=>p.classId==='necromancer').length);
@@ -138,6 +153,11 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
     attack.multiplier = attack.base ? attack.power / attack.base : 1;
   } else if (!attack.balanced && !host && attack.gold && attack.power > 0 && resolveGoldSupport(session, actor, attack.healingPower ?? attack.power, now, {schedule,broadcast})) return;
   if(!host)attack=promotedAttack(actor,attack);
+  const ramp=damageMultiplier(session.countdownEndsAt,now);
+  const windScale=!host && actor.secondWindWordsRemaining>0 ? SECOND_WIND_DAMAGE : 1;
+  const damageScale=ramp*windScale;
+  attack={...attack,power:attack.power*damageScale,multiplier:attack.multiplier*damageScale,damageMultiplier:ramp,secondWindMultiplier:windScale};
+  for(const key of ['earnedPower','orangePower','criticalPower'])if(typeof attack[key]==='number')attack[key]*=damageScale;
   if (attack.balanced && attack.power <= 0) return;
   if(host)session.boss.turnsTaken=(session.boss.turnsTaken || 0)+1;
   const attackNumber = (host ? session.boss.turnsTaken : actor.turnsTaken) || 0;
@@ -169,13 +189,20 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
     if (finishTimedBattle(session)) { broadcast(session); return; }
     // A finished fight cancels in-flight damage.
     if (session.status !== "active") return;
+    if(!host && (session.players.get(actor.code)!==actor || actor.timedOut))return;
     let volleyDamage = 0, volleyBlocked = 0, landed = false;
     const knockedOut=[];
     for (const projectile of volley) {
+      if(projectile.resolvedAt)continue;
       const target = host ? session.players.get(projectile.target) : session.boss;
+      if(!target || target.timedOut)continue;
       const wasAlive = target.hp > 0;
       let damage = target.hp > 0 ? projectile.amount : 0;
       const defense = host ? target.typing : session.typingHost;
+      if(host && (target.secondWindWordsRemaining>0 || target.protectedUntil>Date.now())) {
+        Object.assign(projectile,{willHit:false,evadeType:'secondWind',amount:0,resolvedAt:Date.now()});
+        continue;
+      }
       if(kraken && target.hp>0 && bossAttack.kind==='tidalWave' && random()<.15) {
         krakenCombat.prone(session,target,{schedule,broadcast});
         Object.assign(projectile,{willHit:false,evadeType:'prone',amount:0,resolvedAt:Date.now()});
@@ -216,8 +243,9 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
       }
       if(kraken && target.hp>0 && bossAttack.kind==='tentacleStrike')krakenCombat.prone(session,target,{schedule,broadcast});
       const actual = Math.min(target.hp, damage);
-      target.hp = Math.max(0, target.hp - actual);
-      if (host && wasAlive && target.hp <= 0) knockedOut.push(target);
+      if(host)changePlayerHealth(session,target,-actual);
+      else target.hp = Math.max(0, target.hp - actual);
+      if (host && !session.teamMode && wasAlive && target.hp <= 0) knockedOut.push(target);
       projectile.amount = actual;
       projectile.resolvedAt = Date.now();
       volleyDamage += actual;
@@ -243,10 +271,10 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
           attackNumber,landedAt:Date.now()};
       }
     }
+    if(knockedOut.length)knockOutMany(session,knockedOut);
     if (session.boss.hp <= 0) session.status = "victory";
-    else if (![...session.players.values()].some(player => player.hp > 0)) session.status = "defeat";
+    else if (session.teamMode && session.teamHealth.hp <= 0) session.status = "defeat";
     if (session.status !== "active") { session.closedAt = Date.now(); clearDragonCombat(session); }
-    if(knockedOut.length)knockOutMany(session,knockedOut,{schedule,broadcast});
     broadcast(session);
   }, windup + travel);
   return host ? { duration: (kraken?windup:0)+dragonAttackDuration(volley[0]), kind: bossAttack.kind, id: volley[0].id, actionAt:now+windup } : 0;
@@ -257,7 +285,8 @@ function submitWords(session, auth, records, callbacks) {
   if(session.countdownEndsAt>Date.now())throw new Error("The battle countdown is still running.");
   if (session.status !== "active") throw new Error("The fight is not active.");
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
-  if (!actor || (auth.role === "player" && actor.hp <= 0)) throw new Error("You have been knocked out.");
+  if(auth.role==='player' && actor?.timedOut)throw new Error('You retreated due to inactivity and are out for this battle.');
+  if (!actor || (auth.role === "player" && actor.hp <= 0 && !(actor.secondWindWordsRemaining>0))) throw new Error("You have been knocked out.");
   const state = auth.role === "host" ? actor : actor.typing;
   if(auth.role==='player' && actor.proneUntil>Date.now())throw new Error('Knocked prone. You can type again in a moment.');
   const protectedTyping=state.wordProtocol===1;
@@ -327,6 +356,7 @@ function submitWords(session, auth, records, callbacks) {
       actor.correctKeystrokes += protectedTyping ? text.length : result.correct ? text.length : 0;
       actor.correctStreak = result.correct ? actor.correctStreak + 1 : 0;
       actor.lastSeenAt = Date.now();
+      if((protectedTyping || result.correct) && advanceSecondWind(session,actor))combatChanged=true;
     }
     if (state.wordsInAttack === attackWordLimit(state)) {
       combatChanged = true;
@@ -346,7 +376,7 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
   if (session.mode !== "proportional" || session.status !== "active") return;
   const actor = auth.role === "host" ? session.typingHost : session.players.get(auth.actorCode);
   const state = auth.role === "host" ? actor : actor?.typing;
-  if (!state || (auth.role === "player" && (actor.hp <= 0 || actor.proneUntil>Date.now()))) return;
+  if (!state || (auth.role === "player" && (actor.timedOut || (actor.hp <= 0 && !(actor.secondWindWordsRemaining>0)) || actor.proneUntil>Date.now()))) return;
   if(state.wordProtocol===1 && wordIndex>=state.nextWord+2)return;
   if (!Number.isInteger(wordIndex) || wordIndex < state.nextWord || wordIndex >= state.nextWord - state.wordsInAttack + attackWordLimit(state) ||
       !Number.isInteger(characters) || characters < 0 || characters > typingWord(state, wordIndex).text.length) return;
@@ -372,7 +402,7 @@ function updateProgress(session, auth, wordIndex, characters, broadcast) {
 // Nested diffs preserve unchanged player objects on the client and avoid replaying logs/FX.
 function diffSnapshot(previous, current) {
   const delta = {};
-  for (const key of ["status", "battleView", "teamActivity", "countdownEndsAt", "timeLimitSeconds", "battleEndsAt", "endReason", "timedResult", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "balancedRandomColors", "clericHealingPool", "clericHealingAllowance", "necroHealingPool", "autoRevive", "leaderboard"]) {
+  for (const key of ["status", "battleView", "teamActivity", "countdownEndsAt", "timeLimitSeconds", "battleEndsAt", "endReason", "timedResult", "closedAt", "expiresAt", "startingPlayers", "hpMultiplier", "balanced", "balancedRandomColors", "clericHealingPool", "clericHealingAllowance", "necroHealingPool", "teamMode", "teamHealth", "leaderboard"]) {
     if (JSON.stringify(previous[key]) !== JSON.stringify(current[key])) delta[key] = current[key];
   }
   if (current.typing) {
@@ -399,6 +429,9 @@ function diffSnapshot(previous, current) {
     if (Object.keys(patch).length > 1) players.push(patch);
   }
   if (players.length) delta.players = players;
+  const playerCodes=new Set(current.players.map(player=>player.code));
+  const removedPlayers=previous.players.filter(player=>!playerCodes.has(player.code)).map(player=>player.code);
+  if(removedPlayers.length)delta.removePlayers=removedPlayers;
   const oldProjectiles = new Map(previous.projectiles.map(item => [item.id, item]));
   const projectiles = [];
   for (const item of current.projectiles) {
@@ -427,7 +460,11 @@ function addCountdownPlayer(session, player) {
   player.typing.gradeMask=host.gradeMask;
   player.typing.sentimentMask=host.sentimentMask;
   session.startingPlayers=session.players.size;
-  session.boss.hp=session.boss.maxHp=round(100*(session.hpMultiplier || 1)*bossContributions(session));
+  session.boss.hp=session.boss.maxHp=round(100*(session.hpMultiplier || 1)*(session.teamMode?Math.max(1,session.players.size):bossContributions(session)));
+  if(session.teamMode) {
+    resetTeamHealth(session,teamStartingHp(session.players.size,session.hpMultiplier || 1));
+    if(session.balanced)for(const member of session.players.values())member.typing.balancedGuardMax=member.maxHp;
+  }
   if(session.balanced)host.balancedGuardMax=session.boss.maxHp;
   setCombatDivisors(session);
 }
@@ -442,7 +479,8 @@ function applyHpMultiplier(session, multiplier = 1) {
   if (!Number.isFinite(multiplier) || multiplier < 1 || multiplier > 1.5) throw new Error("Choose an HP multiplier from 1 to 1.5.");
   session.hpMultiplier = multiplier;
   for (const player of session.players.values()) player.hp = player.maxHp = round(100 * multiplier);
-  session.boss.hp = session.boss.maxHp = round(100 * multiplier * bossContributions(session));
+  resetTeamHealth(session,teamStartingHp(session.players.size,multiplier));
+  session.boss.hp = session.boss.maxHp = session.teamMode ? session.teamHealth.maxHp : round(100 * multiplier * bossContributions(session));
   setCombatDivisors(session);
 }
 

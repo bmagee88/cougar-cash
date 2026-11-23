@@ -7,10 +7,10 @@ const FINISHED = new Set(["victory", "defeat", "draw", "closed"]);
 
 function finishTimedBattle(session, now = Date.now()) {
   if (session.status !== 'active' || !session.battleEndsAt || now < session.battleEndsAt) return false;
-  const players = [...session.players.values()];
+  const players = [...session.players.values()].filter(player=>!player.timedOut);
   const teamMaxHp = players.reduce((total, player) => total + player.maxHp, 0);
   const teamHp = players.reduce((total, player) => total + Math.max(0, player.hp), 0);
-  const team = teamMaxHp > 0 ? teamHp / teamMaxHp : 0;
+  const team = session.teamMode && session.teamHealth ? (session.teamHealth.maxHp>0?session.teamHealth.hp/session.teamHealth.maxHp:0) : teamMaxHp > 0 ? teamHp / teamMaxHp : 0;
   const boss = session.boss.maxHp > 0 ? Math.max(0, session.boss.hp) / session.boss.maxHp : 0;
   session.status = Math.abs(team - boss) < 1e-10 ? 'draw' : team > boss ? 'victory' : 'defeat';
   session.endReason = 'time-limit';
@@ -46,6 +46,7 @@ function maintainSession(session, now = Date.now()) {
   session.projectiles = session.projectiles.filter(projectile =>
     now - (projectile.resolvedAt || projectile.impactAt) < 4500);
   if (FINISHED.has(session.status)) {
+    clearInterval(session.inactivityTimer);session.inactivityTimer=null;
     cancelRecovery(session);
     clearDragonCombat(session);
     session.closedAt = session.closedAt || now;
@@ -65,6 +66,7 @@ function maintainSession(session, now = Date.now()) {
 }
 
 function resetForRematch(session) {
+  clearInterval(session.inactivityTimer);session.inactivityTimer=null;
   cancelRecovery(session);
   clearDragonCombat(session);
   clearTimeout(session.bossTimer);
@@ -73,6 +75,8 @@ function resetForRematch(session) {
   session.bossTimer = session.broadcastTimer = session.progressBroadcastTimer = session.studentSummaryTimer = null;
   session.players.clear(); session.challenges.clear();
   session.recovery=null;session.teamKnockouts=0;
+  const teamMaxHp=100*(session.hpMultiplier || 1);
+  session.teamHealth=session.teamMode?{hp:teamMaxHp,maxHp:teamMaxHp}:null;
   session.projectiles = []; session.log = [];
   session.status = "setup"; session.closedAt = null; session.countdownEndsAt = null;
   session.battleEndsAt = session.battleTimer = session.endReason = session.timedResult = null;
@@ -92,6 +96,7 @@ function detachSubscriber(session, subscriber, now = Date.now()) {
 }
 
 function clearSessionTimers(session) {
+  clearInterval(session.inactivityTimer);session.inactivityTimer=null;
   cancelRecovery(session);
   clearDragonCombat(session);
   clearTimeout(session.expireTimer);

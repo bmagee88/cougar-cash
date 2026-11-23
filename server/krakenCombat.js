@@ -2,7 +2,7 @@ const crypto=require('node:crypto');
 const {KRAKEN_ANIMATIONS}=require('../src/TypingBoss/krakenAnimationRules');
 const KINDS=['tentacleStrike','tentacleSweep','tidalWave'];
 function plan(session,attack,random) {
-  const living=[...session.players.values()].filter(p=>p.hp>0);
+  const living=[...session.players.values()].filter(p=>p.hp>0 && !p.timedOut);
   const step=attack.krakenAttackIndex ?? session.bossAttackIndex ?? 0;
   const kind=KINDS[step%3];session.bossAttackIndex=step+1;
   if(kind==='tidalWave')return {kind,targets:living};
@@ -27,7 +27,7 @@ function curse(session,players,{schedule,broadcast,random=Math.random},now=Date.
     player.curseId=id;player.curseUntil=until;player.curseKey=null;
     for(let offset=2000+Math.floor(random()*2001);offset<15000;offset+=2000+Math.floor(random()*2001)) {
       schedule(session,()=>{
-        if(session.status!=='active' || session.players.get(player.code)!==player || player.hp<=0 || player.curseId!==id || Date.now()>=until)return;
+        if(session.status!=='active' || session.players.get(player.code)!==player || player.hp<=0 || player.timedOut || player.curseId!==id || Date.now()>=until)return;
         // A prone player cannot type, so skip forced input during the same lock.
         if(player.proneUntil>Date.now())return;
         // Cosmetic client progress cannot redirect the curse to a safer word.
