@@ -57,7 +57,7 @@ test('battlefield fits a narrow screen and resizes characters without remeasurin
   } finally {bounds.mockRestore();global.ResizeObserver=original;}
 });
 
-test.each([10, 11, 20, 21, 30])("host and quiet student overview share the formation at %i players", count => {
+test.each([10, 11, 20, 21, 30])("host and student battlefield share the formation at %i players", count => {
   const session = room(count);
   const { rerender } = render(<BattleScene session={session} />);
   const host = screen.getByRole("region", { name: "Host battle scene" });
@@ -76,15 +76,15 @@ test.each([10, 11, 20, 21, 30])("host and quiet student overview share the forma
   expect(screen.getByRole("region", { name: "Player battle scene" })).toBeTruthy();
   expect(screen.getAllByRole("img", { name: "Your character" })).toHaveLength(1);
   const overview=screen.getByRole('region',{name:'Player battle scene'});
-  expect(overview.getAttribute('data-overview')).toBe('true');
-  expect(within(overview).queryByLabelText('Dragon attack progress')).toBeNull();
-  expect(within(overview).queryByLabelText('Hero 0 attack progress')).toBeNull();
+  expect(overview.getAttribute('data-overview')).toBe('false');
+  expect(within(overview).queryByLabelText('Dragon attack progress')).toBeTruthy();
+  expect(Boolean(within(overview).queryByLabelText('Hero 0 attack progress'))).toBe(count<=20);
   expect(overview.querySelectorAll('.boss-projectile')).toHaveLength(0);
   rerender(<BattleScene session={session} />);
   expect(screen.getByRole("region").innerHTML).toBe(sceneBefore);
 });
 
-test("only personal projectiles animate beside the profiles while the overview stays still", () => {
+test("all projectiles animate in the battlefield and personal projectiles also appear beside profiles", () => {
   const session = room(2), now = Date.now();
   session.typing = createTypingState(1, "paladin");
   const base = { moveLabel: "Attack", moveId: "weak", startedAt: now, impactAt: now + 700, resolvedAt: null, result: "pending" as const, amount: null };
@@ -105,9 +105,9 @@ test("only personal projectiles animate beside the profiles while the overview s
   HTMLElement.prototype.animate = animate as any;
   try {
     const view = render(<PlayerTypingBattle session={session} me={session.players[0]} code="hero0" active={false} />);
-    expect(view.container.querySelectorAll(".boss-projectile")).toHaveLength(3);
+    expect(view.container.querySelectorAll(".boss-projectile")).toHaveLength(7);
     expect(getComputedStyle(screen.getByTestId("portrait-projectile-layer")).overflow).toBe("hidden");
-    expect(screen.getByRole("region", { name: "Player battle scene" }).querySelectorAll(".boss-projectile")).toHaveLength(0);
+    expect(screen.getByRole("region", { name: "Player battle scene" }).querySelectorAll(".boss-projectile")).toHaveLength(4);
     const origin = "translate(9.1%, 86.73%)";
     const calls = animate.mock.calls as any[];
     expect(calls.filter(call => call[0][0].transform === origin)).toHaveLength(2);
@@ -127,7 +127,7 @@ test("the student dragon profile reacts only to their hits and relevant incoming
   const dragon=()=>within(screen.getByTestId("dragon-portrait")).getByTestId("dragon-animation");
   expect(dragon().getAttribute("data-hurt-tier")).toBe("basic");
   const overview=screen.getByRole('region',{name:'Player battle scene'});
-  expect(within(overview).getByTestId('dragon-animation').getAttribute('data-animation')).toBe('idle');
+  expect(within(overview).getByTestId('dragon-animation').getAttribute('data-hurt-tier')).toBe('critical');
   session.projectiles=[session.projectiles[1]];
   rerender(<PlayerTypingBattle session={{...session}} me={session.players[0]} code="hero0" active={false} />);
   expect(dragon().getAttribute("data-hurt-tier")).toBeNull();

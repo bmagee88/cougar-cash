@@ -52,6 +52,7 @@ export interface TypingBossAttackStats {
   landedAt: number;
 }
 export interface TypingBossLeaderboardEntry {
+  retreated?: boolean;
   rank: number;
   code: string;
   name: string;
