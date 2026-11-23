@@ -41,3 +41,12 @@ test('older results without typing totals remain readable',()=>{
   expect(screen.getByText('Accuracy: —')).toBeTruthy();
   expect(screen.getByText('No landed attack')).toBeTruthy();
 });
+
+test('retreated players are highlighted and labeled without losing their results',()=>{
+  render(<BattleLeaderboard entries={[{rank:1,code:'a',name:'Alex',totalDamage:100,strongestAttack:null,retreated:true},{rank:2,code:'b',name:'Blair',totalDamage:50,strongestAttack:null}]}/>);
+  const alex=screen.getByRole('article',{name:'Alex battle results'});
+  expect(within(alex).getByText('Retreated · Inactive')).toBeTruthy();
+  expect(within(alex).getByText('10,000')).toBeTruthy();
+  expect(getComputedStyle(alex).borderColor).toBe('#f59e0b');
+  expect(within(screen.getByRole('article',{name:'Blair battle results'})).queryByText('Retreated · Inactive')).toBeNull();
+});

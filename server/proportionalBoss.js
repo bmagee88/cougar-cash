@@ -524,6 +524,7 @@ function leaderboard(session) {
   const players = [...session.players.values()]
     .sort((a, b) => b.totalDamage - a.totalDamage || a.code.localeCompare(b.code))
     .map((player, index) => ({ rank: index + 1, code: player.code, name: player.name,
+      retreated:Boolean(player.timedOut),
       totalDamage: player.totalDamage,...stats(player.typing,player.totalDamage,player),
       strongestAttack: player.strongestAttack ? { ...player.strongestAttack } : null }));
   const bossDamage=session.boss.totalDamage ?? [...session.players.values()].reduce((total,player)=>total+(player.typing.totalTaken || 0),0);

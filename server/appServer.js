@@ -18,7 +18,7 @@ const {recordTypingActivity,timeoutInactivePlayers}=require('./typingBossInactiv
 const { queueBattleBroadcast } = require('./typingBossBroadcast');
 const { issuePlayerToken, playerForToken, checkCreationPassword } = require('./typingBossAuth');
 const { publicTypingState } = require('./typingBossIntegrity');
-const { studentView, overviewFor, queueStudentSummary } = require('./typingBossAudience');
+const { studentView } = require('./typingBossAudience');
 
 const PORT = Number(
   process.env.APP_SERVER_PORT ||
@@ -1554,21 +1554,7 @@ function writeTypingBossEvent(subscriber, session, snapshotCache = null) {
     const playerCode = subscriber.auth?.role === 'player' ? subscriber.auth.actorCode : null;
     let current = { ...publicState, typing: playerCode && !session.players.has(playerCode) ? undefined : publicTypingState(session,playerCode ? session.players.get(playerCode)?.typing : session.typingHost),
       ...(playerCode ? { activeChallengeIds: [] } : {}) };
-    if(playerCode) {
-      let overview=snapshotCache?.get('student-overview');
-      if(!overview){overview=overviewFor(publicState);snapshotCache?.set('student-overview',overview);}
-      subscriber.audience=subscriber.audience || {};
-      const view=studentView(current,playerCode,subscriber.audience,Date.now(),overview);
-      current=view.snapshot;
-      if(view.pendingUntil)queueStudentSummary(session,view.pendingUntil,()=>{
-        session.revision+=1;
-        const cache=new Map();
-        for(const student of [...session.subscribers].filter(item=>item.auth?.role==='player')) {
-          try{writeTypingBossEvent(student,session,cache);}
-          catch{typingBossLifecycle.detachSubscriber(session,student);student.res.destroy();}
-        }
-      },scheduleTypingBossTimer);
-    }
+    if(playerCode)current=studentView(current,playerCode).snapshot;
     const delta = subscriber.previous ? proportionalBoss.diffSnapshot(subscriber.previous, current) : null;
     if (!subscriber.previous) {
       subscriber.res.write(`event: session\ndata: ${JSON.stringify(current)}\n\n`);

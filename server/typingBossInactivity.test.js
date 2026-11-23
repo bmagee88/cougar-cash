@@ -16,6 +16,9 @@ test('timeout KO retains the player and HP, excludes their contribution, and adj
   const down=s.players.get('0');assert.equal(down.timedOut,true);assert.equal(down.hp,150);assert.equal(down.maxHp,300);
   assert.equal(s.teamHealth.hp,100);assert.equal(s.teamHealth.maxHp,200);
   assert.equal(s.boss.hp,120);assert.equal(s.boss.maxHp,200);
+  const results=engine.leaderboard(s);
+  assert.equal(results.find(entry=>entry.code==='0').retreated,true);
+  assert.equal(results.find(entry=>entry.code==='1').retreated,false);
   for(const player of [...s.players.values()].filter(p=>!p.timedOut)) {
     assert.equal(player.hp,100);assert.equal(player.typing.combatDivisor,2);assert.equal(player.typing.balancedGuard,20);
   }

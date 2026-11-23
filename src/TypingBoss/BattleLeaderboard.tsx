@@ -14,10 +14,11 @@ function LeaderboardCard({ entry }: { entry: TypingBossLeaderboardEntry }) {
     { label: "Strongest attack", value: entry.strongestAttack ? `${combatNumber(entry.strongestAttack.power)} power` : "No landed attack", color: "#facc15" },
   ];
   return <Paper component="article" aria-label={`${entry.name} battle results`} variant="outlined"
-    sx={{ p: 2, borderColor: entry.isBoss ? "#fb923c" : entry.rank === 1 ? "#facc15" : "#344256" }}>
+    sx={{ p: 2, borderColor: entry.retreated ? "#f59e0b" : entry.isBoss ? "#fb923c" : entry.rank === 1 ? "#facc15" : "#344256", bgcolor:entry.retreated?'rgba(245,158,11,.10)':undefined }}>
     <Stack direction="row" alignItems="center" gap={1}>
       <Typography fontWeight={900}>{entry.isBoss ? entry.name : `#${entry.rank} ${entry.name}`}</Typography>
       {entry.isBoss && <Chip label="Boss" size="small" sx={{ color: "#fb923c" }} />}
+      {entry.retreated && <Chip label="Retreated · Inactive" size="small" sx={{color:'#fbbf24',border:'1px solid #f59e0b'}}/>}
     </Stack>
     <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: 1, mt: 1.5 }}>
       {metrics.map(metric => <Box key={metric.label}>

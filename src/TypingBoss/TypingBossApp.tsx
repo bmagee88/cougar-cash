@@ -1,5 +1,6 @@
 import PromotionButton from './PromotionButton';
 import HostPromotionMenu from './HostPromotionMenu';
+import RetreatNotice from './RetreatNotice';
 import {promotionContributions} from './promotion';
 import {changeTypingBoss} from './api';
 import {KrakenScenery} from './KrakenVisuals';
@@ -3031,14 +3032,14 @@ export function PlayerTypingBattle({ session, me, code, playerToken, active }: {
   </Stack>;
 }
 
-// Students retain the shared formation as a quiet overview; their profiles own the action.
+// Every screen shares the same animated battlefield.
 export function BattleScene({ session, ownCode, sceneRef }: {
   session: TypingBossSessionSnapshot; ownCode?: string; sceneRef?: React.Ref<HTMLDivElement>;
 }) {
   const arena = arenaForBoss(session.boss.id);
   const bossPoint = arena.hostBossPoint;
   const clock = useCombatClock(session.serverNow);
-  const quiet=Boolean(ownCode && session.mode==='proportional');
+  const quiet=false;
   const animations = useMemo(() => quiet ? new Map<string,CombatAnimationEvent[]>() : collectCombatAnimations(session.projectiles), [session.projectiles,quiet]);
   const basePositions = useBattlePositions(session.players, arena.hostSpawns, session.mode === 'proportional');
   const positions=useMemo(()=>session.mode==='proportional'?new Map([...basePositions].map(([id,p])=>[id,{x:p.x-(session.boss.id==='kraken'?3.5:0),y:session.boss.id==='kraken'?64+(p.y-60)*.65:58+(p.y-60)*1.25}])):basePositions,[basePositions,session.boss.id,session.mode]);
@@ -3060,6 +3061,7 @@ export function BattleScene({ session, ownCode, sceneRef }: {
   return (
     <Box data-overview={quiet} className={`battle-scene ${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} ref={stageRef} sx={{ width:"100%", maxWidth:"100%", minWidth:0, overflow:"hidden" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
       <BattleCountdown session={session}/>
+      <RetreatNotice key={session.id} players={session.players}/>
       <Box className={proportional?'battle-world':undefined} data-world-scale={proportional?worldScale:undefined}
         style={proportional?{position:'absolute',left:'50%',top:'50%',width:BATTLE_WIDTH,height:BATTLE_HEIGHT,transform:`translate(-50%, -50%) scale(${worldScale})`,transformOrigin:'center'}:undefined}>
       <BattlefieldShell kraken={session.boss.id==='kraken'} sceneRef={sceneRef} minHeight={proportional?BATTLE_HEIGHT:640}>
