@@ -1,4 +1,5 @@
 import PromotionButton from './PromotionButton';
+import HostPromotionMenu from './HostPromotionMenu';
 import {promotionContributions} from './promotion';
 import {changeTypingBoss} from './api';
 import {KrakenScenery} from './KrakenVisuals';
@@ -14,7 +15,10 @@ import { initializeBalanced, proportionalPlayerPoint } from "./proportionalRules
 import { generateJoinName, shortJoinCode } from "./joinNames";
 import { VolcanicBackdrop, VolcanicForeground } from "./VolcanicScenery";
 import BattleCountdown,{useBattleCountdown} from "./BattleCountdown";
-import BattleTimer from './BattleTimer';
+import BattleStatus from './BattleStatus';
+import {BATTLE_WIDTH,BATTLE_HEIGHT,battleScale} from './battleLayout';
+import InactivityWarning from './InactivityWarning';
+import {teamStartingHp} from './battleRules';
 import TimeLimitSettings, {timeLimitSeconds} from './TimeLimitSettings';
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -113,6 +117,7 @@ import CombatCharacter, { useCombatAnimation, useCombatClock } from "./CombatCha
 import { collectCombatAnimations, CombatAnimation, CombatAnimationEvent, NO_ANIMATION_EVENTS } from "./combatAnimation";
 const KrakenPreview = process.env.NODE_ENV === "development" ? React.lazy(() => import("./KrakenPreview")) : null;
 const AnimationPreview = process.env.NODE_ENV === "development" ? React.lazy(() => import("./AnimationPreview")) : null;
+const BattleLayoutPreview = process.env.NODE_ENV === 'development' ? React.lazy(()=>import('./BattleLayoutPreview')) : null;
 
 const SESSION_ID_PATTERN = /^boss[0-9A-F]{3}$/;
 const PLAYER_TOKEN_PATTERN = /^[a-f0-9]{64}$/;
@@ -765,7 +770,7 @@ function useTypingBossSessionStream(
   };
 }
 
-function PageFrame({ children, wide=false, battle=false }: { children: React.ReactNode; wide?:boolean; battle?:boolean }) {
+export function PageFrame({ children, wide=false, battle=false }: { children: React.ReactNode; wide?:boolean; battle?:boolean }) {
   return (
     <Box className={battle ? 'battle-live-page' : undefined}
       sx={{
@@ -1019,7 +1024,7 @@ function HostSessionPage() {
   );
   const [copied, setCopied] = useState(false);
   const [hpMultiplier, setHpMultiplier] = useState(1);
-  const [autoRevive, setAutoRevive] = useState(true);
+  const [teamMode, setTeamMode] = useState(true);
   const [timePreset, setTimePreset] = useState('300');
   const [customMinutes, setCustomMinutes] = useState('10');
   const selectedTimeLimit = timeLimitSeconds(timePreset, customMinutes);
@@ -1029,15 +1034,18 @@ function HostSessionPage() {
   const lobbyPreview = useMemo(() => {
     if (!session || session.mode !== "proportional" || session.status !== "setup") return session;
     const playerHp = 100 * hpMultiplier;
-    const bossHp = playerHp * promotionContributions(session.players);
-    return { ...session, typing: session.typing ? (balanced ? initializeBalanced({ ...session.typing, ...wordFilters, ability: session.boss.id==='kraken'?'kraken':"dragon", balancedRandomColors }) : { ...session.typing, ...wordFilters, balanced:false }) : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
-      players: session.players.map(player => ({ ...player, hp: playerHp, maxHp: playerHp })) };
-  }, [session, hpMultiplier, wordFilters, balanced, balancedRandomColors]);
+    const bossHp = teamMode?teamStartingHp(session.players.length,hpMultiplier):playerHp*promotionContributions(session.players);
+    const sharedHp=teamMode?bossHp:playerHp;
+    return { ...session, teamMode, teamHealth:teamMode?{hp:sharedHp,maxHp:sharedHp}:null, typing: session.typing ? (balanced ? initializeBalanced({ ...session.typing, ...wordFilters, ability: session.boss.id==='kraken'?'kraken':"dragon", balancedRandomColors }) : { ...session.typing, ...wordFilters, balanced:false }) : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
+      players: session.players.map(player => ({ ...player, hp: sharedHp, maxHp: sharedHp })) };
+  }, [session, hpMultiplier, wordFilters, balanced, balancedRandomColors, teamMode]);
   const [actionError, setActionError] = useState("");
   const [busy, setBusy] = useState(false);
   const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [statsOpen, setStatsOpen] = useState(false);
   const [outcomeDismissed, setOutcomeDismissed] = useState(false);
+
+  useEffect(()=>{if(session?.teamMode!==undefined)setTeamMode(session.teamMode);},[session?.teamMode]);
 
   useEffect(() => {
     if (session?.timeLimitSeconds === undefined) return;
@@ -1104,6 +1112,7 @@ function HostSessionPage() {
   return (
     <PageFrame wide battle={session.mode==='proportional' && session.status==='active'}>
       <ReconnectOverlay show={reconnecting} />
+      {session.mode==='proportional' && <HostPromotionMenu session={session} hostToken={hostToken} onUpdate={setSession}/>}
       <Stack spacing={2} className="battle-session-stack">
         <BattleMenu status={session.status}>
           <TextField select label="Boss type" value={session.boss.id} disabled={session.status!=='setup' || busy} SelectProps={{native:true}} InputLabelProps={{shrink:true}}
@@ -1164,7 +1173,7 @@ function HostSessionPage() {
               disabled={busy || Number.isNaN(selectedTimeLimit) || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
               onClick={() =>
                 runHostAction(() =>
-                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors, autoRevive, selectedTimeLimit)
+                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors, teamMode, selectedTimeLimit)
                 )
               }
             >
@@ -1193,8 +1202,9 @@ function HostSessionPage() {
               onCustomChange={setCustomMinutes} disabled={busy} />
           </Paper>}
           {session.mode === "proportional" && session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
-            <FormControlLabel label="Auto revive" control={<Switch checked={autoRevive} onChange={(_event,checked)=>setAutoRevive(checked)} disabled={busy} inputProps={{'aria-label':'Auto revive'}}/>}/>
-            <Typography variant="body2">{autoRevive ? `Each KO starts its own timer right away: 10 seconds + 3 seconds per player + 3 seconds per prior team KO. Heroes downed together get their delays in random order.` : 'Automatic recovery is off. Necromancers can still revive fallen players.'}</Typography>
+            <FormControlLabel label="Team mode" control={<Switch checked={teamMode} onChange={(_event,checked)=>setTeamMode(checked)} disabled={busy} inputProps={{'aria-label':'Team mode'}}/>}/>
+            <Typography variant="body2">{teamMode ? 'One shared team HP bar, equal to the boss’s starting HP. Both HP totals scale with the number of players: three players means ×3 HP for each side. Each hero deals normal damage divided by the number of players. No individual knockouts. The round ends when either side runs out of HP.' : 'Second Wind replaces knockouts: keep typing at 75% damage, complete three words to recover to 40% HP, then gain five seconds of protection.'}</Typography>
+            <Typography variant="body2">Both sides’ damage starts at ×1.00 and increases by ×0.01 every two battle seconds. Dragon moves: 50% Tail Whip, 40% Bite/Fireball combined, 10% all-player attack.</Typography>
             <FormControlLabel label="Balanced" control={<Switch checked={balanced} onChange={(_event, checked) => setBalanced(checked)} disabled={busy} inputProps={{ "aria-label": "Balanced" }} />} />
             {balanced && <FormControlLabel label="Random colors" control={<Switch checked={balancedRandomColors} onChange={(_event,checked)=>setBalancedRandomColors(checked)} disabled={busy} inputProps={{"aria-label":"Random colors"}}/>}/>}
             {balanced && <Typography variant="body2">{balancedRandomColors ? "Color chances per word: white 40%, orange 20%, blue 18%, green 15%, crit 4%, special 3%. Monks get 6% specials; their other chances scale down to keep the total at 100%. Banking stays active." : "Glowing triggers: extra attack every 127 correct letters, crit 131, Block 137, special 139, Dodge 149. First triggers are staggered; a trigger appears by every third attack. Monk specials repeat twice as often. Ordinary colored words bank power until their trigger."}</Typography>}
@@ -1202,7 +1212,7 @@ function HostSessionPage() {
             <WordFilterChips value={wordFilters} onChange={setWordFilters} disabled={busy} />
             <Typography id="hp-multiplier-label" fontWeight={900}>HP multiplier: ×{hpMultiplier}</Typography>
             <Typography variant="body2" sx={{ color: "text.secondary", mb: 2 }}>
-              Players start with {combatNumber(100 * hpMultiplier)} HP each. The boss starts with {combatNumber(100 * hpMultiplier * promotionContributions(session.players))} HP. Each promoted hero adds an extra HP share. This HP setting does not change attack damage.
+              {teamMode ? `The team and boss each start with ${combatNumber(teamStartingHp(session.players.length,hpMultiplier))} HP (${Math.max(1,session.players.length)} player${session.players.length===1?'':'s'} × base HP × HP multiplier).` : `Players start with ${combatNumber(100*hpMultiplier)} HP each. The boss starts with ${combatNumber(100*hpMultiplier*promotionContributions(session.players))} HP. Each promoted hero adds an extra HP share.`} This HP setting does not change attack damage.
             </Typography>
             <Slider aria-labelledby="hp-multiplier-label" value={hpMultiplier} min={1} max={1.5} step={0.05}
               disabled={busy} valueLabelDisplay="auto" onChange={(_event, value) => setHpMultiplier(value as number)}
@@ -1213,7 +1223,7 @@ function HostSessionPage() {
         {actionError && <Alert severity="error">{actionError}</Alert>}
         {streamError && !reconnecting && <Alert severity="warning">{streamError}</Alert>}
 
-        <BattleTimer session={session} />
+        <BattleStatus session={lobbyPreview!} />
 
         {session.mode === "proportional" ? <>
           <HostBattlefield session={lobbyPreview!} />
@@ -1394,10 +1404,6 @@ function PlayerSessionPage() {
     );
   }
 
-  if (["closed", "expired"].includes(session.status)) {
-    return <PageFrame><Alert severity="info">{session.status === "closed" ? "The host closed this room." : "This room has expired."}</Alert>
-      <Button component={RouterLink} to="/typing-boss/join">Join another room</Button></PageFrame>;
-  }
   const me = session.players.find((player) => player.code === playerCode);
   if (!me) {
     return (
@@ -1408,14 +1414,19 @@ function PlayerSessionPage() {
     );
   }
 
+  if (["closed", "expired"].includes(session.status)) {
+    return <PageFrame><Alert severity="info">{session.status === "closed" ? "The host closed this room." : "This room has expired."}</Alert>
+      <Button component={RouterLink} to="/typing-boss/join">Join another room</Button></PageFrame>;
+  }
+
   return (
     <PageFrame wide battle={session.mode==='proportional' && session.status==='active'}>
       <BattleMenu status={session.status}><Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
         {session.mode==='proportional' && <PromotionButton sessionId={normalizedSessionId} playerToken={playerToken} promoted={me.promoted} disabled={!['setup','active'].includes(session.status)}/>}</BattleMenu>
       <ReconnectOverlay show={reconnecting} />
-      <BattleTimer session={session} />
+      <BattleStatus session={session} />
       {session.mode === "proportional" ? <Stack spacing={2} className="battle-session-stack">
-        <PlayerTypingBattle session={session} me={me} code={playerCode} playerToken={playerToken} active={session.status === "active" && !me.defeated && !reconnecting} />
+        <PlayerTypingBattle session={session} me={me} code={playerCode} playerToken={playerToken} active={session.status === "active" && !me.defeated && !me.timedOut && !reconnecting} />
         {session.leaderboard && <BattleLeaderboard entries={session.leaderboard} />}
       </Stack> : <PlayerBattlePanel
         session={session}
@@ -3005,12 +3016,13 @@ export function PlayerTypingBattle({ session, me, code, playerToken, active }: {
   const personalBoss=useMemo(()=>({...session.boss,hurt:undefined,flameBreath:undefined,queuedStrongReactions:undefined,queuedAttacks:undefined}),[session.boss]);
   const personalPositions=useMemo(()=>layout ? new Map([[me.code,layout.positions.get(me.code)!]]) : new Map<string,Point>(),[layout,me.code]);
   return <Stack spacing={2} className="player-battle-stack">
+    <InactivityWarning sessionId={session.id} player={me} active={session.status==='active'} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow}/>
     <RecoveryNotice player={me} active={session.status==='active'} serverNow={session.serverNow}/>
-    {me.classId==='necromancer' && <Chip label={`Revival healing bank ${combatNumber(session.necroHealingPool || 0)}`} />}
+    {me.classId==='necromancer' && <Chip label={session.teamMode ? 'Gold special: heal the shared team HP bar' : `Revival healing bank ${combatNumber(session.necroHealingPool || 0)}`} />}
     <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} />
     <Box ref={rootRef} data-testid="personal-typing-stage" className="personal-typing-stage" sx={{ position: "relative" }}>
       <ContinuousTyping key={`${session.id}:${session.typing!.seed}:${session.typing!.balanced}`} sessionId={session.id} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} teamActivity={session.teamActivity} credentials={{ code, playerToken }} state={session.typing!} active={active}
-        profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef }}
+        profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef, teamMode:session.teamMode }}
         dragonProfile={{ boss: personalBoss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
     {layout && <Box data-testid="portrait-projectile-layer" sx={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 8 }}>
       <ProjectileLayer projectiles={ownProjectiles} positions={personalPositions} bossPoint={layout.bossPoint} players={session.players} serverNow={session.serverNow} personal />
@@ -3029,35 +3041,38 @@ export function BattleScene({ session, ownCode, sceneRef }: {
   const quiet=Boolean(ownCode && session.mode==='proportional');
   const animations = useMemo(() => quiet ? new Map<string,CombatAnimationEvent[]>() : collectCombatAnimations(session.projectiles), [session.projectiles,quiet]);
   const basePositions = useBattlePositions(session.players, arena.hostSpawns, session.mode === 'proportional');
-  const positions=useMemo(()=>session.boss.id==='kraken'?new Map([...basePositions].map(([id,p])=>[id,{x:p.x-3.5,y:64+(p.y-60)*.65}])):basePositions,[basePositions,session.boss.id]);
-  const stageRef=useRef<HTMLDivElement>(null),[stageWidth,setStageWidth]=useState(1000),[stageHeight,setStageHeight]=useState(1000);
+  const positions=useMemo(()=>session.mode==='proportional'?new Map([...basePositions].map(([id,p])=>[id,{x:p.x-(session.boss.id==='kraken'?3.5:0),y:session.boss.id==='kraken'?64+(p.y-60)*.65:58+(p.y-60)*1.25}])):basePositions,[basePositions,session.boss.id,session.mode]);
+  const stageRef=useRef<HTMLDivElement>(null),[stageWidth,setStageWidth]=useState(BATTLE_WIDTH),[stageHeight,setStageHeight]=useState(BATTLE_HEIGHT);
   useEffect(()=>{
     const node=stageRef.current;
     if(!node)return;
-    const measure=(width:number,height:number)=>{if(width>0)setStageWidth(Math.round(width));if(height>0)setStageHeight(Math.round(height));};
+    const measure=(width:number,height:number)=>{if(width>0)setStageWidth(Math.floor(width));if(height>0)setStageHeight(Math.floor(height));};
     const bounds=node.getBoundingClientRect();measure(bounds.width,bounds.height);
     if(typeof ResizeObserver==='undefined')return;
     const observer=new ResizeObserver(entries=>measure(entries[0].contentRect.width,entries[0].contentRect.height));
     observer.observe(node);
     return ()=>observer.disconnect();
   },[]);
-  const formationScale=Math.max(.12,Math.min(1,stageWidth/1000,stageHeight/1000));
+  const worldScale=battleScale(stageWidth,stageHeight);
+  const proportional=session.mode==='proportional';
   const density = session.players.length > 20 && !quiet ? "minimal" : session.players.length > 10 ? "compact" : "normal";
 
   return (
     <Box data-overview={quiet} className={`battle-scene ${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} ref={stageRef} sx={{ width:"100%", maxWidth:"100%", minWidth:0, overflow:"hidden" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
       <BattleCountdown session={session}/>
-      <BattlefieldShell kraken={session.boss.id==='kraken'} sceneRef={sceneRef} minHeight={session.mode === "proportional" ? Math.max(640,Math.min(1000,stageWidth*1.2)) : 640}>
-        <BossNode quiet={quiet} visualScale={Math.min(1,stageHeight/600,stageWidth/900)} session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
+      <Box className={proportional?'battle-world':undefined} data-world-scale={proportional?worldScale:undefined}
+        style={proportional?{position:'absolute',left:'50%',top:'50%',width:BATTLE_WIDTH,height:BATTLE_HEIGHT,transform:`translate(-50%, -50%) scale(${worldScale})`,transformOrigin:'center'}:undefined}>
+      <BattlefieldShell kraken={session.boss.id==='kraken'} sceneRef={sceneRef} minHeight={proportional?BATTLE_HEIGHT:640}>
+        <BossNode quiet={quiet} session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
         {session.players.map((player) => (
           <PlayerNode
             key={player.code}
             player={player}
+            teamMode={session.teamMode}
             quiet={quiet}
             point={positions.get(player.code) || { x: 50, y: 80 }}
             compact={session.mode === "proportional" || session.players.length > 6}
             proportional={session.mode === "proportional"}
-            formationScale={formationScale}
             density={density}
             sessionId={session.id}
             highlight={player.code === ownCode}
@@ -3067,6 +3082,7 @@ export function BattleScene({ session, ownCode, sceneRef }: {
         ))}
         {!quiet && <ProjectileLayer projectiles={session.projectiles} positions={positions} bossPoint={bossPoint} players={session.players} serverNow={session.serverNow} />}
       </BattlefieldShell>
+      </Box>
     </Box>
   );
 }
@@ -3128,7 +3144,7 @@ function BossNode({
   clock: React.MutableRefObject<number>;
 }) {
   const pose = useDragonCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, quiet ? null : session.boss.hurt, session.status !== "setup" && session.boss.hp <= 0, clock, quiet ? null : session.boss.id==='kraken'?session.boss.krakenWave:session.boss.flameBreath);
-  const dragonWidth = session.mode === "proportional" ? size === "host" ? { xs: 230*visualScale, md: 300*visualScale } : { xs: 240*visualScale, md: 320*visualScale } : bossBattleWidth(session.boss.id, size);
+  const dragonWidth = session.mode === "proportional" ? 300*visualScale : bossBattleWidth(session.boss.id, size);
   const latestAttack = session.projectiles.filter(projectile => projectile.source === "boss").slice(-1)[0];
   return (
     <>
@@ -3229,6 +3245,7 @@ function BossChargeBar({ session }: { session: TypingBossSessionSnapshot }) {
 }
 
 const PlayerNode = React.memo(function PlayerNode({
+  teamMode=false,
   player,
   point,
   compact = false,
@@ -3239,9 +3256,8 @@ const PlayerNode = React.memo(function PlayerNode({
   proportional = false,
   sessionId = "",
   density = "normal",
-  formationScale = 1,
 }: {
-  formationScale?: number;
+  teamMode?: boolean;
   player: TypingBossPlayer;
   point: Point;
   compact?: boolean;
@@ -3258,7 +3274,7 @@ const PlayerNode = React.memo(function PlayerNode({
   const width = formation ? "5.8%" : compact ? 132 : 170;
   const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
-  const pose = useCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, player.defeated, clock);
+  const pose = useCombatAnimation(quiet || player.timedOut ? NO_ANIMATION_EVENTS : events, player.defeated && !player.timedOut, clock);
   return (
     <Box
       sx={{
@@ -3267,11 +3283,10 @@ const PlayerNode = React.memo(function PlayerNode({
         top: `${point.y}%`,
         transform: "translate(-50%, -50%)",
         width,
-        zIndex: 3,
+        zIndex: 5,
       }}
     >
-      <Stack data-formation-scale={formation ? formationScale : undefined} direction="column" spacing={0.5} alignItems="center"
-        sx={formation ? {width:`${100/formationScale}%`,position:'relative',left:`${(100-100/formationScale)/2}%`,transform:`scale(${formationScale})`,transformOrigin:'center'} : undefined}>
+      <Stack direction="column" spacing={0.5} alignItems="center" sx={player.timedOut?{animation:'tb-retreat 900ms ease-in forwards','@keyframes tb-retreat':{'0%':{transform:'translateX(0)',opacity:1},'100%':{transform:'translateX(-1200px)',opacity:0,visibility:'hidden'}}}:undefined}>
         <Stack
           direction="row"
           spacing={0.5}
@@ -3290,9 +3305,9 @@ const PlayerNode = React.memo(function PlayerNode({
           <PlayerCharacterSprite
             classId={player.classId}
             color={highlight ? "#67e8f9" : player.color}
-            size={proportional && compact ? 32 : compact ? 62 : 86}
+            size={proportional && compact ? 64 : compact ? 62 : 86}
             highlight={highlight}
-            inspectFrame={quiet ? (player.defeated ? 5 : 0) : undefined}
+            inspectFrame={quiet ? (player.defeated && !player.timedOut ? 5 : 0) : undefined}
             pose={pose}
             clock={clock}
           />
@@ -3368,13 +3383,13 @@ const PlayerNode = React.memo(function PlayerNode({
             {player.name}
           </Typography>}
           {proportional && !quiet && density !== "minimal" && <AttackProgressBar sessionId={sessionId} actor={player.code} progress={player.attackProgress} label={`${player.name} attack progress`} compact={compact} dense={density === "compact"} />}
-          <StatBar
+          {!teamMode && <StatBar
             value={player.hp}
             max={player.maxHp}
             color={playerHealthColor(player.hp,player.maxHp,player.defeated)}
             height={density === "compact" ? 3 : compact ? 6 : 8}
-          />
-          {!compact && density === "normal" && (
+          />}
+          {!teamMode && !compact && density === "normal" && (
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {combatNumber(player.hp)}/{combatNumber(player.maxHp)}
             </Typography>
@@ -3417,6 +3432,7 @@ export default function TypingBossApp() {
     <ThemeProvider theme={bossTheme}>
       <CssBaseline />
       <Routes>
+        {BattleLayoutPreview && <Route path="layout-preview" element={<React.Suspense fallback={null}><BattleLayoutPreview/></React.Suspense>}/>}
         {KrakenPreview && <Route path="kraken-preview" element={<React.Suspense fallback={<LoadingPanel label="Loading Kraken..." />}><KrakenPreview/></React.Suspense>}/>}
         {AnimationPreview && <Route path="animations" element={<React.Suspense fallback={<LoadingPanel label="Loading animations..." />}><AnimationPreview /></React.Suspense>} />}
         <Route index element={<CreateGamePage />} />

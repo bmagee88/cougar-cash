@@ -1,4 +1,4 @@
-.kraken-arena,.kraken-arena img,.kraken-arena-foreground{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;image-rendering:pixelated;user-select:none}
+.kraken-arena,.kraken-arena img,.kraken-arena-foreground{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none;image-rendering:pixelated;user-select:none}
 .kraken-arena{z-index:0;background:#061322}.kraken-arena-foreground{z-index:4}
 .kraken-sprite{position:relative;isolation:isolate;transform-origin:50% 90%}
 .kraken-sprite>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;image-rendering:pixelated;pointer-events:none}

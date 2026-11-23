@@ -11,7 +11,7 @@ function harness(t) {
   const player = { code: 'hero1', name: 'Hero', hp: 1000, maxHp: 1000, typing: createTypingState(1), totalDamage: 0, bossHitsTaken: 0, turnsTaken: 0 };
   const room = { mode: 'proportional', status: 'active', players: new Map([[player.code, player]]),
     boss: { id: 'infernalDragon', name: 'Dragon', hp: 10000, maxHp: 10000 }, typingHost: createTypingState(2, 'dragon'), projectiles: [] };
-  const callbacks = { random: () => .4, broadcast: () => {}, schedule: (_session, run, delay) => jobs.push({ run, at: now + delay }) };
+  const callbacks = { random: () => .3, broadcast: () => {}, schedule: (_session, run, delay) => jobs.push({ run, at: now + delay }) };
   function advance(ms) {
     const until = now + ms;
     while (jobs.some(job => job.at <= until)) {

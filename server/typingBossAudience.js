@@ -8,7 +8,7 @@ function overviewFor(snapshot) {
   // Word cursors, last-seen stamps and typing streaks are not team activity.
   const signature=JSON.stringify({boss:{hp:boss.hp,maxHp:boss.maxHp,profile:boss.profile,
     attackProgress:boss.attackProgress,attackCharacters:boss.attackCharacters},
-    players:players.map(p=>[p.code,p.name,p.classId,p.hp,p.maxHp,p.defeated,p.totalDamage,p.totalTaken,p.totalHealing,p.totalResurrections,p.proneUntil,p.curseUntil,p.promoted])});
+    players:players.map(p=>[p.code,p.name,p.classId,p.hp,p.maxHp,p.defeated,p.totalDamage,p.totalTaken,p.totalHealing,p.totalResurrections,p.proneUntil,p.curseUntil,p.promoted,p.secondWindWordsRemaining,p.protectedUntil,p.timedOut])});
   return {boss,players,signature,roster:players.map(p=>p.code).join(':')};
 }
 

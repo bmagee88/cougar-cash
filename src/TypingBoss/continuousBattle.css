@@ -60,11 +60,13 @@
 .boss-golden-shield { position: absolute; width: 104px; transform: translate(-50%, -55%); pointer-events: none; z-index: 9; filter: drop-shadow(0 0 10px #60a5fa); animation: boss-golden-shield 900ms ease-out both; }
 @keyframes boss-golden-shield { 0% { opacity: 0; transform: translate(-50%, -55%) scale(.45); } 24% { opacity: 1; transform: translate(-50%, -55%) scale(1.15); } 55% { opacity: .95; transform: translate(-50%, -55%) scale(1); } 100% { opacity: 0; transform: translate(-50%, -65%) scale(1.08); } }
 @media (prefers-reduced-motion: reduce) { .boss-golden-shield { display: none; } }
-.battle-live-page { height:100dvh; min-height:0 !important; overflow:hidden; padding:8px 0 !important; }
+.battle-live-page { position:fixed; inset:0; z-index:100; box-sizing:border-box; height:100dvh; min-height:0 !important; overflow:hidden; padding:6px 0 !important; --portrait-zoom:1; }
 .battle-live-page > .MuiContainer-root { height:100%; min-height:0; display:flex; flex-direction:column; gap:8px; }
 .battle-live-page .battle-session-stack, .battle-live-page .player-battle-stack { flex:1; min-height:0; gap:8px; }
 .battle-live-page .battle-session-stack > *, .battle-live-page .player-battle-stack > * { margin-top:0 !important; }
-.battle-live-page .battle-scene { flex:1; min-height:0; }
+.battle-live-page .battle-scene { position:relative; flex:1 1 0; min-height:0; background:#121824; }
+.battle-scene:has(.battle-world) { position:relative; min-height:240px; aspect-ratio:1672/941; }
+.battle-live-page .battle-scene:has(.battle-world) { min-height:0; aspect-ratio:auto; }
 .battle-live-page .battlefield-shell { height:100% !important; min-height:0 !important; }
 .battle-live-page .battle-menu { flex:none; position:relative; z-index:30; margin:0; }
 .battle-live-page .battle-menu > .MuiAccordion-heading .MuiAccordionSummary-root { min-height:40px; }
@@ -79,15 +81,48 @@
 .battle-live-page .personal-typing-stage { flex:none; min-width:0; }
 .battle-live-page .battle-boss-hud > .MuiTypography-root { font-size:12px; }
 .battle-live-page .battle-boss-hud > .MuiTypography-root:first-child { font-size:clamp(12px,2vw,22px); }
-@media (max-height:650px) {
-  .battle-live-page .typing-portrait { zoom:.65; }
-  .battle-live-page .typing-input-deck { grid-template-columns:93px minmax(0,1fr); }
-  .battle-live-page .typing-input-deck-dual { grid-template-columns:93px minmax(0,1fr) 93px; }
-  .battle-live-page .typing-input-deck-dual .typing-word-input { grid-row:auto; grid-column:auto; }
-  .battle-live-page .typing-input-deck-dual .typing-dragon-portrait { grid-row:auto; grid-column:auto; }
-}
-@media (max-width:600px) {
-  .battle-live-page .typing-input-deck-dual { grid-template-columns:minmax(0,1fr) minmax(0,1fr); }
+
+/* The live screen has one height budget: compact controls, flexible camera,
+   and a non-scrolling typing dock. All actors are scaled by the camera only. */
+.battle-live-page > .MuiContainer-root { gap:6px; padding-inline:clamp(6px,1.5vw,24px); }
+.battle-live-page .battle-session-stack,.battle-live-page .player-battle-stack { gap:6px; min-width:0; overflow:hidden; }
+.battle-live-page .battle-menu > .MuiAccordion-heading .MuiAccordionSummary-root { min-height:30px; }
+.battle-live-page .battle-menu .MuiAccordionSummary-content { margin:4px 0; }
+.battle-live-page .battle-menu .MuiAccordionSummary-content p { font-size:12px; }
+.battle-live-page .battle-status { flex:none; display:grid; grid-template-columns:auto minmax(120px,1fr); align-items:center; gap:8px; }
+.battle-live-page .battle-status > * { margin:0!important; }
+.battle-live-page .battle-status > .MuiStack-root { gap:4px; }
+.battle-live-page .battle-status .MuiChip-root { height:22px; font-size:11px; }
+.battle-live-page .battle-status > .MuiBox-root { padding:5px 8px; }
+.battle-live-page .battle-status .MuiTypography-root { font-size:11px; line-height:1.2; }
+.battle-live-page .battle-status .MuiLinearProgress-root { height:6px; margin-top:3px; }
+.battle-live-page .continuous-typing { padding:6px; }
+.battle-live-page .continuous-typing > .MuiStack-root:first-child { flex-wrap:nowrap!important; overflow-x:auto; scrollbar-width:none; }
+.battle-live-page .continuous-typing .MuiChip-root { height:20px; font-size:10px; flex-shrink:0; }
+.battle-live-page .continuous-typing .typing-team-cue { position:absolute; left:8px; right:8px; bottom:100%; }
+.battle-live-page .typing-input-deck { grid-template-columns:calc(142px * var(--portrait-zoom)) minmax(0,1fr); gap:6px!important; margin-top:6px!important; }
+.battle-live-page .typing-input-deck-dual { grid-template-columns:calc(142px * var(--portrait-zoom)) minmax(0,1fr) calc(142px * var(--portrait-zoom)); }
+.battle-live-page .typing-portrait { zoom:var(--portrait-zoom); }
+.battle-live-page .typing-input-deck .typing-word-input { grid-row:1; grid-column:2; padding:6px; }
+.battle-live-page .typing-input-deck .typing-portrait { grid-row:1; grid-column:1; }
+.battle-live-page .typing-input-deck-dual .typing-dragon-portrait { grid-row:1; grid-column:3; }
+.battle-live-page .typing-word-window { font-size:clamp(18px,2.5vw,32px); margin-block:4px; }
+.battle-world .battle-boss-hud > .MuiTypography-root { font-size:18px!important; }
+.battle-world .battle-boss-hud > .MuiTypography-root:first-child { font-size:26px!important; }
+.battle-live-page .continuous-typing > details { font-size:11px; margin-top:4px; }
+.battle-live-page .player-battle-stack { position:relative; }
+.battle-live-page .player-battle-stack > .MuiAlert-root { position:absolute; top:4px; left:4px; right:4px; z-index:22; padding:0 8px; pointer-events:none; }
+.battle-live-page .player-battle-stack > .MuiChip-root { position:absolute; top:4px; left:4px; z-index:21; height:20px; font-size:10px; }
+@media (max-height:850px) { .battle-live-page { --portrait-zoom:.85; } }
+@media (max-height:650px) { .battle-live-page { --portrait-zoom:.7; } }
+@media (max-width:600px) { .battle-live-page { --portrait-zoom:.6; } .battle-live-page .battle-status { grid-template-columns:minmax(0,1fr) minmax(110px,.7fr); } .battle-live-page .battle-status .MuiChip-root { height:18px; font-size:10px; } }
+@media (max-height:460px) { .battle-live-page { --portrait-zoom:.5; } }
+@media (max-height:500px) and (min-width:650px) {
+  .battle-live-page .player-battle-stack { display:grid; grid-template-columns:1.25fr 1fr; grid-template-rows:minmax(0,1fr); }
+  .battle-live-page .player-battle-stack > .battle-scene { grid-column:1; grid-row:1; height:100%; }
+  .battle-live-page .personal-typing-stage { grid-column:2; grid-row:1; align-self:center; }
+  .battle-live-page .typing-input-deck-dual { grid-template-columns:1fr 1fr; }
+  .battle-live-page .typing-input-deck-dual .typing-portrait { grid-column:1; justify-self:center; }
+  .battle-live-page .typing-input-deck-dual .typing-dragon-portrait { grid-column:2; }
   .battle-live-page .typing-input-deck-dual .typing-word-input { grid-column:1 / -1; grid-row:2; }
-  .battle-live-page .typing-input-deck-dual .typing-dragon-portrait { grid-column:2; grid-row:1; }
 }

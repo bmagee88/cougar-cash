@@ -38,7 +38,7 @@ export function ProjectileMotion({ projectile, from, to, art, serverOffset, labe
     return () => clearTimeout(timer);
   }, [nextWake]);
 
-  const dodged = projectile.evadeType === "dodge" || projectile.evadeType === "prone";
+  const dodged = projectile.evadeType === "dodge" || projectile.evadeType === "prone" || projectile.evadeType === 'secondWind';
   const { color, label } = combatFeedback(projectile);
   const amount = projectile.amount || 0;
   const crit = projectile.critical && amount > 0 && !["miss", "evade"].includes(projectile.result);

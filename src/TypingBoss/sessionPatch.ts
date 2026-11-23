@@ -6,6 +6,7 @@ export type SessionPatch = Partial<Omit<TypingBossSessionSnapshot, "players" | "
   typing?: Partial<TypingBossTypingState>;
   projectiles?: (Partial<TypingBossProjectile> & { id: string })[];
   removeProjectiles?: string[];
+  removePlayers?: string[];
 };
 
 export function acceptSessionSnapshot(previous: TypingBossSessionSnapshot | null, incoming: TypingBossSessionSnapshot) {
@@ -18,7 +19,7 @@ export function acceptSessionSnapshot(previous: TypingBossSessionSnapshot | null
 
 export function applySessionPatch(session: TypingBossSessionSnapshot, patch: SessionPatch): TypingBossSessionSnapshot {
   if (patch.revision !== undefined && patch.revision < (session.revision || 0)) return session;
-  const { players, projectiles, removeProjectiles, boss, typing, ...rest } = patch;
+  const { players, projectiles, removeProjectiles, removePlayers, boss, typing, ...rest } = patch;
   let nextPlayers = session.players;
   if (players) {
     const changes = new Map(players.map(player => [player.code, player]));
@@ -26,6 +27,7 @@ export function applySessionPatch(session: TypingBossSessionSnapshot, patch: Ses
     const known = new Set(session.players.map(player => player.code));
     nextPlayers.push(...players.filter(player => !known.has(player.code)) as TypingBossPlayer[]);
   }
+  if(removePlayers?.length)nextPlayers=nextPlayers.filter(player=>!removePlayers.includes(player.code));
   let nextProjectiles = session.projectiles;
   if (projectiles || removeProjectiles) {
     const changes = new Map((projectiles || []).map(item => [item.id, item]));

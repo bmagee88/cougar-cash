@@ -10,6 +10,7 @@ export const isSupport = (projectile: TypingBossProjectile) => ["heal", "resurre
 export function combatFeedback(projectile: TypingBossProjectile) {
   const amount = combatNumber(projectile.amount || 0);
   const blocked = projectile.blockedAmount || 0;
+  if(projectile.evadeType==='secondWind')return {color:COMBAT_COLORS.dodge,label:'SECOND WIND · PROTECTED'};
   if(projectile.evadeType==='prone')return {color:COMBAT_COLORS.dodge,label:"PRONE · NO DAMAGE"};
   if (projectile.evadeType === "dodge" || projectile.result === "evade") return { color: COMBAT_COLORS.dodge, label: "DODGED!" };
   if (projectile.result === "miss") return { color: COMBAT_COLORS.miss, label: "MISS" };

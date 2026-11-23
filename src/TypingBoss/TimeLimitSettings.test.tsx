@@ -8,6 +8,14 @@ declare const test:any, expect:any, jest:any, afterEach:any;
 const originalFetch=global.fetch;
 afterEach(() => {jest.useRealTimers();global.fetch=originalFetch;});
 
+test.each([undefined,false])('Team mode is enabled by default and sends an explicit opt-out: %s',async(teamMode:boolean|undefined)=>{
+  const selected=teamMode!==false;
+  const fetch=jest.fn(async()=>({ok:true,headers:{get:()=> 'application/json'},text:async()=>JSON.stringify({session:{mode:'proportional',balanced:false,teamMode:selected}})}));
+  global.fetch=fetch as any;
+  await startTypingBossSession('bossABC','host',1,undefined,undefined,false,true,teamMode);
+  expect(JSON.parse(fetch.mock.calls[0][1].body).teamMode).toBe(selected);
+});
+
 test.each([undefined,null,180,270,420])('starting a battle sends the chosen time limit: %s',async(duration:number|null|undefined)=>{
   const fetch=jest.fn(async()=>({ok:true,headers:{get:()=> 'application/json'},text:async()=>JSON.stringify({session:{balanced:false,timeLimitSeconds:duration===undefined?300:duration}})}));
   global.fetch=fetch as any;

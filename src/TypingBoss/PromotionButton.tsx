@@ -1,10 +1,11 @@
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import {Alert,Box,Button,Dialog,DialogActions,DialogContent,DialogTitle,TextField,Typography} from '@mui/material';
 import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
 import {promoteTypingBossPlayer} from './api';
 import {saveDevicePromotion} from './promotion';
 export default function PromotionButton({sessionId,playerToken,promoted,disabled=false}:{sessionId:string;playerToken:string;promoted?:boolean;disabled?:boolean}) {
   const [open,setOpen]=useState(false),[password,setPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[confirmed,setConfirmed]=useState(false);
+  useEffect(()=>{if(promoted!==undefined)setConfirmed(promoted);},[promoted]);
   const close=()=>{if(busy)return;setOpen(false);setPassword('');setError('');};
   const done=promoted || confirmed;
   return <><Button startIcon={<WorkspacePremiumIcon/>} disabled={disabled || done} onClick={()=>setOpen(true)} sx={{color:done?'#facc15':undefined}}>{done?'Promoted · 2× damage':'Promote character'}</Button>

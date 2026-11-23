@@ -81,7 +81,7 @@ export default function CombatCharacter({classId,color,size=62,highlight=false,p
   const delay=useMemo(()=>poseId && poseAt!==undefined && spriteState!=="idle" ? Math.max(0,Date.now()+clock.current-poseAt):0,[poseId,poseAt,spriteState,clock]);
   const isIdle=spriteState==="idle",held=spriteState==="defeated";
   const config=idle[classId];
-  const scale=isIdle && ["paladin","cleric","barbarian"].includes(classId)?1:1.12;
+  const scale=isIdle && ["paladin","cleric","barbarian","rogue"].includes(classId)?1:1.12;
   // Whole-pixel cells prevent a fractional background offset exposing the adjacent frame.
   const frameWidth=Math.round(isIdle?size*config.aspect*scale:size*scale*combatAtlasCellWidth(classId)/96);
   const baseHeight=Math.round(size*scale);

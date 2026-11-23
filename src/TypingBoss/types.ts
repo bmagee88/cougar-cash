@@ -140,6 +140,10 @@ export type TypingBossProjectileKind =
 export type TypingBossProjectileResult = "pending" | "hit" | "miss" | "evade";
 
 export interface TypingBossPlayer {
+  timedOut?: boolean;
+  lastTypingAt?: number | null;
+  secondWindWordsRemaining?: number;
+  protectedUntil?: number | null;
   promoted?:boolean;
   proneUntil?:number|null;
   curseUntil?:number|null;
@@ -219,7 +223,7 @@ export interface TypingBossProjectile {
   resolvedAt: number | null;
   result: TypingBossProjectileResult;
   amount: number | null;
-  evadeType?: "regular" | "special" | "dodge" | "prone" | null;
+  evadeType?: "regular" | "special" | "dodge" | "prone" | "secondWind" | null;
   multiplier?: number;
   sourceName?: string;
   targetName?: string;
@@ -243,7 +247,8 @@ export interface TypingBossSessionSnapshot {
   timedResult?: {bossHpPercent: number; teamHpPercent: number} | null;
   clericHealingPool?: number;
   necroHealingPool?: number;
-  autoRevive?: boolean;
+  teamMode?: boolean;
+  teamHealth?: {hp: number; maxHp: number} | null;
   clericHealingAllowance?: number;
   balanced?: boolean;
   balancedRandomColors?: boolean;

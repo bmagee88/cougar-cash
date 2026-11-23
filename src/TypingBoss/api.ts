@@ -214,16 +214,23 @@ export function verifyTypingBossParticipant(sessionId: string, playerToken: stri
   );
 }
 
-export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true, autoRevive = true, timeLimitSeconds: number | null = 300) {
+export function submitTypingBossActivity(sessionId:string,credentials:TypingBossCredentials) {
+  return apiFetch(`/api/typing-boss/sessions/${sessionId}/activity`,{method:'POST',json:credentialsBody(credentials)});
+}
+
+export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true, teamMode = true, timeLimitSeconds: number | null = 300) {
   const response = await apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors, autoRevive, timeLimitSeconds },
+      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors, teamMode, timeLimitSeconds },
     }
   );
   if (Boolean(response.session.balanced) !== balanced) {
     throw new Error("The backend did not apply Balanced mode. Deploy the matching Typing Boss backend and create a fresh room.");
+  }
+  if(response.session.mode==='proportional' && response.session.teamMode!==teamMode) {
+    throw new Error('The backend did not apply Team mode. Restart or deploy the matching Typing Boss backend.');
   }
   if (balanced && Boolean(response.session.balancedRandomColors) !== balancedRandomColors) {
     throw new Error("The backend did not apply Random colors. Restart or deploy the matching Typing Boss backend and create a fresh room.");
@@ -287,6 +294,9 @@ export function submitTypingBossAction(
 
 export function promoteTypingBossPlayer(sessionId:string,playerToken:string,password:string) {
   return apiFetch<{promotionToken:string;session:TypingBossSessionResponse['session']}>(`/api/typing-boss/sessions/${sessionId}/promote`,{method:'POST',json:{playerToken,password},timeoutMs:30000});
+}
+export function setTypingBossPlayerPromotion(sessionId:string,hostToken:string,playerCode:string,promoted:boolean) {
+  return apiFetch<TypingBossSessionResponse>(`/api/typing-boss/sessions/${sessionId}/player-promotion`,{method:'POST',json:{hostToken,playerCode,promoted}});
 }
 export function changeTypingBoss(sessionId:string,hostToken:string,bossId:TypingBossId) {
   return apiFetch<TypingBossSessionResponse>(`/api/typing-boss/sessions/${sessionId}/boss`,{method:'POST',json:{hostToken,bossId}});

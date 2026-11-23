@@ -15,6 +15,7 @@ import { TypingBossBoss } from "./types";
 import "./typingPortrait.css";
 
 export type TypingPortraitProps = {
+  teamMode?: boolean;
   player: TypingBossPlayer;
   events: readonly CombatAnimationEvent[];
   serverNow?: number;
@@ -97,7 +98,7 @@ export function DragonPortrait({ boss, events, serverNow, anchorRef, state, lett
   </div>;
 }
 
-export default function TypingPortrait({ player, events, serverNow, anchorRef, state, letters }: TypingPortraitProps & {
+export default function TypingPortrait({ player, events, serverNow, anchorRef, state, letters, teamMode }: TypingPortraitProps & {
   state: TypingBossTypingState; letters: number;
 }) {
   const clock = useCombatClock(serverNow);
@@ -121,7 +122,7 @@ export default function TypingPortrait({ player, events, serverNow, anchorRef, s
     <div className="portrait-dodge" data-testid="portrait-dodge" style={{ opacity: Math.sqrt(defense.dodge) }}
       title="Active Dodge" aria-hidden="true" />
     <div className={`portrait-character${player.promoted?" promoted-character":""}`}><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} /></div>
-    {player.defeated && player.recoverAt && <div className="portrait-recovery"><span>Recovering</span><RecoveryBar player={player} clock={clock} profile/></div>}
+    {(player.secondWindWordsRemaining || 0)>0 && <div className="portrait-recovery"><span>Second Wind</span><RecoveryBar player={player} clock={clock} profile/></div>}
     <div className="portrait-shield" data-testid="portrait-shield" style={{ opacity: Math.sqrt(defense.shield) }}
       title="Active Block" aria-hidden="true" />
     <div key={pulse} className={`portrait-attack${pulse ? " portrait-attack-pulse" : ""}`} data-testid="portrait-attack"
@@ -136,6 +137,6 @@ export default function TypingPortrait({ player, events, serverNow, anchorRef, s
     {player.promoted && <span className="portrait-promotion" aria-label="Promoted hero">★</span>}
     <KrakenStatus player={player} serverNow={serverNow}/>
     <span className="portrait-name" title={player.name}>{player.name}</span>
-    <PortraitHealth hp={player.hp} maxHp={player.maxHp} name={player.name}/>
+    {!teamMode && <PortraitHealth hp={player.hp} maxHp={player.maxHp} name={player.name}/>}
   </div>;
 }
