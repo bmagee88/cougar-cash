@@ -1,5 +1,32 @@
 const {test}=require('node:test'),assert=require('node:assert/strict'),crypto=require('node:crypto');
 const promotion=require('./typingBossPromotion'),engine=require('./proportionalBoss'),r=require('../src/TypingBoss/proportionalRules');
+
+test('signed grants remember all tiers and reject a forged change to their level',()=>{
+  const secret=crypto.randomBytes(24).toString('hex');
+  for(const level of [0,1,2]) {
+    const grant=promotion.issuePromotionToken(secret,level);
+    assert.equal(promotion.promotionLevelFromToken(grant,secret),level);
+    assert.equal(promotion.verifyPromotionToken(grant,secret),true);
+    assert.equal(promotion.promotionLevelFromToken(grant,secret+'changed'),null);
+    if(level!==1)assert.equal(promotion.promotionLevelFromToken(grant.replace(`v2.${level}.`,`v2.${level===2?1:2}.`),secret),null);
+  }
+});
+
+test('double promotion uses normal damage and one boss HP share; switching tiers preserves balance',()=>{
+  const {s,p,jobs,cb}=room();s.status='active';
+  const attack={power:20,base:10,multiplier:2,criticalPower:5,orangePower:5,moveId:'weak',balanced:true};
+  engine.launchAttack(s,p,attack,cb);jobs.shift()();
+  promotion.setPlayerPromotion(s,p,1);engine.launchAttack(s,p,attack,cb);jobs.shift()();
+  promotion.setPlayerPromotion(s,p,2);const before=s.boss.hp;
+  assert.equal(p.promoted,false);assert.equal(p.promotionLevel,2);assert.equal(p.typing.promotionLevel,2);
+  assert.equal(promotion.bossContributions(s),3);assert.equal(s.boss.maxHp,300);
+  engine.launchAttack(s,p,attack,cb);jobs.shift()();assert.equal(before-s.boss.hp,20);
+  assert.deepEqual(s.projectiles.map(shot=>shot.amount),[20,40,20]);
+  const hp=s.boss.hp;promotion.setPlayerPromotion(s,p,0);assert.equal(s.boss.hp,hp);assert.equal(s.boss.maxHp,300);
+  promotion.setPlayerPromotion(s,p,2);assert.equal(s.boss.hp,hp);assert.equal(s.boss.maxHp,300);
+  assert.equal(promotion.setPlayerPromotion(s,p,2),false);
+  for(const invalid of [-1,3,1.5,'2',null])assert.throws(()=>promotion.setPlayerPromotion(s,p,invalid),/Choose/);
+});
 function room(){
   const players=new Map(Array.from({length:3},(_,i)=>[String(i),{code:String(i),name:`Hero ${i}`,classId:'barbarian',promoted:false,hp:100,maxHp:100,totalDamage:0,totalHealing:0,turnsTaken:0,typing:r.createTypingState(1,'barbarian')}]));
   const s={mode:'proportional',status:'setup',players,boss:{id:'infernalDragon',hp:300,maxHp:300},typingHost:r.createTypingState(1,'dragon'),projectiles:[]};

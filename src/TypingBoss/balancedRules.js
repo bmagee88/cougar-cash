@@ -8,7 +8,7 @@ const triggerField = color => color === 'gold' ? 'balancedSpecialAt' : color ===
 function balancedTrigger(state) {
   if (state.balancedRandomColors) return null;
   const earliest=Object.keys(TRIGGER_INTERVALS).sort((a,b)=>(state[triggerField(a)] ?? TRIGGER_INTERVALS[a])-(state[triggerField(b)] ?? TRIGGER_INTERVALS[b]))[0];
-  if((state.balancedAttacksWithoutTrigger || 0)>=2 && state.wordsInAttack===0)return earliest;
+  if((state.balancedAttacksWithoutTrigger || 0)>=2 && state.wordsInAttack===(state.summonPrefix?.length || 0))return earliest;
   return Object.keys(TRIGGER_INTERVALS).filter(color => state.balancedCharacters >= (state[triggerField(color)] ?? TRIGGER_INTERVALS[color]))
     .sort((a,b) => (state[triggerField(a)] ?? TRIGGER_INTERVALS[a]) - (state[triggerField(b)] ?? TRIGGER_INTERVALS[b]))[0] || null;
 }
@@ -63,9 +63,9 @@ function recordBalancedWord(state, text, expected, gaps, correct, color, commit=
   const divisor=Math.max(1,state.combatDivisor || 1);
   const bankScale=color==='red'?.1:1/divisor;
   let balance=bank?(state[bank] || 0):0;
-  const opening = state.wordsInAttack === 0;
+  const opening = state.wordsInAttack === (state.summonPrefix?.length || 0);
   const missingFirst = gaps.length === text.length - 1;
-  const letterGaps = gaps.filter((_, i) => !(i === 0 && !missingFirst && !opening));
+  const letterGaps = gaps.filter((_, i) => !(i === 0 && !missingFirst && (!opening || (state.summonPrefix?.length || 0)>0)));
   const pace = [...state.balancedPace, ...letterGaps].slice(-21);
   const threshold = Math.max(300, 2 * median(pace) + 100);
   let earned = 0, characters = 0;

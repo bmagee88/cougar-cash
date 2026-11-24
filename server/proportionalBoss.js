@@ -1,4 +1,5 @@
 const {bossContributions,promotedAttack}=require('./typingBossPromotion');
+const {promotionLevel}=require('../src/TypingBoss/promotionRules');
 const {finishTimedBattle}=require('./typingBossLifecycle');
 const krakenCombat=require('./krakenCombat');
 const {KRAKEN_ANIMATIONS}=require('../src/TypingBoss/krakenAnimationRules');
@@ -8,6 +9,7 @@ const {changePlayerHealth,resetTeamHealth,activePlayers} = require('./typingBoss
 const {damageMultiplier,teamStartingHp,SECOND_WIND_DAMAGE} = require('../src/TypingBoss/battleRules');
 const { isDeepStrictEqual } = require('node:util');
 const integrity = require('./typingBossIntegrity');
+const {summonZombie,loseSummon,prepareSummonWords,livingSummons,weightedTargetIndex}=require('./typingBossSummons');
 const { requestDragonAttack, recordDragonHurt, clearDragonCombat } = require("./dragonCombat");
 const { DRAGON_FLAME, dragonAttackDuration } = require("../src/TypingBoss/dragonHurtRules");
 const { createTypingState, typingWord, attackWordLimit, requiresWordSpace, finishWord, releaseAttack, typingAttackProgress, wordsForGrades, effectiveDodgeChance, dodgeChance, proportionalPlayerPoint, initializeBalanced } = require("../src/TypingBoss/proportionalRules");
@@ -28,7 +30,7 @@ function chooseBossAttack(session, random, attack={}) {
   const kind = session.balanced ? order[step % order.length] : roll < .2 ? "bite" : roll < .4 ? "fireball" : roll < .9 ? "tailWhip" : "flamethrower";
   if (session.balanced) session.bossAttackIndex = step + 1;
   if (kind === "flamethrower" || !living.length) return { kind, targets: living.map(({ player }) => player) };
-  const anchor = living[session.balanced ? step % living.length : Math.floor(random() * living.length)];
+  const anchor = living[weightedTargetIndex(living.map(item=>item.player),random,session.balanced?step:undefined)];
   if (kind !== "tailWhip") return { kind, targets: [anchor.player] };
   const distance = ({ point }) => (point.x - anchor.point.x) ** 2 + (point.y - anchor.point.y) ** 2;
   const count = Math.max(1, Math.round(living.length * .3));
@@ -50,14 +52,7 @@ function resolveGoldSupport(session, actor, power, now, callbacks) {
       actor.totalHealing = (actor.totalHealing || 0) + amount;
       break;
     case "necromancer":
-      if(session.teamMode) {
-        target=roster.find(player=>player.hp<player.maxHp);
-        if(!target)return false;
-        kind='heal';moveLabel='Team Renewal';
-        amount=changePlayerHealth(session,target,power);
-        actor.totalHealing=(actor.totalHealing || 0)+amount;
-        break;
-      }
+      if(session.teamMode)return false;
       target = roster.find(player => player.hp <= 0);
       if (!target) return false;
       kind = "resurrect"; moveLabel = "Golden Revival";
@@ -100,6 +95,12 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
   const now = Date.now();
   const host = actor === session.typingHost;
   if(!host && (session.players.get(actor.code)!==actor || actor.timedOut))return false;
+  const summoned=attack.summonSlot!==undefined;
+  if(summoned && !livingSummons(actor).some(summon=>summon.slot===attack.summonSlot))return false;
+  if(!host && !summoned && session.teamMode && actor.classId==='necromancer' && attack.gold) {
+    summonZombie(actor,now);
+    attack={...attack,gold:0,moveId:'special',moveLabel:'Raise Zombie'};
+  }
   if(attack.balanced && !host && actor.typing.ability==='cleric') {
     session.clericHealingPool=(session.clericHealingPool || 0)+(attack.healingDeposit || 0);
     if(attack.gold && attack.power>0) {
@@ -120,11 +121,7 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
       return;
     }
   }
-  if (attack.balanced && !host && actor.typing.ability==='necromancer' && attack.gold) {
-    if(session.teamMode) {
-      const used=resolveGoldSupport(session,actor,attack.healingPower ?? attack.power,now,{schedule,broadcast});
-      if(used){broadcast(session);return;}
-    }
+  if (attack.balanced && !host && !session.teamMode && actor.typing.ability==='necromancer' && attack.gold) {
     const roster=activePlayers(session);
     const target=roster[Math.min(roster.length-1,Math.floor(random()*roster.length))];
     if(target && target.hp<=0) {
@@ -152,9 +149,9 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
       criticalPower: (attack.criticalPower || 0) + returned * (attack.criticalBonus || 0), supportUsed: used };
     attack.multiplier = attack.base ? attack.power / attack.base : 1;
   } else if (!attack.balanced && !host && attack.gold && attack.power > 0 && resolveGoldSupport(session, actor, attack.healingPower ?? attack.power, now, {schedule,broadcast})) return;
-  if(!host)attack=promotedAttack(actor,attack);
+  if(!host && !summoned)attack=promotedAttack(actor,attack);
   const ramp=damageMultiplier(session.countdownEndsAt,now);
-  const windScale=!host && actor.secondWindWordsRemaining>0 ? SECOND_WIND_DAMAGE : 1;
+  const windScale=!host && !summoned && actor.secondWindWordsRemaining>0 ? (session.teamMode ? .8 : SECOND_WIND_DAMAGE) : 1;
   const damageScale=ramp*windScale;
   attack={...attack,power:attack.power*damageScale,multiplier:attack.multiplier*damageScale,damageMultiplier:ramp,secondWindMultiplier:windScale};
   for(const key of ['earnedPower','orangePower','criticalPower'])if(typeof attack[key]==='number')attack[key]*=damageScale;
@@ -172,11 +169,12 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
   const share = attack.power / targets.length;
   const volley = targets.map(target => ({
     id: crypto.randomBytes(8).toString("hex"),
-    ...(actor.promoted && !host?{promoted:true}:{}),
+    ...(actor.promoted && !host && !summoned?{promoted:true}:{}),
+    ...(summoned?{summonSlot:attack.summonSlot}:{}),
     source: host ? "boss" : actor.code, sourceName: host ? session.boss.name : actor.name,
     target: host ? target.code : "boss", kind: host ? "boss" : "damage",
     bossId: session.boss.id, moveId: attack.moveId,
-    moveLabel: bossAttack ? BOSS_ATTACK_LABELS[bossAttack.kind] : actor.promoted?"Promoted strike":attack.multiplier >= 2 ? "Power attack" : "Quick attack",
+    moveLabel: bossAttack ? BOSS_ATTACK_LABELS[bossAttack.kind] : summoned?'Zombie strike':attack.moveLabel || (actor.promoted?"Promoted strike":attack.multiplier >= 2 ? "Power attack" : "Quick attack"),
     ...(bossAttack ? { bossAttack: bossAttack.kind } : {}),
     ...(attack.balanced ? { balanced: true } : {}),
     multiplier: round(attack.multiplier), startedAt: now + windup, impactAt: now + windup + travel,
@@ -184,6 +182,7 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
     resolvedAt: null, amount: share,
     willHit: true, ...(attack.critical ? { critical: true } : {}),
   }));
+  if(summoned)actor.summons=actor.summons.map(summon=>summon.slot===attack.summonSlot?{...summon,attackAt:now,attackId:volley[0].id}:summon);
   session.projectiles.push(...volley);
   schedule(session, () => {
     if (finishTimedBattle(session)) { broadcast(session); return; }
@@ -245,7 +244,8 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
       const actual = Math.min(target.hp, damage);
       if(host)changePlayerHealth(session,target,-actual);
       else target.hp = Math.max(0, target.hp - actual);
-      if (host && !session.teamMode && wasAlive && target.hp <= 0) knockedOut.push(target);
+      if(host && actual>0 && session.teamMode && target.classId==='necromancer')loseSummon(target);
+      if (host && wasAlive && target.hp <= 0) knockedOut.push(target);
       projectile.amount = actual;
       projectile.resolvedAt = Date.now();
       volleyDamage += actual;
@@ -255,7 +255,7 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
       if (!host) recordDragonHurt(session, projectile);
       defense.totalTaken += actual;
       if (!host) actor.totalDamage += actual;
-      if (!host && (!actor.strongestAttack || attack.power > actor.strongestAttack.power ||
+      if (!host && !summoned && (!actor.strongestAttack || attack.power > actor.strongestAttack.power ||
         (attack.power === actor.strongestAttack.power && actual > actor.strongestAttack.actualDamage))) {
         actor.strongestAttack = { ...attack, actualDamage: actual,
           blockedDamage: Math.max(0, attack.power - damage),
@@ -302,6 +302,7 @@ function submitWords(session, auth, records, callbacks) {
     if (!Number.isInteger(index) || index < 0) throw new Error("Invalid word index.");
     if(protectedTyping)integrity.checkRecord(session,state,record);
     if (index < state.nextWord) continue;
+    if(preview.summonWaiting)throw new Error('Wait for the next summon word roster before starting another attack.');
     const word = typingWord(preview);
     const finalWord = !requiresWordSpace(preview, typeof text === "string" ? text : "");
     const length = word.text.length + (finalWord ? 0 : 1);
@@ -346,6 +347,10 @@ function submitWords(session, auth, records, callbacks) {
   for (const [, text, count, sum, squares, transitionMs, gaps,proof] of fresh) {
     const before = abilityKeys.map(key => state[key] ?? 0);
     const result = finishWord(state, text, count, sum, squares, transitionMs === null ? undefined : transitionMs, gaps,proof?.mistakes || 0);
+    if(auth.role==='player' && result.summonSlot!==undefined && result.correct) {
+      launchAttack(session,actor,{summonSlot:result.summonSlot,base:result.base,power:result.base,multiplier:1,critical:false,moveId:'weak'},callbacks);
+      combatChanged=true;
+    }
     if (abilityKeys.some((key,index) => (state[key] ?? 0) !== before[index])) combatChanged = true;
     if(auth.role==='player' && state.balanced && state.ability==='cleric' && state.balancedHealingDeposit>0) {
       session.clericHealingPool=(session.clericHealingPool || 0)+state.balancedHealingDeposit;
@@ -363,12 +368,13 @@ function submitWords(session, auth, records, callbacks) {
       const attack = releaseAttack(state, callbacks.random);
       if (auth.role === "player") actor.turnsTaken += 1;
       launchAttack(session, actor, attack, callbacks);
+      if(auth.role==='player' && state.summonPrefix)prepareSummonWords(session,actor);
       (auth.role === "host" ? session.boss : actor).attackProgress = 0;
       if (auth.role === "host") session.boss.attackCharacters = 0;
     }
   }
   if (fresh.length) callbacks.broadcast(session, { progressOnly: !combatChanged });
-  return { nextWord: state.nextWord,...(protectedTyping ? {issuedWords:integrity.commit(session,state,fresh,budget),previewWords:integrity.previewWords(state)} : {}) };
+  return { nextWord: state.nextWord,...(state.summonPrefix?{summonPrefix:state.summonPrefix,summonWaiting:false}:{}),...(protectedTyping ? {issuedWords:integrity.commit(session,state,fresh,budget),previewWords:integrity.previewWords(state)} : {}) };
 }
 
 function updateProgress(session, auth, wordIndex, characters, broadcast) {
@@ -471,7 +477,7 @@ function addCountdownPlayer(session, player) {
 
 function setCombatDivisors(session) {
   session.typingHost.combatDivisor=1;
-  for(const player of session.players.values()){player.typing.combatDivisor=Math.max(1,session.players.size);player.typing.promoted=Boolean(player.promoted);}
+  for(const player of session.players.values()){player.typing.combatDivisor=Math.max(1,session.players.size);player.typing.promoted=Boolean(player.promoted);player.typing.promotionLevel=promotionLevel(player);prepareSummonWords(session,player);}
 }
 
 function applyHpMultiplier(session, multiplier = 1) {
@@ -505,6 +511,8 @@ function applyBalanced(session, value = false, randomColors = true) {
     state.balancedGuardMax = player ? player.maxHp : session.boss.maxHp;
     state.combatDivisor=player ? Math.max(1,session.players.size) : 1;
     state.promoted=Boolean(player?.promoted);
+    state.promotionLevel=promotionLevel(player);
+    if(player)prepareSummonWords(session,player);
   });
   session.bossAttackIndex = 0;
 }

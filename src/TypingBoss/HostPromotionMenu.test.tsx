@@ -5,19 +5,20 @@ import {setTypingBossPlayerPromotion} from './api';
 import {TypingBossSessionSnapshot} from './types';
 declare const test:any,expect:any,jest:any;
 jest.mock('./api');
-test('host modal lists all players and sends promotion and demotion toggles',async()=>{
+test('host modal lists all players and offers all three promotion tiers',async()=>{
   const session={id:'bossABC',status:'active',players:[{code:'a',name:'Alex',promoted:true},{code:'b',name:'Blair',promoted:false}]} as TypingBossSessionSnapshot;
   const updated={...session,players:session.players.map(player=>({...player,promoted:false}))};
   (setTypingBossPlayerPromotion as any).mockResolvedValue({session:updated});
   const onUpdate=jest.fn();
   const view=render(<HostPromotionMenu session={session} hostToken="host-secret" onUpdate={onUpdate}/>);
   fireEvent.click(screen.getByRole('button',{name:'Player promotions'}));
-  expect(screen.getByText('Promoted',{selector:'p'})).toBeTruthy();expect(screen.getByText('Not promoted')).toBeTruthy();
-  fireEvent.click(screen.getByRole('checkbox',{name:'Promote Alex'}));
+  expect((screen.getByRole('combobox',{name:'Promotion for Alex'}) as HTMLSelectElement).value).toBe('1');
+  expect(screen.getAllByRole('option',{name:'Double Promoted'})).toHaveLength(2);
+  fireEvent.change(screen.getByRole('combobox',{name:'Promotion for Alex'}),{target:{value:'0'}});
   await waitFor(()=>expect(onUpdate).toHaveBeenCalledWith(updated));
-  expect(setTypingBossPlayerPromotion).toHaveBeenCalledWith('bossABC','host-secret','a',false);
+  expect(setTypingBossPlayerPromotion).toHaveBeenCalledWith('bossABC','host-secret','a',0);
   view.rerender(<HostPromotionMenu session={updated} hostToken="host-secret" onUpdate={onUpdate}/>);
-  await waitFor(()=>expect((screen.getByRole('checkbox',{name:'Promote Blair'}) as HTMLInputElement).disabled).toBe(false));
-  fireEvent.click(screen.getByRole('checkbox',{name:'Promote Blair'}));
-  await waitFor(()=>expect(setTypingBossPlayerPromotion).toHaveBeenCalledWith('bossABC','host-secret','b',true));
+  await waitFor(()=>expect((screen.getByRole('combobox',{name:'Promotion for Blair'}) as HTMLSelectElement).disabled).toBe(false));
+  fireEvent.change(screen.getByRole('combobox',{name:'Promotion for Blair'}),{target:{value:'2'}});
+  await waitFor(()=>expect(setTypingBossPlayerPromotion).toHaveBeenCalledWith('bossABC','host-secret','b',2));
 });

@@ -33,7 +33,7 @@ export function collectCombatAnimations(projectiles: readonly TypingBossProjecti
       shot.kind === "resurrect" ? "reviveCast" : shot.kind === "buff" ? shot.moveId === "goldShield" ? "shieldCast" : "buffCast" :
       shot.bossAttack === "bite" || shot.bossAttack === "tentacleStrike" ? "bite" : shot.bossAttack === "tailWhip" || shot.bossAttack === "tentacleSweep" ? "tailWhip" : shot.bossAttack === "flamethrower" ? "flamethrower" :
       shot.moveId === "strong" ? "strongAttack" : "weakAttack";
-    add(shot.source,shot,cast,shot.animationStartedAt ?? shot.startedAt,"action");
+    if(shot.summonSlot===undefined)add(shot.source,shot,cast,shot.animationStartedAt ?? shot.startedAt,"action");
     if (!shot.resolvedAt || shot.result === "pending") continue;
     if (shot.result === "evade" || shot.result === "miss") {
       if (shot.kind === "damage" || shot.kind === "boss") add(shot.target,shot,"dodge",shot.resolvedAt,"reaction");

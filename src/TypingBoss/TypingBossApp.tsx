@@ -1,7 +1,7 @@
 import PromotionButton from './PromotionButton';
 import HostPromotionMenu from './HostPromotionMenu';
 import RetreatNotice from './RetreatNotice';
-import {promotionContributions} from './promotion';
+import {promotionContributions,promotionVisualClass} from './promotion';
 import {changeTypingBoss} from './api';
 import {KrakenScenery} from './KrakenVisuals';
 import BossHealthFill from './BossHealthFill';
@@ -10,6 +10,7 @@ import HostSetup from './HostSetup';
 import CharacterSelect from './CharacterSelect';
 import RecoveryBar from './RecoveryBar';
 import RecoveryNotice from './RecoveryNotice';
+import SummonParty from './SummonSprites';
 import WordFilterChips, { WordFilters, filteredWordCount } from "../typingProject/components/WordFilterChips";
 import { SENTIMENTS } from "../typingProject/resources/homeRowWordBank";
 import { initializeBalanced, proportionalPlayerPoint } from "./proportionalRules";
@@ -27,7 +28,7 @@ import {partyVictoryAt,playerVictoryPose} from './victoryAnimation';
 import useVictoryCelebration from './useVictoryCelebration';
 import useBossVictoryColor from './useBossVictoryColor';
 import useImpactShake from './useImpactShake';
-import DragonVictoryBlast, {dragonFinisherPose, partyFinisherPose, useDragonEnding} from './DragonBattleEnding';
+import DragonVictoryBlast, {dragonFinisherPose, partyDefeatPose, useDragonEnding} from './DragonBattleEnding';
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
@@ -927,7 +928,7 @@ function classIcon(classId: TypingBossClassId) {
   return <BoltIcon />;
 }
 
-function PlayerCharacterSprite(props: { classId: TypingBossClassId; color: string; size?: number; highlight?: boolean; pose?: CombatAnimation; clock?: React.MutableRefObject<number>; inspectFrame?:number }) {
+function PlayerCharacterSprite(props: { classId: TypingBossClassId; color: string; size?: number; highlight?: boolean; pose?: CombatAnimation; clock?: React.MutableRefObject<number>; inspectFrame?:number;kneeling?:boolean }) {
   return <CombatCharacter {...props} />;
 }
 
@@ -1217,7 +1218,7 @@ function HostSessionPage() {
           </Paper>}
           {session.mode === "proportional" && session.status === "setup" && <Paper variant="outlined" sx={{ p: 2.5 }}>
             <FormControlLabel label="Team mode" control={<Switch checked={teamMode} onChange={(_event,checked)=>setTeamMode(checked)} disabled={busy} inputProps={{'aria-label':'Team mode'}}/>}/>
-            <Typography variant="body2">{teamMode ? 'One shared team HP bar, equal to the boss’s starting HP. Both HP totals scale with the number of players: three players means ×3 HP for each side. Each hero deals normal damage divided by the number of players. No individual knockouts. The round ends when either side runs out of HP.' : 'Second Wind replaces knockouts: keep typing at 75% damage, complete three words to recover to 40% HP, then gain five seconds of protection.'}</Typography>
+            <Typography variant="body2">{teamMode ? 'One shared team HP bar, equal to the boss’s starting HP. Both HP totals scale with the number of players: three players means ×3 HP for each side. Each hero deals normal damage divided by the number of players. Each hero also has individual HP. Fallen heroes kneel and keep typing; three recovery words restore them to their feet. The round ends when either side runs out of HP.' : 'Second Wind replaces knockouts: keep typing at 75% damage, complete three words to recover to 40% HP, then gain five seconds of protection.'}</Typography>
             <Typography variant="body2">Both sides’ damage starts at ×1.00 and increases by ×0.01 every two battle seconds. Dragon moves: 50% Tail Whip, 40% Bite/Fireball combined, 10% all-player attack.</Typography>
             <FormControlLabel label="Balanced" control={<Switch checked={balanced} onChange={(_event, checked) => setBalanced(checked)} disabled={busy} inputProps={{ "aria-label": "Balanced" }} />} />
             {balanced && <FormControlLabel label="Random colors" control={<Switch checked={balancedRandomColors} onChange={(_event,checked)=>setBalancedRandomColors(checked)} disabled={busy} inputProps={{"aria-label":"Random colors"}}/>}/>}
@@ -1436,7 +1437,7 @@ function PlayerSessionPage() {
   return (
     <PageFrame wide battle={session.mode==='proportional' && session.status==='active'}>
       <BattleMenu status={session.status}><Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
-        {session.mode==='proportional' && <PromotionButton sessionId={normalizedSessionId} playerToken={playerToken} promoted={me.promoted} disabled={!['setup','active'].includes(session.status)}/>}</BattleMenu>
+        {session.mode==='proportional' && <PromotionButton sessionId={normalizedSessionId} playerToken={playerToken} promoted={me.promoted} promotionLevel={me.promotionLevel} disabled={!['setup','active'].includes(session.status)}/>}</BattleMenu>
       <ReconnectOverlay show={reconnecting} />
       <BattleStatus session={session} />
       {session.mode === "proportional" ? <Stack spacing={2} className="battle-session-stack">
@@ -3030,18 +3031,19 @@ export function PlayerTypingBattle({ session, me, code, playerToken, active }: {
   const layout = usePortraitProjectileLayout(rootRef, sceneRef, profileRef, positions, arena.hostBossPoint, me.code, dragonRef);
   const ownProjectiles = useMemo(()=>session.projectiles.filter(shot=>shot.source===me.code || shot.target===me.code),[session.projectiles,me.code]);
   const personalAnimations=useMemo(()=>collectCombatAnimations(ownProjectiles),[ownProjectiles]);
+  const ending=useDragonEnding(session);
   const events=personalAnimations.get(me.code) || NO_ANIMATION_EVENTS;
   const dragonEvents=personalAnimations.get('boss') || NO_ANIMATION_EVENTS;
   const personalBoss=useMemo(()=>({...session.boss,hurt:undefined,flameBreath:undefined,queuedStrongReactions:undefined,queuedAttacks:undefined}),[session.boss]);
   const personalPositions=useMemo(()=>layout ? new Map([[me.code,layout.positions.get(me.code)!]]) : new Map<string,Point>(),[layout,me.code]);
   return <Stack spacing={2} className="player-battle-stack">
     <InactivityWarning sessionId={session.id} player={me} active={session.status==='active'} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow}/>
-    <RecoveryNotice player={me} active={session.status==='active'} serverNow={session.serverNow}/>
-    {me.classId==='necromancer' && <Chip label={session.teamMode ? 'Gold special: heal the shared team HP bar' : `Revival healing bank ${combatNumber(session.necroHealingPool || 0)}`} />}
+    <RecoveryNotice teamMode={session.teamMode} player={me} active={session.status==='active'} serverNow={session.serverNow}/>
+    {me.classId==='necromancer' && <Chip label={session.teamMode ? `Zombies ${me.summons?.filter(summon=>summon.alive).length || 0} / 3 · Gold raises a summon` : `Revival healing bank ${combatNumber(session.necroHealingPool || 0)}`} />}
     <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} />
     <Box ref={rootRef} data-testid="personal-typing-stage" className="personal-typing-stage" sx={{ position: "relative" }}>
       <ContinuousTyping key={`${session.id}:${session.typing!.seed}:${session.typing!.balanced}`} sessionId={session.id} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow} healingPool={session.clericHealingPool} teamActivity={session.teamActivity} credentials={{ code, playerToken }} state={session.typing!} active={active}
-        profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef, teamMode:session.teamMode, victoryAt:partyVictoryAt(session) }}
+        profile={{ player: me, events, serverNow: session.serverNow, anchorRef: profileRef, teamMode:session.teamMode, victoryAt:partyVictoryAt(session), battleDefeatPose:partyDefeatPose(session,ending.now) }}
         dragonProfile={{ boss: personalBoss, events: dragonEvents, serverNow: session.serverNow, anchorRef: dragonRef }} />
     {layout && <Box data-testid="portrait-projectile-layer" sx={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 8 }}>
       <ProjectileLayer projectiles={ownProjectiles} positions={personalPositions} bossPoint={layout.bossPoint} players={session.players} serverNow={session.serverNow} personal />
@@ -3094,8 +3096,7 @@ export function BattleScene({ session, ownCode, sceneRef }: {
             key={player.code}
             player={player}
             victoryAt={partyVictoryAt(session)}
-            finisherAt={finisherAt}
-            finisherFinished={!ending.playing}
+            defeatPose={partyDefeatPose(session,ending.now)}
             teamMode={session.teamMode}
             quiet={quiet}
             point={positions.get(player.code) || { x: 50, y: 80 }}
@@ -3278,8 +3279,7 @@ function BossChargeBar({ session }: { session: TypingBossSessionSnapshot }) {
 
 const PlayerNode = React.memo(function PlayerNode({
   victoryAt,
-  finisherAt,
-  finisherFinished=false,
+  defeatPose,
   teamMode=false,
   player,
   point,
@@ -3293,8 +3293,7 @@ const PlayerNode = React.memo(function PlayerNode({
   density = "normal",
 }: {
   victoryAt?:number;
-  finisherAt?:number;
-  finisherFinished?:boolean;
+  defeatPose?:CombatAnimation;
   teamMode?: boolean;
   player: TypingBossPlayer;
   point: Point;
@@ -3308,13 +3307,13 @@ const PlayerNode = React.memo(function PlayerNode({
   density?: "normal" | "compact" | "minimal";
 }) {
   const victoryPose=playerVictoryPose(player,victoryAt);
-  const prone=!victoryPose && player.proneUntil && player.proneUntil>Date.now()+clock.current;
+  const prone=!victoryPose && !defeatPose && player.proneUntil && player.proneUntil>Date.now()+clock.current;
   const formation = proportional && compact;
   const width = formation ? "5.8%" : compact ? 132 : 170;
   const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
   const combatPose = useCombatAnimation(quiet || player.timedOut ? NO_ANIMATION_EVENTS : events, player.defeated && !player.timedOut, clock);
-  const pose = victoryPose || (finisherAt===undefined ? combatPose : partyFinisherPose(finisherAt, finisherFinished ? Infinity : Date.now()+clock.current));
+  const pose = defeatPose || victoryPose || combatPose;
   return (
     <Box
       sx={{
@@ -3326,14 +3325,14 @@ const PlayerNode = React.memo(function PlayerNode({
         zIndex: 5,
       }}
     >
-      <Stack className={finisherAt===undefined?undefined:'dragon-finishing-party'} direction="column" spacing={0.5} alignItems="center" sx={player.timedOut?{animation:'tb-retreat 900ms ease-in forwards','@keyframes tb-retreat':{'0%':{transform:'translateX(0)',opacity:1},'100%':{transform:'translateX(-1200px)',opacity:0,visibility:'hidden'}}}:undefined}>
+      <Stack className={defeatPose?'dragon-finishing-party':undefined} direction="column" spacing={0.5} alignItems="center" sx={player.timedOut?{animation:'tb-retreat 900ms ease-in forwards','@keyframes tb-retreat':{'0%':{transform:'translateX(0)',opacity:1},'100%':{transform:'translateX(-1200px)',opacity:0,visibility:'hidden'}}}:undefined}>
         <Stack
           direction="row"
           spacing={0.5}
           alignItems="center"
           justifyContent="center"
         >
-          <Box data-prone={Boolean(prone)} className={player.promoted?"promoted-character":""} sx={{ position: "relative", flexShrink: 0 }}>
+          <Box data-prone={Boolean(prone)} className={promotionVisualClass(player)} sx={{ position: "relative", flexShrink: 0 }}>
           <RecoveryBar player={player} clock={clock}/>
           {highlight && <Box role="img" aria-label="Your character" className="own-character-arrow">
             <svg width="24" height="30" viewBox="0 0 24 30" aria-hidden="true">
@@ -3342,7 +3341,9 @@ const PlayerNode = React.memo(function PlayerNode({
               <path d="M12 3 L21 3 L12 27 Z" fill="#16a34a" />
             </svg>
           </Box>}
+          {teamMode && <SummonParty summons={player.summons} clock={clock} defeatPose={defeatPose} victoryAt={victoryAt}/>}
           <PlayerCharacterSprite
+            kneeling={Boolean(teamMode && (player.secondWindWordsRemaining || 0)>0)}
             classId={player.classId}
             color={highlight ? "#67e8f9" : player.color}
             size={proportional && compact ? 64 : compact ? 62 : 86}
@@ -3407,7 +3408,7 @@ const PlayerNode = React.memo(function PlayerNode({
             )}
           </Stack>}
         </Stack>
-        {(proportional || density !== "minimal") && <Box sx={{ width: proportional ? "100%" : quiet && density === "compact" ? 32 : density === "compact" ? "65%" : "100%", minWidth:0, flexShrink: 0, textAlign: "center" }}>
+        {(proportional || density !== "minimal") && <Box sx={{ width: proportional ? "100%" : quiet && density === "compact" ? 32 : density === "compact" ? "65%" : "100%", minWidth:0, flexShrink: 0, textAlign: "center",pt:teamMode && player.summons?.length?3:0 }}>
           {(proportional || density === "normal") && <Typography
             sx={{
               fontWeight: 950,
@@ -3423,13 +3424,13 @@ const PlayerNode = React.memo(function PlayerNode({
             {player.name}
           </Typography>}
           {proportional && !quiet && density !== "minimal" && <AttackProgressBar sessionId={sessionId} actor={player.code} progress={player.attackProgress} label={`${player.name} attack progress`} compact={compact} dense={density === "compact"} />}
-          {!teamMode && <StatBar
+          <StatBar
             value={player.hp}
             max={player.maxHp}
             color={playerHealthColor(player.hp,player.maxHp,player.defeated)}
             height={density === "compact" ? 3 : compact ? 6 : 8}
-          />}
-          {!teamMode && !compact && density === "normal" && (
+          />
+          {!compact && density === "normal" && (
             <Typography variant="caption" sx={{ color: "text.secondary" }}>
               {combatNumber(player.hp)}/{combatNumber(player.maxHp)}
             </Typography>

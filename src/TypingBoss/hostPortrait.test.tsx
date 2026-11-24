@@ -8,6 +8,18 @@ declare const test:any,expect:any,jest:any,afterEach:any;
 afterEach(()=>jest.useRealTimers());
 const boss={id:"infernalDragon",name:"Dragon",hp:100,maxHp:100,glow:"red",hurt:null} as any;
 
+test.each(['paladin','cleric','barbarian','rogue','necromancer','monk'])('double-promoted %s has stronger visuals with normal offensive numbers',(classId:any)=>{
+  const state=initializeBalanced(createTypingState(123,classId));Object.assign(state,{promotionLevel:2,promoted:false,balancedPower:10,balancedOrangePower:5,balancedCritBonus:.12});
+  const player={code:'hero',name:'Hero',classId,color:'red',hp:100,maxHp:100,promotionLevel:2,promoted:false} as any;
+  render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero'}} state={state} active={false} profile={{player,events:[]}}/>);
+  expect(screen.getByLabelText('Attack power: 1,000')).toBeTruthy();
+  if(classId!=='cleric')expect(screen.getByLabelText('Power bonus: +500')).toBeTruthy();
+  else expect(screen.queryByLabelText(/Power bonus/)).toBeNull();
+  expect(screen.getByLabelText('Crit ready: +12%')).toBeTruthy();expect(screen.getByTestId('typing-portrait').className).toContain('typing-portrait-double-promoted');
+  expect(screen.getByLabelText('Double promoted hero')).toBeTruthy();expect(screen.getByText('Double Promoted · Normal damage')).toBeTruthy();
+  expect(document.querySelector('.portrait-character.double-promoted-character')).not.toBeNull();
+});
+
 test('promoted profiles show doubled offensive numbers and upgraded appearance without changing HP or crit percent',()=>{
   const state=initializeBalanced(createTypingState(123,'barbarian'));Object.assign(state,{promoted:true,balancedPower:10,balancedOrangePower:5,balancedCritBonus:.12});
   const player={code:'hero',name:'Hero',classId:'barbarian',color:'red',hp:100,maxHp:100,promoted:true} as any;

@@ -1,0 +1,9 @@
+PASS src/TypingBoss/hostPortrait.test.tsx (14.194 s)
+PASS src/TypingBoss/PromotionButton.test.tsx (11.073 s)
+PASS src/TypingBoss/HostPromotionMenu.test.tsx
+PASS src/TypingBoss/api.test.ts
+
+Test Suites: 4 passed, 4 total
+Tests:       28 passed, 28 total
+Snapshots:   0 total
+Time:        35.495 s

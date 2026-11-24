@@ -1,4 +1,5 @@
-const {issuePromotionToken,verifyPromotionToken,promotePlayer,setPlayerPromotion}=require('./typingBossPromotion');
+const {issuePromotionToken,promotionLevelFromToken,setPlayerPromotion}=require('./typingBossPromotion');
+const {promotionLevel:getPromotionLevel,validPromotionLevel}=require('../src/TypingBoss/promotionRules');
 const crypto = require("crypto");
 const https = require("https");
 const http = require("http");
@@ -1349,6 +1350,8 @@ function getTypingBossPlayerSnapshot(player) {
     monkSpecialCharge: player.monkSpecialCharge || 0,
     specialReady: typingBossSpecialReady(player),
     promoted:Boolean(player.promoted),
+    promotionLevel:getPromotionLevel(player),
+    ...(player.summons?{summons:player.summons}:{}),
     defeated: Boolean(player.timedOut) || (player.hp <= 0 && !(player.secondWindWordsRemaining>0) && !player.sharedHealth),
     timedOut: Boolean(player.timedOut),
     secondWindWordsRemaining: player.secondWindWordsRemaining || 0,
@@ -1385,6 +1388,7 @@ function getTypingBossProjectileSnapshot(projectile) {
     moveId: projectile.moveId || null,
     bossId: projectile.bossId || null,
     ...(projectile.promoted?{promoted:true}:{}),
+    ...(projectile.summonSlot!==undefined?{summonSlot:projectile.summonSlot}:{}),
     moveLabel: projectile.moveLabel,
     ...(["heal", "resurrect", "buff"].includes(projectile.kind) ? { targetName: projectile.targetName } : {}),
     ...(projectile.bossAttack ? { bossAttack: projectile.bossAttack } : {}),
@@ -2073,10 +2077,12 @@ async function handleCreateTypingBossParticipant(req, res, session) {
 
   const heroClass = TYPING_BOSS_CLASSES[classId] || TYPING_BOSS_CLASSES.cleric;
   const credential = issuePlayerToken();
+  const promotionLevel=session.mode==='proportional'?(promotionLevelFromToken(body.promotionToken) ?? 0):0;
   const player = {
     code,
     tokenHash: credential.hash,
-    promoted:session.mode==='proportional' && verifyPromotionToken(body.promotionToken),
+    promoted:promotionLevel===1,
+    promotionLevel,
     name: normalizeTypingBossPlayerName(body.name, heroClass.label),
     classId,
     hp: session.mode === "proportional" ? 100 : heroClass.maxHp || TYPING_BOSS_PLAYER_MAX_HP,
@@ -2101,7 +2107,7 @@ async function handleCreateTypingBossParticipant(req, res, session) {
     monkSpecialCharge: 0,
   };
 
-  if(player.typing)player.typing.promoted=Boolean(player.promoted);
+  if(player.typing){player.typing.promoted=Boolean(player.promoted);player.typing.promotionLevel=promotionLevel;}
   session.players.set(code, player);
   if (session.mode === 'proportional' && session.status === 'setup' && session.teamMode) proportionalBoss.applyHpMultiplier(session,session.hpMultiplier || 1);
   if (session.mode === "proportional" && countdownOpen) proportionalBoss.addCountdownPlayer(session, player);
@@ -2251,19 +2257,22 @@ async function handlePromoteTypingBossPlayer(req,res,session,url) {
   if(!auth || auth.role!=='player'){sendError(res,401,'A private player token is required.');return;}
   if(!requireTypingBossCreationPassword(res,body.password))return;
   if(session.mode!=='proportional' || !['setup','active'].includes(session.status)){sendError(res,409,'Promotion requires an open Host vs. Players battle.');return;}
+  const level=body.promotionLevel===undefined?1:body.promotionLevel;
+  if(!validPromotionLevel(level)){sendError(res,400,'Choose Normal, Promoted or Double Promoted.');return;}
   const player=session.players.get(auth.actorCode);
-  promotePlayer(session,player);broadcastTypingBossSession(session);
-  sendJson(res,200,{promotionToken:issuePromotionToken(),session:getTypingBossSnapshotForAuth(session,auth)});
+  setPlayerPromotion(session,player,level);broadcastTypingBossSession(session);
+  sendJson(res,200,{promotionToken:issuePromotionToken(undefined,level),session:getTypingBossSnapshotForAuth(session,auth)});
 }
 
 async function handleHostPlayerPromotion(req,res,session,url) {
   const body=await readJson(req),auth=authenticateTypingBoss(session,url,body);
   if(!requireTypingBossHost(res,session,auth))return;
   if(session.mode!=='proportional' || !['setup','active'].includes(session.status)){sendError(res,409,'Promotion requires an open Host vs. Players battle.');return;}
-  if(typeof body.promoted!=='boolean'){sendError(res,400,'Choose a promotion status.');return;}
+  const level=body.promotionLevel===undefined && typeof body.promoted==='boolean'?(body.promoted?1:0):body.promotionLevel;
+  if(!validPromotionLevel(level)){sendError(res,400,'Choose Normal, Promoted or Double Promoted.');return;}
   const player=session.players.get(body.playerCode);
   if(!player){sendError(res,404,'Player not found.');return;}
-  setPlayerPromotion(session,player,body.promoted);
+  setPlayerPromotion(session,player,level);
   broadcastTypingBossSession(session);
   sendJson(res,200,{session:getTypingBossSnapshotForAuth(session,auth)});
 }

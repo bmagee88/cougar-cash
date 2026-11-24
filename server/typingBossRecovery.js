@@ -15,7 +15,8 @@ function syncRecovery(session) {
   }
 }
 function knockOutMany(session, players) {
-  if (session.teamMode || session.status !== 'active') return;
+  if (session.status !== 'active') return;
+  if(session.teamMode && session.teamHealth?.hp<=0)return;
   for (const player of new Set(players)) {
     if (player.hp > 0 || player.secondWindWordsRemaining > 0) continue;
     session.teamKnockouts = (session.teamKnockouts || 0) + 1;
@@ -26,7 +27,7 @@ function knockOutMany(session, players) {
   }
 }
 function advanceSecondWind(session, player) {
-  if (session.teamMode || session.status !== 'active' || !(player.secondWindWordsRemaining > 0)) return false;
+  if (session.status !== 'active' || !(player.secondWindWordsRemaining > 0)) return false;
   player.secondWindWordsRemaining--;
   if (player.secondWindWordsRemaining === 0) {
     player.hp = player.maxHp * SECOND_WIND_HP;

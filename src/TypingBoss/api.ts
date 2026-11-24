@@ -1,4 +1,4 @@
-import {readDevicePromotion} from './promotion';
+import {readDevicePromotion,promotionLevel as getPromotionLevel} from './promotion';
 import {
   CreateTypingBossSessionResponse,
   TypingBossActionResponse,
@@ -7,6 +7,7 @@ import {
   TypingBossCredentials,
   TypingBossId,
   TypingBossMode,
+  TypingBossPromotionLevel,
   BattleNetworkMode,
   TypingBossWordResult,
   TypingBossParticipantResponse,
@@ -164,7 +165,7 @@ export async function createTypingBossSession(name: string, bossId: TypingBossId
 }
 
 export function submitTypingBossWords(sessionId: string, credentials: TypingBossCredentials, words: TypingBossWordResult[]) {
-  return apiFetch<{ nextWord: number;issuedWords?:TypingBossIssuedWord[];previewWords?:Omit<TypingBossIssuedWord,'ticket'>[] }>(`/api/typing-boss/sessions/${sessionId}/words`, {
+  return apiFetch<{ nextWord: number;summonPrefix?:number[];summonWaiting?:boolean;issuedWords?:TypingBossIssuedWord[];previewWords?:Omit<TypingBossIssuedWord,'ticket'>[] }>(`/api/typing-boss/sessions/${sessionId}/words`, {
     method: "POST", json: { ...credentialsBody(credentials), words },
   });
 }
@@ -296,11 +297,16 @@ export function submitTypingBossAction(
   );
 }
 
-export function promoteTypingBossPlayer(sessionId:string,playerToken:string,password:string) {
-  return apiFetch<{promotionToken:string;session:TypingBossSessionResponse['session']}>(`/api/typing-boss/sessions/${sessionId}/promote`,{method:'POST',json:{playerToken,password},timeoutMs:30000});
+export async function promoteTypingBossPlayer(sessionId:string,playerToken:string,password:string,promotionLevel:TypingBossPromotionLevel=1) {
+  const response=await apiFetch<{promotionToken:string;session:TypingBossSessionResponse['session']}>(`/api/typing-boss/sessions/${sessionId}/promote`,{method:'POST',json:{playerToken,password,promotionLevel},timeoutMs:30000});
+  if(getPromotionLevel(response.session.typing)!==promotionLevel)throw new Error('The backend did not apply this promotion tier. Restart or deploy the matching Typing Boss backend.');
+  return response;
 }
-export function setTypingBossPlayerPromotion(sessionId:string,hostToken:string,playerCode:string,promoted:boolean) {
-  return apiFetch<TypingBossSessionResponse>(`/api/typing-boss/sessions/${sessionId}/player-promotion`,{method:'POST',json:{hostToken,playerCode,promoted}});
+export async function setTypingBossPlayerPromotion(sessionId:string,hostToken:string,playerCode:string,promotion:TypingBossPromotionLevel|boolean) {
+  const promotionLevel=typeof promotion==='boolean'?(promotion?1:0):promotion;
+  const response=await apiFetch<TypingBossSessionResponse>(`/api/typing-boss/sessions/${sessionId}/player-promotion`,{method:'POST',json:{hostToken,playerCode,promotionLevel,promoted:promotionLevel===1}});
+  if(getPromotionLevel(response.session.players.find(player=>player.code===playerCode))!==promotionLevel)throw new Error('The backend did not apply this promotion tier. Restart or deploy the matching Typing Boss backend.');
+  return response;
 }
 export function changeTypingBoss(sessionId:string,hostToken:string,bossId:TypingBossId) {
   return apiFetch<TypingBossSessionResponse>(`/api/typing-boss/sessions/${sessionId}/boss`,{method:'POST',json:{hostToken,bossId}});

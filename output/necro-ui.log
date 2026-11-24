@@ -1,0 +1,47 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest --silent
+
+PASS src/TypingBoss/BattleScene.test.tsx (11.771 s)
+PASS src/TypingBoss/hostPortrait.test.tsx
+PASS src/TypingBoss/PromotionButton.test.tsx
+PASS src/TypingBoss/ContinuousBattle.test.tsx
+PASS src/TypingBoss/HostPromotionMenu.test.tsx
+PASS src/TypingBoss/HostSetup.test.tsx
+PASS src/TypingBoss/CharacterSelect.test.tsx
+PASS src/TypingBoss/KrakenVisuals.test.tsx
+PASS src/TypingBoss/RoomCreationGate.test.tsx
+PASS src/TypingBoss/BattleMenu.test.tsx
+PASS src/TypingBoss/BattleVictoryStats.test.tsx
+PASS src/TypingBoss/HostBattleLog.test.tsx
+PASS src/TypingBoss/BattleCountdown.test.tsx
+PASS src/TypingBoss/KrakenAnimation.test.tsx
+PASS src/TypingBoss/BattleLeaderboard.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/BattleStatus.test.tsx
+PASS src/TypingBoss/dragonHurt.test.tsx
+PASS src/TypingBoss/BattleMusic.test.tsx
+PASS src/TypingBoss/TimeLimitSettings.test.tsx
+PASS src/TypingBoss/InactivityWarning.test.tsx
+PASS src/TypingBoss/dragonFlame.test.tsx
+PASS src/TypingBoss/RetreatNotice.test.tsx
+PASS src/TypingBoss/RecoveryNotice.test.tsx
+PASS src/TypingBoss/TeamActivityCue.test.tsx
+PASS src/TypingBoss/api.test.ts
+PASS src/TypingBoss/combatAnimation.test.tsx
+PASS src/TypingBoss/BossAttackNameBar.test.tsx
+PASS src/TypingBoss/ImpactShake.test.tsx
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+PASS src/TypingBoss/victoryAnimation.test.tsx
+PASS src/TypingBoss/RecoveryBar.test.tsx
+PASS src/TypingBoss/joinNames.test.ts
+PASS src/TypingBoss/credentials.test.ts
+PASS src/TypingBoss/combatNumbers.test.ts
+PASS src/TypingBoss/typingFeedback.test.ts
+PASS src/TypingBoss/battleLayout.test.ts
+PASS src/TypingBoss/necroSummons.test.tsx
+
+Test Suites: 38 passed, 38 total
+Tests:       251 passed, 251 total
+Snapshots:   0 total
+Time:        54.947 s, estimated 72 s

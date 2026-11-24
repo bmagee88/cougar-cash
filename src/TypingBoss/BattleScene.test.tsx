@@ -2,7 +2,7 @@ import React from "react";
 import { act, render, screen, within } from "@testing-library/react";
 import { BattleScene, PlayerTypingBattle } from "./TypingBossApp";
 import { TypingBossSessionSnapshot } from "./types";
-import { createTypingState } from "./proportionalRules";
+import { createTypingState,initializeBalanced } from "./proportionalRules";
 import {DamageBoard} from './ContinuousBattle';
 
 declare const test: any, expect: any, jest: any;
@@ -19,6 +19,41 @@ function room(count: number): TypingBossSessionSnapshot {
     })), projectiles: [],
   } as TypingBossSessionSnapshot;
 }
+
+test.each((['paladin','cleric','barbarian','rogue','necromancer','monk'] as const).flatMap(classId=>
+  (['infernalDragon','kraken'] as const).map(bossId=>[classId,bossId] as const)))('losing %s profile stays KO against %s even without an individual defeated flag',(classId:any,bossId:any)=>{
+  jest.useFakeTimers('modern');jest.setSystemTime(1000);
+  try {
+    const session=room(1),player=session.players[0];
+    Object.assign(session,{status:'defeat',closedAt:new Date(1000).toISOString(),endReason:'time-limit'});session.boss.id=bossId;
+    Object.assign(player,{classId,defeated:false,hp:100,proneUntil:16000,curseUntil:16000,secondWindWordsRemaining:3});
+    session.typing=initializeBalanced(createTypingState(123,classId));
+    Object.assign(session.typing,{gold:1,balancedCritBonus:.25,balancedGuard:50,balancedGuardMax:100,dodgeBank:50});
+    const view=render(<PlayerTypingBattle session={session} me={player} code={player.code} active={false}/>);
+    const profile=screen.getByTestId('typing-portrait');
+    expect(within(profile).getByTestId('combat-character').getAttribute('data-animation')).toBe(bossId==='kraken'?'defeated':'death');
+    expect(within(profile).getByRole('status',{name:'Hero 0 knocked out'}).textContent).toBe('KO');
+    expect(profile.className).toContain('typing-portrait-ko');expect(profile.className).not.toContain('typing-portrait-prone');
+    expect(profile.className).not.toContain('typing-portrait-charged');
+    expect(within(profile).queryByText('Second Wind')).toBeNull();expect(within(profile).queryByLabelText(/Ink Hex/)).toBeNull();
+    expect(screen.queryByText(/Typing resumes when you stand/)).toBeNull();
+    expect(within(profile).getByTestId('portrait-shield').style.opacity).toBe('0');expect(within(profile).getByTestId('portrait-dodge').style.opacity).toBe('0');
+    act(()=>jest.advanceTimersByTime(4210));
+    expect(within(profile).getByTestId('combat-character').getAttribute('data-animation')).toBe('defeated');
+    view.rerender(<PlayerTypingBattle session={{...session,revision:2,serverNow:5210}} me={player} code={player.code} active={false}/>);
+    expect(within(profile).getByTestId('combat-character').getAttribute('data-animation')).toBe('defeated');
+    expect(player.defeated).toBe(false);expect(player.hp).toBe(100);
+    view.rerender(<PlayerTypingBattle session={{...session,status:'setup',closedAt:null}} me={player} code={player.code} active={false}/>);
+    expect(within(profile).queryByLabelText('Hero 0 knocked out')).toBeNull();expect(profile.className).not.toContain('typing-portrait-ko');
+  } finally {jest.useRealTimers();}
+});
+
+test('a losing profile immediately holds KO when the result has no animation timestamp',()=>{
+  const session=room(1),player={...session.players[0],defeated:false};
+  session.status='defeat';session.closedAt=null;session.typing=createTypingState(123,'paladin');
+  render(<PlayerTypingBattle session={session} me={player} code={player.code} active={false}/>);
+  expect(within(screen.getByTestId('typing-portrait')).getByTestId('combat-character').getAttribute('data-animation')).toBe('defeated');
+});
 
 test.each(['infernalDragon','kraken'])('every surviving class celebrates a victory over %s on host and personal screens',(bossId:any)=>{
   const session=room(8),classes=['paladin','cleric','barbarian','rogue','necromancer','monk'] as const;

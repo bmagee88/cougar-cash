@@ -1,0 +1,132 @@
+TAP version 13
+# Subtest: device grants are signed, reject tampering and local booleans, and invalidate on password rotation
+ok 1 - device grants are signed, reject tampering and local booleans, and invalidate on password rotation
+  ---
+  duration_ms: 6.0641
+  type: 'test'
+  ...
+# Subtest: one promoted hero among three contributes four HP shares; promotion is idempotent and preserves damage
+ok 2 - one promoted hero among three contributes four HP shares; promotion is idempotent and preserves damage
+  ---
+  duration_ms: 1.7214
+  type: 'test'
+  ...
+# Subtest: promoted countdown joins contribute twice while the combat divisor stays the roster count
+ok 3 - promoted countdown joins contribute twice while the combat divisor stays the roster count
+  ---
+  duration_ms: 0.5825
+  type: 'test'
+  ...
+# Subtest: host can demote during combat, preserving boss HP percentage and restoring normal attacks
+ok 4 - host can demote during combat, preserving boss HP percentage and restoring normal attacks
+  ---
+  duration_ms: 0.7875
+  type: 'test'
+  ...
+# Subtest: promotion toggles do not change Team HP or an inactive player contribution
+ok 5 - promotion toggles do not change Team HP or an inactive player contribution
+  ---
+  duration_ms: 0.4357
+  type: 'test'
+  ...
+# Subtest: promotion doubles final offensive damage, including bonuses, and marks stronger impacts
+ok 6 - promotion doubles final offensive damage, including bonuses, and marks stronger impacts
+  ---
+  duration_ms: 5.588
+  type: 'test'
+  ...
+# Subtest: promotion does not double cleric healing or necromancer revival healing
+ok 7 - promotion does not double cleric healing or necromancer revival healing
+  ---
+  duration_ms: 1.4126
+  type: 'test'
+  ...
+# (node:18468) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: damage ramp starts after countdown and advances by .01 every two seconds
+ok 8 - damage ramp starts after countdown and advances by .01 every two seconds
+  ---
+  duration_ms: 6.7064
+  type: 'test'
+  ...
+# Subtest: team HP equals boss HP and twelve players collectively earn one full attack without double division
+ok 9 - team HP equals boss HP and twelve players collectively earn one full attack without double division
+  ---
+  duration_ms: 12.9558
+  type: 'test'
+  ...
+# Subtest: single, tail, and all-player volleys each remove their total damage once from the shared pool
+ok 10 - single, tail, and all-player volleys each remove their total damage once from the shared pool
+  ---
+  duration_ms: 10.9129
+  type: 'test'
+  ...
+# Subtest: shared damage respects individual target shields and shared healing never duplicates its amount
+ok 11 - shared damage respects individual target shields and shared healing never duplicates its amount
+  ---
+  duration_ms: 1.0644
+  type: 'test'
+  ...
+# Subtest: cleric and necromancer specials can heal a shared team bar without individual knockouts
+ok 12 - cleric and necromancer specials can heal a shared team bar without individual knockouts
+  ---
+  duration_ms: 1.7504
+  type: 'test'
+  ...
+# Subtest: both sides use the same ramp at attack launch and healing does not gain the ramp
+ok 13 - both sides use the same ramp at attack launch and healing does not gain the ramp
+  ---
+  duration_ms: 3.2125
+  type: 'test'
+  ...
+# Subtest: shared depletion ends the round, caps overkill, and never starts Second Wind
+ok 14 - shared depletion ends the round, caps overkill, and never starts Second Wind
+  ---
+  duration_ms: 1.1087
+  type: 'test'
+  ...
+# Subtest: Second Wind keeps solo and full parties active with no recovery timers
+ok 15 - Second Wind keeps solo and full parties active with no recovery timers
+  ---
+  duration_ms: 1.1615
+  type: 'test'
+  ...
+# Subtest: Second Wind counts accepted words once, skips invalid words, and grants 40% HP and protection
+ok 16 - Second Wind counts accepted words once, skips invalid words, and grants 40% HP and protection
+  ---
+  duration_ms: 2.3059
+  type: 'test'
+  ...
+# Subtest: Second Wind attacks retain 75% power and protection blocks already-launched hits
+ok 17 - Second Wind attacks retain 75% power and protection blocks already-launched hits
+  ---
+  duration_ms: 1.9317
+  type: 'test'
+  ...
+# Subtest: balanced dragon cycle prioritizes tail then single attacks then the all-player attack
+ok 18 - balanced dragon cycle prioritizes tail then single attacks then the all-player attack
+  ---
+  duration_ms: 7.1019
+  type: 'test'
+  ...
+# Subtest: Second Wind protection expires after five seconds and never prevents later damage
+ok 19 - Second Wind protection expires after five seconds and never prevents later damage
+  ---
+  duration_ms: 0.9653
+  type: 'test'
+  ...
+# Subtest: three-player Team mode applies the HP multiplier equally and counts promoted heroes once
+ok 20 - three-player Team mode applies the HP multiplier equally and counts promoted heroes once
+  ---
+  duration_ms: 0.209
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 284.8969

@@ -21,6 +21,7 @@ export interface DragonHurt { id: string; tier: DragonHurtTier; at: number; unti
 export interface DragonFlameBreath { krakenAttack?:'tidalWave'; id: string; at: number; until: number }
 export type TypingBossMode = "old" | "proportional";
 export type BattleNetworkMode = "lan" | "wan";
+export type TypingBossPromotionLevel=0|1|2;
 export interface TypingBossAttackStats {
   promotionMultiplier?:number;
   healingPower?: number;
@@ -64,6 +65,9 @@ export interface TypingBossLeaderboardEntry {
   strongestAttack: TypingBossAttackStats | null;
 }
 export interface TypingBossTypingState {
+  summonPrefix?:number[];
+  summonWaiting?:boolean;
+  promotionLevel?:TypingBossPromotionLevel;
   promoted?:boolean;
   combatDivisor?: number;
   krakenAttackIndex?: number;
@@ -130,7 +134,8 @@ export interface TypingBossTypingState {
   attackErrors?: number;
 }
 // index, typed word, interval count, sum, squared sum, optional Space-to-first-character gap.
-export type TypingBossIssuedWord = {index:number;text:string;color:'blue'|'orange'|'red'|'green'|'gold'|null;ticket:string;trigger?:boolean};
+export type TypingBossIssuedWord = {index:number;text:string;color:'blue'|'orange'|'red'|'green'|'gold'|null;ticket:string;trigger?:boolean;summonSlot?:number};
+export interface ZombieSummon {slot:number;alive:boolean;changedAt:number;event:'spawn'|'resurrection'|'death';attackAt?:number;attackId?:string}
 export type TypingBossWordResult = [number, string, number, number, number, (number | null)?, (number[] | null)?, {ticket:string;mistakes:number}?];
 export type TypingBossMoveId = "weak" | "strong" | "special" | "potion";
 export type TypingBossProjectileKind =
@@ -142,6 +147,8 @@ export type TypingBossProjectileKind =
 export type TypingBossProjectileResult = "pending" | "hit" | "miss" | "evade";
 
 export interface TypingBossPlayer {
+  summons?:ZombieSummon[];
+  promotionLevel?:TypingBossPromotionLevel;
   timedOut?: boolean;
   lastTypingAt?: number | null;
   secondWindWordsRemaining?: number;
@@ -207,6 +214,7 @@ export interface TypingBossBoss {
 }
 
 export interface TypingBossProjectile {
+  summonSlot?:number;
   promoted?:boolean;
   animationStartedAt?: number;
   balanced?: boolean;

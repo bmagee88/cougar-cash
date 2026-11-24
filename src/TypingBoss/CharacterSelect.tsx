@@ -13,7 +13,7 @@ const HEROES:{id:TypingBossClassId;name:string;role:string;color:string;tagline:
   {id:'barbarian',name:'Barbarian',role:'DAMAGE',color:'#ee9874',tagline:'Type two more words for more power.',description:'Type a gold word. Get two more words. Type them for more power.'},
   {id:'paladin',name:'Paladin',role:'DEFENSE',color:'#a8c7db',tagline:'Give a friend a shield.',description:'Type a gold word. Give a friend a shield. It can block a hit.'},
   {id:'rogue',name:'Rogue',role:'EVASION',color:'#c7aedc',tagline:'Get one more try to dodge a hit.',description:'Type a gold word. Get one more try to dodge a hit.'},
-  {id:'necromancer',name:'Necromancer',role:'REVIVAL',color:'#b6ceab',tagline:'You may wake a friend who is down.',description:'Type a gold word. You may wake a friend who is down.'},
+  {id:'necromancer',name:'Necromancer',role:'SUMMONER',color:'#b6ceab',tagline:'Raise zombies to fight at your side.',description:'In Team mode, gold raises a zombie. Type its green word to make it attack. In individual battles, gold can wake a fallen friend.'},
   {id:'monk',name:'Monk',role:'FOCUS',color:'#dfb68b',tagline:'Get more gold. Type fewer words.',description:'You get twice as many gold words. Your next hit needs fewer words.'},
 ];
 

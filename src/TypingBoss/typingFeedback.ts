@@ -5,6 +5,7 @@ import { TypingBossTypingState } from "./types";
 const clamp = (value: number) => Math.min(1, Math.max(0, value));
 
 export function chargedLetters(state: TypingBossTypingState, typed: string) {
+  if(typingWord(state).summonSlot!==undefined)typed='';
   if(state.balanced) {
     const word=typingWord(state);
     const correct=[...typed].filter((letter,index)=>letter===(word.text+' ')[index]).length;
@@ -28,6 +29,7 @@ export type WordReward = { id: number; word: string; label: string; color: strin
 
 export function wordReward(before: TypingBossTypingState, after: TypingBossTypingState, word: string, correct: boolean, color: string | null): WordReward {
   const base = { id: before.nextWord, word, correct };
+  if(typingWord(before).summonSlot!==undefined)return {...base,label:correct?'Zombie attacks!':'Summon word missed',color:'#71952c',bonus:false};
   if (!correct) return { ...base, label: "Entered · no bonus", color: "#94a3b8", bonus: false };
   if (color === "gold") return { ...base, label: "Special charged!", color: "#fde047", bonus: true };
   if (before.balanced) {

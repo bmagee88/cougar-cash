@@ -10,7 +10,8 @@ function control(state,now=Date.now()) {
 function issuedWords(session,state,now=Date.now()) {
   const data=control(state,now),start=state.nextWord-state.wordsInAttack;
   const words=[];
-  for(let index=start;index<state.nextWord+LOOKAHEAD;index++) {
+  const end=state.summonPrefix?Math.min(state.nextWord+LOOKAHEAD,start+attackWordLimit(state)):state.nextWord+LOOKAHEAD;
+  for(let index=start;index<end;index++) {
     let lease=data.leases.get(index);
     if(!lease) {
       lease={ticket:crypto.randomBytes(16).toString('hex'),issuedAt:now};
@@ -27,7 +28,7 @@ function publicTypingState(session,state) {
 }
 function previewWords(state) {
   const start=state.nextWord-state.wordsInAttack;
-  return Array.from({length:attackWordLimit(state)+Math.max(2,goldWordExtension(state))},(_,offset)=>({index:start+offset,...typingWord(state,start+offset)}));
+  return Array.from({length:attackWordLimit(state)+(state.summonPrefix?0:Math.max(2,goldWordExtension(state)))},(_,offset)=>({index:start+offset,...typingWord(state,start+offset)}));
 }
 const fingerprint=record=>crypto.createHash('sha256').update(JSON.stringify([...record.slice(0,7),{ticket:record[7]?.ticket,mistakes:record[7]?.mistakes}])).digest('hex');
 function checkRecord(session,state,record,now=Date.now()) {

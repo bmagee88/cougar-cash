@@ -1,6 +1,7 @@
 const crypto=require('node:crypto');
 const {KRAKEN_ANIMATIONS}=require('../src/TypingBoss/krakenAnimationRules');
 const KINDS=['tentacleStrike','tentacleSweep','tidalWave'];
+const {weightedTargetIndex}=require('./typingBossSummons');
 function plan(session,attack,random) {
   const living=[...session.players.values()].filter(p=>p.hp>0 && !p.timedOut);
   const step=attack.krakenAttackIndex ?? session.bossAttackIndex ?? 0;
@@ -9,8 +10,8 @@ function plan(session,attack,random) {
   const count=kind==='tentacleStrike'?1:Math.min(living.length,2+Math.min(6,Math.floor(random()*7)));
   // Rotating anchors in Balanced; shuffling the sweep avoids targeting roster prefixes.
   const pool=[...living],targets=[];
-  if(pool.length)targets.push(pool.splice(session.balanced?step%pool.length:Math.min(pool.length-1,Math.floor(random()*pool.length)),1)[0]);
-  while(targets.length<count && pool.length)targets.push(pool.splice(Math.min(pool.length-1,Math.floor(random()*pool.length)),1)[0]);
+  if(pool.length)targets.push(pool.splice(weightedTargetIndex(pool,random,session.balanced?step:undefined),1)[0]);
+  while(targets.length<count && pool.length)targets.push(pool.splice(weightedTargetIndex(pool,random),1)[0]);
   return {kind,targets};
 }
 function prone(session,player,{schedule,broadcast},now=Date.now()) {

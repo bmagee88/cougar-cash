@@ -1,0 +1,222 @@
+TAP version 13
+# (node:5368) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: abandoned rooms get a full disconnect grace period; authenticated activity and reconnects keep them alive
+ok 1 - abandoned rooms get a full disconnect grace period; authenticated activity and reconnects keep them alive
+  ---
+  duration_ms: 3.5224
+  type: 'test'
+  ...
+# Subtest: closed rooms shorten retention once; reads and repeated closes never extend it
+ok 2 - closed rooms shorten retention once; reads and repeated closes never extend it
+  ---
+  duration_ms: 1.1354
+  type: 'test'
+  ...
+# Subtest: Old Mode retains only the latest challenge per player and expires it at ten minutes
+ok 3 - Old Mode retains only the latest challenge per player and expires it at ten minutes
+  ---
+  duration_ms: 3.5254
+  type: 'test'
+  ...
+# Subtest: combat events drain without needing a subscriber or a snapshot request
+ok 4 - combat events drain without needing a subscriber or a snapshot request
+  ---
+  duration_ms: 0.4451
+  type: 'test'
+  ...
+# Subtest: removing a room releases connections, snapshots, state and every timer
+ok 5 - removing a room releases connections, snapshots, state and every timer
+  ---
+  duration_ms: 3.8898
+  type: 'test'
+  ...
+# Subtest: LAN/WAN music policy is validated, published to every role, locked at countdown, and retained for rematch
+ok 6 - LAN/WAN music policy is validated, published to every role, locked at countdown, and retained for rematch
+  ---
+  duration_ms: 1093.1299
+  type: 'test'
+  ...
+# Subtest: timed results compare combined team HP percentages, handle ties, and preserve earlier results
+ok 7 - timed results compare combined team HP percentages, handle ties, and preserve earlier results
+  ---
+  duration_ms: 1.5323
+  type: 'test'
+  ...
+# Subtest: time limits start after the countdown, publish results, and clear on rematch
+ok 8 - time limits start after the countdown, publish results, and clear on rematch
+  ---
+  duration_ms: 91.5454
+  type: 'test'
+  ...
+# Subtest: invalid durations cannot start a battle or change its setup
+ok 9 - invalid durations cannot start a battle or change its setup
+  ---
+  duration_ms: 11.2077
+  type: 'test'
+  ...
+# Subtest: Team mode defaults on, validates its toggle, and shares equal HP in host and player snapshots
+ok 10 - Team mode defaults on, validates its toggle, and shares equal HP in host and player snapshots
+  ---
+  duration_ms: 12.4822
+  type: 'test'
+  ...
+# Subtest: protected word submissions remain authenticated and playable during Second Wind
+ok 11 - protected word submissions remain authenticated and playable during Second Wind
+  ---
+  duration_ms: 17.2673
+  type: 'test'
+  ...
+# Subtest: the live room timer preserves timeout KOs, their HP, and their private connection for return
+ok 12 - the live room timer preserves timeout KOs, their HP, and their private connection for return
+  ---
+  duration_ms: 30.9948
+  type: 'test'
+  ...
+# Subtest: timed draws allow rematches and in-flight hits cannot change the final HP result
+ok 13 - timed draws allow rematches and in-flight hits cannot change the final HP result
+  ---
+  duration_ms: 18.7689
+  type: 'test'
+  ...
+# Subtest: classic quiz battles share the timer and HP-percentage result
+ok 14 - classic quiz battles share the timer and HP-percentage result
+  ---
+  duration_ms: 10.775
+  type: 'test'
+  ...
+# Subtest: all three bosses can be selected in either mode; proportional keeps its default
+ok 15 - all three bosses can be selected in either mode; proportional keeps its default
+  ---
+  duration_ms: 5.0206
+  type: 'test'
+  ...
+# Subtest: host alone can toggle any player promotion during gameplay
+ok 16 - host alone can toggle any player promotion during gameplay
+  ---
+  duration_ms: 14.2622
+  type: 'test'
+  ...
+# Subtest: promotion requires private credentials and the host password, persists with signed joins, and boss switching preserves promotion shares
+ok 17 - promotion requires private credentials and the host password, persists with signed joins, and boss switching preserves promotion shares
+  ---
+  duration_ms: 26.5357
+  type: 'test'
+  ...
+# Subtest: Kraken creates an eight-word host, keeps its identity on rematch, and publishes personal controls
+ok 18 - Kraken creates an eight-word host, keeps its identity on rematch, and publishes personal controls
+  ---
+  duration_ms: 9.0064
+  type: 'test'
+  ...
+# Subtest: Start publishes one five-second deadline, rejects early actions and prevents a repeated start
+ok 19 - Start publishes one five-second deadline, rejects early actions and prevents a repeated start
+  ---
+  duration_ms: 15.5736
+  type: 'test'
+  ...
+# Subtest: closing during countdown cancels the pending start callback
+ok 20 - closing during countdown cancels the pending start callback
+  ---
+  duration_ms: 6.4126
+  type: 'test'
+  ...
+# Subtest: server sweeps abandoned rooms and frees their registry entry after the expiry notice
+ok 21 - server sweeps abandoned rooms and frees their registry entry after the expiry notice
+  ---
+  duration_ms: 6.5869
+  type: 'test'
+  ...
+# Subtest: server keeps completed games available for rematches until the original two-hour deadline
+ok 22 - server keeps completed games available for rematches until the original two-hour deadline
+  ---
+  duration_ms: 6.6943
+  type: 'test'
+  ...
+# Subtest: Old Mode redirects a full-health heal target to a wounded survivor
+ok 23 - Old Mode redirects a full-health heal target to a wounded survivor
+  ---
+  duration_ms: 18.5508
+  type: 'test'
+  ...
+# Subtest: shared battle snapshots include allies and recipient names but keep typing state private
+ok 24 - shared battle snapshots include allies and recipient names but keep typing state private
+  ---
+  duration_ms: 5.2145
+  type: 'test'
+  ...
+# Subtest: word pool cache evicts the oldest of 32 combinations, keeps hot entries and preserves seeded content
+ok 25 - word pool cache evicts the oldest of 32 combinations, keeps hot entries and preserves seeded content
+  ---
+  duration_ms: 25.7737
+  type: 'test'
+  ...
+# Subtest: rematches reset combat and roster, preserve room credentials and hard deadline, and reject closed rooms
+ok 26 - rematches reset combat and roster, preserve room credentials and hard deadline, and reject closed rooms
+  ---
+  duration_ms: 9.8348
+  type: 'test'
+  ...
+# Subtest: players can join until the countdown deadline with matching rules and HP, without restarting the countdown
+ok 27 - players can join until the countdown deadline with matching rules and HP, without restarting the countdown
+  ---
+  duration_ms: 31.6298
+  type: 'test'
+  ...
+# Subtest: countdown joining still respects the 30-player limit and closed rooms
+ok 28 - countdown joining still respects the 30-player limit and closed rooms
+  ---
+  duration_ms: 9.62
+  type: 'test'
+  ...
+# Subtest: device grants are signed, reject tampering and local booleans, and invalidate on password rotation
+ok 29 - device grants are signed, reject tampering and local booleans, and invalidate on password rotation
+  ---
+  duration_ms: 6.692
+  type: 'test'
+  ...
+# Subtest: one promoted hero among three contributes four HP shares; promotion is idempotent and preserves damage
+ok 30 - one promoted hero among three contributes four HP shares; promotion is idempotent and preserves damage
+  ---
+  duration_ms: 1.9338
+  type: 'test'
+  ...
+# Subtest: promoted countdown joins contribute twice while the combat divisor stays the roster count
+ok 31 - promoted countdown joins contribute twice while the combat divisor stays the roster count
+  ---
+  duration_ms: 0.752
+  type: 'test'
+  ...
+# Subtest: host can demote during combat, preserving boss HP percentage and restoring normal attacks
+ok 32 - host can demote during combat, preserving boss HP percentage and restoring normal attacks
+  ---
+  duration_ms: 0.6985
+  type: 'test'
+  ...
+# Subtest: promotion toggles do not change Team HP or an inactive player contribution
+ok 33 - promotion toggles do not change Team HP or an inactive player contribution
+  ---
+  duration_ms: 0.5007
+  type: 'test'
+  ...
+# Subtest: promotion doubles final offensive damage, including bonuses, and marks stronger impacts
+ok 34 - promotion doubles final offensive damage, including bonuses, and marks stronger impacts
+  ---
+  duration_ms: 4.905
+  type: 'test'
+  ...
+# Subtest: promotion does not double cleric healing or necromancer revival healing
+ok 35 - promotion does not double cleric healing or necromancer revival healing
+  ---
+  duration_ms: 1.0896
+  type: 'test'
+  ...
+1..35
+# tests 35
+# suites 0
+# pass 35
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1763.8156

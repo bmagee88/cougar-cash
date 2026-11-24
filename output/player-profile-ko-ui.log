@@ -1,0 +1,10 @@
+PASS src/TypingBoss/BattleScene.test.tsx (15.28 s)
+PASS src/TypingBoss/ContinuousBattle.test.tsx (5.594 s)
+PASS src/TypingBoss/BattleVictoryStats.test.tsx
+PASS src/TypingBoss/hostPortrait.test.tsx
+PASS src/TypingBoss/KrakenVisuals.test.tsx
+
+Test Suites: 5 passed, 5 total
+Tests:       77 passed, 77 total
+Snapshots:   0 total
+Time:        28.769 s, estimated 31 s

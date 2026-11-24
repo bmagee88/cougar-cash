@@ -5,6 +5,7 @@ import { combatAtlasCellHeight, combatAtlasCellWidth, combatAtlasFilename, sprit
 import "./characterAnimation.css";
 import {VICTORY_MOTION} from './victoryAnimation';
 import './victoryAnimation.css';
+import {KneelingCharacter} from './SummonSprites';
 
 const ASSETS = `${(process.env.PUBLIC_URL || "").replace(/\/$/, "")}/assets/typing-boss`;
 const idle = {
@@ -64,8 +65,8 @@ export function CombatEffects({pose,clock}:{pose:CombatAnimation;clock:React.Mut
   </>;
 }
 
-export default function CombatCharacter({classId,color,size=62,highlight=false,pose,clock:providedClock,inspectFrame}:{
-  classId:TypingBossClassId;color:string;size?:number;highlight?:boolean;pose?:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;
+export default function CombatCharacter({classId,color,size=62,highlight=false,pose,clock:providedClock,inspectFrame,kneeling=false}:{
+  classId:TypingBossClassId;color:string;size?:number;highlight?:boolean;pose?:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;kneeling?:boolean;
 }) {
   const localClock=useRef(0),clock=providedClock || localClock;
   const state=pose?.state || "idle";
@@ -97,6 +98,7 @@ export default function CombatCharacter({classId,color,size=62,highlight=false,p
   const framePadding=Math.ceil(frameWidth/3);
   // Inspect "Dying" to scrub the fall; "Knocked out" always holds its down pose.
   const frozen=inspectFrame===undefined?undefined:held?5:Math.min(5,Math.max(0,Math.trunc(inspectFrame)));
+  if(kneeling && !['death','defeated','victory'].includes(state))return <KneelingCharacter classId={classId} size={size} pose={pose} clock={clock} inspectFrame={inspectFrame}/>;
   return <span data-testid="combat-character" data-character={classId} data-animation={state}
     data-action={pose?.action?.state} data-reaction={pose?.reaction?.state} data-sprite-state={spriteState}
     className={`combat-actor actor-pose-${state}${frozen===undefined?"":" combat-actor-inspecting"}`} aria-hidden="true"
