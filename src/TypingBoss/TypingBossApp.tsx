@@ -2725,7 +2725,7 @@ function HostCodeModal({
   );
 }
 
-function BattleOutcomeModal({
+export function BattleOutcomeModal({
   open,
   session,
   onClose,
@@ -2746,8 +2746,11 @@ function BattleOutcomeModal({
   const draw = session.status === 'draw';
   const ending = useDragonEnding(session);
   const celebrating = useVictoryCelebration(session);
+  useEffect(()=>{
+    if(open && session.status==='victory' && !celebrating)onStats();
+  },[open,session.status,celebrating,onStats]);
   return (
-    <Dialog open={open && !ending.playing && !celebrating} onClose={onClose} maxWidth={session.mode === "proportional" ? "md" : "sm"} fullWidth>
+    <Dialog open={open && session.status!=='victory' && !ending.playing && !celebrating} onClose={onClose} maxWidth={session.mode === "proportional" ? "md" : "sm"} fullWidth>
       <DialogTitle
         sx={{
           fontWeight: 950,
@@ -2797,7 +2800,7 @@ function StatTile({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function BattleStatsModal({
+export function BattleStatsModal({
   open,
   session,
   me,

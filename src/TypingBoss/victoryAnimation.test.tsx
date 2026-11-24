@@ -15,12 +15,13 @@ afterEach(()=>{window.Image=NativeImage;jest.useRealTimers();});
 function Results({session}:{session:TypingBossSessionSnapshot}) {
   return <div>{useVictoryCelebration(session)?'Celebrating':'Show results'}</div>;
 }
-test('results wait for the full celebration, without extending it on snapshots or reconnect',()=>{
+test('results wait exactly four seconds, without extending it on snapshots or reconnect',()=>{
   const session={status:'victory',closedAt:new Date(1000).toISOString()} as TypingBossSessionSnapshot;
   const view=render(<Results session={session}/>);
   expect(screen.getByText('Celebrating')).toBeTruthy();
   act(()=>jest.advanceTimersByTime(2000));view.rerender(<Results session={{...session,serverNow:3000}}/>);
-  act(()=>jest.advanceTimersByTime(VICTORY_CELEBRATION_MS-2000+10));
+  act(()=>jest.advanceTimersByTime(VICTORY_CELEBRATION_MS-2000-1));expect(screen.getByText('Celebrating')).toBeTruthy();
+  act(()=>jest.advanceTimersByTime(1));
   expect(screen.getByText('Show results')).toBeTruthy();
   view.unmount();render(<Results session={session}/>);expect(screen.getByText('Show results')).toBeTruthy();
 });
@@ -39,7 +40,7 @@ test('victory jumps retain their phase on snapshots and catch up after a late lo
   await waitFor(()=>expect(screen.getByTestId('combat-character').getAttribute('data-sprite-state')).toBe('victory'));
   const body=view.container.querySelector('.actor-body') as HTMLElement,frames=view.container.querySelector('.actor-frames') as HTMLElement;
   const delay=body.style.animationDelay;
-  expect(delay).toBe(`${-(Date.now()-pose.at)}ms`);expect(frames.style.animationIterationCount).toBe('3');
+  expect(delay).toBe(`${-(Date.now()-pose.at)}ms`);expect(frames.style.animationIterationCount).toBe('infinite');
   act(()=>jest.advanceTimersByTime(400));view.rerender(<CombatCharacter classId="rogue" color="#fff" pose={{...pose}}/>);
   expect(view.container.querySelector('.actor-body')).toBe(body);expect(body.style.animationDelay).toBe(delay);
   view.unmount();jest.setSystemTime(7000);

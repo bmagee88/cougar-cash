@@ -109,7 +109,7 @@ export default function CombatCharacter({classId,color,size=62,highlight=false,p
         ...frameStyle,width:frameWidth,height:frameHeight,left:framePadding,
         backgroundImage:`url("${isIdle?config.src:atlas}")`,backgroundSize:`600% ${isIdle?100:800}%`,
         backgroundPositionY:isIdle?"0%":`${row/7*100}%`,backgroundPositionX:frozen!==undefined?`${frozen/5*100}%`:held?"100%":"0%",
-        animationDuration:`${victory?motion.cycleMs:pose?.duration || 900}ms`,animationDelay:`-${delay}ms`,animationName:frozen===undefined?victory?'actor-victory-frames':undefined:"none",animationIterationCount:victory?3:undefined,
+        animationDuration:`${victory?motion.cycleMs:pose?.duration || 900}ms`,animationDelay:`-${delay}ms`,animationName:frozen===undefined?victory?'actor-victory-frames':undefined:"none",animationIterationCount:victory?'infinite':undefined,
         transform:frozen!==undefined?`translateX(${frameOffsets[frozen]}%)`:held?`translateX(${frameOffsets[5]}%)`:undefined,
       }} />
       </span>

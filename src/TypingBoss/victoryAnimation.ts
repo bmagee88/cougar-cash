@@ -1,7 +1,7 @@
 import {CombatAnimation} from './combatAnimation';
 import {TypingBossClassId,TypingBossPlayer,TypingBossSessionSnapshot} from './types';
 
-export const VICTORY_CELEBRATION_MS=4800;
+export const VICTORY_CELEBRATION_MS=4000;
 export const VICTORY_MOTION:Record<TypingBossClassId,{cycleMs:number;lift:number;lean:number;row:number}>={
   paladin:{cycleMs:1250,lift:34,lean:3,row:2},
   cleric:{cycleMs:1200,lift:48,lean:-4,row:2},

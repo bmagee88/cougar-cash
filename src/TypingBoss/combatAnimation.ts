@@ -8,7 +8,7 @@ export type CombatPose = "idle" | "weakAttack" | "strongAttack" | "healCast" | "
 export const POSE_MS: Record<CombatPose, number> = {
   idle:900, weakAttack:620, strongAttack:780, healCast:780, selfHeal:800, healed:700,
   shieldCast:780, shielded:700, buffCast:780, buffed:700, evasionReady:700, reviveCast:900, reviving:1100,
-  dodge:520, hit:460, block:520, death:950, defeated:0, bite:820, tailWhip:820, flamethrower:DRAGON_FLAME.duration, victory:4800,
+  dodge:520, hit:460, block:520, death:950, defeated:0, bite:820, tailWhip:820, flamethrower:DRAGON_FLAME.duration, victory:4000,
 };
 export const POSE_ROW: Record<CombatPose, number> = {
   idle:0, weakAttack:1, strongAttack:1, healCast:2, selfHeal:2, healed:3,

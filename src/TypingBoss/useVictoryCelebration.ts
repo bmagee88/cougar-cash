@@ -8,7 +8,13 @@ export default function useVictoryCelebration(session:TypingBossSessionSnapshot)
   const at=partyVictoryAt(session),deadline=at===undefined?undefined:at+VICTORY_CELEBRATION_MS;
   useEffect(()=>{
     if(deadline===undefined || deadline<=Date.now()+clock.current)return;
-    const timer=setTimeout(()=>redraw(value=>value+1),deadline-Date.now()-clock.current+8);
+    let timer:ReturnType<typeof setTimeout>;
+    const check=()=>{
+      const remaining=deadline-Date.now()-clock.current;
+      if(remaining>0)timer=setTimeout(check,remaining);
+      else redraw(value=>value+1);
+    };
+    timer=setTimeout(check,deadline-Date.now()-clock.current);
     return ()=>clearTimeout(timer);
   },[deadline,clock]);
   return deadline!==undefined && Date.now()+clock.current<deadline;

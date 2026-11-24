@@ -1,11 +1,11 @@
 .actor-body-victory {
-  animation:actor-victory-jump var(--victory-cycle) cubic-bezier(.25,.65,.35,1) 3 both;
+  animation:actor-victory-jump var(--victory-cycle) cubic-bezier(.25,.65,.35,1) infinite both;
 }
 .typing-portrait { --victory-travel-scale:.45; }
 .actor-victory-shadow {
   position:absolute; left:16%; bottom:-2%; width:68%; height:8%; border-radius:50%;
   background:#05070a88; filter:blur(1px); pointer-events:none;
-  animation:actor-victory-shadow var(--victory-cycle) ease-in-out 3 both;
+  animation:actor-victory-shadow var(--victory-cycle) ease-in-out infinite both;
 }
 @keyframes actor-victory-jump {
   0%,100% { transform:translateY(0) scale(1) rotate(0); }
