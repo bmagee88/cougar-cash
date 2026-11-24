@@ -1,0 +1,7 @@
+PASS src/TypingBoss/BattleScene.test.tsx (11.122 s)
+PASS src/TypingBoss/api.test.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       19 passed, 19 total
+Snapshots:   0 total
+Time:        14.696 s

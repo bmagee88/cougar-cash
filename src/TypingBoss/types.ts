@@ -20,6 +20,7 @@ export type DragonHurtTier = "basic" | "power" | "critical";
 export interface DragonHurt { id: string; tier: DragonHurtTier; at: number; until: number }
 export interface DragonFlameBreath { krakenAttack?:'tidalWave'; id: string; at: number; until: number }
 export type TypingBossMode = "old" | "proportional";
+export type BattleNetworkMode = "lan" | "wan";
 export interface TypingBossAttackStats {
   promotionMultiplier?:number;
   healingPower?: number;
@@ -239,6 +240,7 @@ export interface TypingBossLogEntry {
 }
 
 export interface TypingBossSessionSnapshot {
+  networkMode?: BattleNetworkMode;
   battleView?: 'personal' | 'full';
   teamActivity?: {damage:number;healing:number;revives:number};
   countdownEndsAt?: number | null;

@@ -13,6 +13,7 @@ import { previewBalancedWord } from "./balancedRules";
 import {useBattleCountdown} from "./BattleCountdown";
 import {useTypingActivity} from './InactivityWarning';
 import TeamActivityCue from './TeamActivityCue';
+import useImpactShake from './useImpactShake';
 
 const colors = { blue: "#7dd3fc", orange: "#fdba74", red: "#ff6b6b", green: "#86efac", gold: "#fde047" };
 const goldAbilityText = {
@@ -47,6 +48,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
   sessionId: string; credentials: TypingBossCredentials; state: TypingBossTypingState; active: boolean; profile?: TypingPortraitProps; dragonProfile?: DragonPortraitProps; hostProfile?: DragonPortraitProps; healingPool?:number; countdownEndsAt?:number|null; serverNow?:number;teamActivity?:TypingBossSessionSnapshot['teamActivity'];
 }) {
   const seconds=useBattleCountdown(countdownEndsAt,serverNow),proneSeconds=useBattleCountdown(profile?.player.proneUntil,serverNow),canType=active && !profile?.player.timedOut && seconds===0 && proneSeconds===0;
+  const shake = useImpactShake(hostProfile?.events || profile?.events, serverNow, Boolean(hostProfile));
   const model = useRef({ ...state });
   const queue = useRef<TypingBossWordResult[]>([]);
   const acknowledged = useRef(state.nextWord);
@@ -275,7 +277,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
     </Stack>
     {proneSeconds>0 && <Alert severity="info" role="status">Knocked prone · {proneSeconds}s. Typing resumes when you stand.</Alert>}
     {teamActivity && <TeamActivityCue activity={teamActivity} />}
-    <div className={profile || hostProfile ? `typing-input-deck${dragonProfile ? " typing-input-deck-dual" : ""}` : undefined}>
+    <div {...shake} className={`battle-impact-shake${profile || hostProfile ? ` typing-input-deck${dragonProfile ? " typing-input-deck-dual" : ""}` : ''}`}>
     {hostProfile && <DragonPortrait {...hostProfile} state={profileState} letters={(current.balanced ? live.balancedPower || 0 : chargedLetters(current,typed.current))*damageScale}/>}
     {profile && <TypingPortrait {...profile} state={profileState} letters={(current.balanced ? live.balancedPower || 0 : chargedLetters(current, typed.current))*damageScale} />}
     <Box className="typing-word-input" onClick={() => input.current?.focus()} sx={{ mt: 2, position: "relative", cursor: active ? "text" : "default", border: `2px solid ${focused ? "#7dd3fc" : "#344256"}`, borderRadius: 2, p: 2, bgcolor: "#0b1220" }}>

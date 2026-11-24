@@ -7,6 +7,7 @@ import {
   TypingBossCredentials,
   TypingBossId,
   TypingBossMode,
+  BattleNetworkMode,
   TypingBossWordResult,
   TypingBossParticipantResponse,
   TypingBossIssuedWord,
@@ -218,16 +219,19 @@ export function submitTypingBossActivity(sessionId:string,credentials:TypingBoss
   return apiFetch(`/api/typing-boss/sessions/${sessionId}/activity`,{method:'POST',json:credentialsBody(credentials)});
 }
 
-export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true, teamMode = true, timeLimitSeconds: number | null = 300) {
+export async function startTypingBossSession(sessionId: string, hostToken: string, hpMultiplier = 1, gradeLevels?: number[], sentiments?: string[], balanced = false, balancedRandomColors = true, teamMode = true, timeLimitSeconds: number | null = 300, networkMode: BattleNetworkMode = 'lan') {
   const response = await apiFetch<TypingBossSessionResponse>(
     `/api/typing-boss/sessions/${sessionId}/start`,
     {
       method: "POST",
-      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors, teamMode, timeLimitSeconds },
+      json: { hostToken, hpMultiplier, gradeLevels, sentiments, balanced, balancedRandomColors, teamMode, timeLimitSeconds, networkMode },
     }
   );
   if (Boolean(response.session.balanced) !== balanced) {
     throw new Error("The backend did not apply Balanced mode. Deploy the matching Typing Boss backend and create a fresh room.");
+  }
+  if ((response.session.networkMode || 'lan') !== networkMode) {
+    throw new Error('The backend did not apply WAN music. Restart or deploy the matching Typing Boss backend.');
   }
   if(response.session.mode==='proportional' && response.session.teamMode!==teamMode) {
     throw new Error('The backend did not apply Team mode. Restart or deploy the matching Typing Boss backend.');

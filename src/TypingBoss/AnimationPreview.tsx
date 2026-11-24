@@ -58,7 +58,7 @@ export default function AnimationPreview() {
     <Typography variant="h5" sx={{mt:3,mb:1,fontWeight:900}}>Dragon sprite sheets</Typography>
     <Typography sx={{color:"text.secondary",mb:1}}>Flame breath uses 20 drawn frames. Other attacks use six. Hurt uses 3 basic, 6 power, or 10 critical frames. Choose a sequence to replay all three dragons.</Typography>
     <Stack direction="row" gap={1} flexWrap="wrap" sx={{mb:2}}>
-      {([["idle", "Idle dragon"], ["bite", "Bite"], ["weakAttack", "Fireball"], ["tailWhip", "Tail whip"], ["flamethrower", "Flamethrower"]] as [CombatPose, string][]).map(([state, label]) =>
+      {([["idle", "Idle dragon"], ["bite", "Bite"], ["weakAttack", "Fireball"], ["tailWhip", "Tail whip"], ["flamethrower", "Flamethrower"], ["death","Forward collapse"], ["defeated","Collapsed dragon"]] as [CombatPose, string][]).map(([state, label]) =>
         <Button key={state} variant={!dragonSelection.hurtTier && dragonSelection.state === state ? "contained" : "outlined"} onClick={() => playDragon(state)}>{label}</Button>)}
       {(["basic", "power", "critical"] as DragonHurtTier[]).map(tier => <Button key={tier} variant={dragonSelection.hurtTier === tier ? "contained" : "outlined"}
         onClick={() => playDragon("hit", tier)}>{tier} hurt · {DRAGON_HURT[tier].frames} frames</Button>)}

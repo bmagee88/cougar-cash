@@ -13,11 +13,13 @@ async function call(path,body,status=200){
     try {
       game=await call('',{name:'Countdown test',mode,creationPassword},201);
       const id=game.sessionId,player=await call(`/${id}/participants`,{name:'TestFox',classId:'cleric'},201);
-      const started=(await call(`/${id}/start`,{hostToken:game.hostToken,balanced:true,balancedRandomColors:false})).session;
+      const networkMode=mode==='proportional'?'wan':'lan';
+      const started=(await call(`/${id}/start`,{hostToken:game.hostToken,balanced:true,balancedRandomColors:false,networkMode})).session;
       const deadline=started.countdownEndsAt;
       assert.ok(deadline-started.serverNow>4900 && deadline-started.serverNow<=5000);
       const client=(await call(`/${id}?playerToken=${player.playerToken}`)).session;
       assert.equal(client.countdownEndsAt,deadline);
+      assert.equal(started.networkMode,networkMode);assert.equal(client.networkMode,networkMode);
       await call(`/${id}/start`,{hostToken:game.hostToken},409);
       let words;
       if(mode==='proportional') {

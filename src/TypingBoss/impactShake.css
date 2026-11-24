@@ -1,0 +1,10 @@
+.battle-impact-shake { animation-duration:420ms; animation-timing-function:ease-out; animation-fill-mode:both; }
+@keyframes battle-impact-a {
+  0%,100% { transform:translate(0,0); } 12%,38% { transform:translate(calc(-1 * var(--impact-distance)),1px); }
+  25%,52% { transform:translate(var(--impact-distance),-1px); } 68% { transform:translate(calc(-.45 * var(--impact-distance)),0); } 84% { transform:translate(calc(.25 * var(--impact-distance)),0); }
+}
+@keyframes battle-impact-b {
+  0%,100% { transform:translate(0,0); } 12%,38% { transform:translate(calc(-1 * var(--impact-distance)),1px); }
+  25%,52% { transform:translate(var(--impact-distance),-1px); } 68% { transform:translate(calc(-.45 * var(--impact-distance)),0); } 84% { transform:translate(calc(.25 * var(--impact-distance)),0); }
+}
+@media (prefers-reduced-motion:reduce) { .battle-impact-shake { animation:none!important; } }

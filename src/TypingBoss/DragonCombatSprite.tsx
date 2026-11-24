@@ -8,6 +8,7 @@ import { TypingBossId } from "./types";
 import registration from "./dragonRegistration";
 import DragonHurtSprite from "./DragonHurtSprite";
 import DragonFlameSprite from "./DragonFlameSprite";
+import DragonCollapseSprite from './DragonCollapseSprite';
 import { DRAGON_HURT, DRAGON_FLAME } from "./dragonHurtRules";
 import "./dragonAnimation.css";
 
@@ -30,6 +31,10 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
   const [readyAtlas, setReadyAtlas] = useState("");
   const [readyHurt, setReadyHurt] = useState("");
   const [readyFlame, setReadyFlame] = useState("");
+  const [readyCollapse, setReadyCollapse] = useState('');
+  const collapseSrc = `${ASSETS}/dragons/forward-collapse.webp`;
+  const collapsing = pose.state === 'death' || pose.state === 'defeated';
+  const collapseReady = readyCollapse === collapseSrc;
   const config = DRAGONS[bossId];
   const src = `${ASSETS}/dragons/${config.atlas}-v2.webp`;
   const ready = readyAtlas === src;
@@ -41,9 +46,9 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
   const hurtSrc = `${ASSETS}/dragons/${config.atlas.replace("-attacks", "-hurt")}.webp`;
   const hurtReady = readyHurt === hurtSrc;
   const row = action && !isFlame ? DRAGON_ATTACK_ROWS[action.state]! : 0;
-  const animation = hurtTier ? pose : action;
+  const animation = collapsing ? pose : hurtTier ? pose : action;
   const actionId = animation?.id, actionAt = animation?.at, actionDuration = animation?.duration || 1;
-  const animationReady = isFlame ? flameReady : hurtTier ? hurtReady : ready;
+  const animationReady = collapsing ? collapseReady : isFlame ? flameReady : hurtTier ? hurtReady : ready;
   // Cache this delay for the event, so unrelated snapshots cannot restart the sheet.
   // Becoming ready catches up to the existing server timeline instead of replaying it.
   const delay = useMemo(() => !animationReady || !actionId || actionAt === undefined ? 0 : dragonSpriteDelay(actionAt, actionDuration, Date.now() + clock.current),
@@ -58,10 +63,10 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
   const attackFrozen=frozen===undefined?undefined:Math.min(5,frozen);
   const frozenPose=attackFrozen===undefined?undefined:frames[attackFrozen];
   return <Box data-testid="dragon-animation" data-animation={pose.state}
-    data-sprite-state={isFlame && flameReady ? "flamethrower" : hurtTier && hurtReady ? `hurt-${hurtTier}` : ready ? (isFlame ? "idle" : action?.state) || "idle" : "fallback"}
+    data-sprite-state={collapsing && collapseReady ? pose.state==='defeated'?'collapsed':'forward-collapse' : isFlame && flameReady ? "flamethrower" : hurtTier && hurtReady ? `hurt-${hurtTier}` : ready ? (isFlame ? "idle" : action?.state) || "idle" : "fallback"}
     data-hurt-tier={hurtTier}
     data-dragon={bossId} data-sprite-row={ready ? row : undefined}
-    className={`dragon-pose dragon-pose-${pose.state}${ready || flameReady?" dragon-sheet-ready":""}${animationReady && action ? " dragon-sheet-attacking" : ""}${frozen===undefined?"":" dragon-inspecting"}`}
+    className={`dragon-pose dragon-pose-${pose.state}${collapsing && collapseReady?' dragon-collapse-ready':''}${ready || flameReady?" dragon-sheet-ready":""}${animationReady && action ? " dragon-sheet-attacking" : ""}${frozen===undefined?"":" dragon-inspecting"}`}
     sx={{ width, aspectRatio: "1", flexShrink: 0 }}
     style={{ "--pose-ms": `${pose.duration || 900}ms` } as React.CSSProperties}>
     <img data-testid="dragon-atlas-preload" className="dragon-atlas-preload" src={src} alt="" aria-hidden="true"
@@ -70,7 +75,9 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
       onLoad={() => setReadyHurt(hurtSrc)} />
     <img data-testid="dragon-flame-preload" className="dragon-atlas-preload" src={flameSrc} alt="" aria-hidden="true"
       onLoad={() => setReadyFlame(flameSrc)} />
-    {isFlame && flameReady ? <DragonFlameSprite key={actionId} bossId={bossId} src={flameSrc} duration={actionDuration} delay={delay} inspectFrame={frozen} /> : hurtTier && hurtReady ? <DragonHurtSprite key={pose.id} bossId={bossId} tier={hurtTier} src={hurtSrc} duration={actionDuration} delay={delay} inspectFrame={frozen} /> : ready ? <span className="dragon-sprite-viewport"><span key={`${actionId || "idle"}:${row}`} className={`dragon-sprite-cell${action && !isFlame ? " dragon-sprite-playing" : ""}`}
+    <img data-testid="dragon-collapse-preload" className="dragon-atlas-preload" src={collapseSrc} alt="" aria-hidden="true" onLoad={()=>setReadyCollapse(collapseSrc)}/>
+    {collapsing && collapseReady && <DragonCollapseSprite key={pose.id} bossId={bossId} src={collapseSrc} duration={actionDuration} delay={delay} held={pose.state==='defeated'} inspectFrame={frozen}/>}
+    {!(collapsing && collapseReady) && (isFlame && flameReady ? <DragonFlameSprite key={actionId} bossId={bossId} src={flameSrc} duration={actionDuration} delay={delay} inspectFrame={frozen} /> : hurtTier && hurtReady ? <DragonHurtSprite key={pose.id} bossId={bossId} tier={hurtTier} src={hurtSrc} duration={actionDuration} delay={delay} inspectFrame={frozen} /> : ready ? <span className="dragon-sprite-viewport"><span key={`${actionId || "idle"}:${row}`} className={`dragon-sprite-cell${action && !isFlame ? " dragon-sprite-playing" : ""}`}
       data-testid="dragon-sprite-cell" aria-hidden="true" style={{
         ...frameVariables,width:`${geometry.cell/camera.size*100}%`,height:`${geometry.cell/camera.size*100}%`,
         left:`${-camera.left/camera.size*100}%`,top:`${-camera.top/camera.size*100}%`,
@@ -78,7 +85,7 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
         backgroundPositionX:attackFrozen===undefined?undefined:`${attackFrozen/5*100}%`,animationName:attackFrozen===undefined?undefined:"none",
         transform:frozenPose?`translate(${frozenPose.x/geometry.cell*100}%,${frozenPose.y/geometry.cell*100}%) scaleX(${frozenPose.scaleX})`:undefined,
         animationDuration: `${actionDuration}ms`, animationDelay: `${delay}ms`,
-      }} /></span> : <img className="dragon-static-fallback" src={`${ASSETS}/${config.fallback}`} alt="" aria-hidden="true" draggable={false} />}
+      }} /></span> : <img className="dragon-static-fallback" src={`${ASSETS}/${config.fallback}`} alt="" aria-hidden="true" draggable={false} />)}
     <CombatEffects pose={pose} clock={clock} />
   </Box>;
 }
