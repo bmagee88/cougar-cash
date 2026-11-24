@@ -49,12 +49,18 @@ function wordAt(seed, index, gradeMask, sentimentMask, goldEnabled = false, gold
 }
 
 function typingWord(state, index = state.nextWord) {
+  if(state.summonWaiting)return {text:'',color:null,pending:true};
+  const prefix=state.summonPrefix;
+  const offset=index-(state.nextWord-state.wordsInAttack);
+  const summonSlot=prefix?.[offset];
   if(state.issuedWords) {
     const issued=state.issuedWords.find(word=>word.index===index);
     if(!issued)return {...(state.previewWords?.find(word=>word.index===index) || {text:'',color:null}),pending:true};
+    if(issued.summonSlot!==undefined)return {...issued,color:null,trigger:false};
     return state.balanced && !state.balancedRandomColors ? {...issued,color:index===state.nextWord ? balancedWordColor(state) : null,trigger:index===state.nextWord && Boolean(balancedTrigger(state))} : issued;
   }
   const word = wordAt(state.seed, index, state.gradeMask, state.sentimentMask, Boolean(state.ability), state.ability==='monk' ? .1 : .05);
+  if(summonSlot!==undefined)return {...word,color:null,trigger:false,summonSlot};
   if(state.balanced && state.balancedRandomColors) {
     const roll=randomAt(state.seed,index,42)*100;
     let cumulative=0,color=null;
@@ -67,7 +73,8 @@ function typingWord(state, index = state.nextWord) {
   return state.balanced ? { ...word, color: index === state.nextWord ? balancedWordColor(state) : null, trigger:index===state.nextWord && Boolean(balancedTrigger(state)) } : word;
 }
 
-const attackWordLimit = state => state.attackWords ?? 10;
+const attackWordLimit = state => (state.attackWords ?? 10)+(state.summonPrefix?.length || 0);
+const ordinaryWordsInAttack = state => Math.max(0,state.wordsInAttack-(state.summonPrefix?.length || 0));
 const isLastAttackWord = state => state.wordsInAttack + 1 === attackWordLimit(state);
 const goldWordExtension = state => state.ability === "dragon" ? 5 : state.ability === "barbarian" ? 2 : 0;
 const extendsAttack = state => goldWordExtension(state)>0;
@@ -137,18 +144,28 @@ function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistak
   if(state.curseMistakes)state.curseMistakes=Object.fromEntries(Object.entries(state.curseMistakes).filter(([index])=>Number(index)>state.nextWord));
   const word = typingWord(state);
   const correct = mistakes===0 && text === word.text + (requiresWordSpace(state, text) ? " " : "");
+  if(word.summonSlot!==undefined) {
+    // Summon words are typing statistics, never the owner's combat resources.
+    state.nextWord++;state.wordsInAttack++;
+    state.totalCharacters+=text.length+mistakes;
+    state.totalCorrectCharacters=(state.totalCorrectCharacters || 0)+[...text].filter((letter,index)=>letter===(word.text+' ')[index]).length;
+    state.totalIntervalCount=(state.totalIntervalCount || 0)+count;
+    state.totalIntervalSum=(state.totalIntervalSum || 0)+sum;
+    state.totalIntervalSquares=(state.totalIntervalSquares || 0)+squares;
+    return {correct,color:null,summonSlot:word.summonSlot,base:text.length/Math.max(1,state.combatDivisor || 1)};
+  }
   const scheduled=state.balanced && !state.balancedRandomColors;
   const resourceWord=state.balanced && !scheduled && word.color!==null;
   const errors = [...text].filter((letter,index)=>letter !== (word.text + " ")[index]).length;
   state.attackErrors = (state.attackErrors || 0) + (resourceWord?0:errors) + mistakes;
   // Green earnings are pending until a glowing green trigger activates them.
-  if(scheduled && word.color==='green' && correct && state.wordsInAttack!==0 && count>1 && Number.isFinite(transitionMs)) {
+  if(scheduled && word.color==='green' && correct && ordinaryWordsInAttack(state)!==0 && count>1 && Number.isFinite(transitionMs)) {
     const pace=Math.max(40,(sum-transitionMs)/(count-1));
     const smoothness=Math.max(0,Math.min(1,(2.5-transitionMs/pace)/1.25));
     state.balancedDodgeBank=(state.balancedDodgeBank || 0)+smoothness*.5/Math.max(1,state.combatDivisor || 1);
   }
   if (state.balanced) recordBalancedWord(state, text, word.text + " ", gaps || [], correct, word.color);
-  if (!scheduled && (!state.balanced || (word.color==='green' && correct)) && state.dodgeSamples && state.wordsInAttack !== 0 && count > 1 && Number.isFinite(transitionMs)) {
+  if (!scheduled && (!state.balanced || (word.color==='green' && correct)) && state.dodgeSamples && ordinaryWordsInAttack(state) !== 0 && count > 1 && Number.isFinite(transitionMs)) {
     // Compare Space → first character with the rest of that word's key gaps.
     const pace = Math.max(40, (sum - transitionMs) / (count - 1));
     const ratio = transitionMs / pace;
@@ -166,9 +183,10 @@ function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistak
   state.totalIntervalCount = (state.totalIntervalCount || 0) + count;
   state.totalIntervalSum = (state.totalIntervalSum || 0) + sum;
   state.totalIntervalSquares = (state.totalIntervalSquares || 0) + squares;
-  state.intervalCount += count;
-  state.intervalSum += sum;
-  state.intervalSquares += squares;
+  const prefixTransition=(state.summonPrefix?.length || 0)>0 && ordinaryWordsInAttack(state)===1 && Number.isFinite(transitionMs);
+  state.intervalCount += count-(prefixTransition?1:0);
+  state.intervalSum += sum-(prefixTransition?transitionMs:0);
+  state.intervalSquares += squares-(prefixTransition?transitionMs**2:0);
   if (correct) {
     if (!state.balanced) {
       state.growth += state.green * 0.04;
@@ -179,7 +197,7 @@ function finishWord(state, text, count, sum, squares, transitionMs, gaps, mistak
     }
     if (word.color === "gold") {
       state.gold += 1;
-      if (extendsAttack(state)) state.attackWords = attackWordLimit(state) + goldWordExtension(state);
+      if (extendsAttack(state)) state.attackWords = (state.attackWords ?? 10) + goldWordExtension(state);
     }
   }
   return { correct, color: word.color };
@@ -214,6 +232,12 @@ function releaseStandardAttack(state, random = Math.random) {
 function releaseAttack(state,random=Math.random) {
   const index=state.krakenAttackIndex || 0;
   const attack=releaseStandardAttack(state,random);
+  if(state.summonPrefix) {
+    // The next roster is authoritative. Pause at the boundary until its tickets arrive.
+    state.summonWaiting=true;
+    if(state.issuedWords)state.issuedWords=state.issuedWords.filter(word=>word.index<state.nextWord);
+    if(state.previewWords)state.previewWords=state.previewWords.filter(word=>word.index<state.nextWord);
+  }
   if(state.ability==='kraken') {
     attack.krakenAttackIndex=index;state.krakenAttackIndex=index+1;
     state.attackWords=state.krakenAttackIndex%3===0?8:10;

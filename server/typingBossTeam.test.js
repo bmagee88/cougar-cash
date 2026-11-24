@@ -5,6 +5,7 @@ const {damageMultiplier}=require('../src/TypingBoss/battleRules');
 const engine=require('./proportionalBoss');
 const recovery=require('./typingBossRecovery');
 const {changePlayerHealth}=require('./typingBossHealth');
+const {summonZombie,loseSummon,prepareSummonWords,livingSummons,weightedTargetIndex}=require('./typingBossSummons');
 
 function room(count=3,teamMode=true,balanced=false) {
   const players=new Map(Array.from({length:count},(_,index)=>[String(index),{
@@ -53,7 +54,8 @@ test('single, tail, and all-player volleys each remove their total damage once f
     const {s,jobs,cb}=room(count,true,true);s.bossAttackIndex=step;
     engine.launchAttack(s,s.typingHost,hit(30),cb);jobs.shift()();
     assert.ok(Math.abs(s.teamHealth.hp-(100*count-30))<1e-9);
-    assert.ok([...s.players.values()].every(player=>Math.abs(player.hp-(100*count-30))<1e-9));
+    assert.ok(Math.abs([...s.players.values()].reduce((sum,player)=>sum+player.hp,0)-(100*count-30))<1e-9);
+    assert.ok([...s.players.values()].every(player=>player.maxHp===100));
     assert.ok(Math.abs(s.boss.totalDamage-30)<1e-9);
     assert.ok([...s.players.values()].every(player=>!player.secondWindWordsRemaining && !player.knockouts));
   }
@@ -66,11 +68,11 @@ test('shared damage respects individual target shields and shared healing never 
   assert.equal(s.teamHealth.hp,390);
   assert.equal(changePlayerHealth(s,player,5),5);
   assert.equal(s.teamHealth.hp,395);
-  assert.ok([...s.players.values()].every(p=>p.hp===395));
+  assert.equal(player.hp,95);assert.ok([...s.players.values()].filter(p=>p!==player).every(p=>p.hp===100));
 });
 
-test('cleric and necromancer specials can heal a shared team bar without individual knockouts',()=>{
-  for(const ability of ['cleric','necromancer'])for(const balanced of [false,true]) {
+test('cleric specials heal both the wounded hero and shared team pool once',()=>{
+  for(const ability of ['cleric'])for(const balanced of [false,true]) {
     const {s,cb,player}=room(3,true,balanced);
     for(const p of s.players.values())p.classId='barbarian';
     player.classId=ability;player.typing.ability=ability;
@@ -171,5 +173,85 @@ test('three-player Team mode applies the HP multiplier equally and counts promot
   engine.applyHpMultiplier(s,1.25);
   assert.equal(s.teamHealth.hp,375);assert.equal(s.teamHealth.maxHp,375);
   assert.equal(s.boss.hp,375);assert.equal(s.boss.maxHp,375);
-  assert.ok([...s.players.values()].every(player=>player.hp===375 && player.maxHp===375));
+  assert.ok([...s.players.values()].every(player=>player.hp===125 && player.maxHp===125));
+});
+
+test('team necromancer specials summon once per attack, cap at three and resurrect existing KO slots',()=>{
+  for(const balanced of [false,true]) {
+    const {s,cb,player}=room(3,true,balanced);player.classId=player.typing.ability='necromancer';
+    for(let index=0;index<4;index++)engine.launchAttack(s,player,{...hit(),gold:3,balanced},cb);
+    assert.equal(livingSummons(player).length,3);assert.equal(player.summons.length,3);
+    assert.equal(s.projectiles.length,4);assert.ok(s.projectiles.every(shot=>shot.target==='boss'));
+    assert.equal(player.totalHealing,0);assert.equal(s.teamHealth.hp,300);
+    const down=loseSummon(player);assert.equal(down.slot,2);assert.equal(player.summons[2].alive,false);
+    engine.launchAttack(s,player,{...hit(),gold:1,balanced},cb);
+    assert.equal(player.summons.length,3);assert.equal(player.summons[2].alive,true);
+    assert.equal(player.summons[2].event,'resurrection');
+  }
+});
+
+test('a damaging boss hit hurts the owner and team and kills one summon; full blocks and dodges preserve summons',()=>{
+  for(const protection of ['none','block','dodge']) {
+    const {s,cb,jobs,player}=room(2);player.classId='necromancer';summonZombie(player);summonZombie(player);
+    if(protection==='block')player.typing.shield=1;
+    if(protection==='dodge')player.typing.dodgeBank=100;
+    engine.launchAttack(s,s.typingHost,hit(20),cb);jobs.shift()();
+    assert.equal(player.hp,protection==='none'?80:100);
+    assert.equal(s.teamHealth.hp,protection==='none'?180:200);
+    assert.equal(livingSummons(player).length,protection==='none'?1:2);
+    assert.equal(s.players.get('1').hp,100);
+  }
+});
+
+test('target weighting adds one ticket per living summon, excludes KO slots, and applies to both bosses',()=>{
+  const {s,player}=room(2);player.classId='necromancer';
+  for(let index=0;index<3;index++)summonZombie(player);
+  const players=[...s.players.values()];
+  assert.deepEqual(Array.from({length:5},(_,step)=>weightedTargetIndex(players,()=>0,step)),[0,0,0,0,1]);
+  assert.equal(weightedTargetIndex(players,()=>.79),0);assert.equal(weightedTargetIndex(players,()=>.81),1);
+  loseSummon(player);assert.equal(weightedTargetIndex(players,()=>.76),1);
+  for(const boss of ['infernalDragon','kraken']) {
+    const {s,player,cb}=room(2);s.boss.id=boss;player.classId='necromancer';summonZombie(player);summonZombie(player);summonZombie(player);
+    engine.launchAttack(s,s.typingHost,hit(),{...cb,random:()=>.7});
+    // Dragon chooses Tail Whip, anchored on the weighted necromancer; Kraken chooses Slam.
+    assert.equal(s.projectiles[0].target,player.code);
+  }
+});
+
+test('summon prefixes precede ten normal words and never earn owner ATK, cadence, colors, triggers or banks',()=>{
+  for(const balanced of [false,true])for(const randomColors of [false,true]) {
+    const state=rules.createTypingState(1,'necromancer');if(balanced){rules.initializeBalanced(state);state.balancedRandomColors=randomColors;}
+    Object.assign(state,{summonPrefix:[0,2],combatDivisor:3,green:5,growth:1,red:.5,orange:.4});
+    const before=structuredClone(state);
+    for(const slot of [0,2]) {
+      const word=rules.typingWord(state),text=word.text+(rules.requiresWordSpace(state,word.text)?' ':'');
+      assert.equal(word.summonSlot,slot);assert.equal(word.color,null);assert.equal(word.trigger,false);
+      const result=rules.finishWord(state,text,2,200,20000,100,[100,100]);
+      assert.equal(result.base,text.length/3);assert.equal(result.correct,true);
+    }
+    for(const key of ['characters','intervalCount','intervalSum','intervalSquares','orange','red','green','growth','gold','balancedPower','balancedCharacters','balancedOrangeBank','balancedCadenceBonus','dodgeBank'])assert.equal(state[key],before[key],key);
+    assert.equal(state.wordsInAttack,2);assert.equal(rules.attackWordLimit(state),12);
+    assert.equal(rules.typingWord(state).summonSlot,undefined);
+    assert.ok(state.totalCharacters>0);
+  }
+});
+
+test('summon damage ignores promotion and the kneeling penalty while owner attacks use team Second Wind power',()=>{
+  const {s,player,cb}=room(2);player.classId=player.typing.ability='necromancer';player.promoted=true;player.promotionLevel=1;
+  summonZombie(player);player.hp=0;recovery.knockOut(s,player);
+  engine.launchAttack(s,player,hit(10),cb);assert.equal(s.projectiles.at(-1).amount,16);
+  engine.launchAttack(s,player,{...hit(10),summonSlot:0},cb);assert.equal(s.projectiles.at(-1).amount,10);
+  assert.equal(s.projectiles.at(-1).promoted,undefined);assert.equal(s.projectiles.at(-1).summonSlot,0);
+  const shared=s.teamHealth.hp;
+  for(let index=0;index<3;index++)recovery.advanceSecondWind(s,player);
+  assert.equal(player.hp,40);assert.equal(player.secondWindWordsRemaining,0);assert.equal(s.teamHealth.hp,shared);
+});
+
+test('missing or lost summon slots cannot attack and a mid-run loss preserves the issued word order',()=>{
+  const {s,player,cb}=room(2);player.classId='necromancer';summonZombie(player);summonZombie(player);prepareSummonWords(s,player);
+  const words=Array.from({length:12},(_,index)=>rules.typingWord(player.typing,index));
+  loseSummon(player);
+  assert.deepEqual(Array.from({length:12},(_,index)=>rules.typingWord(player.typing,index)),words);
+  engine.launchAttack(s,player,{...hit(10),summonSlot:1},cb);assert.equal(s.projectiles.length,0);
+  prepareSummonWords(s,player);assert.deepEqual(player.typing.summonPrefix,[0]);
 });

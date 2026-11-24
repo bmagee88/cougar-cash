@@ -1,0 +1,10 @@
+PASS src/TypingBoss/ContinuousBattle.test.tsx (11.823 s)
+PASS src/TypingBoss/necroSummons.test.tsx
+PASS src/TypingBoss/BattleScene.test.tsx (5.836 s)
+PASS src/TypingBoss/RecoveryNotice.test.tsx
+PASS src/TypingBoss/typingFeedback.test.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       78 passed, 78 total
+Snapshots:   0 total
+Time:        23.561 s, estimated 57 s

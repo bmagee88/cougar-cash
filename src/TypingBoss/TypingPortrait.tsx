@@ -6,7 +6,7 @@ import RecoveryBar from './RecoveryBar';
 import BossHealthFill from './BossHealthFill';
 import React, { useEffect, useRef, useState } from "react";
 import CombatCharacter, { useCombatAnimation, useCombatClock } from "./CombatCharacter";
-import { CombatAnimationEvent } from "./combatAnimation";
+import { CombatAnimation, CombatAnimationEvent } from "./combatAnimation";
 import { TypingBossPlayer, TypingBossTypingState } from "./types";
 import { portraitDefense } from "./typingFeedback";
 import DragonCombatSprite from "./DragonCombatSprite";
@@ -14,8 +14,11 @@ import { useDragonCombatAnimation } from "./useDragonCombatAnimation";
 import { TypingBossBoss } from "./types";
 import "./typingPortrait.css";
 import {playerVictoryPose} from './victoryAnimation';
+import {promotionLevel,promotionDamageMultiplier,promotionVisualClass} from './promotion';
+import SummonParty from './SummonSprites';
 
 export type TypingPortraitProps = {
+  battleDefeatPose?:CombatAnimation;
   victoryAt?:number;
   teamMode?: boolean;
   player: TypingBossPlayer;
@@ -41,7 +44,7 @@ function FittedNumber({children}:{children:string}) {
 function PortraitPower({state}:{state?:Partial<TypingBossTypingState>}) {
   if(!state)return null;
   if(state.balanced && state.ability==='cleric')return null;
-  const power=state.balanced ? (state.balancedOrangePower || 0)*(state.promoted?2:1) : ((state.orange || 0)+(state.growth || 0))*100;
+  const power=state.balanced ? (state.balancedOrangePower || 0)*promotionDamageMultiplier(state) : ((state.orange || 0)+(state.growth || 0))*100;
   const label=`+${state.balanced ? combatNumber(power) : Number(power.toFixed(2))}${state.balanced?'':'%'}`;
   return <span className="portrait-power" aria-label={`Power bonus: +${state.balanced ? combatNumber(power) : Number(power.toFixed(2))}${state.balanced?'':'%'}`}>
     <FittedNumber>{label}</FittedNumber>
@@ -100,33 +103,36 @@ export function DragonPortrait({ boss, events, serverNow, anchorRef, state, lett
   </div>;
 }
 
-export default function TypingPortrait({ player, events, serverNow, anchorRef, state, letters, teamMode, victoryAt }: TypingPortraitProps & {
+export default function TypingPortrait({ player, events, serverNow, anchorRef, state, letters, teamMode, victoryAt, battleDefeatPose }: TypingPortraitProps & {
   state: TypingBossTypingState; letters: number;
 }) {
   const clock = useCombatClock(serverNow);
   const combatPose = useCombatAnimation(events, player.defeated, clock);
-  const pose = playerVictoryPose(player,victoryAt) || combatPose;
+  const pose = battleDefeatPose || playerVictoryPose(player,victoryAt) || combatPose;
+  const knockedOut=pose.state==='death' || pose.state==='defeated';
+  const level=promotionLevel(player);
   const defense = portraitDefense(state, player.maxHp);
-  const prone=useBattleCountdown(player.proneUntil,serverNow)>0 && pose.state!=='victory';
+  const prone=useBattleCountdown(player.proneUntil,serverNow)>0 && pose.state!=='victory' && !knockedOut;
   const previous = useRef(letters);
   const [pulse, setPulse] = useState(0);
   useEffect(() => {
     if (letters > previous.current) setPulse(value => value + 1);
     previous.current = letters;
   }, [letters]);
-  const special = (state.gold || 0) > 0;
-  const crit = state.balanced ? (state.balancedCritBonus || 0) * 100 : 0;
-  return <div ref={anchorRef} className={`typing-portrait${player.promoted?" typing-portrait-promoted":""}${prone?" typing-portrait-prone":""}${special ? " typing-portrait-charged" : ""}`}
+  const special = !knockedOut && (state.gold || 0) > 0;
+  const crit = !knockedOut && state.balanced ? (state.balancedCritBonus || 0) * 100 : 0;
+  return <div ref={anchorRef} className={`typing-portrait${knockedOut?' typing-portrait-ko':''}${battleDefeatPose?.state==='death'?' dragon-finishing-party':''}${level>0?" typing-portrait-promoted":""}${level===2?' typing-portrait-double-promoted':''}${prone?" typing-portrait-prone":""}${special ? " typing-portrait-charged" : ""}`}
     data-testid="typing-portrait" aria-label={`${player.name} typing profile`}>
     <div className="portrait-scenery" aria-hidden="true" />
     {crit > 0 && <div className="portrait-crit-aura" data-testid="portrait-crit-aura" aria-hidden="true"><i /><i /><i /></div>}
     <div className="portrait-special" data-testid="portrait-special" data-charged={special}
       style={{ opacity: special ? 1 : 0 }} aria-hidden="true"><i /><i /><i /></div>
-    <div className="portrait-dodge" data-testid="portrait-dodge" style={{ opacity: Math.sqrt(defense.dodge) }}
+    <div className="portrait-dodge" data-testid="portrait-dodge" style={{ opacity: knockedOut?0:Math.sqrt(defense.dodge) }}
       title="Active Dodge" aria-hidden="true" />
-    <div className={`portrait-character${player.promoted?" promoted-character":""}`}><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} /></div>
-    {(player.secondWindWordsRemaining || 0)>0 && <div className="portrait-recovery"><span>Second Wind</span><RecoveryBar player={player} clock={clock} profile/></div>}
-    <div className="portrait-shield" data-testid="portrait-shield" style={{ opacity: Math.sqrt(defense.shield) }}
+    {teamMode && <SummonParty portrait summons={player.summons} clock={clock} defeatPose={battleDefeatPose} victoryAt={victoryAt}/>}
+    <div className={`portrait-character ${promotionVisualClass(player)}`}><CombatCharacter classId={player.classId} color={player.color} size={78} pose={pose} clock={clock} kneeling={Boolean(teamMode && (player.secondWindWordsRemaining || 0)>0)} /></div>
+    {!knockedOut && (player.secondWindWordsRemaining || 0)>0 && <div className="portrait-recovery"><span>Second Wind</span><RecoveryBar player={player} clock={clock} profile/></div>}
+    <div className="portrait-shield" data-testid="portrait-shield" style={{ opacity: knockedOut?0:Math.sqrt(defense.shield) }}
       title="Active Block" aria-hidden="true" />
     <div key={pulse} className={`portrait-attack${pulse ? " portrait-attack-pulse" : ""}`} data-testid="portrait-attack"
       title="Earned attack charge" aria-label={`Attack power: ${combatNumber(letters)}`}>
@@ -137,9 +143,10 @@ export default function TypingPortrait({ player, events, serverNow, anchorRef, s
     {crit > 0 && <div className="portrait-crit-badge" data-testid="portrait-crit-badge" role="status" aria-label={`Crit ready: +${Number(crit.toFixed(2))}%`}>
       <span>CRIT</span><strong><FittedNumber>{`+${Number(crit.toFixed(2))}%`}</FittedNumber></strong>
     </div>}
-    {player.promoted && <span className="portrait-promotion" aria-label="Promoted hero">★</span>}
-    <KrakenStatus player={player} serverNow={serverNow}/>
+    {level>0 && <span className="portrait-promotion" aria-label={level===2?'Double promoted hero':'Promoted hero'}>{level===2?'★★':'★'}</span>}
+    {!knockedOut && <KrakenStatus player={player} serverNow={serverNow}/>}
+    {knockedOut && <span className="portrait-ko-label" role="status" aria-label={`${player.name} knocked out`}>KO</span>}
     <span className="portrait-name" title={player.name}>{player.name}</span>
-    {!teamMode && <PortraitHealth hp={player.hp} maxHp={player.maxHp} name={player.name}/>}
+    <PortraitHealth hp={player.hp} maxHp={player.maxHp} name={player.name}/>
   </div>;
 }

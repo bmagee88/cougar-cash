@@ -29,6 +29,12 @@ export function dragonFinisherPose(at: number): CombatAnimation {
 export function partyFinisherPose(at: number, now: number): CombatAnimation {
   return now<at+DRAGON_FINISH_MS ? {id:`party-ko:${at}`,state:'death',at,duration:DRAGON_FINISH_MS} : {id:`party-ko:${at}`,state:'defeated',at,duration:0};
 }
+export function partyDefeatPose(session:TypingBossSessionSnapshot,now:number):CombatAnimation|undefined {
+  if(session.status!=='defeat')return;
+  const ending=dragonEnding(session);
+  if(ending?.kind==='blast')return partyFinisherPose(ending.at,now);
+  return {id:`party-ko:${session.id}:${session.closedAt || ''}`,state:'defeated',at:0,duration:0};
+}
 export default function DragonVictoryBlast({at,now,bossPoint}: {at:number;now:number;bossPoint:{x:number;y:number}}) {
   const timing = useRef({at,delay:-Math.max(0,now-at)});
   if(timing.current.at!==at)timing.current={at,delay:-Math.max(0,now-at)};

@@ -20,7 +20,7 @@ test('timeout KO retains the player and HP, excludes their contribution, and adj
   assert.equal(results.find(entry=>entry.code==='0').retreated,true);
   assert.equal(results.find(entry=>entry.code==='1').retreated,false);
   for(const player of [...s.players.values()].filter(p=>!p.timedOut)) {
-    assert.equal(player.hp,100);assert.equal(player.typing.combatDivisor,2);assert.equal(player.typing.balancedGuard,20);
+    assert.equal(player.hp,150);assert.equal(player.maxHp,300);assert.equal(player.typing.combatDivisor,2);assert.equal(player.typing.balancedGuard,30);
   }
 });
 test('retreated players cannot return or restore either side HP by typing',()=>{

@@ -19,7 +19,6 @@ function adjustHealth(session,teamHp) {
   session.boss.hp*=bossRatio;session.boss.maxHp=maxHp;
   scaleDefense(session.typingHost,bossRatio,maxHp);
   if(session.teamMode) {
-    for(const player of active)scaleDefense(player.typing,maxHp/player.maxHp,maxHp);
     session.teamHealth={hp:Math.min(maxHp,teamHp),maxHp};
     syncTeamHealth(session);
   }

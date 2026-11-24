@@ -26,9 +26,10 @@ export function combatFeedback(projectile: TypingBossProjectile) {
 export function projectileEndpoints(projectile: TypingBossProjectile, positions: Map<string, Point>, bossPoint: Point) {
   const support = isSupport(projectile);
   const targetOffscreen = support && !positions.has(projectile.target);
+  const owner=positions.get(projectile.source);
   // Personal streams omit allies. Route their support to a separate notice, never to the dragon or caster.
   return {
-    from: projectile.source === "boss" ? bossPoint : positions.get(projectile.source) || (support ? { x: 8, y: 26 } : bossPoint),
+    from: projectile.summonSlot!==undefined && owner ? {x:owner.x-2+projectile.summonSlot*1.5,y:owner.y-2} : projectile.source === "boss" ? bossPoint : owner || (support ? { x: 8, y: 26 } : bossPoint),
     to: projectile.target === "boss" ? bossPoint : positions.get(projectile.target) || (support ? { x: 26, y: 22 } : bossPoint),
     targetOffscreen,
   };

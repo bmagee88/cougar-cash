@@ -13,6 +13,7 @@ import { previewBalancedWord } from "./balancedRules";
 import {useBattleCountdown} from "./BattleCountdown";
 import {useTypingActivity} from './InactivityWarning';
 import TeamActivityCue from './TeamActivityCue';
+import {promotionLevel,promotionDamageMultiplier} from './promotion';
 import useImpactShake from './useImpactShake';
 
 const colors = { blue: "#7dd3fc", orange: "#fdba74", red: "#ff6b6b", green: "#86efac", gold: "#fde047" };
@@ -141,6 +142,10 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
       if (!mounted.current) return;
       acknowledged.current = Math.max(acknowledged.current, result.nextWord);
       queue.current = queue.current.filter(record => record[0] >= result.nextWord);
+      if(model.current.summonWaiting && result.nextWord===model.current.nextWord && result.summonPrefix) {
+        model.current.summonPrefix=result.summonPrefix;model.current.summonWaiting=false;
+        redraw(value=>value+1);
+      }
       if(result.issuedWords) {
         const current=model.current;
         if(result.previewWords)current.previewWords=result.previewWords;
@@ -220,6 +225,9 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
       const before = { ...current };
       const result = finishWord(current, typed.current, currentTiming.count, currentTiming.sum, currentTiming.squares, record[5] ?? undefined, record[6],record[7]?.mistakes || 0);
       const reward = wordReward(before, current, expectedWord.text, result.correct, result.color);
+      if(result.summonSlot!==undefined && profile?.player.summons?.some(summon=>summon.slot===result.summonSlot && !summon.alive)) {
+        reward.label='Summon is KO';reward.color='#64748b';
+      }
       setRewards([reward]);
       completedText.current[record[0]] = typed.current;
       queue.current.push(record);
@@ -240,10 +248,10 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
   }
 
   const current = model.current;
-  const damageScale=current.promoted?2:1;
+  const damageScale=promotionDamageMultiplier(current);
   const scheduled=current.balanced && !current.balancedRandomColors;
   const word = typingWord(current);
-  const live = current.balanced ? previewBalancedWord(current,typed.current,word.text+" ",timing.current.gaps,word.color) : current;
+  const live = current.balanced && word.summonSlot===undefined ? previewBalancedWord(current,typed.current,word.text+" ",timing.current.gaps,word.color) : current;
   const multiplier = scheduled ? 1+(live.balancedCadenceBonus || 0) : current.balanced ? current.characters ? Math.max(0,current.balancedPower || 0) * Math.max(1,current.combatDivisor || 1) / current.characters : current.balancedQuality || 1.25 : consistencyMultiplier(current.intervalCount + timing.current.count,
     current.intervalSum + timing.current.sum, current.intervalSquares + timing.current.squares);
   const profileState=current;
@@ -257,7 +265,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
 
   return <Paper className="continuous-typing" elevation={0} sx={{ p: { xs: 2, md: 2.5 }, border: "1px solid #50627a", borderRadius: 2 }}>
     <Stack direction="row" flexWrap="wrap" gap={1}>
-      {current.promoted && <Chip label="Promoted · 2× damage" sx={{color:'#fde68a',border:'1px solid #d4af37'}}/>}
+      {promotionLevel(current)>0 && <Chip label={promotionLevel(current)===2?'Double Promoted · Normal damage':'Promoted · 2× damage'} sx={{color:promotionLevel(current)===2?'#a5f3fc':'#fde68a',border:'1px solid currentColor'}}/>}
       {(scheduled || multiplier !== 1) && <Chip label={`${scheduled ? "Cadence" : current.balanced ? "Quality" : "Rhythm"} ×${multiplier.toFixed(scheduled ? 4 : 2)}`} sx={{ color: "#e9d5ff" }} />}
       {scheduled && <Chip label={`ATK ${combatNumber(chargedLetters(current,typed.current)*damageScale)}`} />}
       {current.balanced ? <>
@@ -275,7 +283,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
       {current.red > 0 && <Chip label={`Crit ${Math.round(current.red * 100)}%`} sx={{ color: colors.red }} />}
       {current.green > 0 && <Chip label={`+${current.green * 4}% per correct word`} sx={{ color: colors.green }} />}
     </Stack>
-    {proneSeconds>0 && <Alert severity="info" role="status">Knocked prone · {proneSeconds}s. Typing resumes when you stand.</Alert>}
+    {proneSeconds>0 && !profile?.battleDefeatPose && <Alert severity="info" role="status">Knocked prone · {proneSeconds}s. Typing resumes when you stand.</Alert>}
     {teamActivity && <TeamActivityCue activity={teamActivity} />}
     <div {...shake} className={`battle-impact-shake${profile || hostProfile ? ` typing-input-deck${dragonProfile ? " typing-input-deck-dual" : ""}` : ''}`}>
     {hostProfile && <DragonPortrait {...hostProfile} state={profileState} letters={(current.balanced ? live.balancedPower || 0 : chargedLetters(current,typed.current))*damageScale}/>}
@@ -290,10 +298,10 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
             const prayerWord=current.balanced && current.ability==="cleric" && item.color==="orange";
             const text = index === current.nextWord ? typed.current : completedText.current[index] || "";
             const glowing=scheduled ? item.trigger : item.color==='gold' || item.color==='red';
-            return <span key={index} data-testid="typing-word" data-word-index={index} data-trigger={Boolean(glowing)}>{item.text.split("").map((letter, position) => {
+            return <span key={index} data-testid="typing-word" data-word-index={index} data-summon-slot={item.summonSlot} data-trigger={Boolean(glowing)} aria-label={item.summonSlot!==undefined?`Zombie ${item.summonSlot+1}: ${item.text}`:undefined}>{item.text.split("").map((letter, position) => {
               const done = index < current.nextWord || position < text.length;
               const wrong = (position < text.length && text[position] !== letter) || (wrongLetter?.word===index && wrongLetter.position===position);
-              return <span key={position} data-incorrect={wrong || undefined} style={{ color: wrong ? "#fda4af" : done ? "#64748b" : prayerWord ? "#facc15" : item.color ? colors[item.color] : "#f8fafc", fontWeight: glowing ? 800 : undefined, textShadow: !wrong && !done && glowing && item.color ? `0 0 8px ${prayerWord ? '#facc15' : colors[item.color]}` : 'none', borderBottom: !awaitingSpace.current && index === current.nextWord && position === text.length ? "3px solid #fff" : "3px solid transparent" }}>{letter}</span>;
+              return <span key={position} data-incorrect={wrong || undefined} style={{ color: wrong ? "#fda4af" : done ? "#64748b" : item.summonSlot!==undefined ? '#71952c' : prayerWord ? "#facc15" : item.color ? colors[item.color] : "#f8fafc", fontWeight: glowing ? 800 : undefined, textShadow: !wrong && !done && glowing && item.color ? `0 0 8px ${prayerWord ? '#facc15' : colors[item.color]}` : 'none', borderBottom: !awaitingSpace.current && index === current.nextWord && position === text.length ? "3px solid #fff" : "3px solid transparent" }}>{letter}</span>;
             })}<span data-testid={awaitingSpace.current && index===current.nextWord-1 ? 'pending-word-space' : undefined} style={{ borderBottom: (awaitingSpace.current && index===current.nextWord-1) || (index === current.nextWord && text.length === item.text.length) ? "3px solid #fff" : "3px solid transparent" }}>{" "}</span></span>;
           })}
         </Box>
@@ -324,7 +332,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
         {credentials.hostToken && " Dragon attacks: 50% Tail Whip targets a nearby group, 40% Bite or Fireball targets one player, and 10% Flamethrower targets everyone standing. Damage splits evenly among targets before defenses."}
       </Typography>}
       {current.ability && <Typography variant="body2" sx={{ mt: 1 }}>
-        {current.balanced ? "Master earned gold words to activate your class ability." : `Gold words appear ${current.ability==='monk'?10:5}% of the time. Type them perfectly to earn your ability.`} {current.balanced && current.ability==='cleric' ? "Prayer replaces Charge. Yellow words build Prayer and ATK in scheduled mode; mistakes preserve saved Prayer. Perfect yellow triggers deposit the saved amount into the shared Prayer pool. On attack release, a gold special turns ATK including bonuses into shared healing, divided by all Clerics in the battle. It heals one random wounded living player from the accumulated pool, spending only their missing HP and saving the rest. That special deals no damage to the dragon." : current.balanced && ["paladin","necromancer","rogue"].includes(current.ability) ? "Necromancer gold picks a random player: a downed target is revived using full ATK divided by the Necromancer count, with leftover healing saved. A standing target means normal boss damage, with no saved revive charge. Paladin gives an ally Block using the 20% support budget. Rogue specials add extra dodge rolls." : goldAbilityText[current.ability]} {scheduled ? "Gold extensions commit on the last letter." : "A gold word extending a run needs Space even if it was previously the last word."}
+        {current.balanced ? "Master earned gold words to activate your class ability." : `Gold words appear ${current.ability==='monk'?10:5}% of the time. Type them perfectly to earn your ability.`} {current.summonPrefix ? "Each special raises one zombie, up to three. Perfect rancid-green summon words attack before your ten words without adding to your ATK or color bonuses. Taking damage knocks out one zombie; later specials resurrect fallen summons. More living zombies draw more boss attention." : current.balanced && current.ability==='cleric' ? "Prayer replaces Charge. Yellow words build Prayer and ATK in scheduled mode; mistakes preserve saved Prayer. Perfect yellow triggers deposit the saved amount into the shared Prayer pool. On attack release, a gold special turns ATK including bonuses into shared healing, divided by all Clerics in the battle. It heals one random wounded living player from the accumulated pool, spending only their missing HP and saving the rest. That special deals no damage to the dragon." : current.balanced && ["paladin","necromancer","rogue"].includes(current.ability) ? "Necromancer gold picks a random player: a downed target is revived using full ATK divided by the Necromancer count, with leftover healing saved. A standing target means normal boss damage, with no saved revive charge. Paladin gives an ally Block using the 20% support budget. Rogue specials add extra dodge rolls." : goldAbilityText[current.ability]} {scheduled ? "Gold extensions commit on the last letter." : "A gold word extending a run needs Space even if it was previously the last word."}
       </Typography>}
     </Box>
     {error && <Alert severity="warning" sx={{ mt: 1 }}>{error} Your completed words will retry automatically. <Button onClick={flush}>Retry</Button></Alert>}

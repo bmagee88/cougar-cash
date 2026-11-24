@@ -1,6 +1,18 @@
-import {getTypingBossEventSourceUrl,getTypingBossSession,submitTypingBossWords,verifyTypingBossParticipant,createTypingBossChallenge,unlockTypingBossCreation,createTypingBossParticipant,startTypingBossSession} from './api';
+import {getTypingBossEventSourceUrl,getTypingBossSession,submitTypingBossWords,verifyTypingBossParticipant,createTypingBossChallenge,unlockTypingBossCreation,createTypingBossParticipant,startTypingBossSession,promoteTypingBossPlayer,setTypingBossPlayerPromotion} from './api';
 declare const test:any,expect:any,jest:any,afterEach:any;
 const originalFetch=global.fetch;
+
+test('Double Promoted requests send tier 2 with the normal-damage flag, and reject an outdated backend',async()=>{
+  const fetch=jest.fn(async()=>({ok:true,headers:{get:()=> 'application/json'},text:async()=>JSON.stringify({promotionToken:'signed',session:{typing:{promotionLevel:2,promoted:false},players:[{code:'hero',promotionLevel:2,promoted:false}]}})}));
+  global.fetch=fetch as any;
+  await promoteTypingBossPlayer('bossABC','player-secret','host-password',2);
+  expect(JSON.parse(fetch.mock.calls[0][1].body).promotionLevel).toBe(2);
+  await setTypingBossPlayerPromotion('bossABC','host-secret','hero',2);
+  expect(JSON.parse(fetch.mock.calls[1][1].body)).toEqual({hostToken:'host-secret',playerCode:'hero',promotionLevel:2,promoted:false});
+  global.fetch=jest.fn(async()=>({ok:true,headers:{get:()=> 'application/json'},text:async()=>JSON.stringify({session:{typing:{promoted:true},players:[{code:'hero',promoted:false}]}})})) as any;
+  await expect(promoteTypingBossPlayer('bossABC','player-secret','host-password',2)).rejects.toThrow('matching Typing Boss backend');
+  await expect(setTypingBossPlayerPromotion('bossABC','host-secret','hero',2)).rejects.toThrow('matching Typing Boss backend');
+});
 
 test.each(['lan','wan'])('Start carries the selected %s music policy and rejects an outdated backend for WAN',async(networkMode:'lan'|'wan')=>{
   const fetch=jest.fn(async(_url:string,options:any)=>({ok:true,headers:{get:()=> 'application/json'},text:async()=>JSON.stringify({session:{mode:'proportional',teamMode:true,networkMode:JSON.parse(options.body).networkMode}})}));

@@ -1,0 +1,16 @@
+.kneeling-frames,.zombie-summon i{position:absolute;display:block;background-repeat:no-repeat;background-size:600% 600%;image-rendering:pixelated;animation-timing-function:steps(1,end);animation-fill-mode:both;filter:drop-shadow(0 2px 1px #0009)}
+.kneeling-actor{position:relative;display:inline-block;vertical-align:bottom}
+.kneeling-rest{animation-name:kneeling-breathe;animation-iteration-count:infinite;animation-direction:alternate}
+.kneeling-attack{animation-name:actor-sprite-frames;animation-iteration-count:1}
+.kneeling-hit{animation:actor-hit-flash 460ms ease-out both}
+@keyframes kneeling-breathe{0%,49%{background-position-x:0%}50%,100%{background-position-x:20%}}
+.summon-party{position:absolute;left:50%;bottom:-25px;width:78px;height:36px;transform:translateX(-50%);display:flex;justify-content:center;gap:0;pointer-events:none;z-index:0}
+.zombie-summon{position:relative;display:inline-block;width:26px;height:36px;flex-shrink:0}
+.zombie-summon:nth-child(2){transform:translateY(-7px)}
+.zombie-summon i{width:38px;height:38px;left:-6px;bottom:0;background-size:600% 800%;animation-name:actor-sprite-frames}
+.zombie-ko i{animation:none!important;background-position-x:100%;filter:saturate(.5) brightness(.7) drop-shadow(0 2px 1px #0009)}
+.summon-party-portrait{bottom:29px;left:50%;width:132px;height:60px;z-index:1;gap:0}
+.summon-party-portrait .zombie-summon{width:44px;height:58px}
+.summon-party-portrait .zombie-summon i{width:54px;height:54px;left:-5px}
+.summon-party-portrait .zombie-summon:nth-child(2){transform:translateY(-36px)}
+@media(prefers-reduced-motion:reduce){.kneeling-frames,.zombie-summon i,.kneeling-hit{animation:none!important}.kneeling-attack{background-position-x:60%}}

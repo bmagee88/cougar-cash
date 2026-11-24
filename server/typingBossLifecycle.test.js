@@ -248,10 +248,10 @@ test('the live room timer preserves timeout KOs, their HP, and their private con
   const events=[];
   session.subscribers.add({auth:{role:'player',actorCode:inactive},res:{write(event){events.push(event);},destroy(){}}});
   await server.handleStartTypingBossSession(req({hostToken:session.hostToken}),response(),session,new URL('http://localhost'));
-  session.boss.hp=180;require('./typingBossHealth').changePlayerHealth(session,session.players.get(inactive),-150);
+  session.boss.hp=180;for(const player of session.players.values())require('./typingBossHealth').changePlayerHealth(session,player,-50);
   advanceTyping(t,session,36000,[inactive]);
   assert.equal(session.players.size,3);assert.equal(session.players.get(inactive).timedOut,true);
-  assert.equal(session.players.get(inactive).hp,150);
+  assert.equal(session.players.get(inactive).hp,50);
   assert.equal(session.boss.hp,120);assert.equal(session.teamHealth.hp,100);
   t.mock.timers.tick(200);
   assert.ok(events.some(event=>event.includes('"timedOut":true') && event.includes(inactive)));
@@ -310,6 +310,31 @@ test('all three bosses can be selected in either mode; proportional keeps its de
     assert.equal(session.boss.id,bossId);assert.equal(session.mode,mode);
   }
   assert.equal(server.createTypingBossSession({mode:'proportional'}).boss.id,'infernalDragon');
+});
+
+test('all promotion tiers require authorization, publish to clients, and signed Double Promoted joins retain normal damage',async t=>{
+  t.mock.timers.enable({apis:['setTimeout','setInterval']});
+  const prior=process.env.TYPING_BOSS_CREATION_PASSWORD;process.env.TYPING_BOSS_CREATION_PASSWORD=require('node:crypto').randomBytes(24).toString('hex');
+  try {
+    const server=loadServer(),s=server.createTypingBossSession({mode:'proportional'});
+    const req=body=>require('node:stream').Readable.from([JSON.stringify(body)]);
+    const res=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+    const joined=res();await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin',promotionLevel:2}),joined,s);
+    const {code,playerToken}=joined.body;assert.equal(s.players.get(code).promotionLevel,0);
+    for(const promotionLevel of [2,1,0]) {
+      const changed=res();await server.handleHostPlayerPromotion(req({hostToken:s.hostToken,playerCode:code,promotionLevel}),changed,s,new URL('http://localhost'));
+      assert.equal(changed.status,200);assert.equal(changed.body.session.players[0].promotionLevel,promotionLevel);
+      assert.equal(changed.body.session.players[0].promoted,promotionLevel===1);
+    }
+    const promoted=res();await server.handlePromoteTypingBossPlayer(req({playerToken,password:process.env.TYPING_BOSS_CREATION_PASSWORD,promotionLevel:2}),promoted,s,new URL('http://localhost'));
+    assert.equal(promoted.status,200);assert.equal(promoted.body.session.typing.promotionLevel,2);assert.equal(promoted.body.session.typing.promoted,false);
+    const next=server.createTypingBossSession({mode:'proportional'}),remembered=res();
+    await server.handleCreateTypingBossParticipant(req({name:'Remembered',classId:'rogue',promotionToken:promoted.body.promotionToken}),remembered,next);
+    const player=[...next.players.values()][0];assert.equal(player.promotionLevel,2);assert.equal(player.typing.promotionLevel,2);assert.equal(player.promoted,false);
+    for(const promotionLevel of [3,-1,1.5,'2']) {
+      const invalid=res();await server.handleHostPlayerPromotion(req({hostToken:s.hostToken,playerCode:code,promotionLevel}),invalid,s,new URL('http://localhost'));assert.equal(invalid.status,400);
+    }
+  } finally {if(prior===undefined)delete process.env.TYPING_BOSS_CREATION_PASSWORD;else process.env.TYPING_BOSS_CREATION_PASSWORD=prior;}
 });
 
 test('host alone can toggle any player promotion during gameplay',async t=>{
@@ -544,12 +569,12 @@ test('players can join until the countdown deadline with matching rules and HP, 
     const late=response();await server.handleCreateTypingBossParticipant(req({name:'Late',classId:'necromancer'}),late,session);
     assert.equal(late.status,201);assert.ok(late.body.playerToken);
     const joined=session.players.get(late.body.code);
-    assert.equal(joined.hp,250);assert.equal(joined.maxHp,250);
+    assert.equal(joined.hp,125);assert.equal(joined.maxHp,125);
     assert.equal(Boolean(joined.typing.balanced),balanced);
-    if(balanced){assert.equal(joined.typing.balancedRandomColors,random);assert.equal(joined.typing.ability,'necromancer');assert.equal(joined.typing.seed,session.typingHost.seed);assert.equal(joined.typing.balancedGuardMax,250);assert.equal(originalTyping.balancedGuardMax,250);}
+    if(balanced){assert.equal(joined.typing.balancedRandomColors,random);assert.equal(joined.typing.ability,'necromancer');assert.equal(joined.typing.seed,session.typingHost.seed);assert.equal(joined.typing.balancedGuardMax,125);assert.equal(originalTyping.balancedGuardMax,125);}
     assert.equal(joined.typing.wordProtocol,1);assert.equal(joined.typing.gradeMask,session.typingHost.gradeMask);
     assert.equal(session.startingPlayers,2);assert.equal(session.boss.hp,250);assert.equal(session.boss.maxHp,250);
-    assert.equal(session.teamHealth.hp,250);assert.equal(originalPlayer.hp,250);
+    assert.equal(session.teamHealth.hp,250);assert.equal(originalPlayer.hp,125);
     assert.equal(session.countdownEndsAt,deadline);assert.equal(session.startedAt,deadline);
     assert.equal(originalPlayer.typing,originalTyping);assert.equal(originalTyping.nextWord,0);
     t.mock.timers.tick(1);

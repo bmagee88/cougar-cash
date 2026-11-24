@@ -60,3 +60,33 @@ test('correcting a mistake retains letter power, records accuracy and does not a
   assert.ok(h.state.balancedOrangeBank>20);assert.equal(h.state.totalCorrectCharacters,rec[1].length);
   assert.equal(h.state.totalCharacters,rec[1].length+3);
 });
+
+test('protected necromancer attacks issue a new summon roster at the boundary and retries deal damage once',t=>{
+  const h=room(t),summons=require('./typingBossSummons');
+  h.player.classId=h.state.ability='necromancer';h.session.teamMode=true;h.session.teamHealth={hp:100,maxHp:100};
+  summons.prepareSummonWords(h.session,h.player);h.state.gold=1;
+  for(let index=0;index<10;index++){const record=h.record();h.advance();h.submit([record]);}
+  assert.deepEqual(h.state.summonPrefix,[0]);assert.equal(h.state.wordsInAttack,0);
+  assert.equal(h.state.summonWaiting,false);assert.equal(h.session.projectiles.length,1);
+  const publicState=security.publicTypingState(h.session,h.state);
+  assert.equal(publicState.issuedWords[0].summonSlot,0);assert.equal(publicState.issuedWords[0].color,null);
+  assert.equal(publicState.previewWords.length,11);
+  const before=structuredClone(h.state),record=h.record();h.advance();
+  const result=h.submit([record]);assert.equal(h.session.projectiles.length,2);
+  assert.equal(h.session.projectiles[1].summonSlot,0);
+  assert.equal(h.session.projectiles[1].amount,record[1].length);
+  assert.equal(h.state.characters,before.characters);assert.equal(h.state.gold,before.gold);
+  h.submit([record]);assert.equal(h.session.projectiles.length,2);
+  assert.deepEqual(result.summonPrefix,[0]);
+});
+
+test('summon words with corrected mistakes never hit, and an invalid following record rejects the entire batch',t=>{
+  const h=room(t),summons=require('./typingBossSummons');
+  h.player.classId=h.state.ability='necromancer';h.session.teamMode=true;
+  summons.summonZombie(h.player);summons.prepareSummonWords(h.session,h.player);
+  const record=h.record();record[7].mistakes=1;h.advance();
+  const invalid=structuredClone(record);invalid[0]++;
+  assert.throws(()=>h.submit([record,invalid]));assert.equal(h.state.nextWord,0);assert.equal(h.session.projectiles.length,0);
+  h.submit([record]);assert.equal(h.state.nextWord,1);assert.equal(h.session.projectiles.length,0);
+  assert.equal(h.state.characters,0);assert.equal(h.state.totalCharacters,record[1].length+1);
+});

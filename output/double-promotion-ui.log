@@ -1,0 +1,385 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest --silent
+
+PASS src/TypingBoss/BattleScene.test.tsx (15.136 s)
+PASS src/TypingBoss/ContinuousBattle.test.tsx (5.792 s)
+PASS src/TypingBoss/PromotionButton.test.tsx
+PASS src/TypingBoss/HostSetup.test.tsx
+PASS src/TypingBoss/HostBattleLog.test.tsx
+PASS src/TypingBoss/CharacterSelect.test.tsx
+PASS src/TypingBoss/BattleMenu.test.tsx
+FAIL src/TypingBoss/hostPortrait.test.tsx
+  ● double-promoted cleric has stronger visuals with normal offensive numbers
+
+    TestingLibraryElementError: Unable to find a label with the text of: Power bonus: +500
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation0 continuous-typing css-urmzs0-MuiPaper-root"
+          style="--Paper-shadow: none;"
+        >
+          <div
+            class="MuiStack-root css-10k1dl5-MuiStack-root"
+          >
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-vz19le-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Double Promoted · Normal damage
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-990tka-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Cadence ×1.0000
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-5c51lm-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                ATK 1,000
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-10lty8l-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Prayer ready +0
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-lq4sng-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Crit +12%
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-gy3j35-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Prayer +0
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-gy3j35-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Prayer pool 0
+              </span>
+            </div>
+            <div
+              class="MuiBox-root css-1rcki10"
+            >
+              <span
+                class="MuiTypography-root MuiTypography-caption css-mpaqru-MuiTypography-root"
+              >
+                Crit charge +
+                0
+                %
+              </span>
+              <span
+                aria-label="Crit power charge"
+                aria-valuemax="100"
+                aria-valuemin="0"
+                aria-valuenow="61"
+                class="MuiLinearProgress-root MuiLinearProgress-colorPrimary MuiLinearProgress-determinate css-10qtmmv-MuiLinearProgress-root"
+                role="progressbar"
+              >
+                <span
+                  class="MuiLinearProgress-bar MuiLinearProgress-bar1 MuiLinearProgress-barColorPrimary MuiLinearProgress-bar1Determinate css-l16vtb-MuiLinearProgress-bar1"
+                  style="transform: translateX(-38.93129770992366%);"
+                />
+              </span>
+            </div>
+          </div>
+          <div
+            class="battle-impact-shake typing-input-deck"
+            style="animation-delay: 0ms; --impact-distance: 0px;"
+          >
+            <div
+              aria-label="Hero typing profile"
+              class="typing-portrait typing-portrait-promoted typing-portrait-double-promoted"
+              data-testid="typing-portrait"
+            >
+              <div
+                aria-hidden="true"
+                class="portrait-scenery"
+              />
+              <div
+                aria-hidden="true"
+                class="portrait-crit-aura"
+                data-testid="portrait-crit-aura"
+              >
+                <i />
+                <i />
+                <i />
+              </div>
+              <div
+                aria-hidden="true"
+                class="portrait-special"
+                data-charged="false"
+                data-testid="portrait-special"
+                style="opacity: 0;"
+              >
+                <i />
+                <i />
+                <i />
+              </div>
+              <div
+                aria-hidden="true"
+                class="portrait-dodge"
+                data-testid="portrait-dodge"
+                style="opacity: 0;"
+                title="Active Dodge"
+              />
+              <div
+                class="portrait-character promoted-character double-promoted-character"
+              >
+                <span
+                  aria-hidden="true"
+                  class="combat-actor actor-pose-idle"
+                  data-animation="idle"
+                  data-character="cleric"
+                  data-sprite-state="idle"
+                  data-testid="combat-character"
+                  style="width: 66.3px; height: 78px; --actor-color: red; --...
+
+      13 |   const player={code:'hero',name:'Hero',classId,color:'red',hp:100,maxHp:100,promotionLevel:2,promoted:false} as any;
+      14 |   render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero'}} state={state} active={false} profile={{player,events:[]}}/>);
+    > 15 |   expect(screen.getByLabelText('Attack power: 1,000')).toBeTruthy();expect(screen.getByLabelText('Power bonus: +500')).toBeTruthy();
+         |                                                                                   ^
+      16 |   expect(screen.getByLabelText('Crit ready: +12%')).toBeTruthy();expect(screen.getByTestId('typing-portrait').className).toContain('typing-portrait-double-promoted');
+      17 |   expect(screen.getByLabelText('Double promoted hero')).toBeTruthy();expect(screen.getByText('Double Promoted · Normal damage')).toBeTruthy();
+      18 |   expect(document.querySelector('.portrait-character.double-promoted-character')).not.toBeNull();
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText (node_modules/@testing-library/dom/dist/queries/label-text.js:111:38)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByLabelText (node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at src/TypingBoss/hostPortrait.test.tsx:15:83
+
+PASS src/TypingBoss/BattleVictoryStats.test.tsx
+PASS src/TypingBoss/RoomCreationGate.test.tsx
+PASS src/TypingBoss/HostPromotionMenu.test.tsx
+PASS src/TypingBoss/KrakenVisuals.test.tsx
+PASS src/TypingBoss/BattleCountdown.test.tsx
+PASS src/TypingBoss/KrakenAnimation.test.tsx
+PASS src/TypingBoss/combatAnimation.test.tsx
+PASS src/TypingBoss/dragonFlame.test.tsx
+PASS src/TypingBoss/BattleLeaderboard.test.tsx
+PASS src/TypingBoss/BattleMusic.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/RetreatNotice.test.tsx
+PASS src/TypingBoss/TimeLimitSettings.test.tsx
+PASS src/TypingBoss/TeamActivityCue.test.tsx
+PASS src/TypingBoss/dragonHurt.test.tsx
+PASS src/TypingBoss/BattleStatus.test.tsx
+PASS src/TypingBoss/InactivityWarning.test.tsx
+PASS src/TypingBoss/RecoveryNotice.test.tsx
+PASS src/TypingBoss/victoryAnimation.test.tsx
+PASS src/TypingBoss/ImpactShake.test.tsx
+PASS src/TypingBoss/BossAttackNameBar.test.tsx
+PASS src/TypingBoss/RecoveryBar.test.tsx
+PASS src/TypingBoss/typingFeedback.test.ts
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+PASS src/TypingBoss/joinNames.test.ts
+PASS src/TypingBoss/credentials.test.ts
+PASS src/TypingBoss/api.test.ts
+PASS src/TypingBoss/combatNumbers.test.ts
+PASS src/TypingBoss/battleLayout.test.ts
+
+Summary of all failing tests
+FAIL src/TypingBoss/hostPortrait.test.tsx
+  ● double-promoted cleric has stronger visuals with normal offensive numbers
+
+    TestingLibraryElementError: Unable to find a label with the text of: Power bonus: +500
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="MuiPaper-root MuiPaper-elevation MuiPaper-rounded MuiPaper-elevation0 continuous-typing css-urmzs0-MuiPaper-root"
+          style="--Paper-shadow: none;"
+        >
+          <div
+            class="MuiStack-root css-10k1dl5-MuiStack-root"
+          >
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-vz19le-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Double Promoted · Normal damage
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-990tka-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Cadence ×1.0000
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-5c51lm-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                ATK 1,000
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-10lty8l-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Prayer ready +0
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-lq4sng-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Crit +12%
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-gy3j35-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Prayer +0
+              </span>
+            </div>
+            <div
+              class="MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorDefault MuiChip-filledDefault css-gy3j35-MuiChip-root"
+            >
+              <span
+                class="MuiChip-label MuiChip-labelMedium css-1dybbl5-MuiChip-label"
+              >
+                Prayer pool 0
+              </span>
+            </div>
+            <div
+              class="MuiBox-root css-1rcki10"
+            >
+              <span
+                class="MuiTypography-root MuiTypography-caption css-mpaqru-MuiTypography-root"
+              >
+                Crit charge +
+                0
+                %
+              </span>
+              <span
+                aria-label="Crit power charge"
+                aria-valuemax="100"
+                aria-valuemin="0"
+                aria-valuenow="61"
+                class="MuiLinearProgress-root MuiLinearProgress-colorPrimary MuiLinearProgress-determinate css-10qtmmv-MuiLinearProgress-root"
+                role="progressbar"
+              >
+                <span
+                  class="MuiLinearProgress-bar MuiLinearProgress-bar1 MuiLinearProgress-barColorPrimary MuiLinearProgress-bar1Determinate css-l16vtb-MuiLinearProgress-bar1"
+                  style="transform: translateX(-38.93129770992366%);"
+                />
+              </span>
+            </div>
+          </div>
+          <div
+            class="battle-impact-shake typing-input-deck"
+            style="animation-delay: 0ms; --impact-distance: 0px;"
+          >
+            <div
+              aria-label="Hero typing profile"
+              class="typing-portrait typing-portrait-promoted typing-portrait-double-promoted"
+              data-testid="typing-portrait"
+            >
+              <div
+                aria-hidden="true"
+                class="portrait-scenery"
+              />
+              <div
+                aria-hidden="true"
+                class="portrait-crit-aura"
+                data-testid="portrait-crit-aura"
+              >
+                <i />
+                <i />
+                <i />
+              </div>
+              <div
+                aria-hidden="true"
+                class="portrait-special"
+                data-charged="false"
+                data-testid="portrait-special"
+                style="opacity: 0;"
+              >
+                <i />
+                <i />
+                <i />
+              </div>
+              <div
+                aria-hidden="true"
+                class="portrait-dodge"
+                data-testid="portrait-dodge"
+                style="opacity: 0;"
+                title="Active Dodge"
+              />
+              <div
+                class="portrait-character promoted-character double-promoted-character"
+              >
+                <span
+                  aria-hidden="true"
+                  class="combat-actor actor-pose-idle"
+                  data-animation="idle"
+                  data-character="cleric"
+                  data-sprite-state="idle"
+                  data-testid="combat-character"
+                  style="width: 66.3px; height: 78px; --actor-color: red; --...
+
+      13 |   const player={code:'hero',name:'Hero',classId,color:'red',hp:100,maxHp:100,promotionLevel:2,promoted:false} as any;
+      14 |   render(<ContinuousTyping sessionId="bossABC" credentials={{code:'hero'}} state={state} active={false} profile={{player,events:[]}}/>);
+    > 15 |   expect(screen.getByLabelText('Attack power: 1,000')).toBeTruthy();expect(screen.getByLabelText('Power bonus: +500')).toBeTruthy();
+         |                                                                                   ^
+      16 |   expect(screen.getByLabelText('Crit ready: +12%')).toBeTruthy();expect(screen.getByTestId('typing-portrait').className).toContain('typing-portrait-double-promoted');
+      17 |   expect(screen.getByLabelText('Double promoted hero')).toBeTruthy();expect(screen.getByText('Double Promoted · Normal damage')).toBeTruthy();
+      18 |   expect(document.querySelector('.portrait-character.double-promoted-character')).not.toBeNull();
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText (node_modules/@testing-library/dom/dist/queries/label-text.js:111:38)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at getByLabelText (node_modules/@testing-library/dom/dist/query-helpers.js:95:19)
+      at src/TypingBoss/hostPortrait.test.tsx:15:83
+
+
+Test Suites: 1 failed, 36 passed, 37 total
+Tests:       1 failed, 238 passed, 239 total
+Snapshots:   0 total
+Time:        54.09 s

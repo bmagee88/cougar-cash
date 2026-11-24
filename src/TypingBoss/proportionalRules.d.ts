@@ -5,7 +5,7 @@ export const MONK_BALANCED_COLOR_CHANCES: Record<string,number>;
 export const GRADE_OPTIONS: { grade: number; count: number }[];
 export function wordsForGrades(mask?: number, sentimentMask?: number): string[];
 export function attackProgress(seed: number, wordIndex: number, characters: number, gradeMask?: number, sentimentMask?: number): number;
-type TypingWord = { text: string; color: "blue" | "orange" | "red" | "green" | "gold" | null; trigger?: boolean; pending?:boolean;ticket?:string };
+type TypingWord = { text: string; color: "blue" | "orange" | "red" | "green" | "gold" | null; trigger?: boolean; pending?:boolean;ticket?:string;summonSlot?:number };
 export function wordAt(seed: number, index: number, gradeMask?: number, sentimentMask?: number, goldEnabled?: boolean, goldChance?:number): TypingWord;
 export function typingWord(state: TypingBossTypingState, index?: number): TypingWord;
 export function attackWordLimit(state: TypingBossTypingState): number;
@@ -18,7 +18,7 @@ export function dodgeChance(state: TypingBossTypingState): number;
 export function effectiveDodgeChance(state: Partial<TypingBossTypingState>): number;
 export function initializeBalanced(state: TypingBossTypingState): TypingBossTypingState;
 export function proportionalPlayerPoint(index: number, rosterSize: number): { x: number; y: number };
-export function finishWord(state: TypingBossTypingState, text: string, count: number, sum: number, squares: number, transitionMs?: number, gaps?: number[] | null, mistakes?:number): { correct: boolean; color: string | null };
+export function finishWord(state: TypingBossTypingState, text: string, count: number, sum: number, squares: number, transitionMs?: number, gaps?: number[] | null, mistakes?:number): { correct: boolean; color: string | null;summonSlot?:number;base?:number };
 export function releaseAttack(state: TypingBossTypingState, random?: () => number): { base: number; power: number; multiplier: number; critical: boolean; consistency: number; moveId: string; orangeBonus: number; greenBonus: number; greenStacks: number; criticalChance: number; blueShield: number; meanIntervalMs: number; intervalStdDevMs: number; gold?: number; powerBonus?: number; balanced?: boolean; earnedPower?: number; healingPower?: number; supportPower?: number; guardPower?: number; orangePower?: number; criticalPower?: number; criticalBonus?: number };
 
 export function goldWordExtension(state: Pick<TypingBossTypingState,"ability">): number;

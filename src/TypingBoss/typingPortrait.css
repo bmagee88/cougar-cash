@@ -2,6 +2,9 @@
 .typing-input-deck .typing-word-input { margin-top: 0; min-width: 0; }
 .typing-input-deck-dual { grid-template-columns: 142px minmax(0,1fr) 142px; }
 .typing-dragon-portrait { border-color: #b86b4b; }
+.typing-portrait-ko { border-color:#64748b; }
+.typing-portrait-ko .portrait-scenery { filter:saturate(.2); }
+.portrait-ko-label { position:absolute; z-index:8; left:0; right:0; bottom:39px; text-align:center; color:#e2e8f0; font:900 12px/1 monospace; letter-spacing:.12em; text-shadow:0 2px 3px #000; }
 .portrait-dragon { position: absolute; z-index: 3; left: 50%; bottom: 7px; transform: translateX(-50%); }
 .host-profile-hit { position:absolute; z-index:5; inset:34px 18px 22px; pointer-events:none; border-radius:45%; background:radial-gradient(ellipse,#ffe4da77,transparent 70%); box-shadow:inset 0 0 14px #ff817a; animation:host-profile-impact 460ms ease-out both; }
 .host-profile-hit i,.host-profile-hit b { position:absolute; left:44%; top:12%; width:4px; height:70%; background:linear-gradient(transparent,#fff0d8,#fb7185,transparent); transform:rotate(35deg); }
