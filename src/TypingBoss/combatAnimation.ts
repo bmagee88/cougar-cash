@@ -4,16 +4,16 @@ import { DRAGON_FLAME } from "./dragonHurtRules";
 
 export type CombatPose = "idle" | "weakAttack" | "strongAttack" | "healCast" | "selfHeal" | "healed" |
   "shieldCast" | "shielded" | "buffCast" | "buffed" | "evasionReady" | "reviveCast" | "reviving" | "dodge" | "hit" | "block" |
-  "death" | "defeated" | "bite" | "tailWhip" | "flamethrower";
+  "death" | "defeated" | "bite" | "tailWhip" | "flamethrower" | "victory";
 export const POSE_MS: Record<CombatPose, number> = {
   idle:900, weakAttack:620, strongAttack:780, healCast:780, selfHeal:800, healed:700,
   shieldCast:780, shielded:700, buffCast:780, buffed:700, evasionReady:700, reviveCast:900, reviving:1100,
-  dodge:520, hit:460, block:520, death:950, defeated:0, bite:820, tailWhip:820, flamethrower:DRAGON_FLAME.duration,
+  dodge:520, hit:460, block:520, death:950, defeated:0, bite:820, tailWhip:820, flamethrower:DRAGON_FLAME.duration, victory:4000,
 };
 export const POSE_ROW: Record<CombatPose, number> = {
   idle:0, weakAttack:1, strongAttack:1, healCast:2, selfHeal:2, healed:3,
   shieldCast:2, shielded:5, buffCast:2, buffed:0, evasionReady:0, reviveCast:2, reviving:6,
-  dodge:4, hit:5, block:5, death:7, defeated:7, bite:1, tailWhip:1, flamethrower:1,
+  dodge:4, hit:5, block:5, death:7, defeated:7, bite:1, tailWhip:1, flamethrower:1, victory:2,
 };
 export type CombatAnimationEvent = { incomingAttack?:TypingBossProjectile['bossAttack']; krakenAttack?:'tentacleStrike'|'tentacleSweep'|'tidalWave'; id:string; state:CombatPose; at:number; duration:number; channel:"action"|"reaction"; critical?:boolean; hurtTier?:DragonHurtTier };
 export type CombatAnimation = { krakenAttack?:'tentacleStrike'|'tentacleSweep'|'tidalWave'; state:CombatPose; id:string; at:number; duration:number; action?:CombatAnimationEvent; reaction?:CombatAnimationEvent; block?:CombatAnimationEvent; nextAt?:number; hurtTier?:DragonHurtTier };

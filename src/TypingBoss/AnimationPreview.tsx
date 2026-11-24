@@ -13,7 +13,7 @@ const poses:[CombatPose,string][]=[
   ["idle","Idle"],["weakAttack","Weapon / cast"],["strongAttack","Power attack"],["healCast","Healing ally"],["selfHeal","Self healing"],
   ["healed","Getting healed"],["shieldCast","Casting shield"],["shielded","Receiving shield"],["block","Blocking"],
   ["buffCast","Casting buff"],["buffed","Receiving buff"],["evasionReady","Evasion buff"],["dodge","Dodging"],["hit","Taking damage"],
-  ["reviveCast","Reviving ally"],["reviving","Being revived"],["death","Dying"],["defeated","Knocked out"],
+  ["reviveCast","Reviving ally"],["reviving","Being revived"],["death","Dying"],["defeated","Knocked out"],["victory","Victory jump"],
   ["bite","Dragon bite"],["tailWhip","Dragon tail whip"],["flamethrower","Dragon flame"]
 ];
 export default function AnimationPreview() {

@@ -13,8 +13,10 @@ import DragonCombatSprite from "./DragonCombatSprite";
 import { useDragonCombatAnimation } from "./useDragonCombatAnimation";
 import { TypingBossBoss } from "./types";
 import "./typingPortrait.css";
+import {playerVictoryPose} from './victoryAnimation';
 
 export type TypingPortraitProps = {
+  victoryAt?:number;
   teamMode?: boolean;
   player: TypingBossPlayer;
   events: readonly CombatAnimationEvent[];
@@ -98,13 +100,14 @@ export function DragonPortrait({ boss, events, serverNow, anchorRef, state, lett
   </div>;
 }
 
-export default function TypingPortrait({ player, events, serverNow, anchorRef, state, letters, teamMode }: TypingPortraitProps & {
+export default function TypingPortrait({ player, events, serverNow, anchorRef, state, letters, teamMode, victoryAt }: TypingPortraitProps & {
   state: TypingBossTypingState; letters: number;
 }) {
   const clock = useCombatClock(serverNow);
-  const pose = useCombatAnimation(events, player.defeated, clock);
+  const combatPose = useCombatAnimation(events, player.defeated, clock);
+  const pose = playerVictoryPose(player,victoryAt) || combatPose;
   const defense = portraitDefense(state, player.maxHp);
-  const prone=useBattleCountdown(player.proneUntil,serverNow)>0;
+  const prone=useBattleCountdown(player.proneUntil,serverNow)>0 && pose.state!=='victory';
   const previous = useRef(letters);
   const [pulse, setPulse] = useState(0);
   useEffect(() => {

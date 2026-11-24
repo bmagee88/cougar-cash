@@ -1,0 +1,2 @@
+.boss-victory-color { animation:boss-victory-desaturate 8000ms linear both; }
+@keyframes boss-victory-desaturate { from { filter:saturate(1); } to { filter:saturate(.2); } }

@@ -1,0 +1,9 @@
+PASS src/TypingBoss/BattleScene.test.tsx (13.951 s)
+PASS src/TypingBoss/BattleVictoryStats.test.tsx
+PASS src/TypingBoss/victoryAnimation.test.tsx
+PASS src/TypingBoss/combatAnimation.test.tsx
+
+Test Suites: 4 passed, 4 total
+Tests:       48 passed, 48 total
+Snapshots:   0 total
+Time:        23.005 s

@@ -3,6 +3,8 @@ import { CombatAnimation, CombatAnimationEvent, POSE_ROW, selectCombatAnimation 
 import { TypingBossClassId } from "./types";
 import { combatAtlasCellHeight, combatAtlasCellWidth, combatAtlasFilename, spriteFrameOffsets } from "./spriteAnchors";
 import "./characterAnimation.css";
+import {VICTORY_MOTION} from './victoryAnimation';
+import './victoryAnimation.css';
 
 const ASSETS = `${(process.env.PUBLIC_URL || "").replace(/\/$/, "")}/assets/typing-boss`;
 const idle = {
@@ -80,6 +82,7 @@ export default function CombatCharacter({classId,color,size=62,highlight=false,p
   const spriteState=readyClass===classId?state:"idle";
   const delay=useMemo(()=>poseId && poseAt!==undefined && spriteState!=="idle" ? Math.max(0,Date.now()+clock.current-poseAt):0,[poseId,poseAt,spriteState,clock]);
   const isIdle=spriteState==="idle",held=spriteState==="defeated";
+  const victory=spriteState==='victory',motion=VICTORY_MOTION[classId];
   const config=idle[classId];
   const scale=isIdle && ["paladin","cleric","barbarian","rogue"].includes(classId)?1:1.12;
   // Whole-pixel cells prevent a fractional background offset exposing the adjacent frame.
@@ -87,7 +90,8 @@ export default function CombatCharacter({classId,color,size=62,highlight=false,p
   const baseHeight=Math.round(size*scale);
   const frameHeight=isIdle?baseHeight:Math.round(baseHeight*combatAtlasCellHeight(classId)/96);
   const verticalPadding=(frameHeight-baseHeight)/2;
-  const frameOffsets=spriteFrameOffsets(classId,POSE_ROW[spriteState],!isIdle);
+  const row=victory?motion.row:POSE_ROW[spriteState];
+  const frameOffsets=spriteFrameOffsets(classId,row,!isIdle);
   const frameStyle=Object.fromEntries(frameOffsets.map((offset,index)=>[`--frame-x-${index}`,`${offset}%`])) as React.CSSProperties;
   // Leave space for the registration shift without clipping the moving weapon.
   const framePadding=Math.ceil(frameWidth/3);
@@ -96,14 +100,16 @@ export default function CombatCharacter({classId,color,size=62,highlight=false,p
   return <span data-testid="combat-character" data-character={classId} data-animation={state}
     data-action={pose?.action?.state} data-reaction={pose?.reaction?.state} data-sprite-state={spriteState}
     className={`combat-actor actor-pose-${state}${frozen===undefined?"":" combat-actor-inspecting"}`} aria-hidden="true"
-    style={{width:size*.85,height:size,"--actor-color":color,"--actor-glow":`${highlight?18:8}px`,"--pose-ms":`${pose?.duration || 900}ms`} as React.CSSProperties}>
+    style={{width:size*.85,height:size,"--actor-color":color,"--actor-glow":`${highlight?18:8}px`,"--pose-ms":`${pose?.duration || 900}ms`,
+      '--victory-cycle':`${motion.cycleMs}ms`,'--victory-lift':`${motion.lift}%`,'--victory-lean':`${motion.lean}deg`} as React.CSSProperties}>
+    {state==='victory' && <span key={`shadow:${spriteState}:${poseId}`} className="actor-victory-shadow" style={{animationDelay:`-${delay}ms`}}/>}
     <span key={`${spriteState}:${pose?.id || "idle"}`} className={`actor-body actor-body-${state}`} style={{animationDelay:`-${delay}ms`}}>
       <span className="actor-viewport" style={{width:frameWidth+framePadding*2,height:frameHeight,left:"50%",top:size-baseHeight-verticalPadding,marginLeft:-frameWidth/2-framePadding}}>
       <span className={`actor-frames${isIdle?" actor-frames-idle":""}${held?" actor-frames-held":""}`} style={{
         ...frameStyle,width:frameWidth,height:frameHeight,left:framePadding,
         backgroundImage:`url("${isIdle?config.src:atlas}")`,backgroundSize:`600% ${isIdle?100:800}%`,
-        backgroundPositionY:isIdle?"0%":`${POSE_ROW[spriteState]/7*100}%`,backgroundPositionX:frozen!==undefined?`${frozen/5*100}%`:held?"100%":"0%",
-        animationDuration:`${pose?.duration || 900}ms`,animationDelay:`-${delay}ms`,animationName:frozen===undefined?undefined:"none",
+        backgroundPositionY:isIdle?"0%":`${row/7*100}%`,backgroundPositionX:frozen!==undefined?`${frozen/5*100}%`:held?"100%":"0%",
+        animationDuration:`${victory?motion.cycleMs:pose?.duration || 900}ms`,animationDelay:`-${delay}ms`,animationName:frozen===undefined?victory?'actor-victory-frames':undefined:"none",animationIterationCount:victory?'infinite':undefined,
         transform:frozen!==undefined?`translateX(${frameOffsets[frozen]}%)`:held?`translateX(${frameOffsets[5]}%)`:undefined,
       }} />
       </span>
