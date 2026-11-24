@@ -22,6 +22,10 @@ export default function BattleLayoutPreview() {
     players:Array.from({length:count},(_,i)=>({code:`hero${i}`,name:`Hero ${i+1}`,classId:classes[i%classes.length],color:'#93c5fd',hp:count*80,maxHp:count*100,defeated:false,attackProgress:40})),
     projectiles:[],log:[],closedAt:null,timeLimitSeconds:null,
   } as unknown as TypingBossSessionSnapshot;
+  const attack=options.get('attack') as 'bite'|'fireball'|'tailWhip'|'flamethrower'|null;
+  const attackLabels={bite:'Bite',fireball:'Fireball',tailWhip:'Tail Whip',flamethrower:'Flamethrower'};
+  if(attack && attackLabels[attack])session.projectiles=[{id:'preview-attack',source:'boss',target:'hero0',kind:'boss',bossAttack:attack,
+    moveLabel:attackLabels[attack],startedAt:endingAt,impactAt:endingAt+700,resolvedAt:null,result:'pending',amount:null}];
   if (!kraken && options.get('ending')) {
     session.status=options.get('ending')==='collapse'?'victory':'defeat';
     session.closedAt=new Date(endingAt).toISOString();

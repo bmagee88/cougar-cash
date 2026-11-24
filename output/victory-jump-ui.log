@@ -1,0 +1,81 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest --silent
+
+PASS src/TypingBoss/ContinuousBattle.test.tsx (12.378 s)
+PASS src/TypingBoss/BattleScene.test.tsx
+PASS src/TypingBoss/BattleCountdown.test.tsx
+PASS src/TypingBoss/RoomCreationGate.test.tsx
+PASS src/TypingBoss/CharacterSelect.test.tsx
+PASS src/TypingBoss/BattleLeaderboard.test.tsx
+PASS src/TypingBoss/PromotionButton.test.tsx
+PASS src/TypingBoss/HostSetup.test.tsx
+PASS src/TypingBoss/HostBattleLog.test.tsx
+PASS src/TypingBoss/hostPortrait.test.tsx
+PASS src/TypingBoss/BattleMenu.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/TeamActivityCue.test.tsx
+PASS src/TypingBoss/KrakenAnimation.test.tsx
+PASS src/TypingBoss/BattleMusic.test.tsx
+PASS src/TypingBoss/KrakenVisuals.test.tsx
+PASS src/TypingBoss/RetreatNotice.test.tsx
+PASS src/TypingBoss/dragonHurt.test.tsx
+PASS src/TypingBoss/HostPromotionMenu.test.tsx
+PASS src/TypingBoss/BattleStatus.test.tsx
+PASS src/TypingBoss/RecoveryNotice.test.tsx
+PASS src/TypingBoss/TimeLimitSettings.test.tsx
+PASS src/TypingBoss/InactivityWarning.test.tsx
+PASS src/TypingBoss/dragonFlame.test.tsx
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+PASS src/TypingBoss/ImpactShake.test.tsx
+PASS src/TypingBoss/combatAnimation.test.tsx
+PASS src/TypingBoss/credentials.test.ts
+PASS src/TypingBoss/api.test.ts
+PASS src/TypingBoss/joinNames.test.ts
+PASS src/TypingBoss/RecoveryBar.test.tsx
+PASS src/TypingBoss/typingFeedback.test.ts
+PASS src/TypingBoss/BossAttackNameBar.test.tsx
+PASS src/TypingBoss/battleLayout.test.ts
+PASS src/TypingBoss/combatNumbers.test.ts
+FAIL src/TypingBoss/victoryAnimation.test.tsx
+  ● victory jumps retain their phase on snapshots and catch up after a late load
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "-500ms"
+    Received: "-550ms"
+
+      39 |   await waitFor(()=>expect(screen.getByTestId('combat-character').getAttribute('data-sprite-state')).toBe('victory'));
+      40 |   const body=view.container.querySelector('.actor-body') as HTMLElement,frames=view.container.querySelector('.actor-frames') as HTMLElement;
+    > 41 |   expect(body.style.animationDelay).toBe('-500ms');expect(frames.style.animationIterationCount).toBe('3');
+         |                                     ^
+      42 |   act(()=>jest.advanceTimersByTime(400));view.rerender(<CombatCharacter classId="rogue" color="#fff" pose={{...pose}}/>);
+      43 |   expect(view.container.querySelector('.actor-body')).toBe(body);expect(body.style.animationDelay).toBe('-500ms');
+      44 |   view.unmount();jest.setSystemTime(7000);
+
+      at Object.<anonymous> (src/TypingBoss/victoryAnimation.test.tsx:41:37)
+
+Summary of all failing tests
+FAIL src/TypingBoss/victoryAnimation.test.tsx
+  ● victory jumps retain their phase on snapshots and catch up after a late load
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "-500ms"
+    Received: "-550ms"
+
+      39 |   await waitFor(()=>expect(screen.getByTestId('combat-character').getAttribute('data-sprite-state')).toBe('victory'));
+      40 |   const body=view.container.querySelector('.actor-body') as HTMLElement,frames=view.container.querySelector('.actor-frames') as HTMLElement;
+    > 41 |   expect(body.style.animationDelay).toBe('-500ms');expect(frames.style.animationIterationCount).toBe('3');
+         |                                     ^
+      42 |   act(()=>jest.advanceTimersByTime(400));view.rerender(<CombatCharacter classId="rogue" color="#fff" pose={{...pose}}/>);
+      43 |   expect(view.container.querySelector('.actor-body')).toBe(body);expect(body.style.animationDelay).toBe('-500ms');
+      44 |   view.unmount();jest.setSystemTime(7000);
+
+      at Object.<anonymous> (src/TypingBoss/victoryAnimation.test.tsx:41:37)
+
+
+Test Suites: 1 failed, 35 passed, 36 total
+Tests:       1 failed, 217 passed, 218 total
+Snapshots:   0 total
+Time:        45.837 s, estimated 81 s

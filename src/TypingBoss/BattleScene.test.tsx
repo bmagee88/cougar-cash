@@ -20,12 +20,34 @@ function room(count: number): TypingBossSessionSnapshot {
   } as TypingBossSessionSnapshot;
 }
 
+test.each(['infernalDragon','kraken'])('every surviving class celebrates a victory over %s on host and personal screens',(bossId:any)=>{
+  const session=room(8),classes=['paladin','cleric','barbarian','rogue','necromancer','monk'] as const;
+  session.status='victory';session.closedAt=new Date().toISOString();session.boss.id=bossId;
+  classes.forEach((classId,index)=>Object.assign(session.players[index],{classId,defeated:false}));
+  session.players[0].proneUntil=Date.now()+15000;
+  Object.assign(session.players[6],{hp:0,defeated:true});Object.assign(session.players[7],{defeated:false,timedOut:true});
+  session.typing=createTypingState(123,'paladin');
+  const view=render(<BattleScene session={session}/>);
+  const actors=screen.getAllByTestId('combat-character');
+  classes.forEach((classId,index)=>{expect(actors[index].getAttribute('data-character')).toBe(classId);expect(actors[index].getAttribute('data-animation')).toBe('victory');});
+  expect(actors[0].parentElement?.getAttribute('data-prone')).toBe('false');
+  expect(actors[6].getAttribute('data-animation')).toBe('defeated');expect(actors[7].getAttribute('data-animation')).not.toBe('victory');
+  view.rerender(<PlayerTypingBattle session={session} me={session.players[0]} code="hero0" active={false}/>);
+  expect(within(screen.getByTestId('typing-portrait')).getByTestId('combat-character').getAttribute('data-animation')).toBe('victory');
+  expect(screen.getByTestId('typing-portrait').className).not.toContain('typing-portrait-prone');
+  view.rerender(<BattleScene session={{...session,status:'setup',closedAt:null}}/>);
+  expect(screen.getAllByTestId('combat-character').some(node=>node.getAttribute('data-animation')==='victory')).toBe(false);
+});
+
 test('dragon finisher KOs every hero, keeps its timeline through snapshots, and holds the down pose',()=>{
   jest.useFakeTimers('modern');jest.setSystemTime(1000);
   try {
     const session={...room(6),status:'defeat' as const,closedAt:new Date(1000).toISOString()};
     const view=render(<BattleScene session={session}/>);
     const blast=screen.getByTestId('dragon-victory-blast');
+    const world=view.container.querySelector('.boss-victory-color') as HTMLElement;
+    expect(world).not.toBeNull();
+    const colorDelay=world.style.animationDelay;
     const delay=blast.style.getPropertyValue('--finisher-delay');
     expect(screen.getAllByTestId('combat-character').every(node=>node.getAttribute('data-animation')==='death')).toBe(true);
     expect(screen.getByTestId('dragon-animation').getAttribute('data-animation')).toBe('flamethrower');
@@ -33,11 +55,13 @@ test('dragon finisher KOs every hero, keeps its timeline through snapshots, and 
     view.rerender(<BattleScene session={{...session,revision:2,serverNow:3000}}/>);
     expect(screen.getByTestId('dragon-victory-blast')).toBe(blast);
     expect(blast.style.getPropertyValue('--finisher-delay')).toBe(delay);
+    expect(world.style.animationDelay).toBe(colorDelay);
     act(()=>jest.advanceTimersByTime(2210));
     expect(screen.queryByTestId('dragon-victory-blast')).toBeNull();
     expect(screen.getAllByTestId('combat-character').every(node=>node.getAttribute('data-animation')==='defeated')).toBe(true);
     view.rerender(<BattleScene session={{...session,status:'setup',closedAt:null}}/>);
     expect(screen.queryByTestId('dragon-victory-blast')).toBeNull();
+    expect(view.container.querySelector('.boss-victory-color')).toBeNull();
   } finally {jest.useRealTimers();}
 });
 
@@ -46,11 +70,23 @@ test('ending dragon collapse persists without projectiles and Kraken does not us
   try {
     const session=room(1);session.status='victory';session.closedAt=new Date(1000).toISOString();session.boss.hp=0;
     const view=render(<BattleScene session={session}/>);
+    expect(view.container.querySelector('.boss-victory-color')).toBeNull();
     expect(screen.getByTestId('dragon-animation').getAttribute('data-animation')).toBe('death');
     act(()=>jest.advanceTimersByTime(1810));
     expect(screen.getByTestId('dragon-animation').getAttribute('data-animation')).toBe('defeated');
     view.rerender(<BattleScene session={{...session,status:'defeat',boss:{...session.boss,id:'kraken',hp:100}}}/>);
     expect(screen.queryByTestId('dragon-victory-blast')).toBeNull();
+    expect(view.container.querySelector('.boss-victory-color')).not.toBeNull();
+  } finally {jest.useRealTimers();}
+});
+
+test('reconnecting resumes the scene color fade from the result timestamp and the boss helper caption is removed',()=>{
+  jest.useFakeTimers('modern');jest.setSystemTime(5000);
+  try {
+    const session={...room(1),status:'defeat' as const,closedAt:new Date(1000).toISOString()};
+    const view=render(<BattleScene session={session}/>);
+    expect((view.container.querySelector('.boss-victory-color') as HTMLElement).style.animationDelay).toBe('-4000ms');
+    expect(screen.queryByText(/Host controlled|every 10 words/)).toBeNull();
   } finally {jest.useRealTimers();}
 });
 
