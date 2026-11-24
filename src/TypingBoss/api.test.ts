@@ -1,6 +1,16 @@
-import {getTypingBossEventSourceUrl,getTypingBossSession,submitTypingBossWords,verifyTypingBossParticipant,createTypingBossChallenge,unlockTypingBossCreation,createTypingBossParticipant} from './api';
+import {getTypingBossEventSourceUrl,getTypingBossSession,submitTypingBossWords,verifyTypingBossParticipant,createTypingBossChallenge,unlockTypingBossCreation,createTypingBossParticipant,startTypingBossSession} from './api';
 declare const test:any,expect:any,jest:any,afterEach:any;
 const originalFetch=global.fetch;
+
+test.each(['lan','wan'])('Start carries the selected %s music policy and rejects an outdated backend for WAN',async(networkMode:'lan'|'wan')=>{
+  const fetch=jest.fn(async(_url:string,options:any)=>({ok:true,headers:{get:()=> 'application/json'},text:async()=>JSON.stringify({session:{mode:'proportional',teamMode:true,networkMode:JSON.parse(options.body).networkMode}})}));
+  global.fetch=fetch as any;
+  await startTypingBossSession('bossABC','host',1,undefined,undefined,false,true,true,300,networkMode);
+  expect(JSON.parse(fetch.mock.calls[0][1].body).networkMode).toBe(networkMode);
+  global.fetch=jest.fn(async()=>({ok:true,headers:{get:()=> 'application/json'},text:async()=>JSON.stringify({session:{mode:'proportional',teamMode:true}})})) as any;
+  if(networkMode==='wan')await expect(startTypingBossSession('bossABC','host',1,undefined,undefined,false,true,true,300,'wan')).rejects.toThrow('backend did not apply WAN music');
+  else await expect(startTypingBossSession('bossABC','host')).resolves.toBeTruthy();
+});
 afterEach(()=>{global.fetch=originalFetch;jest.useRealTimers();});
 
 test('future joins send the remembered signed promotion without a stored password',async()=>{

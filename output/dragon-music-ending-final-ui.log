@@ -1,0 +1,9 @@
+PASS src/TypingBoss/BattleScene.test.tsx (9.552 s)
+PASS src/TypingBoss/BattleMusic.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/ImpactShake.test.tsx
+
+Test Suites: 4 passed, 4 total
+Tests:       25 passed, 25 total
+Snapshots:   0 total
+Time:        14.817 s, estimated 17 s

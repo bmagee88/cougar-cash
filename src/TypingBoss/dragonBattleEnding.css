@@ -1,0 +1,48 @@
+.battle-music-enable { position:absolute!important; left:12px; top:12px; z-index:30; }
+.dragon-victory-blast { position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:9; }
+.dragon-blast-cone { position:absolute; left:0; top:calc(var(--blast-origin-y) - 20%); width:var(--blast-origin-x); height:60%; transform-origin:100% 33.333%; clip-path:polygon(100% 33.333%,83% 27%,65% 11%,49% 16%,30% 0,16% 8%,0 0,0 100%,23% 91%,37% 100%,58% 72%,74% 64%,88% 44%); background:radial-gradient(ellipse at 95% 33.333%,#fffde0 0%,#fff09c 13%,#ffbf36 28%,#ff710bee 51%,#c32206bb 72%,transparent 90%); filter:drop-shadow(0 0 18px #ff6a00); animation:dragon-finishing-fire 4200ms linear both; animation-delay:var(--finisher-delay); }
+.dragon-blast-cone i { position:absolute; inset:0; background:repeating-conic-gradient(from 30deg at 100% 33.333%,transparent 0deg 4deg,#fff4a988 5deg 8deg,transparent 10deg 15deg); mix-blend-mode:screen; }
+.dragon-blast-cone i:nth-child(2) { transform:scaleY(.72); filter:blur(8px); }
+.dragon-blast-cone i:nth-child(3) { transform:scaleY(.4); background:#fff9c8; filter:blur(18px); }
+.dragon-blast-flash { position:absolute; inset:0; background:radial-gradient(ellipse at var(--blast-origin-x) var(--blast-origin-y),#fff8cc,#ff6b00aa 40%,transparent 80%); animation:dragon-finishing-flash 4200ms linear both; animation-delay:var(--finisher-delay); }
+.dragon-blast-shockwave { position:absolute; left:10%; top:33%; width:60%; height:59%; border:10px solid #fff0b5; border-radius:50%; box-shadow:0 0 35px #ff8a00,inset 0 0 40px #ff8a00; animation:dragon-finishing-wave 4200ms linear both; animation-delay:var(--finisher-delay); }
+.dragon-blast-ember { position:absolute; left:var(--ember-x); top:var(--ember-y); width:6px; height:14px; border-radius:50% 0; background:#fff1a2; box-shadow:0 0 14px 4px #ff6000; animation:dragon-finishing-ember 4200ms linear both; animation-delay:var(--finisher-delay); }
+.dragon-blast-ko { position:absolute; left:8%; bottom:12%; color:#fff3ce; font:900 32px/1 monospace; letter-spacing:.12em; text-shadow:0 3px 0 #701500,0 0 24px #ff6b00; animation:dragon-finishing-ko 4200ms linear both; animation-delay:var(--finisher-delay); }
+/* First half of the action arrives quickly. The remaining motion stretches out. */
+@keyframes dragon-finishing-fire { 0% { opacity:0; transform:scaleX(.04) scaleY(.15); } 9% { opacity:1; transform:scaleX(.55) scaleY(.6); } 21% { opacity:1; transform:scale(1); } 50% { opacity:.94; transform:scale(1.025,1.07); } 78% { opacity:.72; transform:scale(1.05,1.13); } 100% { opacity:0; transform:scale(1.08,1.2); } }
+@keyframes dragon-finishing-flash { 0% { opacity:0; } 12% { opacity:.2; } 21% { opacity:1; } 27% { opacity:.2; } 60% { opacity:.12; } 100% { opacity:0; } }
+@keyframes dragon-finishing-wave { 0%,14% { opacity:0; transform:scale(.1,.3); } 21% { opacity:.9; transform:scale(.9); } 65% { opacity:.3; transform:scale(1.18); } 100% { opacity:0; transform:scale(1.4); } }
+@keyframes dragon-finishing-ember { 0%,19% { opacity:0; transform:translate(0,0); } 23% { opacity:1; transform:translate(-8px,-8px) rotate(var(--ember-turn)); } 80% { opacity:.8; transform:translate(-45px,-28px) rotate(var(--ember-turn)); } 100% { opacity:0; transform:translate(-65px,-36px) rotate(var(--ember-turn)); } }
+@keyframes dragon-finishing-ko { 0%,32% { opacity:0; transform:scale(1.15); } 48%,85% { opacity:1; transform:scale(1); } 100% { opacity:0; transform:scale(1); } }
+.dragon-finishing-party .actor-pose-death .actor-frames { animation-name:dragon-finishing-party-fall; }
+@keyframes dragon-finishing-party-fall { 0%,19% { background-position-x:0%; transform:translateX(var(--frame-x-0)); } 21% { background-position-x:20%; transform:translateX(var(--frame-x-1)); } 30% { background-position-x:40%; transform:translateX(var(--frame-x-2)); } 52% { background-position-x:60%; transform:translateX(var(--frame-x-3)); } 76% { background-position-x:80%; transform:translateX(var(--frame-x-4)); } 96%,100% { background-position-x:100%; transform:translateX(var(--frame-x-5)); } }
+.dragon-finishing-boss .dragon-flame-cell { animation-name:dragon-final-flame-frames; }
+@media (prefers-reduced-motion:reduce) {
+  .dragon-victory-blast * { animation:none!important; }
+  .dragon-blast-cone,.dragon-blast-flash,.dragon-blast-shockwave,.dragon-blast-ember { display:none; }
+  .dragon-blast-ko { opacity:1; }
+  .dragon-finishing-party .actor-frames { background-position-x:100%!important; transform:translateX(var(--frame-x-5)); }
+}
+
+@keyframes dragon-final-flame-frames {
+  0.000000% { background-position:0% 0.00000000%; transform:var(--flame-transform-0); }
+  2.100000% { background-position:25% 0.00000000%; transform:var(--flame-transform-1); }
+  4.200000% { background-position:50% 0.00000000%; transform:var(--flame-transform-2); }
+  6.300000% { background-position:75% 0.00000000%; transform:var(--flame-transform-3); }
+  8.400000% { background-position:100% 0.00000000%; transform:var(--flame-transform-4); }
+  10.500000% { background-position:0% 33.33333333%; transform:var(--flame-transform-5); }
+  12.600000% { background-position:25% 33.33333333%; transform:var(--flame-transform-6); }
+  14.700000% { background-position:50% 33.33333333%; transform:var(--flame-transform-7); }
+  16.800000% { background-position:75% 33.33333333%; transform:var(--flame-transform-8); }
+  18.900000% { background-position:100% 33.33333333%; transform:var(--flame-transform-9); }
+  21.000000% { background-position:0% 66.66666667%; transform:var(--flame-transform-10); }
+  29.777778% { background-position:25% 66.66666667%; transform:var(--flame-transform-11); }
+  38.555556% { background-position:50% 66.66666667%; transform:var(--flame-transform-12); }
+  47.333333% { background-position:75% 66.66666667%; transform:var(--flame-transform-13); }
+  56.111111% { background-position:100% 66.66666667%; transform:var(--flame-transform-14); }
+  64.888889% { background-position:0% 100.00000000%; transform:var(--flame-transform-15); }
+  73.666667% { background-position:25% 100.00000000%; transform:var(--flame-transform-16); }
+  82.444444% { background-position:50% 100.00000000%; transform:var(--flame-transform-17); }
+  91.222222% { background-position:75% 100.00000000%; transform:var(--flame-transform-18); }
+  100% { background-position:100% 100.00000000%; transform:var(--flame-transform-19); }
+}

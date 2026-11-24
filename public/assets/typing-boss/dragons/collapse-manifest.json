@@ -1,0 +1,130 @@
+{
+  "columns": 6,
+  "rows": 3,
+  "cell": 256,
+  "dragons": {
+    "infernalDragon": {
+      "row": 0,
+      "frames": [
+        {
+          "width": 194,
+          "height": 181,
+          "x": 34,
+          "y": 29
+        },
+        {
+          "width": 200,
+          "height": 162,
+          "x": 28,
+          "y": 48
+        },
+        {
+          "width": 193,
+          "height": 137,
+          "x": 35,
+          "y": 73
+        },
+        {
+          "width": 203,
+          "height": 108,
+          "x": 25,
+          "y": 102
+        },
+        {
+          "width": 193,
+          "height": 86,
+          "x": 35,
+          "y": 124
+        },
+        {
+          "width": 193,
+          "height": 77,
+          "x": 35,
+          "y": 133
+        }
+      ]
+    },
+    "cindermaw": {
+      "row": 1,
+      "frames": [
+        {
+          "width": 171,
+          "height": 146,
+          "x": 59,
+          "y": 61
+        },
+        {
+          "width": 168,
+          "height": 128,
+          "x": 62,
+          "y": 79
+        },
+        {
+          "width": 166,
+          "height": 107,
+          "x": 64,
+          "y": 100
+        },
+        {
+          "width": 174,
+          "height": 86,
+          "x": 56,
+          "y": 121
+        },
+        {
+          "width": 170,
+          "height": 70,
+          "x": 60,
+          "y": 137
+        },
+        {
+          "width": 172,
+          "height": 63,
+          "x": 58,
+          "y": 144
+        }
+      ]
+    },
+    "emberWhelp": {
+      "row": 2,
+      "frames": [
+        {
+          "width": 172,
+          "height": 155,
+          "x": 56,
+          "y": 56
+        },
+        {
+          "width": 167,
+          "height": 141,
+          "x": 61,
+          "y": 70
+        },
+        {
+          "width": 163,
+          "height": 122,
+          "x": 65,
+          "y": 89
+        },
+        {
+          "width": 162,
+          "height": 97,
+          "x": 66,
+          "y": 114
+        },
+        {
+          "width": 178,
+          "height": 82,
+          "x": 50,
+          "y": 129
+        },
+        {
+          "width": 182,
+          "height": 66,
+          "x": 46,
+          "y": 145
+        }
+      ]
+    }
+  }
+}

@@ -21,6 +21,9 @@ import {BATTLE_WIDTH,BATTLE_HEIGHT,battleScale} from './battleLayout';
 import InactivityWarning from './InactivityWarning';
 import {teamStartingHp} from './battleRules';
 import TimeLimitSettings, {timeLimitSeconds} from './TimeLimitSettings';
+import BattleMusic from './BattleMusic';
+import useImpactShake from './useImpactShake';
+import DragonVictoryBlast, {dragonFinisherPose, partyFinisherPose, useDragonEnding} from './DragonBattleEnding';
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
@@ -1025,6 +1028,7 @@ function HostSessionPage() {
   );
   const [copied, setCopied] = useState(false);
   const [hpMultiplier, setHpMultiplier] = useState(1);
+  const [networkMode, setNetworkMode] = useState<'lan'|'wan'>('lan');
   const [teamMode, setTeamMode] = useState(true);
   const [timePreset, setTimePreset] = useState('300');
   const [customMinutes, setCustomMinutes] = useState('10');
@@ -1047,6 +1051,7 @@ function HostSessionPage() {
   const [outcomeDismissed, setOutcomeDismissed] = useState(false);
 
   useEffect(()=>{if(session?.teamMode!==undefined)setTeamMode(session.teamMode);},[session?.teamMode]);
+  useEffect(()=>{if(session?.networkMode)setNetworkMode(session.networkMode);},[session?.networkMode]);
 
   useEffect(() => {
     if (session?.timeLimitSeconds === undefined) return;
@@ -1174,7 +1179,7 @@ function HostSessionPage() {
               disabled={busy || Number.isNaN(selectedTimeLimit) || session.status !== "setup" || (session.mode === "proportional" && !filteredWordCount(wordFilters))}
               onClick={() =>
                 runHostAction(() =>
-                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors, teamMode, selectedTimeLimit)
+                  startTypingBossSession(normalizedSessionId, hostToken, hpMultiplier, wordFilters.gradeMask === undefined ? undefined : Array.from({length:13}, (_, i) => i).filter(i => wordFilters.gradeMask! & (1 << i)), wordFilters.sentimentMask === undefined ? undefined : SENTIMENTS.filter((_, i) => wordFilters.sentimentMask! & (1 << i)), balanced, balancedRandomColors, teamMode, selectedTimeLimit, networkMode)
                 )
               }
             >
@@ -1199,6 +1204,10 @@ function HostSessionPage() {
         </Stack>
 
           {session.status === 'setup' && <Paper variant="outlined" sx={{p: 2.5}}>
+            <Stack direction="row" spacing={1} role="group" aria-label="Battle music network" sx={{mb:1}}>
+              {(['lan','wan'] as const).map(value=><Chip key={value} label={value.toUpperCase()} aria-pressed={networkMode===value} color={networkMode===value?'primary':'default'} variant={networkMode===value?'filled':'outlined'} disabled={busy} onClick={()=>setNetworkMode(value)}/>)}
+            </Stack>
+            <Typography variant="body2" sx={{mb:2}}>{networkMode==='lan'?'LAN: battle music plays on the host computer.':'WAN: battle music plays on every connected device.'} Music starts with the countdown.</Typography>
             <TimeLimitSettings preset={timePreset} customMinutes={customMinutes} onPresetChange={setTimePreset}
               onCustomChange={setCustomMinutes} disabled={busy} />
           </Paper>}
@@ -2731,8 +2740,9 @@ function BattleOutcomeModal({
 }) {
   const victory = session.mode === "proportional" && host ? session.status === "defeat" : session.status === "victory";
   const draw = session.status === 'draw';
+  const ending = useDragonEnding(session);
   return (
-    <Dialog open={open} onClose={onClose} maxWidth={session.mode === "proportional" ? "md" : "sm"} fullWidth>
+    <Dialog open={open && !ending.playing} onClose={onClose} maxWidth={session.mode === "proportional" ? "md" : "sm"} fullWidth>
       <DialogTitle
         sx={{
           fontWeight: 950,
@@ -3040,6 +3050,8 @@ export function BattleScene({ session, ownCode, sceneRef }: {
   const bossPoint = arena.hostBossPoint;
   const clock = useCombatClock(session.serverNow);
   const quiet=false;
+  const ending = useDragonEnding(session);
+  const finisherAt = ending.ending?.kind==='blast' ? ending.ending.at : undefined;
   const animations = useMemo(() => quiet ? new Map<string,CombatAnimationEvent[]>() : collectCombatAnimations(session.projectiles), [session.projectiles,quiet]);
   const basePositions = useBattlePositions(session.players, arena.hostSpawns, session.mode === 'proportional');
   const positions=useMemo(()=>session.mode==='proportional'?new Map([...basePositions].map(([id,p])=>[id,{x:p.x-(session.boss.id==='kraken'?3.5:0),y:session.boss.id==='kraken'?64+(p.y-60)*.65:58+(p.y-60)*1.25}])):basePositions,[basePositions,session.boss.id,session.mode]);
@@ -3060,6 +3072,7 @@ export function BattleScene({ session, ownCode, sceneRef }: {
 
   return (
     <Box data-overview={quiet} className={`battle-scene ${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} ref={stageRef} sx={{ width:"100%", maxWidth:"100%", minWidth:0, overflow:"hidden" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
+      <BattleMusic session={session} host={!ownCode}/>
       <BattleCountdown session={session}/>
       <RetreatNotice key={session.id} players={session.players}/>
       <Box className={proportional?'battle-world':undefined} data-world-scale={proportional?worldScale:undefined}
@@ -3070,6 +3083,8 @@ export function BattleScene({ session, ownCode, sceneRef }: {
           <PlayerNode
             key={player.code}
             player={player}
+            finisherAt={finisherAt}
+            finisherFinished={!ending.playing}
             teamMode={session.teamMode}
             quiet={quiet}
             point={positions.get(player.code) || { x: 50, y: 80 }}
@@ -3083,6 +3098,7 @@ export function BattleScene({ session, ownCode, sceneRef }: {
           />
         ))}
         {!quiet && <ProjectileLayer projectiles={session.projectiles} positions={positions} bossPoint={bossPoint} players={session.players} serverNow={session.serverNow} />}
+        {finisherAt!==undefined && ending.playing && <DragonVictoryBlast at={finisherAt} now={ending.now} bossPoint={bossPoint}/>}
       </BattlefieldShell>
       </Box>
     </Box>
@@ -3145,7 +3161,11 @@ function BossNode({
   events: readonly CombatAnimationEvent[];
   clock: React.MutableRefObject<number>;
 }) {
-  const pose = useDragonCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, quiet ? null : session.boss.hurt, session.status !== "setup" && session.boss.hp <= 0, clock, quiet ? null : session.boss.id==='kraken'?session.boss.krakenWave:session.boss.flameBreath);
+  const combatPose = useDragonCombatAnimation(quiet ? NO_ANIMATION_EVENTS : events, quiet ? null : session.boss.hurt, session.status !== "setup" && session.boss.hp <= 0, clock, quiet ? null : session.boss.id==='kraken'?session.boss.krakenWave:session.boss.flameBreath);
+  const ending = useDragonEnding(session);
+  const finishing = ending.playing && ending.ending?.kind==='blast';
+  const pose = finishing ? dragonFinisherPose(ending.ending!.at) : ending.playing && ending.ending?.kind==='collapse' ? {id:`dragon-collapse:${ending.ending.at}`,state:'death' as const,at:ending.ending.at,duration:ending.ending.duration} : combatPose;
+  const shake = useImpactShake(events, session.serverNow, true);
   const dragonWidth = session.mode === "proportional" ? 300*visualScale : bossBattleWidth(session.boss.id, size);
   const latestAttack = session.projectiles.filter(projectile => projectile.source === "boss").slice(-1)[0];
   return (
@@ -3220,7 +3240,9 @@ function BossNode({
 
         }}
       >
-        <DragonCombatSprite bossId={session.boss.id} krakenCast={quiet?null:session.boss.krakenCast} width={session.boss.id==='kraken'?{xs:300*visualScale,md:420*visualScale}:dragonWidth} glow={session.boss.color} pose={pose} clock={clock} inspectFrame={quiet ? 0 : undefined} />
+        <div {...shake} className={`battle-impact-shake${finishing?' dragon-finishing-boss':''}`} style={{...shake.style,'--impact-distance':'2px'} as React.CSSProperties}>
+          <DragonCombatSprite bossId={session.boss.id} krakenCast={quiet?null:session.boss.krakenCast} width={session.boss.id==='kraken'?{xs:300*visualScale,md:420*visualScale}:dragonWidth} glow={session.boss.color} pose={pose} clock={clock} inspectFrame={quiet ? 0 : undefined} />
+        </div>
       </Box>
     </>
   );
@@ -3247,6 +3269,8 @@ function BossChargeBar({ session }: { session: TypingBossSessionSnapshot }) {
 }
 
 const PlayerNode = React.memo(function PlayerNode({
+  finisherAt,
+  finisherFinished=false,
   teamMode=false,
   player,
   point,
@@ -3259,6 +3283,8 @@ const PlayerNode = React.memo(function PlayerNode({
   sessionId = "",
   density = "normal",
 }: {
+  finisherAt?:number;
+  finisherFinished?:boolean;
   teamMode?: boolean;
   player: TypingBossPlayer;
   point: Point;
@@ -3276,7 +3302,8 @@ const PlayerNode = React.memo(function PlayerNode({
   const width = formation ? "5.8%" : compact ? 132 : 170;
   const defense = defensePercentForPlayer(player);
   const attack = attackStrengthForPlayer(player);
-  const pose = useCombatAnimation(quiet || player.timedOut ? NO_ANIMATION_EVENTS : events, player.defeated && !player.timedOut, clock);
+  const combatPose = useCombatAnimation(quiet || player.timedOut ? NO_ANIMATION_EVENTS : events, player.defeated && !player.timedOut, clock);
+  const pose = finisherAt===undefined ? combatPose : partyFinisherPose(finisherAt, finisherFinished ? Infinity : Date.now()+clock.current);
   return (
     <Box
       sx={{
@@ -3288,7 +3315,7 @@ const PlayerNode = React.memo(function PlayerNode({
         zIndex: 5,
       }}
     >
-      <Stack direction="column" spacing={0.5} alignItems="center" sx={player.timedOut?{animation:'tb-retreat 900ms ease-in forwards','@keyframes tb-retreat':{'0%':{transform:'translateX(0)',opacity:1},'100%':{transform:'translateX(-1200px)',opacity:0,visibility:'hidden'}}}:undefined}>
+      <Stack className={finisherAt===undefined?undefined:'dragon-finishing-party'} direction="column" spacing={0.5} alignItems="center" sx={player.timedOut?{animation:'tb-retreat 900ms ease-in forwards','@keyframes tb-retreat':{'0%':{transform:'translateX(0)',opacity:1},'100%':{transform:'translateX(-1200px)',opacity:0,visibility:'hidden'}}}:undefined}>
         <Stack
           direction="row"
           spacing={0.5}

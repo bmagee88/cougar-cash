@@ -20,6 +20,40 @@ function room(count: number): TypingBossSessionSnapshot {
   } as TypingBossSessionSnapshot;
 }
 
+test('dragon finisher KOs every hero, keeps its timeline through snapshots, and holds the down pose',()=>{
+  jest.useFakeTimers('modern');jest.setSystemTime(1000);
+  try {
+    const session={...room(6),status:'defeat' as const,closedAt:new Date(1000).toISOString()};
+    const view=render(<BattleScene session={session}/>);
+    const blast=screen.getByTestId('dragon-victory-blast');
+    const delay=blast.style.getPropertyValue('--finisher-delay');
+    expect(screen.getAllByTestId('combat-character').every(node=>node.getAttribute('data-animation')==='death')).toBe(true);
+    expect(screen.getByTestId('dragon-animation').getAttribute('data-animation')).toBe('flamethrower');
+    act(()=>jest.advanceTimersByTime(2000));
+    view.rerender(<BattleScene session={{...session,revision:2,serverNow:3000}}/>);
+    expect(screen.getByTestId('dragon-victory-blast')).toBe(blast);
+    expect(blast.style.getPropertyValue('--finisher-delay')).toBe(delay);
+    act(()=>jest.advanceTimersByTime(2210));
+    expect(screen.queryByTestId('dragon-victory-blast')).toBeNull();
+    expect(screen.getAllByTestId('combat-character').every(node=>node.getAttribute('data-animation')==='defeated')).toBe(true);
+    view.rerender(<BattleScene session={{...session,status:'setup',closedAt:null}}/>);
+    expect(screen.queryByTestId('dragon-victory-blast')).toBeNull();
+  } finally {jest.useRealTimers();}
+});
+
+test('ending dragon collapse persists without projectiles and Kraken does not use dragon endings',()=>{
+  jest.useFakeTimers('modern');jest.setSystemTime(1000);
+  try {
+    const session=room(1);session.status='victory';session.closedAt=new Date(1000).toISOString();session.boss.hp=0;
+    const view=render(<BattleScene session={session}/>);
+    expect(screen.getByTestId('dragon-animation').getAttribute('data-animation')).toBe('death');
+    act(()=>jest.advanceTimersByTime(1810));
+    expect(screen.getByTestId('dragon-animation').getAttribute('data-animation')).toBe('defeated');
+    view.rerender(<BattleScene session={{...session,status:'defeat',boss:{...session.boss,id:'kraken',hp:100}}}/>);
+    expect(screen.queryByTestId('dragon-victory-blast')).toBeNull();
+  } finally {jest.useRealTimers();}
+});
+
 test('two-player balanced HP and damage use whole hundredfold display units',()=>{
   const session=room(2);session.balanced=true;
   session.players.forEach(player=>Object.assign(player,{totalDamage:0,totalTaken:0}));

@@ -12,6 +12,19 @@ function ready() {
   fireEvent.load(screen.getByTestId("dragon-atlas-preload"));
 }
 
+test.each(['infernalDragon','cindermaw','emberWhelp'])('forward collapse catches up and holds the final drawn pose for %s',(bossId:any)=>{
+  jest.useFakeTimers('modern');jest.setSystemTime(1600);
+  const death:CombatAnimation={state:'death',id:'death-1',at:1000,duration:1800};
+  const view=render(<DragonCombatSprite bossId={bossId} width={300} glow="#f00" pose={death}/>);
+  fireEvent.load(screen.getByTestId('dragon-collapse-preload'));
+  expect(screen.getByTestId('dragon-animation').getAttribute('data-sprite-state')).toBe('forward-collapse');
+  expect(screen.getByTestId('dragon-collapse-cell').style.animationDelay).toBe('-600ms');
+  expect(screen.queryByTestId('dragon-sprite-cell')).toBeNull();
+  view.rerender(<DragonCombatSprite bossId={bossId} width={300} glow="#f00" pose={{...death,state:'defeated'}}/>);
+  expect(screen.getByTestId('dragon-collapse-cell').style.backgroundPositionX).toBe('100%');
+  expect(screen.getByTestId('dragon-collapse-cell').style.animationName).toBe('none');
+});
+
 test("a late atlas load catches up to the attack and subsequent snapshots never restart it", () => {
   jest.useFakeTimers("modern"); jest.setSystemTime(1200);
   const view = render(<DragonCombatSprite bossId="infernalDragon" width={300} glow="#f00" pose={attack} />);

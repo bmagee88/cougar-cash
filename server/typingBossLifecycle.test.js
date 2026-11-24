@@ -99,6 +99,25 @@ function advanceTyping(t,session,milliseconds,excluded=[]) {
   }
 }
 
+test('LAN/WAN music policy is validated, published to every role, locked at countdown, and retained for rematch',async t=>{
+  t.mock.timers.enable({apis:['Date','setTimeout','setInterval'],now:1000000});
+  const server=loadServer(),req=body=>require('node:stream').Readable.from([JSON.stringify(body)]);
+  const response=()=>({setHeader(){},writeHead(status){this.status=status;},end(body){this.body=JSON.parse(body);}});
+  for(const mode of ['old','proportional'])for(const networkMode of ['lan','wan']){
+    const session=server.createTypingBossSession({mode}),join=response();
+    assert.equal(session.networkMode,'lan');
+    await server.handleCreateTypingBossParticipant(req({name:'Hero',classId:'paladin'}),join,session);
+    const invalid=response();await server.handleStartTypingBossSession(req({hostToken:session.hostToken,networkMode:'invalid'}),invalid,session,new URL('http://localhost'));
+    assert.equal(invalid.status,400);assert.equal(session.status,'setup');
+    const start=response();await server.handleStartTypingBossSession(req({hostToken:session.hostToken,networkMode}),start,session,new URL('http://localhost'));
+    assert.equal(start.status,200);assert.equal(start.body.session.networkMode,networkMode);
+    assert.equal(server.getTypingBossSnapshotForAuth(session,{role:'player',actorCode:join.body.code}).networkMode,networkMode);
+    const duplicate=response();await server.handleStartTypingBossSession(req({hostToken:session.hostToken,networkMode:networkMode==='lan'?'wan':'lan'}),duplicate,session,new URL('http://localhost'));
+    assert.equal(duplicate.status,409);assert.equal(session.networkMode,networkMode);
+    lifecycle.resetForRematch(session);assert.equal(session.networkMode,networkMode);
+  }
+});
+
 test('timed results compare combined team HP percentages, handle ties, and preserve earlier results', () => {
   for (const [teamHp, expected] of [[76, 'victory'], [74, 'defeat'], [75, 'draw']]) {
     const session = {...room(), status:'active', battleEndsAt:5000,

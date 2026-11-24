@@ -1278,6 +1278,7 @@ function createTypingBossSession(body) {
     hostToken: randomHex(32),
     name: normalizeBoardName(body.name || body.gameName, "Typing Boss Battle"),
     status: "setup",
+    networkMode: "lan",
     teamMode: mode === 'proportional',
     teamHealth: mode === 'proportional' ? {hp:100,maxHp:100} : null,
     timeLimitSeconds: 300,
@@ -1421,6 +1422,7 @@ function getTypingBossSnapshot(session, options = {}) {
     remainingSeconds: Math.max(0, Math.ceil((session.expiresAt - now) / 1000)),
     serverNow: now,
     countdownEndsAt: session.countdownEndsAt || null,
+    networkMode: session.networkMode || "lan",
     timeLimitSeconds: session.timeLimitSeconds ?? null,
     battleEndsAt: session.battleEndsAt || null,
     endReason: session.endReason || null,
@@ -2157,6 +2159,10 @@ async function handleStartTypingBossSession(req, res, session, url) {
 
   const now = Date.now();
   const timeLimitSeconds = body.timeLimitSeconds === undefined ? 300 : body.timeLimitSeconds;
+  if (body.networkMode !== undefined && !['lan','wan'].includes(body.networkMode)) {
+    sendError(res, 400, 'Choose LAN or WAN for battle music.');
+    return;
+  }
   if (timeLimitSeconds !== null && (!Number.isInteger(timeLimitSeconds) || timeLimitSeconds < 60 || timeLimitSeconds > 7200)) {
     sendError(res, 400, 'Choose Unlimited or a time limit from 1 to 120 minutes.');
     return;
@@ -2173,6 +2179,7 @@ async function handleStartTypingBossSession(req, res, session, url) {
     session.startedAt = now + 5000;
   }
   session.status = "active";
+  session.networkMode = body.networkMode || session.networkMode || 'lan';
   session.countdownEndsAt = now + 5000;
   if(session.mode==='proportional') {
     session.inactivityTimer=setInterval(()=>{

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useState} from 'react';
 import {Stack} from '@mui/material';
 import {PageFrame,BattleMenu,BattleScene,PlayerTypingBattle} from './TypingBossApp';
 import BattleStatus from './BattleStatus';
@@ -12,6 +12,7 @@ export default function BattleLayoutPreview() {
   const options=new URLSearchParams(window.location.search);
   const count=Math.max(1,Math.min(30,Number(options.get('players')) || 12));
   const host=options.get('role')==='host',kraken=options.get('boss')==='kraken';
+  const [endingAt]=useState(()=>Date.now()-(Number(options.get('elapsed')) || 0));
   const classes:TypingBossClassId[]=['paladin','cleric','barbarian','rogue','necromancer','monk'];
   const state=initializeBalanced(createTypingState(123,host?'dragon':'paladin'));
   state.combatDivisor=host?1:count;
@@ -21,6 +22,12 @@ export default function BattleLayoutPreview() {
     players:Array.from({length:count},(_,i)=>({code:`hero${i}`,name:`Hero ${i+1}`,classId:classes[i%classes.length],color:'#93c5fd',hp:count*80,maxHp:count*100,defeated:false,attackProgress:40})),
     projectiles:[],log:[],closedAt:null,timeLimitSeconds:null,
   } as unknown as TypingBossSessionSnapshot;
+  if (!kraken && options.get('ending')) {
+    session.status=options.get('ending')==='collapse'?'victory':'defeat';
+    session.closedAt=new Date(endingAt).toISOString();
+    if(session.status==='victory')session.boss.hp=0;
+    else {session.teamHealth!.hp=0;session.players.forEach(player=>{player.hp=0;player.defeated=true;});}
+  }
   return <PageFrame wide battle>
     <BattleMenu status="active"><a href="?players=30">30 players</a> · <a href="?players=3">3 players</a> · <a href="?role=host&players=30">Host</a> · <a href="?boss=kraken&players=30">Kraken</a></BattleMenu>
     <BattleStatus session={session}/>
