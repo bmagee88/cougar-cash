@@ -1,0 +1,64 @@
+TAP version 13
+# Subtest: signed grants remember all tiers and reject a forged change to their level
+ok 1 - signed grants remember all tiers and reject a forged change to their level
+  ---
+  duration_ms: 21.8503
+  type: 'test'
+  ...
+# Subtest: double promotion uses normal damage and one boss HP share; switching tiers preserves balance
+ok 2 - double promotion uses normal damage and one boss HP share; switching tiers preserves balance
+  ---
+  duration_ms: 16.2165
+  type: 'test'
+  ...
+# Subtest: device grants are signed, reject tampering and local booleans, and invalidate on password rotation
+ok 3 - device grants are signed, reject tampering and local booleans, and invalidate on password rotation
+  ---
+  duration_ms: 2.2953
+  type: 'test'
+  ...
+# Subtest: one promoted hero among three contributes four HP shares; promotion is idempotent and preserves damage
+ok 4 - one promoted hero among three contributes four HP shares; promotion is idempotent and preserves damage
+  ---
+  duration_ms: 2.3759
+  type: 'test'
+  ...
+# Subtest: promoted countdown joins contribute twice while the combat divisor stays the roster count
+ok 5 - promoted countdown joins contribute twice while the combat divisor stays the roster count
+  ---
+  duration_ms: 1.8346
+  type: 'test'
+  ...
+# Subtest: host can demote during combat, preserving boss HP percentage and restoring normal attacks
+ok 6 - host can demote during combat, preserving boss HP percentage and restoring normal attacks
+  ---
+  duration_ms: 1.0897
+  type: 'test'
+  ...
+# Subtest: promotion toggles do not change Team HP or an inactive player contribution
+ok 7 - promotion toggles do not change Team HP or an inactive player contribution
+  ---
+  duration_ms: 1.2528
+  type: 'test'
+  ...
+# Subtest: promotion doubles final offensive damage, including bonuses, and marks stronger impacts
+ok 8 - promotion doubles final offensive damage, including bonuses, and marks stronger impacts
+  ---
+  duration_ms: 2.7697
+  type: 'test'
+  ...
+# Subtest: promotion does not double cleric healing or necromancer revival healing
+ok 9 - promotion does not double cleric healing or necromancer revival healing
+  ---
+  duration_ms: 4.2698
+  type: 'test'
+  ...
+1..9
+# tests 9
+# suites 0
+# pass 9
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 780.155
