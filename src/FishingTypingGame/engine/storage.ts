@@ -30,7 +30,7 @@ function readTypingMemory(value: unknown): CatchTypingMemory | undefined {
 export function emptySave(): SaveData {
   return { version: 1, sizeQualityVersion:1, livewell: [], notebook: [], butterflyDiscoveries:[], visitorDiscoveries:[], santaYears:[], balance: BALANCE.initialBalance, location: 'dock', awardedIds: [],
     tackle: { ...DEFAULT_TACKLE }, lineGear: readLineGear(),
-    settings: { weather: 'sunny', sound: false, soundVolume: .55, reducedMotion: false, keepScreenAwake: true, fishingMode: DEFAULT_FISHING_MODE, wordCheckpoint: false, environmentRender: 'natural', hideFishDetails: true, measurements: 'imperial' },
+    settings: { weather: 'sunny', sound: false, soundVolume: .55, reducedMotion: false, cameraDrift: true, keepScreenAwake: true, fishingMode: DEFAULT_FISHING_MODE, wordCheckpoint: false, environmentRender: 'natural', hideFishDetails: true, measurements: 'imperial' },
     stats: { caught: 0, escaped: 0, discovered: [], byRarity: Object.fromEntries(RARITIES.map(r => [r, 0])) as SaveData['stats']['byRarity'],
       byQuality: Object.fromEntries(QUALITIES.map(q => [q, 0])) as SaveData['stats']['byQuality'], albinos: 0, albinoDiscovered: [], largest: {}, bestWpm: 0, totalWpm: 0, currentStreak: 0, longestStreak: 0 } };
 }
@@ -62,7 +62,7 @@ export function deserializeSave(raw: string | null): SaveData {
         return { ...record, ...(typing ? { typing } : {}), ...(retrieve ? { retrieve } : {}), ...(conditions ? { conditions } : {}) };
       }),
       settings: { sound: data.settings?.sound === true,
-        soundVolume: readSoundVolume(data.settings?.soundVolume), reducedMotion: data.settings?.reducedMotion === true, keepScreenAwake: typeof data.settings?.keepScreenAwake === 'boolean' ? data.settings.keepScreenAwake : true, hideFishDetails:data.settings?.hideFishDetails!==false, measurements:data.settings?.measurements==='metric'?'metric':'imperial', fishingMode: data.settings?.fishingMode==='standard' ? 'standard' : data.settings?.fishingMode==='interactive' ? 'interactive' : DEFAULT_FISHING_MODE, wordCheckpoint: data.settings?.wordCheckpoint===true, environmentRender: readEnvironmentRender(data.settings?.environmentRender), weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
+        soundVolume: readSoundVolume(data.settings?.soundVolume), reducedMotion: data.settings?.reducedMotion === true, cameraDrift: data.settings?.cameraDrift !== false, keepScreenAwake: typeof data.settings?.keepScreenAwake === 'boolean' ? data.settings.keepScreenAwake : true, hideFishDetails:data.settings?.hideFishDetails!==false, measurements:data.settings?.measurements==='metric'?'metric':'imperial', fishingMode: data.settings?.fishingMode==='standard' ? 'standard' : data.settings?.fishingMode==='interactive' ? 'interactive' : DEFAULT_FISHING_MODE, wordCheckpoint: data.settings?.wordCheckpoint===true, environmentRender: readEnvironmentRender(data.settings?.environmentRender), weather: naturalWeather?.weather ?? (WEATHERS.includes(data.settings?.weather) ? data.settings.weather : 'sunny'),
         ...(data.settings?.weatherMode === 'natural' ? { weatherMode: 'natural' as const, ...(naturalWeather ? { naturalWeather } : {}) } : {}),
         ...(data.settings?.weatherMode !== 'natural' && data.settings?.weather === 'thunderstorm' && number(data.settings?.stormStartedAt) > 0 ? { stormStartedAt: data.settings.stormStartedAt } : {}) } };
     if(data.sizeQualityVersion!==1){

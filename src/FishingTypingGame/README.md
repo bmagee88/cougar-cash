@@ -49,6 +49,13 @@ The 122 poems come from Basil Hall Chamberlain's 1902 English translations of cl
 
 ## Assets
 
+Settings → **Camera drift** controls the gentle side-to-side movement independently
+of Environment render. Turning it off holds both foreground and background camera
+positions at zero and stops the drift animation-frame loop. Timed sky/weather
+samples, wildlife and fishing animations continue. The preference saves in this
+browser; new and older saves keep drift enabled until it is switched off. Reduce
+animation and the system reduced-motion preference still override camera drift.
+
 All assets are bundled in `public/assets/fishing/`, including retained reference/vector alternatives; there is no third-party image hosting or font dependency. The subfolders contain seasonal locations, character art, rod, lure, normal/albino fish illustrations, cloud/weather/moon artwork, ripple effects, and a UI mark.
 
 The transparent distant shore at `locations/cedar/distant-shore.png` was created using the built-in imagegen tool. Final prompt: “Wide panoramic transparent distant scenery layer for a layered 2D fishing game: tranquil temperate North American lake shore, blue-green rolling mountains behind pine and deciduous forest, a few golden autumn trees, atmospheric depth; polished painterly vector-like game illustration, muted teal and sage, golden highlights. Only distant mountains and trees, transparent sky and lower area; no water, character, rod, foreground, text, or watermark.”
