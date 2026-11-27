@@ -1,0 +1,9 @@
+PASS src/TypingBoss/KrakenAnimation.test.tsx (28.38 s)
+PASS src/TypingBoss/HostSetup.test.tsx (14.878 s)
+PASS src/TypingBoss/WyrmVisuals.test.tsx (25.244 s)
+PASS src/TypingBoss/BattleMusic.test.tsx (7.123 s)
+
+Test Suites: 4 passed, 4 total
+Tests:       29 passed, 29 total
+Snapshots:   0 total
+Time:        94.217 s

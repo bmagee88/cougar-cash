@@ -16,6 +16,7 @@ import "./typingPortrait.css";
 import {playerVictoryPose} from './victoryAnimation';
 import {promotionLevel,promotionDamageMultiplier,promotionVisualClass} from './promotion';
 import SummonParty from './SummonSprites';
+import {bossPortraitWidth} from './bossPortraitLayout';
 
 export type TypingPortraitProps = {
   battleDefeatPose?:CombatAnimation;
@@ -89,7 +90,7 @@ export function DragonPortrait({ boss, events, serverNow, anchorRef, state, lett
     {crit > 0 && <div className="portrait-crit-aura" aria-hidden="true"><i/><i/><i/></div>}
     {special && <div className="portrait-special" aria-hidden="true"><i/><i/><i/></div>}
     {defense && <div className="portrait-dodge" style={{opacity:Math.sqrt(defense.dodge)}} aria-hidden="true"/>}
-    <div className="portrait-dragon"><DragonCombatSprite bossId={boss.id} krakenCast={boss.krakenCast} width={{xs:98,md:136}} glow={boss.glow} pose={pose} clock={clock} /></div>
+    <div className="portrait-dragon"><DragonCombatSprite bossId={boss.id} bossState={boss} krakenCast={boss.krakenCast} width={bossPortraitWidth(boss.id)} glow={boss.glow} pose={pose} clock={clock} /></div>
     <HostHitFeedback events={events} clock={clock}/>
     {defense && <div className="portrait-shield" style={{opacity:Math.sqrt(defense.shield)}} aria-hidden="true"/>}
     <div className="portrait-attack" title="Dragon attack charge" aria-label={`Dragon attack power: ${combatNumber(letters)}`}>

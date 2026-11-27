@@ -28,6 +28,7 @@ export function collectCombatAnimations(projectiles: readonly TypingBossProjecti
     const list = actors.get(actor) || []; list.push(event); actors.set(actor,list);
   };
   for (const shot of projectiles) {
+    if(shot.consumeTick) {if(shot.resolvedAt && (shot.amount || 0)>0)add(shot.target,shot,"hit",shot.resolvedAt,"reaction");continue;}
     const selfHeal = shot.kind === "heal" && shot.source === shot.target;
     const cast:CombatPose = shot.kind === "heal" ? selfHeal ? "selfHeal" : "healCast" :
       shot.kind === "resurrect" ? "reviveCast" : shot.kind === "buff" ? shot.moveId === "goldShield" ? "shieldCast" : "buffCast" :

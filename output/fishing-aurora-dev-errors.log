@@ -1,0 +1,797 @@
+Browserslist: browsers data (caniuse-lite) is 21 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+(node:19104) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:19104) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
+(node:19104) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
+ERROR in src/TypingBoss/DragonCombatSprite.tsx:94:188
+TS2322: Type '"emberWhelp" | "cindermaw" | "infernalDragon" | "giantSandWyrm"' is not assignable to type '"emberWhelp" | "cindermaw" | "infernalDragon"'.
+  Type '"giantSandWyrm"' is not assignable to type '"emberWhelp" | "cindermaw" | "infernalDragon"'.
+    92 |
+    93 | export default function DragonCombatSprite(props:{bossId:TypingBossId;width:number|{xs:number;md:number};glow:string;pose:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;krakenCast?:{id:string;at:number;until:number}|null}) {
+  > 94 |   return props.bossId==='kraken'?<KrakenSprite width={props.width} pose={props.pose} clock={props.clock} cast={props.krakenCast} quiet={props.inspectFrame===0}/>:<DragonSprite {...props} bossId={props.bossId}/>;
+       |                                                                                                                                                                                            ^^^^^^
+    95 | }
+    96 |
+
+ERROR in src/TypingBoss/DragonCombatSprite.tsx:94:188
+TS2322: Type '"emberWhelp" | "cindermaw" | "infernalDragon" | "giantSandWyrm"' is not assignable to type '"emberWhelp" | "cindermaw" | "infernalDragon"'.
+  Type '"giantSandWyrm"' is not assignable to type '"emberWhelp" | "cindermaw" | "infernalDragon"'.
+    92 |
+    93 | export default function DragonCombatSprite(props:{bossId:TypingBossId;width:number|{xs:number;md:number};glow:string;pose:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;krakenCast?:{id:string;at:number;until:number}|null}) {
+  > 94 |   return props.bossId==='kraken'?<KrakenSprite width={props.width} pose={props.pose} clock={props.clock} cast={props.krakenCast} quiet={props.inspectFrame===0}/>:<DragonSprite {...props} bossId={props.bossId}/>;
+       |                                                                                                                                                                                            ^^^^^^
+    95 | }
+    96 |
+
+ERROR in src/TypingBoss/KrakenPreview.tsx:36:21
+TS2322: Type 'string' is not assignable to type 'number | { xs: number; md: number; }'.
+    34 |     <Stack direction="row" gap={1} flexWrap="wrap" sx={{my:2}}>{(Object.entries(KRAKEN_ANIMATIONS) as [KrakenAction,typeof config][]).map(([kind,value])=><Button key={kind} variant={selected===kind?'contained':'outlined'} onClick={()=>play(kind)}>{value.label} · {value.frames} frames</Button>)}</Stack>
+    35 |     <Box sx={{maxWidth:680,mx:'auto',border:'1px solid #164e63',borderRadius:3,overflow:'hidden',background:'radial-gradient(ellipse at 50% 80%,#164e63,#020617 75%)'}}>
+  > 36 |       <KrakenSprite width="100%" pose={pose} clock={clock} cast={inspectionCast} inspectFrame={frame}/>
+       |                     ^^^^^
+    37 |     </Box>
+    38 |     <Stack direction="row" gap={1} flexWrap="wrap" justifyContent="center" alignItems="center" sx={{my:1}}>
+    39 |       <Button onClick={()=>play(selected)}>Replay</Button><Button onClick={()=>setFrame(Math.floor(config.impact/config.duration*config.frames))}>Inspect impact frame</Button>
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:12:67
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    10 |   jest.useFakeTimers();jest.setSystemTime(1000);
+    11 |   render(<AnimationPreview/>);
+  > 12 |   fireEvent.click(screen.getByRole('button',{name:'Critical hurt',exact:true}));
+       |                                                                   ^^^^^^^^^^
+    13 |   fireEvent.click(screen.getByRole('checkbox',{name:'Inspect Wyrm frames'}));
+    14 |   fireEvent.change(screen.getByRole('slider',{name:'Wyrm animation frame'}),{target:{value:4}});
+    15 |   act(()=>jest.advanceTimersByTime(10000));
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:39:61
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    37 | test('all animation groups are accessible without a live room',()=>{
+    38 |   render(<AnimationPreview/>);
+  > 39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+       |                                                             ^^^^^^^^^^
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:40:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    38 |   render(<AnimationPreview/>);
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+  > 40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:68
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                    ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:41:136
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): any', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    39 |   fireEvent.click(screen.getByRole('button',{name:'Dragons',exact:true}));expect(screen.getByRole('checkbox',{name:'Inspect dragon frames'})).toBeTruthy();
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+  > 41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+       |                                                                                                                                        ^^^^^^^^^^
+    42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+    43 | });
+    44 |
+
+ERROR in src/TypingBoss/AnimationPreview.test.tsx:42:60
+TS2769: No overload matches this call.
+  Overload 1 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+  Overload 2 of 2, '(role: ByRoleMatcher, options?: ByRoleOptions): HTMLElement', gave the following error.
+    Argument of type '{ name: string; exact: boolean; }' is not assignable to parameter of type 'ByRoleOptions'.
+      Object literal may only specify known properties, and 'exact' does not exist in type 'ByRoleOptions'.
+    40 |   fireEvent.click(screen.getByRole('button',{name:'Heroes',exact:true}));expect(screen.getByRole('checkbox',{name:'Kneeling heroes'})).toBeTruthy();
+    41 |   fireEvent.click(screen.getByRole('button',{name:'Zombie summons',exact:true}));expect(screen.getByRole('button',{name:'Resurrection',exact:true})).toBeTruthy();
+  > 42 |   fireEvent.click(screen.getByRole('button',{name:'Kraken',exact:true}));expect(screen.getByRole('button',{name:'Inspect impact frame'})).toBeTruthy();
+       |                                                            ^^^^^^^^^^
+    43 | });
+    44 |
+

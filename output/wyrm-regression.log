@@ -1,0 +1,180 @@
+TAP version 13
+# Subtest: Kraken repeats 8/10/10 words and gold never extends its word count
+ok 1 - Kraken repeats 8/10/10 words and gold never extends its word count
+  ---
+  duration_ms: 40.6301
+  type: 'test'
+  ...
+# Subtest: sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+ok 2 - sweep selects unique 2-8 living targets, clamps to the party, and shares all damage
+  ---
+  duration_ms: 15.0985
+  type: 'test'
+  ...
+# Subtest: single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+ok 3 - single slam deals damage, forces 5-second prone, blocks submissions/progress, then releases
+  ---
+  duration_ms: 5.1779
+  type: 'test'
+  ...
+# Subtest: wave independently grants 15% prone instead of damage without redistributing the saved damage
+ok 4 - wave independently grants 15% prone instead of damage without redistributing the saved damage
+  ---
+  duration_ms: 2.238
+  type: 'test'
+  ...
+# Subtest: curse ticks every 2-4 seconds for 15 seconds, sends a correct-key pulse without penalizing accuracy, and stops at expiry
+ok 5 - curse ticks every 2-4 seconds for 15 seconds, sends a correct-key pulse without penalizing accuracy, and stops at expiry
+  ---
+  duration_ms: 2.9043
+  type: 'test'
+  ...
+# Subtest: prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+ok 6 - prone and ended battles suppress curse key presses; replacement curses invalidate old callbacks
+  ---
+  duration_ms: 16.7306
+  type: 'test'
+  ...
+# Subtest: Kraken attacks wait for the previous drawn recovery without overlapping clips or awarding twice
+ok 7 - Kraken attacks wait for the previous drawn recovery without overlapping clips or awarding twice
+  ---
+  duration_ms: 7.122
+  type: 'test'
+  ...
+# Subtest: a full 20-frame wave completes before critical recoil and the next queued attack
+ok 8 - a full 20-frame wave completes before critical recoil and the next queued attack
+  ---
+  duration_ms: 6.5472
+  type: 'test'
+  ...
+# Subtest: Ink Hex gets its own 20-frame cast before the regular attack and its damage
+ok 9 - Ink Hex gets its own 20-frame cast before the regular attack and its damage
+  ---
+  duration_ms: 2.5996
+  type: 'test'
+  ...
+# (node:6520) ExperimentalWarning: The MockTimers API is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# Subtest: damage ramp starts after countdown and advances by .01 every two seconds
+ok 10 - damage ramp starts after countdown and advances by .01 every two seconds
+  ---
+  duration_ms: 3.1895
+  type: 'test'
+  ...
+# Subtest: team HP equals boss HP and twelve players collectively earn one full attack without double division
+ok 11 - team HP equals boss HP and twelve players collectively earn one full attack without double division
+  ---
+  duration_ms: 60.0026
+  type: 'test'
+  ...
+# Subtest: single, tail, and all-player volleys each remove their total damage once from the shared pool
+ok 12 - single, tail, and all-player volleys each remove their total damage once from the shared pool
+  ---
+  duration_ms: 14.2083
+  type: 'test'
+  ...
+# Subtest: shared damage respects individual target shields and shared healing never duplicates its amount
+ok 13 - shared damage respects individual target shields and shared healing never duplicates its amount
+  ---
+  duration_ms: 2.0198
+  type: 'test'
+  ...
+# Subtest: cleric specials heal both the wounded hero and shared team pool once
+ok 14 - cleric specials heal both the wounded hero and shared team pool once
+  ---
+  duration_ms: 2.4212
+  type: 'test'
+  ...
+# Subtest: both sides use the same ramp at attack launch and healing does not gain the ramp
+ok 15 - both sides use the same ramp at attack launch and healing does not gain the ramp
+  ---
+  duration_ms: 8.2714
+  type: 'test'
+  ...
+# Subtest: shared depletion ends the round, caps overkill, and never starts Second Wind
+ok 16 - shared depletion ends the round, caps overkill, and never starts Second Wind
+  ---
+  duration_ms: 2.4376
+  type: 'test'
+  ...
+# Subtest: Second Wind keeps solo and full parties active with no recovery timers
+ok 17 - Second Wind keeps solo and full parties active with no recovery timers
+  ---
+  duration_ms: 5.6127
+  type: 'test'
+  ...
+# Subtest: Second Wind counts accepted words once, skips invalid words, and grants 40% HP and protection
+ok 18 - Second Wind counts accepted words once, skips invalid words, and grants 40% HP and protection
+  ---
+  duration_ms: 7.9816
+  type: 'test'
+  ...
+# Subtest: Second Wind attacks retain 75% power and protection blocks already-launched hits
+ok 19 - Second Wind attacks retain 75% power and protection blocks already-launched hits
+  ---
+  duration_ms: 6.4908
+  type: 'test'
+  ...
+# Subtest: balanced dragon cycle prioritizes tail then single attacks then the all-player attack
+ok 20 - balanced dragon cycle prioritizes tail then single attacks then the all-player attack
+  ---
+  duration_ms: 24.4248
+  type: 'test'
+  ...
+# Subtest: Second Wind protection expires after five seconds and never prevents later damage
+ok 21 - Second Wind protection expires after five seconds and never prevents later damage
+  ---
+  duration_ms: 3.1991
+  type: 'test'
+  ...
+# Subtest: three-player Team mode applies the HP multiplier equally and counts promoted heroes once
+ok 22 - three-player Team mode applies the HP multiplier equally and counts promoted heroes once
+  ---
+  duration_ms: 0.5792
+  type: 'test'
+  ...
+# Subtest: team necromancer specials summon once per attack, cap at three and resurrect existing KO slots
+ok 23 - team necromancer specials summon once per attack, cap at three and resurrect existing KO slots
+  ---
+  duration_ms: 5.7831
+  type: 'test'
+  ...
+# Subtest: a damaging boss hit hurts the owner and team and kills one summon; full blocks and dodges preserve summons
+ok 24 - a damaging boss hit hurts the owner and team and kills one summon; full blocks and dodges preserve summons
+  ---
+  duration_ms: 3.5445
+  type: 'test'
+  ...
+# Subtest: target weighting adds one ticket per living summon, excludes KO slots, and applies to both bosses
+ok 25 - target weighting adds one ticket per living summon, excludes KO slots, and applies to both bosses
+  ---
+  duration_ms: 6.3624
+  type: 'test'
+  ...
+# Subtest: summon prefixes precede ten normal words and never earn owner ATK, cadence, colors, triggers or banks
+ok 26 - summon prefixes precede ten normal words and never earn owner ATK, cadence, colors, triggers or banks
+  ---
+  duration_ms: 2.8269
+  type: 'test'
+  ...
+# Subtest: summon damage ignores promotion and the kneeling penalty while owner attacks use team Second Wind power
+ok 27 - summon damage ignores promotion and the kneeling penalty while owner attacks use team Second Wind power
+  ---
+  duration_ms: 0.9343
+  type: 'test'
+  ...
+# Subtest: missing or lost summon slots cannot attack and a mid-run loss preserves the issued word order
+ok 28 - missing or lost summon slots cannot attack and a mid-run loss preserves the issued word order
+  ---
+  duration_ms: 1.0307
+  type: 'test'
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 839.383

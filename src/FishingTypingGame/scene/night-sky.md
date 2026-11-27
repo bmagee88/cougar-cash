@@ -30,7 +30,9 @@ trails. Strong auroral curtains use mostly green oxygen emission with a
 fainter reddish upper edge. At this latitude and south-facing view these
 represent rare displays extending high across the sky.
 
-These events are separate SVG layers and do not belong to the weather enum.
+The aurora uses a transparent painted image; meteors use a separate SVG layer.
+See [the aurora artwork, generation prompt and runtime copy](aurora-artwork.md).
+These events do not belong to the weather enum.
 They remain scheduled during every weather, while the cloud layer and fog
 obscure them naturally. Both sky layers sit behind clouds and terrain. They
 do not illuminate the entire lake or add fictional nebulae.

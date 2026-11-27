@@ -18,6 +18,7 @@ import useImpactShake from './useImpactShake';
 
 const colors = { blue: "#7dd3fc", orange: "#fdba74", red: "#ff6b6b", green: "#86efac", gold: "#fde047" };
 const goldAbilityText = {
+  wyrm: "Gold prepares Burrow. Stay underground for the next full attack sequence, then release Consume. The target keeps typing inside the Wyrm and takes ten damage ticks over thirty seconds before being spat out. Overrun makes incoming attacks miss immediately.",
   cleric: "Turn your attack into a heal for the lowest-HP wounded player.",
   barbarian: "Each perfect gold adds two words to this run. Type them to earn more damage and color bonuses. No gold damage multiplier or carryover.",
   necromancer: "Turn your attack into a revival for a knocked-out player.",
@@ -329,7 +330,7 @@ export function ContinuousTyping({ sessionId, credentials, state, active, profil
       {!current.balanced && <Typography variant="body2" sx={{ mt: 1 }}>
         30% colored words: perfect blue words block 10% of the next hit; orange adds 10% attack; red adds 10% crit chance; green adds 4% per following correct word.
         Bonuses stack. Attack bonuses reset when you fire; Block lasts until hit.
-        {credentials.hostToken && " Dragon attacks: 50% Tail Whip targets a nearby group, 40% Bite or Fireball targets one player, and 10% Flamethrower targets everyone standing. Damage splits evenly among targets before defenses."}
+        {credentials.hostToken && current.ability!=='wyrm' && " Dragon attacks: 50% Tail Whip targets a nearby group, 40% Bite or Fireball targets one player, and 10% Flamethrower targets everyone standing. Damage splits evenly among targets before defenses."}
       </Typography>}
       {current.ability && <Typography variant="body2" sx={{ mt: 1 }}>
         {current.balanced ? "Master earned gold words to activate your class ability." : `Gold words appear ${current.ability==='monk'?10:5}% of the time. Type them perfectly to earn your ability.`} {current.summonPrefix ? "Each special raises one zombie, up to three. Perfect rancid-green summon words attack before your ten words without adding to your ATK or color bonuses. Taking damage knocks out one zombie; later specials resurrect fallen summons. More living zombies draw more boss attention." : current.balanced && current.ability==='cleric' ? "Prayer replaces Charge. Yellow words build Prayer and ATK in scheduled mode; mistakes preserve saved Prayer. Perfect yellow triggers deposit the saved amount into the shared Prayer pool. On attack release, a gold special turns ATK including bonuses into shared healing, divided by all Clerics in the battle. It heals one random wounded living player from the accumulated pool, spending only their missing HP and saving the rest. That special deals no damage to the dragon." : current.balanced && ["paladin","necromancer","rogue"].includes(current.ability) ? "Necromancer gold picks a random player: a downed target is revived using full ATK divided by the Necromancer count, with leftover healing saved. A standing target means normal boss damage, with no saved revive charge. Paladin gives an ally Block using the 20% support budget. Rogue specials add extra dodge rolls." : goldAbilityText[current.ability]} {scheduled ? "Gold extensions commit on the last letter." : "A gold word extending a run needs Space even if it was previously the last word."}

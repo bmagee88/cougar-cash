@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: Wyrm cycles Bite, group Slam and all-player Overrun
+ok 1 - Wyrm cycles Bite, group Slam and all-player Overrun
+  ---
+  duration_ms: 13.088
+  type: 'test'
+  ...
+# Subtest: Overrun discards in-flight and new attacks immediately and never queues player damage
+ok 2 - Overrun discards in-flight and new attacks immediately and never queues player damage
+  ---
+  duration_ms: 1.852
+  type: 'test'
+  ...
+# Subtest: Burrow stays underground through the next full ten-word sequence before Consume
+ok 3 - Burrow stays underground through the next full ten-word sequence before Consume
+  ---
+  duration_ms: 5.7878
+  type: 'test'
+  ...
+# Subtest: Consume lands without upfront damage, ticks precisely ten times, then spits out and stops
+ok 4 - Consume lands without upfront damage, ticks precisely ten times, then spits out and stops
+  ---
+  duration_ms: 4.0657
+  type: 'test'
+  ...
+# Subtest: consumed players remain able to type and recover; other boss attacks exclude their slot
+ok 5 - consumed players remain able to type and recover; other boss attacks exclude their slot
+  ---
+  duration_ms: 2.1209
+  type: 'test'
+  ...
+# Subtest: closing or ending a battle cancels Consume damage and no tick can resurrect it
+ok 6 - closing or ending a battle cancels Consume damage and no tick can resurrect it
+  ---
+  duration_ms: 1.37
+  type: 'test'
+  ...
+# Subtest: Consume can end the shared-HP battle and cannot damage a replaced or retreated actor
+ok 7 - Consume can end the shared-HP battle and cannot damage a replaced or retreated actor
+  ---
+  duration_ms: 0.7183
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 392.9304

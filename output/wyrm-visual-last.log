@@ -1,0 +1,6 @@
+PASS src/TypingBoss/WyrmVisuals.test.tsx (34.141 s)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        55.707 s

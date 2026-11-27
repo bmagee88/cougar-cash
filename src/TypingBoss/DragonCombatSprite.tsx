@@ -1,3 +1,7 @@
+import visualRegistration from './bossVisualRegistration';
+import WyrmSprite from './WyrmVisuals';
+import BossIdleSprite from './BossIdleSprite';
+import {TypingBossBoss} from './types';
 import {KrakenSprite} from './KrakenVisuals';
 import React, { useMemo, useRef, useState } from "react";
 import { Box } from "@mui/material";
@@ -20,7 +24,7 @@ const DRAGONS = {
 };
 
 function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame }: {
-  bossId: Exclude<TypingBossId,'kraken'>;
+  bossId: Exclude<TypingBossId,'kraken'|'giantSandWyrm'>;
   width: number | { xs: number; md: number };
   glow: string;
   pose: CombatAnimation;
@@ -40,7 +44,7 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
   const ready = readyAtlas === src;
   const action = dragonSpriteAction(pose);
   const isFlame = action?.state === "flamethrower";
-  const flameSrc = `${ASSETS}/dragons/${config.atlas.replace("-attacks", "-flame-20")}.webp`;
+  const flameSrc = `${ASSETS}/dragons/${config.atlas.replace("-attacks", "-flame-20-v2")}.webp`;
   const flameReady = readyFlame === flameSrc;
   const hurtTier = action ? undefined : pose.hurtTier;
   const hurtSrc = `${ASSETS}/dragons/${config.atlas.replace("-attacks", "-hurt")}.webp`;
@@ -54,7 +58,7 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
   const delay = useMemo(() => !animationReady || !actionId || actionAt === undefined ? 0 : dragonSpriteDelay(actionAt, actionDuration, Date.now() + clock.current),
     [actionId, actionAt, actionDuration, clock, animationReady]);
   const frozen=inspectFrame===undefined?undefined:Math.min(isFlame ? DRAGON_FLAME.frames - 1 : hurtTier ? DRAGON_HURT[hurtTier].frames - 1 : 5,Math.max(0,Math.trunc(inspectFrame)));
-  const geometry=registration[bossId],camera=geometry.camera,frames=geometry.rows[row];
+  const geometry=registration[bossId],camera=visualRegistration.cameras[bossId],frames=geometry.rows[row];
   const frameVariables=Object.fromEntries(frames.flatMap((frame,index)=>[
     [`--dragon-scale-${index}`,frame.scaleX],
     [`--dragon-x-${index}`,`${frame.x/geometry.cell*100}%`],
@@ -66,7 +70,7 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
     data-sprite-state={collapsing && collapseReady ? pose.state==='defeated'?'collapsed':'forward-collapse' : isFlame && flameReady ? "flamethrower" : hurtTier && hurtReady ? `hurt-${hurtTier}` : ready ? (isFlame ? "idle" : action?.state) || "idle" : "fallback"}
     data-hurt-tier={hurtTier}
     data-dragon={bossId} data-sprite-row={ready ? row : undefined}
-    className={`dragon-pose dragon-pose-${pose.state}${collapsing && collapseReady?' dragon-collapse-ready':''}${ready || flameReady?" dragon-sheet-ready":""}${animationReady && action ? " dragon-sheet-attacking" : ""}${frozen===undefined?"":" dragon-inspecting"}`}
+    className={`dragon-pose${pose.state==='idle'?' boss-is-idle':''} dragon-pose-${pose.state}${collapsing && collapseReady?' dragon-collapse-ready':''}${ready || flameReady?" dragon-sheet-ready":""}${animationReady && action ? " dragon-sheet-attacking" : ""}${frozen===undefined?"":" dragon-inspecting"}`}
     sx={{ width, aspectRatio: "1", flexShrink: 0 }}
     style={{ "--pose-ms": `${pose.duration || 900}ms` } as React.CSSProperties}>
     <img data-testid="dragon-atlas-preload" className="dragon-atlas-preload" src={src} alt="" aria-hidden="true"
@@ -86,10 +90,11 @@ function DragonSprite({ bossId, width, pose, clock: providedClock, inspectFrame 
         transform:frozenPose?`translate(${frozenPose.x/geometry.cell*100}%,${frozenPose.y/geometry.cell*100}%) scaleX(${frozenPose.scaleX})`:undefined,
         animationDuration: `${actionDuration}ms`, animationDelay: `${delay}ms`,
       }} /></span> : <img className="dragon-static-fallback" src={`${ASSETS}/${config.fallback}`} alt="" aria-hidden="true" draggable={false} />)}
+    {pose.state==='idle' && <BossIdleSprite bossId={bossId} inspectFrame={inspectFrame}/>}
     <CombatEffects pose={pose} clock={clock} />
   </Box>;
 }
 
-export default function DragonCombatSprite(props:{bossId:TypingBossId;width:number|{xs:number;md:number};glow:string;pose:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;krakenCast?:{id:string;at:number;until:number}|null}) {
-  return props.bossId==='kraken'?<KrakenSprite width={props.width} pose={props.pose} clock={props.clock} cast={props.krakenCast} quiet={props.inspectFrame===0}/>:<DragonSprite {...props} bossId={props.bossId}/>;
+export default function DragonCombatSprite(props:{bossId:TypingBossId;width:number|{xs:number;md:number};glow:string;pose:CombatAnimation;clock?:React.MutableRefObject<number>;inspectFrame?:number;krakenCast?:{id:string;at:number;until:number}|null;bossState?:TypingBossBoss}) {
+  return props.bossId==='giantSandWyrm'?<WyrmSprite boss={props.bossState || {}} pose={props.pose} width={props.width} clock={props.clock}/>:props.bossId==='kraken'?<KrakenSprite width={props.width} pose={props.pose} clock={props.clock} cast={props.krakenCast} quiet={props.inspectFrame===0}/>:<DragonSprite {...props} bossId={props.bossId}/>;
 }

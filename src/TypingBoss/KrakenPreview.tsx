@@ -33,7 +33,7 @@ export default function KrakenPreview(){
   return <Box className="kraken-preview" sx={{p:2}}><Typography variant="h5">Kraken battle preview</Typography><Typography>Replay each attack, or inspect its drawn frames. No room or battle submissions.</Typography>
     <Stack direction="row" gap={1} flexWrap="wrap" sx={{my:2}}>{(Object.entries(KRAKEN_ANIMATIONS) as [KrakenAction,typeof config][]).map(([kind,value])=><Button key={kind} variant={selected===kind?'contained':'outlined'} onClick={()=>play(kind)}>{value.label} · {value.frames} frames</Button>)}</Stack>
     <Box sx={{maxWidth:680,mx:'auto',border:'1px solid #164e63',borderRadius:3,overflow:'hidden',background:'radial-gradient(ellipse at 50% 80%,#164e63,#020617 75%)'}}>
-      <KrakenSprite width={{xs:360,md:640}} pose={pose} clock={clock} cast={inspectionCast} inspectFrame={frame}/>
+      <KrakenSprite width="100%" pose={pose} clock={clock} cast={inspectionCast} inspectFrame={frame}/>
     </Box>
     <Stack direction="row" gap={1} flexWrap="wrap" justifyContent="center" alignItems="center" sx={{my:1}}>
       <Button onClick={()=>play(selected)}>Replay</Button><Button onClick={()=>setFrame(Math.floor(config.impact/config.duration*config.frames))}>Inspect impact frame</Button>

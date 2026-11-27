@@ -373,7 +373,7 @@ button.f-fish-card:hover { background: #2a5143; }
 /* Only backgrounds and persistent weather motion use the sampled timeline.
    Foreground sway, the angler, wildlife, meteors and temporary effects stay live. */
 .f-scene-stepped :is([data-scene-depth="background"],.f-rain-mist),
-.f-scene-stepped :is(.f-celestial-sky,.f-cloud-system,.f-weather,.f-lake-fog) :is(.f-stars i,.f-catalog-star,.f-aurora-curtain,.f-aurora-distant,.f-cloud-cycle,.f-cloud-deck,.f-fog-bank,.f-fog-wisp,.f-lake-fog-surface,.f-raindrop,.f-rain-ring,.f-snowflake,.f-wind-wisps g),
+.f-scene-stepped :is(.f-celestial-sky,.f-cloud-system,.f-weather,.f-lake-fog) :is(.f-stars i,.f-catalog-star,.f-aurora-curtain,.f-cloud-cycle,.f-cloud-deck,.f-fog-bank,.f-fog-wisp,.f-lake-fog-surface,.f-raindrop,.f-rain-ring,.f-snowflake,.f-wind-wisps g),
 .f-scene-stepped .f-heat-haze::after { animation-play-state: paused !important; }
 .f-effect-dormant, .f-effect-dormant *, .f-effect-dormant::after { animation-play-state: paused !important; }
 .f-reduced-motion .f-splash, .f-reduced-motion .f-raindrop, .f-reduced-motion .f-wind-wisps, .f-reduced-motion .f-ground-leaf { display: none; }
@@ -445,13 +445,12 @@ button.f-fish-card:hover { background: #2a5143; }
 .f-catalog-star { transition: transform 1s linear; }
 .f-catalog-star:nth-child(7n) { animation: f-star-scintillation var(--star-glimmer, 7s) ease-in-out infinite alternate; animation-delay: var(--star-delay, 0s); }
 .f-sky-events { mask-image: linear-gradient(#000 0%, #000 32%, transparent 56%); }
-.f-aurora { transform: translateY(-17%); }
-.f-aurora-curtain { transform-origin: 50% 40%; animation: f-aurora-drift 39s ease-in-out infinite alternate, f-aurora-breathe 17s ease-in-out infinite alternate; }
-.f-aurora-distant { opacity: .28; transform-origin: 50% 30%; animation: f-aurora-drift 57s ease-in-out infinite alternate-reverse; }
+.f-aurora { mix-blend-mode: screen; }
+.f-aurora-curtain { display: block; position: absolute; left: -4%; top: -8%; width: 108%; height: auto; max-width: none; transform-origin: 50% 60%; animation: f-aurora-drift 49s ease-in-out infinite alternate, f-aurora-breathe 23s ease-in-out infinite alternate; }
 .f-meteor { opacity: 0; stroke-dasharray: 1; stroke-dashoffset: 1; animation: f-meteor-pass var(--meteor-period, 18s) linear infinite; animation-delay: var(--meteor-delay, 0s); }
 @keyframes f-star-scintillation { from { fill-opacity: .8; } to { fill-opacity: 1; } }
-@keyframes f-aurora-drift { from { transform: translateX(-1.5%) skewX(-3deg); } to { transform: translateX(1.5%) skewX(3deg); } }
-@keyframes f-aurora-breathe { from { opacity: .6; } to { opacity: 1; } }
+@keyframes f-aurora-drift { from { transform: translate(-1.2%, -.4%) skewX(-2deg) scaleY(.97); } to { transform: translate(1.2%, .4%) skewX(2deg) scaleY(1.03); } }
+@keyframes f-aurora-breathe { from { opacity: .66; } to { opacity: 1; } }
 @keyframes f-meteor-pass { 0% { stroke-dashoffset: 1; opacity: 0; } 2% { opacity: .9; } 6% { opacity: .8; } 9%, 100% { stroke-dashoffset: -1; opacity: 0; } }
 .f-reduced-motion .f-meteor-shower { display: none; }
 @keyframes f-star-glimmer { from { opacity: .45; } to { opacity: 1; } }

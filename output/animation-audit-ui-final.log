@@ -1,0 +1,10 @@
+PASS src/TypingBoss/AnimationPreview.test.tsx (14.374 s)
+PASS src/TypingBoss/WyrmVisuals.test.tsx
+PASS src/TypingBoss/KrakenAnimation.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+
+Test Suites: 4 passed, 4 total
+Tests:       26 passed, 26 total
+Snapshots:   0 total
+Time:        29.307 s, estimated 38 s
+Ran all test suites matching /AnimationPreview|TypingPortrait|DragonCombatSprite|WyrmVisuals|KrakenAnimation/i.

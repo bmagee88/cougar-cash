@@ -7,6 +7,10 @@ function combatState(session) {
 }
 
 function clearDragonCombat(session) {
+  if(session.boss?.id==='giantSandWyrm') {
+    session.boss.wyrmAction=null;session.boss.wyrmBurrowed=false;session.boss.wyrmSpitAt=null;
+    for(const player of session.players?.values() || []) {player.consumeId=null;player.consumedAt=null;player.consumedUntil=null;}
+  }
   if (session.dragonCombat) { session.dragonCombat.queue.length = 0; session.dragonCombat.strongQueue.length = 0; session.dragonCombat.token++; }
   session.dragonCombat = null;
   if (session.boss) { session.boss.queuedAttacks = 0; session.boss.queuedStrongReactions = 0; session.boss.flameBreath = null; session.boss.krakenWave=null; }
@@ -29,7 +33,7 @@ function wakeDragonCombat(session, callbacks, readyAt) {
 function blockingUntil(session, now) {
   const hurt = session.boss.hurt;
   const hurtUntil=hurt && hurt.until > now && DRAGON_HURT[hurt.tier].rank > 1 ? hurt.until : now;
-  return session.boss.id==='kraken'?Math.max(hurtUntil,session.dragonCombat?.attackUntil || now):hurtUntil;
+  return ['kraken','giantSandWyrm'].includes(session.boss.id)?Math.max(hurtUntil,session.dragonCombat?.attackUntil || now):hurtUntil;
 }
 
 function playAttack(session, run, now, callbacks) {

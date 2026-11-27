@@ -40,6 +40,6 @@ export default function MainMenu({children}:{children:React.ReactNode}) {
           {children}
         </article>
       </section>
-      <footer className="tb-menu-footer"><span>THE QUEST IS SIMPLE</span><ol><li><b>1</b> Choose a hero</li><li><b>2</b> Type to attack</li><li><b>3</b> Win together</li></ol><span className="tb-menu-footer-note">Better together. One word at a time.</span></footer>
+      <footer className="tb-menu-footer"><span>THE QUEST IS SIMPLE</span><ol><li><b>1</b> Choose a hero</li><li><b>2</b> Type to attack</li><li><b>3</b> Win together</li></ol><a href="/typing-boss/animations">Preview animations</a></footer>
   </MenuFrame>;
 }

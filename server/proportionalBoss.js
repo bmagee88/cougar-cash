@@ -2,6 +2,8 @@ const {bossContributions,promotedAttack}=require('./typingBossPromotion');
 const {promotionLevel}=require('../src/TypingBoss/promotionRules');
 const {finishTimedBattle}=require('./typingBossLifecycle');
 const krakenCombat=require('./krakenCombat');
+const wyrmCombat=require('./wyrmCombat');
+const {WYRM_ACTIONS}=require('../src/TypingBoss/wyrmRules');
 const {KRAKEN_ANIMATIONS}=require('../src/TypingBoss/krakenAnimationRules');
 const crypto = require("node:crypto");
 const {knockOutMany,syncRecovery,advanceSecondWind} = require("./typingBossRecovery");
@@ -20,6 +22,7 @@ const newState = ability => ({...createTypingState(crypto.randomBytes(4).readUIn
 const BOSS_ATTACK_LABELS = { bite: "Bite", fireball: "Fireball", tailWhip: "Tail Whip", flamethrower: "Flamethrower", tentacleStrike:"Tentacle Slam",tentacleSweep:"Multi-tentacle Assault",tidalWave:"Tidal Wave" };
 
 function chooseBossAttack(session, random, attack={}) {
+  if(session.boss.id==='giantSandWyrm')return wyrmCombat.plan(session,attack,random);
   if(session.boss.id==='kraken')return krakenCombat.plan(session,attack,random);
   const roster = [...session.players.values()];
   const living = roster.map((player, index) => ({ player, point: proportionalPlayerPoint(index, roster.length) }))
@@ -155,17 +158,23 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
   const damageScale=ramp*windScale;
   attack={...attack,power:attack.power*damageScale,multiplier:attack.multiplier*damageScale,damageMultiplier:ramp,secondWindMultiplier:windScale};
   for(const key of ['earnedPower','orangePower','criticalPower'])if(typeof attack[key]==='number')attack[key]*=damageScale;
-  if (attack.balanced && attack.power <= 0) return;
+  if (attack.balanced && attack.power <= 0 && !(host && session.boss.id==='giantSandWyrm' && (attack.gold || session.boss.wyrmBurrowed))) return;
   if(host)session.boss.turnsTaken=(session.boss.turnsTaken || 0)+1;
   const attackNumber = (host ? session.boss.turnsTaken : actor.turnsTaken) || 0;
   const bossAttack = host ? chooseBossAttack(session, random, attack) : null;
   const targets = bossAttack ? bossAttack.targets : [session.boss];
-  if (!targets.length) return;
+  const wyrm=host && session.boss.id==='giantSandWyrm';
+  if(wyrm)wyrmCombat.beginAction(session,bossAttack.kind,targets,{schedule,broadcast},now);
+  if (!targets.length && !wyrm) return;
+  if(wyrm && !targets.length){
+    session.projectiles.push({id:crypto.randomBytes(8).toString('hex'),source:'boss',target:'boss',kind:'boss',bossId:'giantSandWyrm',bossAttack:bossAttack.kind,moveLabel:WYRM_ACTIONS[bossAttack.kind].label,startedAt:now,impactAt:now,resolvedAt:now,amount:0,willHit:true});
+    broadcast(session);return {duration:WYRM_ACTIONS[bossAttack.kind].duration,kind:bossAttack.kind};
+  }
   const kraken=host && session.boss.id==='kraken';
   if(kraken && attack.gold)krakenCombat.curse(session,targets,{schedule,broadcast,random},now);
   const breath = bossAttack?.kind === "flamethrower";
   const windup = kraken ? attack.gold ? KRAKEN_ANIMATIONS.special.duration : 0 : breath ? DRAGON_FLAME.windup : 0;
-  const travel = kraken ? KRAKEN_ANIMATIONS[bossAttack.kind].impact : breath ? DRAGON_FLAME.flight : 700;
+  const travel = wyrm ? WYRM_ACTIONS[bossAttack.kind].impact : kraken ? KRAKEN_ANIMATIONS[bossAttack.kind].impact : breath ? DRAGON_FLAME.flight : 700;
   const share = attack.power / targets.length;
   const volley = targets.map(target => ({
     id: crypto.randomBytes(8).toString("hex"),
@@ -174,7 +183,7 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
     source: host ? "boss" : actor.code, sourceName: host ? session.boss.name : actor.name,
     target: host ? target.code : "boss", kind: host ? "boss" : "damage",
     bossId: session.boss.id, moveId: attack.moveId,
-    moveLabel: bossAttack ? BOSS_ATTACK_LABELS[bossAttack.kind] : summoned?'Zombie strike':attack.moveLabel || (actor.promoted?"Promoted strike":attack.multiplier >= 2 ? "Power attack" : "Quick attack"),
+    moveLabel: bossAttack ? (WYRM_ACTIONS[bossAttack.kind]?.label || BOSS_ATTACK_LABELS[bossAttack.kind]) : summoned?'Zombie strike':attack.moveLabel || (actor.promoted?"Promoted strike":attack.multiplier >= 2 ? "Power attack" : "Quick attack"),
     ...(bossAttack ? { bossAttack: bossAttack.kind } : {}),
     ...(attack.balanced ? { balanced: true } : {}),
     multiplier: round(attack.multiplier), startedAt: now + windup, impactAt: now + windup + travel,
@@ -184,6 +193,10 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
   }));
   if(summoned)actor.summons=actor.summons.map(summon=>summon.slot===attack.summonSlot?{...summon,attackAt:now,attackId:volley[0].id}:summon);
   session.projectiles.push(...volley);
+  if(!host && wyrmCombat.invulnerable(session,now)) {
+    for(const shot of volley)Object.assign(shot,{impactAt:now,resolvedAt:now,amount:0,willHit:false});
+    broadcast(session);return 0;
+  }
   schedule(session, () => {
     if (finishTimedBattle(session)) { broadcast(session); return; }
     // A finished fight cancels in-flight damage.
@@ -195,6 +208,8 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
       if(projectile.resolvedAt)continue;
       const target = host ? session.players.get(projectile.target) : session.boss;
       if(!target || target.timedOut)continue;
+      if(!host && wyrmCombat.invulnerable(session)){Object.assign(projectile,{amount:0,willHit:false,resolvedAt:Date.now()});continue;}
+      if(host && target.consumedUntil>Date.now()){Object.assign(projectile,{amount:0,willHit:false,resolvedAt:Date.now()});continue;}
       const wasAlive = target.hp > 0;
       let damage = target.hp > 0 ? projectile.amount : 0;
       const defense = host ? target.typing : session.typingHost;
@@ -241,6 +256,10 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
         if (shieldBlocked > 0) projectile.blockedAmount = (projectile.blockedAmount || 0) + shieldBlocked;
       }
       if(kraken && target.hp>0 && bossAttack.kind==='tentacleStrike')krakenCombat.prone(session,target,{schedule,broadcast});
+      if(wyrm && bossAttack.kind==='consume' && damage>0) {
+        wyrmCombat.consume(session,target,damage,{schedule,broadcast});
+        Object.assign(projectile,{amount:0,willHit:true,resolvedAt:Date.now()});continue;
+      }
       const actual = Math.min(target.hp, damage);
       if(host)changePlayerHealth(session,target,-actual);
       else target.hp = Math.max(0, target.hp - actual);
@@ -277,7 +296,7 @@ function launchAttackNow(session, actor, attack, { schedule, broadcast, random =
     if (session.status !== "active") { session.closedAt = Date.now(); clearDragonCombat(session); }
     broadcast(session);
   }, windup + travel);
-  return host ? { duration: (kraken?windup:0)+dragonAttackDuration(volley[0]), kind: bossAttack.kind, id: volley[0].id, actionAt:now+windup } : 0;
+  return host ? { duration: wyrm ? WYRM_ACTIONS[bossAttack.kind].duration : (kraken?windup:0)+dragonAttackDuration(volley[0]), kind: bossAttack.kind, id: volley[0].id, actionAt:now+windup } : 0;
 }
 
 function submitWords(session, auth, records, callbacks) {
@@ -505,7 +524,7 @@ function applyBalanced(session, value = false, randomColors = true) {
   const seed = session.typingHost.seed;
   actors.forEach((state, index) => {
     const player = index ? [...session.players.values()][index-1] : null;
-    Object.assign(state, createTypingState(seed, player ? player.classId || state.ability : session.boss.id==='kraken'?'kraken':"dragon"));
+    Object.assign(state, createTypingState(seed, player ? player.classId || state.ability : session.boss.id==='giantSandWyrm'?'wyrm':session.boss.id==='kraken'?'kraken':"dragon"));
     initializeBalanced(state);
     state.balancedRandomColors = randomColors;
     state.balancedGuardMax = player ? player.maxHp : session.boss.maxHp;

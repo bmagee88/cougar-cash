@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Stack} from '@mui/material';
+import {Stack,Button} from '@mui/material';
 import {PageFrame,BattleMenu,BattleScene,PlayerTypingBattle,BattleOutcomeModal,BattleStatsModal} from './TypingBossApp';
 import BattleStatus from './BattleStatus';
 import {ContinuousTyping} from './ContinuousBattle';
@@ -11,18 +11,18 @@ import {TypingBossSessionSnapshot,TypingBossClassId,TypingBossPromotionLevel} fr
 export default function BattleLayoutPreview() {
   const options=new URLSearchParams(window.location.search);
   const count=Math.max(1,Math.min(30,Number(options.get('players')) || 12));
-  const host=options.get('role')==='host',kraken=options.get('boss')==='kraken';
+  const host=options.get('role')==='host',kraken=options.get('boss')==='kraken',wyrm=options.get('boss')==='wyrm';
   const ownClass=(options.get('class') || 'paladin') as TypingBossClassId;
-  const [endingAt]=useState(()=>Date.now()-(Number(options.get('elapsed')) || 0));
+  const [endingAt,setEndingAt]=useState(()=>Date.now()-(Number(options.get('elapsed')) || 0));
   const [statsOpen,setStatsOpen]=useState(false),[outcomeDismissed,setOutcomeDismissed]=useState(false);
   const classes:TypingBossClassId[]=['paladin','cleric','barbarian','rogue','necromancer','monk'];
-  const state=initializeBalanced(createTypingState(123,host?'dragon':ownClass));
+  const state=initializeBalanced(createTypingState(123,host?(wyrm?'wyrm':'dragon'):ownClass));
   const promotionLevel=Math.max(0,Math.min(2,Number(options.get('promotion')) || 0)) as TypingBossPromotionLevel;
   if(!host){state.promotionLevel=promotionLevel;state.promoted=promotionLevel===1;}
   state.combatDivisor=host?1:count;
   const session={id:'preview',mode:'proportional',status:'active',balanced:true,teamMode:true,
     teamHealth:{hp:count*80,maxHp:count*100},typing:state,
-    boss:{id:kraken?'kraken':'infernalDragon',name:kraken?'Kraken':'Ancient Red Dragon',hp:count*70,maxHp:count*100,color:'#ef4444',glow:'#ef4444'},
+    boss:{id:wyrm?'giantSandWyrm':kraken?'kraken':'infernalDragon',name:wyrm?'Giant Sand Wyrm':kraken?'Kraken':'Ancient Red Dragon',hp:count*70,maxHp:count*100,color:'#ef4444',glow:'#ef4444'},
     players:Array.from({length:count},(_,i)=>({code:`hero${i}`,name:`Hero ${i+1}`,classId:i===0?ownClass:classes[i%classes.length],color:'#93c5fd',hp:80,maxHp:100,defeated:false,attackProgress:40,totalDamage:0,totalTaken:0})),
     projectiles:[],log:[],closedAt:null,timeLimitSeconds:null,
   } as unknown as TypingBossSessionSnapshot;
@@ -34,6 +34,9 @@ export default function BattleLayoutPreview() {
     });
     if(!host && ownClass==='necromancer')state.summonPrefix=session.players[0].summons?.filter(summon=>summon.alive).map(summon=>summon.slot);
   }
+  if(wyrm && options.get('action')){const kind=options.get('action') as any;session.boss.wyrmAction={id:'preview-wyrm',kind,at:endingAt,until:endingAt+(kind==='overrun'?8000:kind==='consume'?2600:1600),targetCode:'hero0'};session.boss.wyrmBurrowed=kind==='burrow';}
+  if(wyrm && options.has('consumed')){session.players[0].consumedAt=endingAt;session.players[0].consumedUntil=endingAt+30000;}
+  if(wyrm && options.has('spit'))session.players[0].spitOutAt=endingAt;
   const attack=options.get('attack') as 'bite'|'fireball'|'tailWhip'|'flamethrower'|null;
   const attackLabels={bite:'Bite',fireball:'Fireball',tailWhip:'Tail Whip',flamethrower:'Flamethrower'};
   if(attack && attackLabels[attack])session.projectiles=[{id:'preview-attack',source:'boss',target:'hero0',kind:'boss',bossAttack:attack,
@@ -48,6 +51,7 @@ export default function BattleLayoutPreview() {
   return <PageFrame wide battle>
     <BattleMenu status="active"><a href="?players=30">30 players</a> · <a href="?players=3">3 players</a> · <a href="?role=host&players=30">Host</a> · <a href="?boss=kraken&players=30">Kraken</a></BattleMenu>
     <BattleStatus session={session}/>
+    {wyrm && options.has('action') && <Button onClick={()=>setEndingAt(Date.now())}>Replay Wyrm attack</Button>}
     <Stack className="battle-session-stack">
       {host?<><BattleScene session={session}/><ContinuousTyping sessionId="preview" credentials={{}} state={state} active={false} hostProfile={{boss:session.boss,events:[]}}/></>:
         <PlayerTypingBattle session={session} me={session.players[0]} code="hero0" active={false}/>}
