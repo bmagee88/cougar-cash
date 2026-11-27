@@ -43,7 +43,7 @@ export function stepAmbientAnimations(scene: HTMLElement, delta: number, duratio
 }
 
 /** Ambient horizontal movement, independent of pointer or touch input. */
-export function useSceneParallax(sceneRef: RefObject<HTMLDivElement>, reducedMotion: boolean, intervalMs = 0) {
+export function useSceneParallax(sceneRef: RefObject<HTMLDivElement>, reducedMotion: boolean, intervalMs = 0, cameraDrift = true) {
   useEffect(() => {
     const scene = sceneRef.current;
     if (!scene) return;
@@ -83,7 +83,7 @@ export function useSceneParallax(sceneRef: RefObject<HTMLDivElement>, reducedMot
         bridges.add(animation);
         animation.onfinish = animation.oncancel = () => { bridges.delete(animation); };
       });
-      scene.style.setProperty('--environment-x', drift());
+      if (cameraDrift) scene.style.setProperty('--environment-x', drift());
       timer = window.setTimeout(sample, intervalMs);
     };
     const update = () => {
@@ -95,7 +95,7 @@ export function useSceneParallax(sceneRef: RefObject<HTMLDivElement>, reducedMot
       previousPaint = -Infinity;
       scene.classList.toggle('f-scene-paused', document.hidden || !onScreen);
       if (!document.hidden && onScreen) {
-        frame = requestAnimationFrame(animate);
+        if (cameraDrift) frame = requestAnimationFrame(animate);
         if (intervalMs) { previousSample = performance.now(); timer = window.setTimeout(sample, intervalMs); }
       }
     };
@@ -115,5 +115,5 @@ export function useSceneParallax(sceneRef: RefObject<HTMLDivElement>, reducedMot
       scene.classList.remove('f-scene-paused');
       reset();
     };
-  }, [sceneRef, reducedMotion, intervalMs]);
+  }, [sceneRef, reducedMotion, intervalMs, cameraDrift]);
 }

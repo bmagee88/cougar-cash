@@ -111,6 +111,8 @@ test('environment render setting offers all intervals, persists, and leaves typi
   ['Natural (smooth)','Every 1 second','Every 2 seconds','Every 5 seconds','Every 10 seconds'].forEach(name=>expect(screen.getByRole('option',{name})).toBeInTheDocument());
   fireEvent.click(screen.getByRole('option',{name:'Every 10 seconds'}));
   expect(deserializeSave(localStorage.getItem(SAVE_KEY)).settings.environmentRender).toBe(10000);
+  fireEvent.click(screen.getByRole('checkbox',{name:'Camera drift'}));
+  expect(deserializeSave(localStorage.getItem(SAVE_KEY)).settings.cameraDrift).toBe(false);
   fireEvent.click(screen.getByRole('button',{name:'Close Make yourself at home'}));act(()=>jest.advanceTimersByTime(300));
   expect(view.container.querySelector('.f-scene')).toHaveClass('f-scene-stepped');
   fireEvent.click(screen.getByRole('button',{name:/Cast your line/}));act(()=>jest.advanceTimersByTime(900));

@@ -103,7 +103,7 @@ export interface SaveData {
   lineGear?: LineGear;
   version: 1; livewell: CatchRecord[]; stats: FishingStats; balance: number;
   location: string; awardedIds: string[]; tackle: TackleSetup; notebook?: NotebookEntry[]; butterflyDiscoveries?:string[]; sizeQualityVersion?: 1;
-  settings: { sound: boolean; soundVolume?: number; reducedMotion: boolean; keepScreenAwake?: boolean; hideFishDetails?: boolean; measurements?: MeasurementSystem; weather: Weather; fishingMode?: FishingMode; wordCheckpoint?: boolean; environmentRender?: EnvironmentRender; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
+  settings: { sound: boolean; soundVolume?: number; reducedMotion: boolean; cameraDrift?: boolean; keepScreenAwake?: boolean; hideFishDetails?: boolean; measurements?: MeasurementSystem; weather: Weather; fishingMode?: FishingMode; wordCheckpoint?: boolean; environmentRender?: EnvironmentRender; stormStartedAt?: number; weatherMode?: 'manual' | 'natural'; naturalWeather?: NaturalWeatherState };
 }
 export interface EncounterOverrides { speciesId?: string; rarity?: Rarity; quality?: Quality; isAlbino?: boolean; targetWpm?: number; wpmAdjustment?: number; lineRemaining?: number; castDistance?: number }
 export interface SceneAsset {

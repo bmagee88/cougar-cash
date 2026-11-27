@@ -217,15 +217,15 @@ export const WeatherSystem = memo(function WeatherSystem({ weather, visuals = we
     <div className={`f-heat-haze ${heatMoving ? '' : 'f-effect-dormant'}`} data-layer="heat-haze" aria-hidden="true" style={{ opacity: visuals.heat }} />
   </>;
 });
-export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly, intervalMs = 0, skyPreview, wildlifePreview, onObserveVisitor, onObserveBird, santaYears, audio, showTreeMap = false,plantsEnabled=true,plantDayPreview }: {
+export default function FishingScene({ game, location, weather, reducedMotion, world, preview, manifest = CEDAR_SCENE, weatherState, lightningPreview, butterflyPreview, checkPreview, onObserveButterfly, intervalMs = 0, cameraDrift = true, skyPreview, wildlifePreview, onObserveVisitor, onObserveBird, santaYears, audio, showTreeMap = false,plantsEnabled=true,plantDayPreview }: {
   onObserveBird?:ObserveBird;
-  game: GameState; location: string; weather: Weather; reducedMotion: boolean; intervalMs?:number; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly; skyPreview?: SkyPreview; wildlifePreview?:WildlifePreview; onObserveVisitor?:ObserveButterfly; santaYears?:readonly number[]; audio?:LakeSoundControls; showTreeMap?:boolean;plantsEnabled?:boolean;plantDayPreview?:number;
+  game: GameState; location: string; weather: Weather; reducedMotion: boolean; intervalMs?:number; cameraDrift?:boolean; world: WorldConditions; preview?: CharacterState; manifest?: SceneAsset[]; weatherState?: WeatherVisuals; lightningPreview?: number; butterflyPreview?: number; checkPreview?: FishCheck; onObserveButterfly?:ObserveButterfly; skyPreview?: SkyPreview; wildlifePreview?:WildlifePreview; onObserveVisitor?:ObserveButterfly; santaYears?:readonly number[]; audio?:LakeSoundControls; showTreeMap?:boolean;plantsEnabled?:boolean;plantDayPreview?:number;
 }) {
   const tipRef = useRef<HTMLElement>(null); const handRef = useRef<HTMLElement>(null); const sceneRef = useRef<HTMLDivElement>(null);
   const landingOriginRef = useRef<HTMLDivElement>(null);
   const caughtFish = game.phase === 'landing' || (game.phase === 'result' && game.outcome === 'caught') ? game.encounter : undefined;
   const battle = useFishBattle(game);
-  useSceneParallax(sceneRef, reducedMotion, intervalMs);
+  useSceneParallax(sceneRef, reducedMotion, intervalMs, cameraDrift);
   const [animation, setAnimation] = useState<CharacterState>('idle');
   const lastPhase = useRef(game.phase);
   const phase = game.phase; const mappedAnimation = characterState(game);
