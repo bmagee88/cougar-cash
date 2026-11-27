@@ -13,6 +13,8 @@ export const VERTICAL_COLUMNS = {
 
 export type VerticalHomeKey = keyof typeof VERTICAL_COLUMNS;
 export const VERTICAL_KEY_STORAGE = "typingDdrVerticalHomeKey";
+export const VERTICAL_SELECTION_STORAGE = "typingDdrVerticalSelection";
+export type VerticalSelection = { homeKey: VerticalHomeKey; keys: string[] };
 export const VERTICAL_ROW_POSITIONS = [59, 74, 89] as const;
 
 export type VerticalNoteMotion = { startX: number; travelMs: number };
@@ -34,4 +36,17 @@ export function loadVerticalHomeKey(): VerticalHomeKey {
   } catch {
     return "f";
   }
+}
+
+export function loadVerticalSelection(): VerticalSelection {
+  const homeKey = loadVerticalHomeKey();
+  const column = VERTICAL_COLUMNS[homeKey];
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(VERTICAL_SELECTION_STORAGE) || "null");
+    if (saved?.homeKey === homeKey && Array.isArray(saved.keys)) {
+      const keys = (column.keys as readonly string[]).filter((key) => saved.keys.includes(key));
+      if (keys.length >= 2) return { homeKey, keys };
+    }
+  } catch { /* Invalid or unavailable saves start with the whole column selected. */ }
+  return { homeKey, keys: [...column.keys] };
 }

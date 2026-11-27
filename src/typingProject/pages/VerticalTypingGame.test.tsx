@@ -2,11 +2,14 @@ import React from "react";
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import TypingDdrPage from "./TypingDdrPage";
 import { FINISH_RESTART_MS } from "./DdrRoundTransition";
+import { COACH_CARD_COUNT, COACH_CARD_MS } from "./DdrTypingCoach";
+import { loadVerticalSelection, VERTICAL_KEY_STORAGE, VERTICAL_SELECTION_STORAGE } from "./verticalMode";
 
 declare const test: any, expect: any, jest: any, beforeEach: any, afterEach: any;
 
 let viewportWidth = 1024;
 let targetCenter = 512;
+let warmupOffset = 0;
 
 beforeEach(() => {
   jest.useFakeTimers("modern");
@@ -15,6 +18,7 @@ beforeEach(() => {
   (globalThis as any).ResizeObserver = class { observe() {} disconnect() {} };
   viewportWidth = 1024;
   targetCenter = 512;
+  warmupOffset = 0;
   jest.spyOn(document.documentElement, "clientWidth", "get").mockImplementation(() => viewportWidth);
   const getRect = HTMLElement.prototype.getBoundingClientRect;
   jest.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
@@ -26,15 +30,27 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); jest.restoreAllMocks(); jest.useRealTimers(); });
 
-function press(key: string) { fireEvent.keyDown(window, { key }); }
-function advanceTo(time: number) { act(() => { jest.advanceTimersByTime(time - performance.now()); }); }
+function press(key: string) {
+  fireEvent.keyDown(window, { key });
+  // These regression cases exercise the lanes after the real warm-up finishes.
+  if (key === "Tab" && screen.queryByRole("dialog", { name: "Typing warm-up" })) {
+    for (let index = 0; index < COACH_CARD_COUNT; index += 1) {
+      fireEvent.load(within(screen.getByRole("dialog", { name: "Typing warm-up" })).getAllByRole("img").find((element) => element.tagName === "IMG")!);
+      act(() => { jest.advanceTimersByTime(COACH_CARD_MS); });
+    }
+    for (let index = 0; index < 3; index += 1) act(() => { jest.advanceTimersByTime(1000); });
+    warmupOffset = performance.now();
+  }
+}
+function advanceTo(time: number) { act(() => { jest.advanceTimersByTime(time + warmupOffset - performance.now()); }); }
 function setMode(mode: string) {
   fireEvent.mouseDown(screen.getByRole("combobox"));
   fireEvent.click(screen.getByRole("option", { name: mode }));
 }
 function chooseColumn(key: string) {
   const menu = screen.getByRole("dialog", { name: "DDR start menu" });
-  fireEvent.click(within(menu).getByRole("button", { name: `${key.toUpperCase()} key` }));
+  const button = within(menu).getByRole("button", { name: `${key.toUpperCase()} key` });
+  if (button.getAttribute("aria-pressed") !== "true") fireEvent.click(button);
 }
 function openVertical(key = "f") {
   render(<TypingDdrPage />);
@@ -43,7 +59,7 @@ function openVertical(key = "f") {
 }
 function expectTempo(tempo: number) { expect(screen.getByText(`${tempo} BPM`, { exact: true })).toBeInTheDocument(); }
 
-test("Vertical is listed directly after Balanced and uses the same buttons for a single selection", () => {
+test("Vertical keeps the home row and starts its three column letters selected", () => {
   render(<TypingDdrPage />);
   fireEvent.mouseDown(screen.getByRole("combobox"));
   const options = screen.getAllByRole("option");
@@ -51,16 +67,113 @@ test("Vertical is listed directly after Balanced and uses the same buttons for a
   fireEvent.click(screen.getByRole("option", { name: "Vertical" }));
   const menu = screen.getByRole("dialog", { name: "DDR start menu" });
   expect(within(menu).queryByRole("radio")).not.toBeInTheDocument();
-  expect(within(menu).getAllByRole("button", { pressed: true })).toHaveLength(1);
+  expect(within(menu).getAllByRole("button", { pressed: true })).toHaveLength(3);
   expect(within(menu).getByRole("button", { name: "F key" })).toHaveAttribute("aria-pressed", "true");
   chooseColumn("f");
   expect(within(menu).getByRole("button", { name: "F key" })).toHaveAttribute("aria-pressed", "true");
   chooseColumn("j");
-  expect(within(menu).getAllByRole("button", { pressed: true })).toHaveLength(1);
+  expect(within(menu).getAllByRole("button", { pressed: true })).toHaveLength(3);
   expect(within(menu).getByRole("button", { name: "J key" })).toHaveAttribute("aria-pressed", "true");
   expect(within(menu).getByRole("button", { name: "Space key" })).toBeDisabled();
   expect(within(menu).getByRole("checkbox", { name: "Random key set" })).toBeDisabled();
 });
+
+test.each([["j", "u", "m", "7/8"], ["d", "e", "c", "3/4"]])(
+  "%s shows its selected upper and lower letters in the same column as the home row",
+  (home: string, upper: string, lower: string, column: string) => {
+    openVertical(home);
+    const menu = within(screen.getByRole("dialog", { name: "DDR start menu" }));
+    [upper, home, lower].forEach((key, index) => {
+      const button = menu.getByRole("button", { name: `${key.toUpperCase()} key` });
+      expect(button).toHaveAttribute("aria-pressed", "true");
+      expect(window.getComputedStyle(button).getPropertyValue("grid-column").replace(/\s/g, "")).toBe(column);
+      expect(button).toHaveStyle({ gridRow: String(index + 1) });
+    });
+    for (const key of ["A", "S", "D", "F", "G", "H", "J", "K", "L", ";"]) {
+      expect(menu.getByRole("button", { name: `${key} key` })).toHaveStyle({ gridRow: "2" });
+    }
+  }
+);
+
+test("Vertical can toggle each letter but warns and keeps two selected", () => {
+  openVertical("j");
+  const menu = within(screen.getByRole("dialog", { name: "DDR start menu" }));
+  const upper = menu.getByRole("button", { name: "U key" });
+  const middle = menu.getByRole("button", { name: "J key" });
+  const lower = menu.getByRole("button", { name: "M key" });
+  fireEvent.click(lower);
+  expect(lower).toHaveAttribute("aria-pressed", "false");
+  fireEvent.click(upper);
+  expect(menu.getByRole("alert")).toHaveTextContent("Select at least 2 letters.");
+  expect(upper).toHaveAttribute("aria-pressed", "true");
+  expect(menu.getAllByRole("button", { pressed: true })).toHaveLength(2);
+  fireEvent.click(lower);
+  expect(menu.queryByRole("alert")).not.toBeInTheDocument();
+  fireEvent.click(middle);
+  expect(middle).toHaveAttribute("aria-pressed", "false");
+  expect(upper).toHaveAttribute("aria-pressed", "true");
+  expect(lower).toHaveAttribute("aria-pressed", "true");
+  chooseColumn("d");
+  expect(menu.queryByRole("button", { name: "U key" })).not.toBeInTheDocument();
+  expect(menu.queryByRole("button", { name: "M key" })).not.toBeInTheDocument();
+  expect(menu.getAllByRole("button", { pressed: true }).map((button) => button.textContent)).toEqual(["E", "D", "C"]);
+});
+
+test("Vertical keyboard editing toggles upper and lower letters and enforces the minimum", () => {
+  openVertical("d");
+  press("k");
+  press("e");
+  press("c");
+  const menu = within(screen.getByRole("dialog", { name: "DDR start menu" }));
+  expect(menu.getByRole("button", { name: "E key" })).toHaveAttribute("aria-pressed", "false");
+  expect(menu.getByRole("button", { name: "C key" })).toHaveAttribute("aria-pressed", "true");
+  expect(menu.getByRole("alert")).toHaveTextContent("Select at least 2 letters.");
+  press("Enter");
+});
+
+test("only selected vertical letters are generated, accepted and recorded", () => {
+  openVertical("j");
+  const menu = within(screen.getByRole("dialog", { name: "DDR start menu" }));
+  fireEvent.click(menu.getByRole("button", { name: "J key" }));
+  press("Tab");
+  advanceTo(140);
+  expect(screen.getByRole("img", { name: "J hit target" })).toHaveAttribute("data-active", "false");
+  expect(screen.getAllByTestId("vertical-note").map((note) => note.getAttribute("data-key"))).toEqual(["u", "u", "m", "m"]);
+  advanceTo(3950);
+  press("u");
+  advanceTo(4700);
+  press("u");
+  advanceTo(5450);
+  press("m");
+  advanceTo(6200);
+  press("m");
+  expect(screen.getByText("Correct 4", { exact: true })).toBeInTheDocument();
+  press("j");
+  expect(screen.getByText("Wrong 1", { exact: true })).toBeInTheDocument();
+  for (let index = 0; index < 12; index += 1) press("x");
+  expect(JSON.parse(localStorage.getItem("typingDdrLeaderboard")!)[0].keys).toBe("U M");
+});
+
+test("Vertical restores its own letter selection without changing normal home-row keys", () => {
+  openVertical("j");
+  fireEvent.click(within(screen.getByRole("dialog", { name: "DDR start menu" })).getByRole("button", { name: "M key" }));
+  expect(loadVerticalSelection()).toEqual({ homeKey: "j", keys: ["u", "j"] });
+  setMode("Balanced");
+  setMode("Vertical");
+  expect(within(screen.getByRole("dialog", { name: "DDR start menu" })).getByRole("button", { name: "M key" })).toHaveAttribute("aria-pressed", "false");
+  cleanup();
+  render(<TypingDdrPage />);
+  setMode("Vertical");
+  expect(within(screen.getByRole("dialog", { name: "DDR start menu" })).getByRole("button", { name: "M key" })).toHaveAttribute("aria-pressed", "false");
+});
+
+test.each([null, "bad json", JSON.stringify({ homeKey: "j", keys: ["u"] }), JSON.stringify({ homeKey: "d", keys: ["e", "d"] })])(
+  "old or invalid vertical selections restore all three letters: %s", (saved: string | null) => {
+    localStorage.setItem(VERTICAL_KEY_STORAGE, "j");
+    if (saved !== null) localStorage.setItem(VERTICAL_SELECTION_STORAGE, saved);
+    expect(loadVerticalSelection()).toEqual({ homeKey: "j", keys: ["u", "j", "m"] });
+  }
+);
 
 test("Vertical preserves the normal multi-key selection and random preference", () => {
   render(<TypingDdrPage />);

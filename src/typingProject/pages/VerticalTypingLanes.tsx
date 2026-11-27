@@ -6,6 +6,7 @@ import { getVerticalNoteMotion, VERTICAL_COLUMNS, VERTICAL_ROW_POSITIONS, Vertic
 type Size = { xs: number; sm: number; md: number };
 type Props = {
   homeKey: VerticalHomeKey;
+  activeKeys: string[];
   homeKeys: { key: string; label: string; color: string }[];
   columns: { xs: string; sm: string; md: string };
   getColumn: (key: string) => string;
@@ -31,7 +32,7 @@ const pulse = keyframes`
 `;
 
 export default function VerticalTypingLanes(props: Props) {
-  const { homeKey, homeKeys, columns, getColumn, notes, running, showKeyLetters, targetSize, noteWidth, noteHeight, postTargetMs, onMotionChange } = props;
+  const { homeKey, activeKeys, homeKeys, columns, getColumn, notes, running, showKeyLetters, targetSize, noteWidth, noteHeight, postTargetMs, onMotionChange } = props;
   const fieldRef = useRef<HTMLDivElement | null>(null);
   const anchorRef = useRef<HTMLDivElement | null>(null);
   const column = VERTICAL_COLUMNS[homeKey];
@@ -73,10 +74,12 @@ export default function VerticalTypingLanes(props: Props) {
         <Box key={`${key}-${props.pulse?.key === key ? props.pulse.token : "idle"}`}
           ref={row === 1 ? anchorRef : undefined}
           role="img" aria-label={`${key.toUpperCase()} hit target`} data-testid="vertical-hit-target" data-key={key}
+          data-active={activeKeys.includes(key)}
           sx={{ position: "absolute", gridColumn: getColumn(homeKey), left: "50%", top: `${VERTICAL_ROW_POSITIONS[row]}%`,
             transform: "translate(-50%, -50%)", width: targetSize, height: targetSize, display: "grid", placeItems: "center",
             border: `3px solid ${selectedKey.color}`, borderRadius: 1, bgcolor: "#07110f", color: selectedKey.color, zIndex: 3,
-            boxShadow: `0 0 20px ${selectedKey.color}55`, animation: props.pulse?.key === key ? `${pulse} 260ms ease-out` : "none",
+            opacity: activeKeys.includes(key) ? 1 : 0.22,
+            boxShadow: activeKeys.includes(key) ? `0 0 20px ${selectedKey.color}55` : "none", animation: props.pulse?.key === key ? `${pulse} 260ms ease-out` : "none",
           }}>
           {showKeyLetters && <Typography component="span" sx={{ fontSize: { xs: 13, sm: 16, md: 18 }, fontWeight: 900, color: "inherit" }}>{key.toUpperCase()}</Typography>}
         </Box>

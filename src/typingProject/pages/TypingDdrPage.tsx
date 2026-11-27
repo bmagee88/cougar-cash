@@ -32,7 +32,8 @@ import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import { keyframes } from "@emotion/react";
 import DdrRoundTransition, { FINISH_RESTART_MS, FINISH_SEQUENCE, FinishPhase, RecordSaveStatus } from "./DdrRoundTransition";
 import VerticalTypingLanes from "./VerticalTypingLanes";
-import { getVerticalNoteMotion, isVerticalHomeKey, loadVerticalHomeKey, VERTICAL_COLUMNS, VERTICAL_KEY_STORAGE, VerticalHomeKey, VerticalNoteMotion } from "./verticalMode";
+import DdrTypingCoach, { CoachCue, DdrFingerPreview } from "./DdrTypingCoach";
+import { getVerticalNoteMotion, isVerticalHomeKey, loadVerticalSelection, VERTICAL_COLUMNS, VERTICAL_KEY_STORAGE, VERTICAL_SELECTION_STORAGE, VerticalNoteMotion } from "./verticalMode";
 
 type HomeKey = {
   key: string;
@@ -113,8 +114,8 @@ const HOME_KEYS: HomeKey[] = [
   { key: "s", label: "S", targetLabel: "S", color: "#facc15" },
   { key: "d", label: "D", targetLabel: "D", color: "#f97316" },
   { key: "f", label: "F", targetLabel: "F", color: "#22c55e" },
-  { key: "g", label: "G", targetLabel: "G", color: "#14b8a6" },
-  { key: "h", label: "H", targetLabel: "H", color: "#14b8a6" },
+  { key: "g", label: "G", targetLabel: "G", color: "#7dd3fc" },
+  { key: "h", label: "H", targetLabel: "H", color: "#7dd3fc" },
   { key: " ", label: "Space", targetLabel: "Space", color: "#3b82f6", widthUnits: 2 },
   { key: "j", label: "J", targetLabel: "J", color: "#22c55e" },
   { key: "k", label: "K", targetLabel: "K", color: "#f97316" },
@@ -709,13 +710,41 @@ function useBeatSound(enabled: boolean) {
     });
   }, [enabled, ensureAudioContext]);
 
+  const playCoachCue = useCallback((cue: CoachCue) => {
+    if (!enabled) return;
+    const context = ensureAudioContext();
+    if (!context) return;
+    const melodies: Record<CoachCue, number[]> = {
+      finger: [523.25, 659.25], kitty: [293.66, 392, 349.23],
+      tall: [392, 523.25, 659.25], eyes: [783.99, 1046.5, 1318.5],
+      home: [659.25, 523.25, 392, 523.25], count: [440], go: [523.25, 659.25, 783.99],
+    };
+    melodies[cue].forEach((frequency, index) => {
+      const voice = context.createOscillator();
+      const gain = context.createGain();
+      const start = context.currentTime + index * 0.12;
+      const duration = cue === "kitty" ? 0.25 : 0.18;
+      voice.type = cue === "eyes" ? "sine" : "triangle";
+      voice.frequency.setValueAtTime(frequency, start);
+      if (cue === "kitty") voice.frequency.exponentialRampToValueAtTime(frequency * 1.35, start + duration);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.045, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      voice.connect(gain).connect(context.destination);
+      voicesRef.current.add(voice);
+      voice.onended = () => { voicesRef.current.delete(voice); voice.disconnect(); gain.disconnect(); };
+      voice.start(start);
+      voice.stop(start + duration + 0.02);
+    });
+  }, [enabled, ensureAudioContext]);
+
   useEffect(() => {
     const voices = voicesRef.current;
     if (!enabled) voices.forEach((voice) => voice.stop());
     return () => { voices.forEach((voice) => voice.stop()); };
   }, [enabled]);
 
-  return { prime: ensureAudioContext, playBeat, playFanfare };
+  return { prime: ensureAudioContext, playBeat, playFanfare, playCoachCue };
 }
 
 export default function TypingDdrPage() {
@@ -725,7 +754,12 @@ export default function TypingDdrPage() {
   const [rhythmMode, setRhythmMode] = useState<RhythmMode>("quarter");
   const [keyRepeats, setKeyRepeats] = useState(DEFAULT_KEY_REPEATS);
   const [activeKeys, setActiveKeys] = useState<string[]>(loadDdrActiveKeys);
-  const [verticalHomeKey, setVerticalHomeKey] = useState<VerticalHomeKey>(loadVerticalHomeKey);
+  const [verticalSelection, setVerticalSelection] = useState(loadVerticalSelection);
+  const { homeKey: verticalHomeKey, keys: verticalActiveKeys } = verticalSelection;
+  const verticalSelectionRef = useRef(verticalSelection);
+  const [coachOpen, setCoachOpen] = useState(false);
+  const coachOpenRef = useRef(false);
+  const [keySelectionWarning, setKeySelectionWarning] = useState(false);
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [keysLocked, setKeysLocked] = useState(false);
@@ -744,6 +778,7 @@ export default function TypingDdrPage() {
   const [levelUpToken, setLevelUpToken] = useState(0);
   const [mistakeToken, setMistakeToken] = useState(0);
   const [soundOn, setSoundOn] = useState(false);
+  const [coachSoundOn, setCoachSoundOn] = useState(true);
   const [showKeyLetters, setShowKeyLetters] = useState(true);
   const [compactMode, setCompactMode] = useState(true);
   const [randomKeysEnabled, setRandomKeysEnabled] = useState(false);
@@ -809,6 +844,7 @@ export default function TypingDdrPage() {
   const [stageHeight, setStageHeight] = useState(560);
 
   const { prime, playBeat, playFanfare } = useBeatSound(soundOn);
+  const { prime: primeCoachSound, playCoachCue } = useBeatSound(coachSoundOn);
   const playBeatRef = useRef(playBeat);
   const playFanfareRef = useRef(playFanfare);
   const beatMs = useMemo(() => 60000 / tempo, [tempo]);
@@ -858,7 +894,7 @@ export default function TypingDdrPage() {
   const selectedVerticalColumn = VERTICAL_COLUMNS[verticalHomeKey];
   const effectiveActiveKeys = useMemo(() => isVerticalMode ? [verticalHomeKey] : activeKeys, [activeKeys, isVerticalMode, verticalHomeKey]);
   const randomKeySetActive = randomKeysEnabled && !isVerticalMode;
-  const playableKeyCount = isVerticalMode ? 3 : activeKeys.length;
+  const playableKeyCount = isVerticalMode ? verticalActiveKeys.length : activeKeys.length;
   const activeLaneIndexes = useMemo(
     () =>
       HOME_KEYS.map((homeKey, index) => (effectiveActiveKeys.includes(homeKey.key) ? index : -1)).filter(
@@ -908,8 +944,11 @@ export default function TypingDdrPage() {
   }, []);
 
   useEffect(() => {
-    try { window.localStorage.setItem(VERTICAL_KEY_STORAGE, verticalHomeKey); } catch { /* Keep selection usable without storage. */ }
-  }, [verticalHomeKey]);
+    try {
+      window.localStorage.setItem(VERTICAL_KEY_STORAGE, verticalHomeKey);
+      window.localStorage.setItem(VERTICAL_SELECTION_STORAGE, JSON.stringify(verticalSelection));
+    } catch { /* Keep selection usable without storage. */ }
+  }, [verticalHomeKey, verticalSelection]);
 
   useEffect(() => {
     soundOnRef.current = soundOn;
@@ -1364,6 +1403,8 @@ export default function TypingDdrPage() {
   }, [clearTimingEvents, getNoteTravelMs]);
 
   const resetGame = useCallback(() => {
+    coachOpenRef.current = false;
+    setCoachOpen(false);
     setFinishPhase(null);
     setRecordSaveStatus("saving");
     runningRef.current = false;
@@ -1506,6 +1547,38 @@ export default function TypingDdrPage() {
     resumeTimingEvents();
   }, [getNoteTravelMs, prime, resetGame, resumePausedTimeline, resumeTimingEvents, startBalancedRunClock]);
 
+  const requestStart = useCallback(() => {
+    if (coachOpenRef.current) return;
+    if (gameModeRef.current === "vertical" && !keysLockedRef.current) {
+      if (coachSoundOn) primeCoachSound();
+      setModeShortcutActive(false);
+      keyEditActiveRef.current = false;
+      setKeyEditActive(false);
+      coachOpenRef.current = true;
+      setCoachOpen(true);
+      return;
+    }
+    startGame();
+  }, [coachSoundOn, primeCoachSound, startGame]);
+
+  const finishCoach = useCallback(() => {
+    if (!coachOpenRef.current) return;
+    coachOpenRef.current = false;
+    setCoachOpen(false);
+    startGame();
+  }, [startGame]);
+
+  const toggleSound = useCallback(() => {
+    if (!soundOnRef.current) prime();
+    soundOnRef.current = !soundOnRef.current;
+    setSoundOn(soundOnRef.current);
+  }, [prime]);
+
+  const toggleCoachSound = useCallback(() => {
+    if (!coachSoundOn) primeCoachSound();
+    setCoachSoundOn((previous) => !previous);
+  }, [coachSoundOn, primeCoachSound]);
+
   const restartAndStart = useCallback(() => {
     resetGame();
     startGame();
@@ -1532,6 +1605,7 @@ export default function TypingDdrPage() {
 
   const applyGameMode = useCallback((nextMode: GameMode) => {
     setGameMode(nextMode);
+    setKeySelectionWarning(false);
     balancedRunStartedAtRef.current = null;
     balancedElapsedMsRef.current = 0;
     tempoAverageStartedAtRef.current = null;
@@ -1573,7 +1647,24 @@ export default function TypingDdrPage() {
     if (keysLockedRef.current) return;
 
     if (gameModeRef.current === "vertical") {
-      if (isVerticalHomeKey(key)) setVerticalHomeKey(key);
+      const current = verticalSelectionRef.current;
+      const column = VERTICAL_COLUMNS[current.homeKey];
+      if (isVerticalHomeKey(key) && key !== current.homeKey) {
+        const next = { homeKey: key, keys: [...VERTICAL_COLUMNS[key].keys] };
+        verticalSelectionRef.current = next;
+        setVerticalSelection(next);
+      } else if ((column.keys as readonly string[]).includes(key)) {
+        if (current.keys.includes(key) && current.keys.length <= MIN_ACTIVE_KEYS) {
+          setKeySelectionWarning(true);
+          return;
+        }
+        const next = { ...current, keys: (column.keys as readonly string[]).filter((value) => value === key ? !current.keys.includes(value) : current.keys.includes(value)) };
+        verticalSelectionRef.current = next;
+        setVerticalSelection(next);
+      } else {
+        return;
+      }
+      setKeySelectionWarning(false);
       return;
     }
 
@@ -1745,6 +1836,9 @@ export default function TypingDdrPage() {
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
+      // The warm-up owns keyboard input until its countdown has finished.
+      // Keep Tab available for the modal's sound and back buttons.
+      if (coachOpenRef.current) return;
       if (leaderboardOpen) {
         if (event.ctrlKey || event.metaKey || event.altKey) return;
 
@@ -1830,8 +1924,8 @@ export default function TypingDdrPage() {
 
         const editKey = event.key === " " ? " " : event.key.toLowerCase();
         const matchingHomeKey = HOME_KEYS.find((homeKey) => homeKey.key === editKey);
-        if (matchingHomeKey) {
-          toggleActiveKey(matchingHomeKey.key);
+        if (matchingHomeKey || gameModeRef.current === "vertical") {
+          toggleActiveKey(editKey);
         }
         return;
       }
@@ -1841,7 +1935,7 @@ export default function TypingDdrPage() {
         if (runningRef.current) {
           pauseGame();
         } else {
-          startGame();
+          requestStart();
         }
         return;
       }
@@ -1877,7 +1971,7 @@ export default function TypingDdrPage() {
         ? activeLaneIndexesRef.current[0] ?? -1
         : HOME_KEYS.findIndex((homeKey) => homeKey.key === pressedKey);
       const playableKey = isVerticalMode
-        ? (selectedVerticalColumn.keys as readonly string[]).includes(pressedKey)
+        ? verticalActiveKeys.includes(pressedKey)
         : activeKeySet.has(pressedKey);
 
       if (homeKeyIndex === -1 || !playableKey) {
@@ -1909,7 +2003,7 @@ export default function TypingDdrPage() {
     [
       activeKeySet,
       isVerticalMode,
-      selectedVerticalColumn,
+      verticalActiveKeys,
       handleMenuShortcut,
       hitWindowMs,
       pauseGame,
@@ -1917,7 +2011,7 @@ export default function TypingDdrPage() {
       registerMistake,
       resetGame,
       restartAndStart,
-      startGame,
+      requestStart,
       toggleActiveKey,
       leaderboardOpen,
       leaderboardView,
@@ -1941,6 +2035,8 @@ export default function TypingDdrPage() {
       const pattern = RHYTHM_PATTERNS[rhythmModeRef.current];
       const verticalKey = HOME_KEYS[activeLanes[0]]?.key;
       const verticalColumn = gameModeRef.current === "vertical" && isVerticalHomeKey(verticalKey) ? VERTICAL_COLUMNS[verticalKey] : null;
+      // Preserve each selected letter's original target row.
+      const verticalRows = verticalColumn ? verticalColumn.keys.map((_, row) => row).filter((row) => verticalSelectionRef.current.keys.includes(verticalColumn.keys[row])) : [];
       const verticalMotion = verticalColumn ? verticalMotionRef.current : undefined;
       const travelMs = verticalMotion?.travelMs ?? FALL_DURATION_MS;
       const newNotes: Note[] = [];
@@ -1969,7 +2065,7 @@ export default function TypingDdrPage() {
         pattern.offsets.forEach((offset) => {
           if (repeatsRemainingRef.current === 0) {
             lastLaneRef.current = getRandomLane(activeLanes, lastLaneRef.current);
-            if (verticalColumn) lastVerticalRowRef.current = getRandomLane([0, 1, 2], lastVerticalRowRef.current);
+            if (verticalColumn) lastVerticalRowRef.current = getRandomLane(verticalRows, lastVerticalRowRef.current);
             repeatsRemainingRef.current = keyRepeatsRef.current;
             repeatGroupIdRef.current = nextNoteIdRef.current;
             repeatGroupsRef.current.set(repeatGroupIdRef.current, { remaining: keyRepeatsRef.current, hits: 0 });
@@ -2028,15 +2124,11 @@ export default function TypingDdrPage() {
     if (runningRef.current) {
       clearNotesAndReseed();
     }
-  }, [effectiveActiveKeys, clearNotesAndReseed, keyRepeats, rhythmMode]);
+  }, [effectiveActiveKeys, verticalActiveKeys, clearNotesAndReseed, keyRepeats, rhythmMode]);
 
   const handleActiveKeysChange = (_: React.MouseEvent<HTMLElement>, nextKeys: string[]) => {
     if (keysLockedRef.current) return;
-    if (isVerticalMode) {
-      const key = nextKeys.find((value) => value !== verticalHomeKey);
-      if (key && isVerticalHomeKey(key)) setVerticalHomeKey(key);
-      return;
-    }
+    if (isVerticalMode) return;
     if (nextKeys.length < MIN_ACTIVE_KEYS) return;
     const enabledKey = nextKeys.find((key) => !activeKeySet.has(key));
     const orderedKeys = getOrderedHomeKeys(nextKeys, enabledKey);
@@ -2102,7 +2194,7 @@ export default function TypingDdrPage() {
   const playAreaWidth = compactMode ? "min(760px, 100%)" : "min(1100px, 100%)";
   const modeDisplayLabel = gameMode === "progressive" ? "Progressive" : MODE_LABELS[gameMode];
   const modeColor = displayPreset?.color ?? "#38d9a9";
-  const keyListLabel = isVerticalMode ? selectedVerticalColumn.keys.map((key) => key.toUpperCase()).join(" ") : formatKeyList(activeKeys);
+  const keyListLabel = isVerticalMode ? verticalActiveKeys.map((key) => key.toUpperCase()).join(" ") : formatKeyList(activeKeys);
   const paused = keysLocked && !running && !gameOver;
   const gameFaded = finishPhase !== null && finishPhase !== "celebrate";
   const balancedTimeDisplay =
@@ -2162,6 +2254,17 @@ export default function TypingDdrPage() {
         },
       }}
     >
+      {coachOpen && (
+        <DdrTypingCoach
+          homeKey={verticalHomeKey}
+          activeKeys={verticalActiveKeys}
+          soundOn={coachSoundOn}
+          onToggleSound={toggleCoachSound}
+          onCue={playCoachCue}
+          onComplete={finishCoach}
+          onCancel={resetGame}
+        />
+      )}
       {mistakeToken > 0 && (
         <Box
           aria-hidden
@@ -2223,13 +2326,7 @@ export default function TypingDdrPage() {
             <Tooltip title={soundOn ? "Mute beat" : "Unmute beat"}>
               <IconButton
                 color="inherit"
-                onClick={() =>
-                  setSoundOn((previous) => {
-                    const next = !previous;
-                    if (next) prime();
-                    return next;
-                  })
-                }
+                onClick={toggleSound}
                 aria-label="Toggle beat sound"
               >
                 {soundOn ? <VolumeUpIcon /> : <VolumeOffIcon />}
@@ -2588,7 +2685,7 @@ export default function TypingDdrPage() {
             </Typography>
           )}
 
-          {!keysLocked && !gameOver && (
+          {!keysLocked && !gameOver && !coachOpen && (
             <Box
               aria-hidden
               sx={{
@@ -2653,6 +2750,8 @@ export default function TypingDdrPage() {
                     (l) Leaderboard
                   </Button>
                 </Stack>
+
+                {isVerticalMode && <DdrFingerPreview homeKey={verticalHomeKey} activeKeys={verticalActiveKeys} onStart={requestStart} />}
 
                 <Divider sx={{ borderColor: "rgba(255,255,255,0.1)" }} />
 
@@ -2839,10 +2938,10 @@ export default function TypingDdrPage() {
                     )}
                   </Stack>
                   <ToggleButtonGroup
-                    value={isVerticalMode ? [verticalHomeKey] : randomKeySetActive ? ALL_HOME_KEY_VALUES : activeKeys}
-                    onChange={randomKeySetActive ? undefined : handleActiveKeysChange}
+                    value={isVerticalMode ? verticalActiveKeys : randomKeySetActive ? ALL_HOME_KEY_VALUES : activeKeys}
+                    onChange={isVerticalMode || randomKeySetActive ? undefined : handleActiveKeysChange}
                     size="small"
-                    aria-label="Active home row keys"
+                    aria-label={isVerticalMode ? "Vertical letter selection" : "Active home row keys"}
                     aria-describedby="ddr-center-keys-help"
                     sx={{
                       display: "grid",
@@ -2854,35 +2953,41 @@ export default function TypingDdrPage() {
                       },
                     }}
                   >
-                    {HOME_KEYS.map((homeKey, keyIndex) => (
-                      <ToggleButton
-                        key={homeKey.key}
-                        value={homeKey.key}
-                        disabled={isVerticalMode && homeKey.key === " "}
-                        aria-label={`${homeKey.label} key`}
-                        sx={{
-                          color: "#e2e8f0",
-                          gridColumn: homeKey.key === " " ? "4 / span 4" : getLaneGridColumn(keyIndex),
-                          gridRow: homeKey.key === " " ? 2 : 1,
-                          minWidth: 0,
-                          px: 0.5,
-                          fontWeight: 900,
-                          animation: randomKeySetActive ? `${randomKeyFade} 1350ms ease-in-out infinite` : "none",
-                          animationDelay: randomKeySetActive ? `${randomKeyFlashDelays[keyIndex]}ms` : "0ms",
-                          "&.Mui-selected": {
-                            color: "#05070d",
-                            bgcolor: homeKey.color,
-                            "&:hover": { bgcolor: homeKey.color },
-                          },
-                        }}
-                      >
-                        {homeKey.label}
-                      </ToggleButton>
-                    ))}
+                    {HOME_KEYS.flatMap((homeKey, keyIndex) => {
+                      const selectedColumn = isVerticalMode && homeKey.key === verticalHomeKey;
+                      const letters = selectedColumn ? selectedVerticalColumn.keys : [homeKey.key];
+                      return letters.map((key, row) => (
+                        <ToggleButton
+                          key={key}
+                          value={key}
+                          onClick={isVerticalMode ? () => toggleActiveKey(key) : undefined}
+                          disabled={isVerticalMode && homeKey.key === " "}
+                          aria-label={`${key === " " ? "Space" : key.toUpperCase()} key`}
+                          sx={{
+                            color: "#e2e8f0",
+                            gridColumn: homeKey.key === " " ? "4 / span 4" : getLaneGridColumn(keyIndex),
+                            gridRow: isVerticalMode ? homeKey.key === " " ? 4 : selectedColumn ? row + 1 : 2 : homeKey.key === " " ? 2 : 1,
+                            minWidth: 0,
+                            px: 0.5,
+                            fontWeight: 900,
+                            animation: randomKeySetActive ? `${randomKeyFade} 1350ms ease-in-out infinite` : "none",
+                            animationDelay: randomKeySetActive ? `${randomKeyFlashDelays[keyIndex]}ms` : "0ms",
+                            "&.Mui-selected": {
+                              color: "#05070d",
+                              bgcolor: homeKey.color,
+                              "&:hover": { bgcolor: homeKey.color },
+                            },
+                          }}
+                        >
+                          {key === " " ? "Space" : key.toUpperCase()}
+                        </ToggleButton>
+                      ));
+                    })}
                   </ToggleButtonGroup>
+                  {keySelectionWarning && <Typography role="alert" sx={{ mt: 0.75, color: "#fca5a5", fontSize: "0.82rem", fontWeight: 800 }}>Select at least 2 letters.</Typography>}
                   <Typography id="ddr-center-keys-help" sx={{ mt: 0.75, color: "#94a3b8", fontSize: "0.68rem", fontWeight: 800 }}>
                     {isVerticalMode
-                      ? `Choose one column: ${selectedVerticalColumn.keys.map((key) => key.toUpperCase()).join(" / ")}. Blocks arrive from the ${selectedVerticalColumn.hand === "left" ? "right" : "left"}.`
+                      ? `Choose a home-row key, then select at least 2 letters. Blocks arrive from the ${selectedVerticalColumn.hand === "left" ? "right" : "left"}.`
                       : "G/H and Space share the center. Choosing Space turns G/H off; choosing G or H turns Space off."}
                   </Typography>
                 </Box>
@@ -3034,6 +3139,7 @@ export default function TypingDdrPage() {
           {isVerticalMode ? (
             <VerticalTypingLanes
               homeKey={verticalHomeKey}
+              activeKeys={verticalActiveKeys}
               homeKeys={HOME_KEYS}
               columns={noteColumns}
               getColumn={(key) => getLaneGridColumn(HOME_KEYS.findIndex((homeKey) => homeKey.key === key))}
