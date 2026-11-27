@@ -1,0 +1,55 @@
+{
+  "frames": 733,
+  "edgeFrames": 4,
+  "viewportClips": 0,
+  "problems": [
+    {
+      "file": "dragons/cindermaw-flame-20.webp",
+      "row": 1,
+      "frame": 3,
+      "edge": 23,
+      "viewport": {
+        "left": -17.04378051666666,
+        "right": 278.4362194833334,
+        "top": 59.79943925233647,
+        "bottom": 201.66859813084113
+      }
+    },
+    {
+      "file": "dragons/cindermaw-flame-20.webp",
+      "row": 1,
+      "frame": 4,
+      "edge": 28,
+      "viewport": {
+        "left": -37.217113850000004,
+        "right": 200.11621948333334,
+        "top": 59.79943925233647,
+        "bottom": 200.3788785046729
+      }
+    },
+    {
+      "file": "dragons/cindermaw-flame-20.webp",
+      "row": 2,
+      "frame": 3,
+      "edge": 8,
+      "viewport": {
+        "left": -31.28378051666667,
+        "right": 264.1962194833334,
+        "top": 80.43495327102804,
+        "bottom": 200.37887850467288
+      }
+    },
+    {
+      "file": "dragons/cindermaw-flame-20.webp",
+      "row": 2,
+      "frame": 4,
+      "edge": 8,
+      "viewport": {
+        "left": -33.65711385,
+        "right": 207.23621948333334,
+        "top": 68.82747663551402,
+        "bottom": 200.37887850467288
+      }
+    }
+  ]
+}

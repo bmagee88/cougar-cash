@@ -1,3 +1,4 @@
+import visualRegistration from './bossVisualRegistration';
 import React from "react";
 import { DragonHurtTier, TypingBossId } from "./types";
 import registration from "./dragonHurtRegistration";
@@ -6,7 +7,7 @@ import "./dragonHurt.css";
 export default function DragonHurtSprite({ bossId, tier, src, duration, delay, inspectFrame }: {
   bossId: TypingBossId; tier: DragonHurtTier; src: string; duration: number; delay: number; inspectFrame?: number;
 }) {
-  const geometry = registration[bossId], camera = geometry.camera, frames = geometry.tiers[tier];
+  const geometry = registration[bossId], camera = visualRegistration.cameras[bossId], frames = geometry.tiers[tier];
   const transform = (index: number) => {
     const frame = frames[index];
     return `translate(${frame.x / geometry.cell * 100}%,${frame.y / geometry.cell * 100}%) scale(${frame.scaleX},${frame.scaleY})`;

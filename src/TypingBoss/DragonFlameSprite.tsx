@@ -1,3 +1,4 @@
+import visualRegistration from './bossVisualRegistration';
 import React from "react";
 import { TypingBossId } from "./types";
 import registration from "./dragonFlameRegistration";
@@ -6,7 +7,7 @@ import "./dragonFlame.css";
 export default function DragonFlameSprite({ bossId, src, duration, delay, inspectFrame }: {
   bossId: TypingBossId; src: string; duration: number; delay: number; inspectFrame?: number;
 }) {
-  const geometry=registration[bossId],camera=geometry.camera,frames=geometry.frames;
+  const geometry=registration[bossId],camera=visualRegistration.cameras[bossId],frames=geometry.frames;
   const transform=(index:number)=>{
     const frame=frames[index];
     return `translate(${frame.x/geometry.cell*100}%,${frame.y/geometry.cell*100}%) scale(${frame.scaleX},${frame.scaleY})`;

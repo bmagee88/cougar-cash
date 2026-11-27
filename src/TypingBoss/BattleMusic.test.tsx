@@ -47,6 +47,11 @@ test('autoplay rejection offers a gesture retry at the current room time',async(
   expect(media[0].currentTime).toBe(2.2);expect(screen.queryByRole('button')).toBeNull();
 });
 
+test('Sand Wyrm uses the supplied Sand Worm roar from countdown with WAN device playback',async()=>{
+  await act(async()=>{render(<BattleMusic session={room({status:'active',networkMode:'wan',countdownEndsAt:6000,boss:{id:'giantSandWyrm'} as any})} host={false}/>);});
+  expect(media[0].src).toContain('sand-worms-roar.mp3');expect(media[0].play).toHaveBeenCalledTimes(1);
+});
+
 test.each(['infernalDragon','kraken'])('boss victory fades %s battle music, then plays Final Bow once without resetting on snapshots',async(bossId:string)=>{
   const session=room({status:'active',countdownEndsAt:6000,boss:{id:bossId} as any});
   const view=render(<BattleMusic session={session} host/>),element=media[0];

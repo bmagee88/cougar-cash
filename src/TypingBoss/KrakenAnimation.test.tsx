@@ -34,8 +34,8 @@ test('late loading catches up; health snapshots and responsive resizing keep the
   act(()=>jest.advanceTimersByTime(200));view.rerender(<KrakenSprite width={136} pose={{...p}} clock={clock}/>);
   expect(screen.getByTestId('kraken-atlas-cell')).toBe(cell);expect(cell.style.animationDelay).toBe('-500ms');
   fireEvent.load(screen.getByTestId('kraken-preload-tentacleStrike'));
-  act(()=>jest.advanceTimersByTime(810));expect(screen.getByTestId('kraken-atlas-cell').getAttribute('data-action')).toBe('idle');
-  expect(screen.getByTestId('kraken-atlas-cell').style.animationName).toBe('none');view.unmount();expect(jest.getTimerCount()).toBe(0);
+  act(()=>jest.advanceTimersByTime(810));expect(screen.getByTestId('boss-idle-animation').getAttribute('data-boss')).toBe('kraken');
+  expect(screen.queryByTestId('kraken-atlas-cell')).toBeNull();view.unmount();expect(jest.getTimerCount()).toBe(0);
 });
 
 test('quiet overviews stay at rest and never preload the three attack-only sheets',()=>{
@@ -43,7 +43,7 @@ test('quiet overviews stay at rest and never preload the three attack-only sheet
   render(<KrakenSprite width={384} pose={pose('tidalWave')} cast={{id:'hex',at:1000,until:2600}} quiet/>);
   fireEvent.load(screen.getByTestId('kraken-preload-tentacleStrike'));
   expect(screen.queryByTestId('kraken-preload-special')).toBeNull();expect(screen.queryByTestId('kraken-preload-tidalWave')).toBeNull();
-  expect(screen.getByTestId('kraken-atlas-cell').getAttribute('data-action')).toBe('idle');expect(screen.queryByTestId('kraken-special-glow')).toBeNull();
+  expect(screen.getByTestId('boss-idle-animation').getAttribute('data-boss')).toBe('kraken');expect(screen.queryByTestId('kraken-special-glow')).toBeNull();
 });
 
 test('gold casting yields to the scheduled tentacle action; defeat overrides both',()=>{

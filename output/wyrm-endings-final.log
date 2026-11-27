@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: pain uses 3 basic, 6 power and 10 critical frames with increasing durations
+ok 1 - pain uses 3 basic, 6 power and 10 critical frames with increasing durations
+  ---
+  duration_ms: 8.1696
+  type: 'test'
+  ...
+# Subtest: higher pain interrupts lower pain; lower and equal hits cannot restart it
+ok 2 - higher pain interrupts lower pain; lower and equal hits cannot restart it
+  ---
+  duration_ms: 3.2641
+  type: 'test'
+  ...
+# Subtest: basic pain yields to a dragon attack and cannot interrupt its active frames
+ok 3 - basic pain yields to a dragon attack and cannot interrupt its active frames
+  ---
+  duration_ms: 9.2168
+  type: 'test'
+  ...
+# Subtest: a power reaction delays the projectile and its damage timer until all six frames finish
+ok 4 - a power reaction delays the projectile and its damage timer until all six frames finish
+  ---
+  duration_ms: 14.2551
+  type: 'test'
+  ...
+# Subtest: a critical extends a pending power wait, and queued attacks drain once in FIFO order
+ok 5 - a critical extends a pending power wait, and queued attacks drain once in FIFO order
+  ---
+  duration_ms: 10.0468
+  type: 'test'
+  ...
+# Subtest: misses, full shielding and support do not create a pain animation
+ok 6 - misses, full shielding and support do not create a pain animation
+  ---
+  duration_ms: 1.1099
+  type: 'test'
+  ...
+# Subtest: 20-frame flame breath locks the body, queues critical before power, and delays every outgoing attack
+ok 7 - 20-frame flame breath locks the body, queues critical before power, and delays every outgoing attack
+  ---
+  duration_ms: 8.025
+  type: 'test'
+  ...
+# Subtest: cleanup cancels flame lock, pending strong reactions, outgoing shots and stale wake-ups
+ok 8 - cleanup cancels flame lock, pending strong reactions, outgoing shots and stale wake-ups
+  ---
+  duration_ms: 3.0555
+  type: 'test'
+  ...
+# Subtest: queued attacks are discarded on lethal damage or room cleanup
+ok 9 - queued attacks are discarded on lethal damage or room cleanup
+  ---
+  duration_ms: 2.8441
+  type: 'test'
+  ...
+# Subtest: Wyrm cycles Bite, group Slam and all-player Overrun
+ok 10 - Wyrm cycles Bite, group Slam and all-player Overrun
+  ---
+  duration_ms: 20.6519
+  type: 'test'
+  ...
+# Subtest: Overrun discards in-flight and new attacks immediately and never queues player damage
+ok 11 - Overrun discards in-flight and new attacks immediately and never queues player damage
+  ---
+  duration_ms: 55.783
+  type: 'test'
+  ...
+# Subtest: Burrow stays underground through the next full ten-word sequence before Consume
+ok 12 - Burrow stays underground through the next full ten-word sequence before Consume
+  ---
+  duration_ms: 19.6122
+  type: 'test'
+  ...
+# Subtest: Consume lands without upfront damage, ticks precisely ten times, then spits out and stops
+ok 13 - Consume lands without upfront damage, ticks precisely ten times, then spits out and stops
+  ---
+  duration_ms: 25.6076
+  type: 'test'
+  ...
+# Subtest: consumed players remain able to type and recover; other boss attacks exclude their slot
+ok 14 - consumed players remain able to type and recover; other boss attacks exclude their slot
+  ---
+  duration_ms: 3.4314
+  type: 'test'
+  ...
+# Subtest: closing or ending a battle cancels Consume damage and no tick can resurrect it
+ok 15 - closing or ending a battle cancels Consume damage and no tick can resurrect it
+  ---
+  duration_ms: 5.4508
+  type: 'test'
+  ...
+# Subtest: Consume can end the shared-HP battle and cannot damage a replaced or retreated actor
+ok 16 - Consume can end the shared-HP battle and cannot damage a replaced or retreated actor
+  ---
+  duration_ms: 3.4212
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 963.335

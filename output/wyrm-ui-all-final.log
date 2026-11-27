@@ -1,0 +1,48 @@
+
+> cougar-cash@0.1.0 test:typing-boss-ui
+> react-scripts test --watchAll=false --runInBand --testPathPattern=TypingBoss --cacheDirectory=node_modules/.cache/typing-boss-jest --silent
+
+PASS src/TypingBoss/KrakenAnimation.test.tsx (9.923 s)
+PASS src/TypingBoss/WyrmVisuals.test.tsx (8.029 s)
+PASS src/TypingBoss/ContinuousBattle.test.tsx (17.356 s)
+PASS src/TypingBoss/BattleScene.test.tsx (10.953 s)
+PASS src/TypingBoss/HostSetup.test.tsx
+PASS src/TypingBoss/BattleMusic.test.tsx
+PASS src/TypingBoss/PromotionButton.test.tsx (5.103 s)
+PASS src/TypingBoss/HostPromotionMenu.test.tsx
+PASS src/TypingBoss/HostBattleLog.test.tsx
+PASS src/TypingBoss/hostPortrait.test.tsx
+PASS src/TypingBoss/CharacterSelect.test.tsx
+PASS src/TypingBoss/RoomCreationGate.test.tsx
+PASS src/TypingBoss/BattleMenu.test.tsx
+PASS src/TypingBoss/necroSummons.test.tsx
+PASS src/TypingBoss/BattleCountdown.test.tsx
+PASS src/TypingBoss/BattleStatus.test.tsx
+PASS src/TypingBoss/dragonHurt.test.tsx
+PASS src/TypingBoss/BattleVictoryStats.test.tsx
+PASS src/TypingBoss/TimeLimitSettings.test.tsx
+PASS src/TypingBoss/KrakenVisuals.test.tsx
+PASS src/TypingBoss/RecoveryNotice.test.tsx
+PASS src/TypingBoss/BattleLeaderboard.test.tsx
+PASS src/TypingBoss/TeamActivityCue.test.tsx
+PASS src/TypingBoss/dragonFlame.test.tsx
+PASS src/TypingBoss/DragonCombatSprite.test.tsx
+PASS src/TypingBoss/InactivityWarning.test.tsx
+PASS src/TypingBoss/RetreatNotice.test.tsx
+PASS src/TypingBoss/combatAnimation.test.tsx
+PASS src/TypingBoss/joinNames.test.ts
+PASS src/TypingBoss/ProjectileMotion.test.tsx
+PASS src/TypingBoss/RecoveryBar.test.tsx
+PASS src/TypingBoss/ImpactShake.test.tsx
+PASS src/TypingBoss/typingFeedback.test.ts
+PASS src/TypingBoss/victoryAnimation.test.tsx
+PASS src/TypingBoss/api.test.ts
+PASS src/TypingBoss/BossAttackNameBar.test.tsx
+PASS src/TypingBoss/combatNumbers.test.ts
+PASS src/TypingBoss/credentials.test.ts
+PASS src/TypingBoss/battleLayout.test.ts
+
+Test Suites: 39 passed, 39 total
+Tests:       259 passed, 259 total
+Snapshots:   0 total
+Time:        128.548 s, estimated 147 s

@@ -1,3 +1,4 @@
+import BossIdleSprite from './BossIdleSprite';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import {Box} from '@mui/material';
 import {CombatAnimation} from './combatAnimation';
@@ -14,7 +15,7 @@ export function krakenSpriteAction(pose:CombatAnimation,now:number,cast?:TypingB
   if(!kind || now<action.at || now>=action.at+action.duration)return null;
   return {kind,id:action.id,at:action.at,duration:action.duration};
 }
-export default function KrakenAtlasSprite({width,pose,clock,cast,quiet=false,inspectFrame}:{width:number|{xs:number;md:number};pose:CombatAnimation;clock?:React.MutableRefObject<number>;cast?:TypingBossBoss['krakenCast'];quiet?:boolean;inspectFrame?:number}){
+export default function KrakenAtlasSprite({width,pose,clock,cast,quiet=false,inspectFrame}:{width:number|string|{xs:number;md:number};pose:CombatAnimation;clock?:React.MutableRefObject<number>;cast?:TypingBossBoss['krakenCast'];quiet?:boolean;inspectFrame?:number}){
   const fallback=useRef(0),time=clock || fallback;
   const [,redraw]=useState(0),[loaded,setLoaded]=useState<Set<string>>(()=>new Set());
   const now=Date.now()+time.current,sampleAt=inspectFrame===undefined?now:cast?cast.at:pose.action?.at ?? pose.at;
@@ -30,7 +31,7 @@ export default function KrakenAtlasSprite({width,pose,clock,cast,quiet=false,ins
   const position=(index:number)=>`${(index%config.columns)/(config.columns-1)*100}% ${Math.floor(index/config.columns)/(config.rows-1)*100}%`;
   return <Box className={`kraken-sprite kraken-atlas-sprite kraken-pose-${quiet?'idle':pose.state}`} data-testid="kraken-animation" data-animation={quiet?'idle':pose.state} data-kraken-action={action?.kind || 'idle'} sx={{width,aspectRatio:'384 / 216',flexShrink:0}}>
     {Object.entries(KRAKEN_ANIMATIONS).filter(([key])=>!quiet || key==='tentacleStrike').map(([key,value])=><img key={key} className="kraken-atlas-preload" data-testid={`kraken-preload-${key}`} src={`${ASSETS}/kraken/${value.file}.webp`} alt="" aria-hidden="true" onLoad={()=>setLoaded(previous=>new Set([...previous,key]))}/>)}
-    {ready?<span className="kraken-atlas-viewport"><span key={`${id || 'idle'}:${kind}`} data-testid="kraken-atlas-cell" data-frame-count={config.frames} data-action={action?.kind || 'idle'}
+    {!action && !['death','defeated','hit'].includes(pose.state)?<BossIdleSprite bossId="kraken" inspectFrame={inspectFrame}/>:ready?<span className="kraken-atlas-viewport"><span key={`${id || 'idle'}:${kind}`} data-testid="kraken-atlas-cell" data-frame-count={config.frames} data-action={action?.kind || 'idle'}
       className={`kraken-atlas-cell kraken-sheet-${kind}`} style={{backgroundImage:`url("${ASSETS}/kraken/${config.file}.webp")`,backgroundSize:`${config.columns*100}% ${config.rows*100}%`,
         animationDuration:`${duration}ms`,animationDelay:`${delay}ms`,animationName:frame===undefined?undefined:'none',backgroundPosition:frame===undefined?undefined:position(frame),
         '--kraken-still-position':position(Math.min(config.frames-1,Math.floor(config.impact/config.duration*config.frames))),

@@ -1,3 +1,4 @@
+import {WyrmScenery,WyrmSceneEffects,ConsumeNotice} from './WyrmVisuals';
 import PromotionButton from './PromotionButton';
 import HostPromotionMenu from './HostPromotionMenu';
 import RetreatNotice from './RetreatNotice';
@@ -125,7 +126,7 @@ import { usePortraitProjectileLayout } from "./usePortraitProjectileLayout";
 import CombatCharacter, { useCombatAnimation, useCombatClock } from "./CombatCharacter";
 import { collectCombatAnimations, CombatAnimation, CombatAnimationEvent, NO_ANIMATION_EVENTS } from "./combatAnimation";
 const KrakenPreview = process.env.NODE_ENV === "development" ? React.lazy(() => import("./KrakenPreview")) : null;
-const AnimationPreview = process.env.NODE_ENV === "development" ? React.lazy(() => import("./AnimationPreview")) : null;
+const AnimationPreview = React.lazy(() => import("./AnimationPreview"));
 const BattleLayoutPreview = process.env.NODE_ENV === 'development' ? React.lazy(()=>import('./BattleLayoutPreview')) : null;
 
 const SESSION_ID_PATTERN = /^boss[0-9A-F]{3}$/;
@@ -163,6 +164,7 @@ const TYPING_BOSS_ASSETS = {
 } as const;
 
 const BOSS_SPRITE_ASSETS: Record<TypingBossId, string> = {
+  giantSandWyrm:`${PUBLIC_ASSET_BASE}/assets/typing-boss/wyrm/portrait-v2.webp`,
   kraken:`${PUBLIC_ASSET_BASE}/assets/typing-boss/kraken-concept-v1/kraken-clean-v2.png`,
   emberWhelp: TYPING_BOSS_ASSETS.emberWhelpBoss,
   cindermaw: TYPING_BOSS_ASSETS.cindermawBoss,
@@ -170,6 +172,7 @@ const BOSS_SPRITE_ASSETS: Record<TypingBossId, string> = {
 };
 
 const BOSS_FIREBALL_ASSETS: Record<TypingBossId, string> = {
+  giantSandWyrm:`${PUBLIC_ASSET_BASE}/assets/typing-boss/wyrm/portrait-v2.webp`,
   kraken:`${PUBLIC_ASSET_BASE}/assets/typing-boss/kraken-concept-v1/foreground.png`,
   emberWhelp: TYPING_BOSS_ASSETS.fireballWhelp,
   cindermaw: TYPING_BOSS_ASSETS.fireballCindermaw,
@@ -269,6 +272,7 @@ const BOSS_CHOICES: {
   color: string;
   description: string;
 }[] = [
+  {id:"giantSandWyrm",name:"Giant Sand Wyrm",difficulty:"hard",hp:1550,attackIntervalMs:18000,color:"#d6a44c",description:"Bite, Slam, Overrun, and the Burrow–Consume special."},
   {id:"kraken",name:"Abyssal Kraken",difficulty:"hard",hp:1550,attackIntervalMs:18000,color:"#22d3ee",description:"Tentacle strikes, sweeping waves, and a typing curse."},
   {
     id: "emberWhelp",
@@ -319,6 +323,7 @@ const VOLCANIC_PLAYER_SPAWNS: Point[] = [
 ];
 
 const BOSS_ARENAS: Record<TypingBossId, ArenaLayout> = {
+  giantSandWyrm:{hostBossPoint:{x:80,y:52},playerBossPoint:{x:80,y:52},hostSpawns:VOLCANIC_HOST_SPAWNS,playerSpawns:VOLCANIC_PLAYER_SPAWNS},
   kraken:{hostBossPoint:{x:76,y:80},playerBossPoint:{x:76,y:80},hostSpawns:VOLCANIC_HOST_SPAWNS,playerSpawns:VOLCANIC_PLAYER_SPAWNS},
   emberWhelp: {
     hostBossPoint: { x: 80, y: 52 },
@@ -799,7 +804,7 @@ export function BattleMenu({status,children}:{status:string;children:React.React
   useEffect(()=>{setExpanded(status==='setup');},[status]);
   return <Accordion className="battle-menu" disableGutters expanded={expanded} onChange={(_event,value)=>setExpanded(value)}>
     <AccordionSummary expandIcon={<ExpandMoreIcon/>}><Typography fontWeight={800}>Battle menu</Typography></AccordionSummary>
-    <AccordionDetails>{children}</AccordionDetails>
+    <AccordionDetails><Button component={RouterLink} to="/typing-boss/animations" sx={{mb:1}}>Preview animations</Button>{children}</AccordionDetails>
   </Accordion>;
 }
 
@@ -1046,7 +1051,7 @@ function HostSessionPage() {
     const playerHp = 100 * hpMultiplier;
     const bossHp = teamMode?teamStartingHp(session.players.length,hpMultiplier):playerHp*promotionContributions(session.players);
     const sharedHp=teamMode?bossHp:playerHp;
-    return { ...session, teamMode, teamHealth:teamMode?{hp:sharedHp,maxHp:sharedHp}:null, typing: session.typing ? (balanced ? initializeBalanced({ ...session.typing, ...wordFilters, ability: session.boss.id==='kraken'?'kraken':"dragon", balancedRandomColors }) : { ...session.typing, ...wordFilters, balanced:false }) : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
+    return { ...session, teamMode, teamHealth:teamMode?{hp:sharedHp,maxHp:sharedHp}:null, typing: session.typing ? (balanced ? initializeBalanced({ ...session.typing, ...wordFilters, ability: session.boss.id==='giantSandWyrm'?'wyrm':session.boss.id==='kraken'?'kraken':"dragon", balancedRandomColors }) : { ...session.typing, ...wordFilters, balanced:false }) : session.typing, boss: { ...session.boss, hp: bossHp, maxHp: bossHp },
       players: session.players.map(player => ({ ...player, hp: sharedHp, maxHp: sharedHp })) };
   }, [session, hpMultiplier, wordFilters, balanced, balancedRandomColors, teamMode]);
   const [actionError, setActionError] = useState("");
@@ -1128,7 +1133,7 @@ function HostSessionPage() {
         <BattleMenu status={session.status}>
           <TextField select label="Boss type" value={session.boss.id} disabled={session.status!=='setup' || busy} SelectProps={{native:true}} InputLabelProps={{shrink:true}}
             sx={{minWidth:240,mb:2}} onChange={event=>runHostAction(()=>changeTypingBoss(normalizedSessionId,hostToken,event.target.value as TypingBossId))}>
-            {BOSS_CHOICES.filter(boss=>session.mode==='proportional' || boss.id!=='kraken').map(boss=><option key={boss.id} value={boss.id}>{boss.name}</option>)}
+            {BOSS_CHOICES.filter(boss=>session.mode==='proportional' || !['kraken','giantSandWyrm'].includes(boss.id)).map(boss=><option key={boss.id} value={boss.id}>{boss.name}</option>)}
           </TextField>
       <Button component={RouterLink} to="/typing-boss" startIcon={<HomeIcon />} sx={{ mb: 2, alignSelf: "flex-start" }}>Main menu</Button>
         <Stack
@@ -2962,13 +2967,14 @@ function projectileArtFor(
   projectile: TypingBossProjectile,
   playerByCode: Map<string, TypingBossPlayer>
 ): ProjectileArt | null {
+  if(projectile.bossId==='giantSandWyrm' && projectile.kind==='boss')return null;
   if (projectile.kind === "boss") {
     const bossId = projectile.bossId || "cindermaw";
     const sizeByBoss: Record<TypingBossId, number> = {
       emberWhelp: 42,
       cindermaw: 54,
       infernalDragon: 68,
-      kraken:68,
+      kraken:68,giantSandWyrm:68,
     };
     return {
       src: BOSS_FIREBALL_ASSETS[bossId],
@@ -3038,6 +3044,7 @@ export function PlayerTypingBattle({ session, me, code, playerToken, active }: {
   const personalPositions=useMemo(()=>layout ? new Map([[me.code,layout.positions.get(me.code)!]]) : new Map<string,Point>(),[layout,me.code]);
   return <Stack spacing={2} className="player-battle-stack">
     <InactivityWarning sessionId={session.id} player={me} active={session.status==='active'} countdownEndsAt={session.countdownEndsAt} serverNow={session.serverNow}/>
+    {session.boss.id==='giantSandWyrm' && <ConsumeNotice player={me} serverNow={session.serverNow} active={session.status==='active'}/>}
     <RecoveryNotice teamMode={session.teamMode} player={me} active={session.status==='active'} serverNow={session.serverNow}/>
     {me.classId==='necromancer' && <Chip label={session.teamMode ? `Zombies ${me.summons?.filter(summon=>summon.alive).length || 0} / 3 · Gold raises a summon` : `Revival healing bank ${combatNumber(session.necroHealingPool || 0)}`} />}
     <BattleScene session={session} ownCode={me.code} sceneRef={sceneRef} />
@@ -3079,18 +3086,20 @@ export function BattleScene({ session, ownCode, sceneRef }: {
   },[]);
   const worldScale=battleScale(stageWidth,stageHeight);
   const proportional=session.mode==='proportional';
+  const consumedSeconds=useBattleCountdown(session.status==='active'?session.players.find(p=>p.code===ownCode)?.consumedUntil:null,session.serverNow);
   const density = session.players.length > 20 && !quiet ? "minimal" : session.players.length > 10 ? "compact" : "normal";
 
   return (
-    <Box data-overview={quiet} className={`battle-scene ${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} ref={stageRef} sx={{ width:"100%", maxWidth:"100%", minWidth:0, overflow:"hidden" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
+    <Box data-overview={quiet} className={`battle-scene ${consumedSeconds>0?'consumed-player-scene ':''}${quiet ? 'typing-battle-overview ' : ''}${density !== 'normal' ? 'typing-battle-crowd' : ''}`} ref={stageRef} sx={{ width:"100%", maxWidth:"100%", minWidth:0, overflow:"hidden" }} role="region" aria-label={ownCode ? "Player battle scene" : "Host battle scene"} tabIndex={0}>
       <BattleMusic session={session} host={!ownCode}/>
       <BattleCountdown session={session}/>
       <RetreatNotice key={session.id} players={session.players}/>
       <Box className={`${proportional?'battle-world ':''}${victoryColor.className}`} data-world-scale={proportional?worldScale:undefined}
         style={{...(proportional?{position:'absolute' as const,left:'50%',top:'50%',width:BATTLE_WIDTH,height:BATTLE_HEIGHT,transform:`translate(-50%, -50%) scale(${worldScale})`,transformOrigin:'center'}:{}),...victoryColor.style}}>
-      <BattlefieldShell kraken={session.boss.id==='kraken'} sceneRef={sceneRef} minHeight={proportional?BATTLE_HEIGHT:640}>
-        <BossNode quiet={quiet} session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
+      <BattlefieldShell desert={session.boss.id==='giantSandWyrm'} kraken={session.boss.id==='kraken'} sceneRef={sceneRef} minHeight={proportional?BATTLE_HEIGHT:640}>
+        <BossNode consumePoint={positions.get(session.boss.wyrmAction?.targetCode || '')} quiet={quiet} session={session} point={bossPoint} size="host" events={animations.get("boss") || NO_ANIMATION_EVENTS} clock={clock} />
         <BossAttackNameBar session={session}/>
+        <WyrmSceneEffects session={session} positions={positions}/>
         {session.players.map((player) => (
           <PlayerNode
             key={player.code}
@@ -3119,12 +3128,14 @@ export function BattleScene({ session, ownCode, sceneRef }: {
 
 function BattlefieldShell({
   kraken=false,
+  desert=false,
   children,
   minHeight,
   minWidth,
   sceneRef,
 }: {
   kraken?:boolean;
+  desert?:boolean;
   children: React.ReactNode;
   minHeight: number;
   minWidth?: number;
@@ -3149,14 +3160,15 @@ function BattlefieldShell({
         boxShadow: "inset 0 0 0 2px #c08b32",
       }}
     >
-      {kraken?<KrakenScenery/>:<VolcanicBackdrop />}
+      {desert?<WyrmScenery/>:kraken?<KrakenScenery/>:<VolcanicBackdrop />}
       {children}
-      {kraken?<KrakenScenery foreground/>:<VolcanicForeground />}
+      {!desert && (kraken?<KrakenScenery foreground/>:<VolcanicForeground />)}
     </Box>
   );
 }
 
 function BossNode({
+  consumePoint,
   session,
   point,
   size,
@@ -3165,6 +3177,7 @@ function BossNode({
   quiet=false,
   visualScale=1,
 }: {
+  consumePoint?:Point;
   visualScale?:number;
   quiet?:boolean;
   session: TypingBossSessionSnapshot;
@@ -3249,8 +3262,10 @@ function BossNode({
 
         }}
       >
-        <div {...shake} className={`battle-impact-shake${finishing?' dragon-finishing-boss':''}`} style={{...shake.style,'--impact-distance':'2px'} as React.CSSProperties}>
-          <DragonCombatSprite bossId={session.boss.id} krakenCast={quiet?null:session.boss.krakenCast} width={session.boss.id==='kraken'?{xs:300*visualScale,md:420*visualScale}:dragonWidth} glow={session.boss.color} pose={pose} clock={clock} inspectFrame={quiet ? 0 : undefined} />
+        <div {...shake} className={`battle-impact-shake${finishing?' dragon-finishing-boss':''}`} style={{...shake.style,'--impact-distance':'2px',
+          '--wyrm-consume-x':`${consumePoint?(consumePoint.x-point.x)*BATTLE_WIDTH/100:0}px`,
+          '--wyrm-consume-y':`${consumePoint?(consumePoint.y+4-point.y)*BATTLE_HEIGHT/100-175*visualScale:0}px`} as React.CSSProperties}>
+          <DragonCombatSprite bossId={session.boss.id} bossState={session.boss} krakenCast={quiet?null:session.boss.krakenCast} width={session.boss.id==='kraken'?{xs:300*visualScale,md:420*visualScale}:session.boss.id==='giantSandWyrm'?400*visualScale:dragonWidth} glow={session.boss.color} pose={pose} clock={clock} inspectFrame={quiet ? 0 : undefined} />
         </div>
       </Box>
     </>
@@ -3306,6 +3321,8 @@ const PlayerNode = React.memo(function PlayerNode({
   sessionId?: string;
   density?: "normal" | "compact" | "minimal";
 }) {
+  const consumed=useBattleCountdown(player.consumedUntil,Date.now()+clock.current)>0;
+  const spatOut=useBattleCountdown(player.spitOutAt?player.spitOutAt+1800:null,Date.now()+clock.current)>0;
   const victoryPose=playerVictoryPose(player,victoryAt);
   const prone=!victoryPose && !defeatPose && player.proneUntil && player.proneUntil>Date.now()+clock.current;
   const formation = proportional && compact;
@@ -3325,7 +3342,7 @@ const PlayerNode = React.memo(function PlayerNode({
         zIndex: 5,
       }}
     >
-      <Stack className={defeatPose?'dragon-finishing-party':undefined} direction="column" spacing={0.5} alignItems="center" sx={player.timedOut?{animation:'tb-retreat 900ms ease-in forwards','@keyframes tb-retreat':{'0%':{transform:'translateX(0)',opacity:1},'100%':{transform:'translateX(-1200px)',opacity:0,visibility:'hidden'}}}:undefined}>
+      <Stack className={defeatPose?'dragon-finishing-party':consumed && !victoryPose?'wyrm-consumed-actor':spatOut && !victoryPose?'wyrm-spat-out':undefined} direction="column" spacing={0.5} alignItems="center" sx={player.timedOut?{animation:'tb-retreat 900ms ease-in forwards','@keyframes tb-retreat':{'0%':{transform:'translateX(0)',opacity:1},'100%':{transform:'translateX(-1200px)',opacity:0,visibility:'hidden'}}}:undefined}>
         <Stack
           direction="row"
           spacing={0.5}
@@ -3475,7 +3492,7 @@ export default function TypingBossApp() {
       <Routes>
         {BattleLayoutPreview && <Route path="layout-preview" element={<React.Suspense fallback={null}><BattleLayoutPreview/></React.Suspense>}/>}
         {KrakenPreview && <Route path="kraken-preview" element={<React.Suspense fallback={<LoadingPanel label="Loading Kraken..." />}><KrakenPreview/></React.Suspense>}/>}
-        {AnimationPreview && <Route path="animations" element={<React.Suspense fallback={<LoadingPanel label="Loading animations..." />}><AnimationPreview /></React.Suspense>} />}
+        <Route path="animations" element={<React.Suspense fallback={<LoadingPanel label="Loading animations..." />}><AnimationPreview /></React.Suspense>} />
         <Route index element={<CreateGamePage />} />
         <Route path="host/:sessionId" element={<HostSessionPage />} />
         <Route path="join" element={<JoinPage />} />

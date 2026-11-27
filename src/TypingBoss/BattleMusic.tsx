@@ -22,7 +22,7 @@ export default function BattleMusic({ session, host }: {session: TypingBossSessi
   policy.current = { session, host };
   const [blocked, setBlocked] = useState(false);
   const synchronize = useRef<() => void>(() => {});
-  const battleTrack = session.boss.id === 'kraken' ? 'leviathans-roar.mp3' : 'dragons-roar.mp3';
+  const battleTrack = session.boss.id === 'giantSandWyrm' ? 'sand-worms-roar.mp3' : session.boss.id === 'kraken' ? 'leviathans-roar.mp3' : 'dragons-roar.mp3';
   useEffect(() => {
     if (policy.current.session.status !== 'setup' && !policy.current.session.countdownEndsAt) return;
     const media = new Audio(`${ASSETS}/${battleTrack}`);

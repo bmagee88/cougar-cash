@@ -91,6 +91,7 @@ const TYPING_BOSS_PROFILES = {
       { id: "cinder-claw", label: "Cinder Claw", damageMin: 24, damageMax: 34 },
     ],
   },
+  giantSandWyrm: {id:'giantSandWyrm',name:'Giant Sand Wyrm',difficulty:'hard',maxHp:1550,attackIntervalMs:18000,color:'#d6a44c',glow:'rgba(234,179,8,.55)',moves:[{id:'bite',label:'Bite',damageMin:24,damageMax:36}]},
   kraken: {id:'kraken',name:'Abyssal Kraken',difficulty:'hard',maxHp:1550,attackIntervalMs:18000,color:'#22d3ee',glow:'rgba(34,211,238,.55)',moves:[{id:'tentacle-slam',label:'Tentacle Slam',damageMin:24,damageMax:36}]},
   infernalDragon: {
     id: "infernalDragon",
@@ -1270,12 +1271,12 @@ function createTypingBossSession(body) {
   const now = Date.now();
   const mode = body.mode === "proportional" ? "proportional" : "old";
   const bossProfile = normalizeTypingBossProfile(body.bossId || body.bossType || (mode === "proportional" ? "infernalDragon" : undefined));
-  if(bossProfile.id==='kraken' && mode!=='proportional')throw new Error('The Kraken requires Host vs. players mode.');
+  if(['kraken','giantSandWyrm'].includes(bossProfile.id) && mode!=='proportional')throw new Error('This boss requires Host vs. players mode.');
   const session = {
     id,
     mode,
     revision: 0,
-    typingHost: mode === "proportional" ? proportionalBoss.newState(bossProfile.id==='kraken'?'kraken':body.goldWords === true ? "dragon" : undefined) : null,
+    typingHost: mode === "proportional" ? proportionalBoss.newState(bossProfile.id==='giantSandWyrm'?'wyrm':bossProfile.id==='kraken'?'kraken':body.goldWords === true ? "dragon" : undefined) : null,
     hostToken: randomHex(32),
     name: normalizeBoardName(body.name || body.gameName, "Typing Boss Battle"),
     status: "setup",
@@ -1351,6 +1352,7 @@ function getTypingBossPlayerSnapshot(player) {
     specialReady: typingBossSpecialReady(player),
     promoted:Boolean(player.promoted),
     promotionLevel:getPromotionLevel(player),
+    consumedAt:player.consumedAt || null,consumedUntil:player.consumedUntil || null,spitOutAt:player.spitOutAt || null,
     ...(player.summons?{summons:player.summons}:{}),
     defeated: Boolean(player.timedOut) || (player.hp <= 0 && !(player.secondWindWordsRemaining>0) && !player.sharedHealth),
     timedOut: Boolean(player.timedOut),
@@ -1382,6 +1384,7 @@ function getTypingBossProjectileSnapshot(projectile) {
     : "miss";
   return {
     id: projectile.id,
+    ...(projectile.consumeTick?{consumeTick:true}:{}),
     source: projectile.source,
     target: projectile.target,
     kind: projectile.kind,
@@ -2282,11 +2285,11 @@ async function handleChangeTypingBoss(req,res,session,url) {
   if(!requireTypingBossHost(res,session,auth))return;
   if(session.status!=='setup'){sendError(res,409,'Choose the boss before starting the battle.');return;}
   const profile=TYPING_BOSS_PROFILES[body.bossId];
-  if(!profile || (profile.id==='kraken' && session.mode!=='proportional')){sendError(res,400,'Choose a boss available in this battle mode.');return;}
+  if(!profile || (['kraken','giantSandWyrm'].includes(profile.id) && session.mode!=='proportional')){sendError(res,400,'Choose a boss available in this battle mode.');return;}
   session.boss={id:profile.id,name:profile.name,difficulty:profile.difficulty,color:profile.color,glow:profile.glow,hp:profile.maxHp,maxHp:profile.maxHp,attackIntervalMs:profile.attackIntervalMs,lastAttackAt:Date.now(),nextAttackAt:Date.now()+profile.attackIntervalMs,currentMoveLabel:profile.moves[0].label};
   if(session.mode==='proportional') {
     const prior=session.typingHost;
-    session.typingHost=proportionalBoss.newState(profile.id==='kraken'?'kraken':prior.ability==='kraken'?'dragon':prior.ability || 'dragon');
+    session.typingHost=proportionalBoss.newState(profile.id==='giantSandWyrm'?'wyrm':profile.id==='kraken'?'kraken':'dragon');
     if(profile.id!=='kraken' && session.typingHost.ability==='kraken')session.typingHost.ability='dragon';
     session.typingHost.gradeMask=prior.gradeMask;session.typingHost.sentimentMask=prior.sentimentMask;
     proportionalBoss.applyHpMultiplier(session,session.hpMultiplier || 1);

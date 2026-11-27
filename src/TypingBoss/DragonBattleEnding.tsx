@@ -7,7 +7,7 @@ import './dragonBattleEnding.css';
 export const DRAGON_FINISH_MS = 4200;
 export const DRAGON_COLLAPSE_MS = 1800;
 export function dragonEnding(session: TypingBossSessionSnapshot) {
-  if (session.boss.id === 'kraken') return null;
+  if (['kraken','giantSandWyrm'].includes(session.boss.id)) return null;
   const kind = session.status === 'defeat' ? 'blast' : session.status === 'victory' && session.boss.hp <= 0 ? 'collapse' : null;
   const at = session.closedAt ? Date.parse(session.closedAt) : NaN;
   return kind && Number.isFinite(at) ? {kind, at, duration:kind === 'blast' ? DRAGON_FINISH_MS : DRAGON_COLLAPSE_MS} : null;

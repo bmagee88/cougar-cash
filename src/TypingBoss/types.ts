@@ -14,7 +14,7 @@ export type TypingBossClassId =
   | "rogue"
   | "necromancer"
   | "monk";
-export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon" | "kraken";
+export type TypingBossId = "emberWhelp" | "cindermaw" | "infernalDragon" | "kraken" | "giantSandWyrm";
 export type TypingBossDifficulty = "easy" | "medium" | "hard";
 export type DragonHurtTier = "basic" | "power" | "critical";
 export interface DragonHurt { id: string; tier: DragonHurtTier; at: number; until: number }
@@ -102,7 +102,7 @@ export interface TypingBossTypingState {
   balancedGreenAt?: number;
   balancedDodgeBank?: number;
   balancedCadenceBonus?: number;
-  ability?: TypingBossClassId | "dragon" | "kraken";
+  ability?: TypingBossClassId | "dragon" | "kraken" | "wyrm";
   gold?: number;
   attackWords?: number;
   nextPowerBonus?: number;
@@ -147,6 +147,9 @@ export type TypingBossProjectileKind =
 export type TypingBossProjectileResult = "pending" | "hit" | "miss" | "evade";
 
 export interface TypingBossPlayer {
+  consumedAt?:number|null;
+  consumedUntil?:number|null;
+  spitOutAt?:number|null;
   summons?:ZombieSummon[];
   promotionLevel?:TypingBossPromotionLevel;
   timedOut?: boolean;
@@ -190,7 +193,11 @@ export interface TypingBossPlayer {
   attackProgress?: number;
 }
 
+export interface WyrmAction {id:string;kind:'wyrmBite'|'slam'|'overrun'|'burrow'|'consume'|'spitOut';at:number;until:number;targetCode?:string}
 export interface TypingBossBoss {
+  wyrmSpitAt?:number|null;
+  wyrmAction?:WyrmAction|null;
+  wyrmBurrowed?:boolean;
   krakenWave?:DragonFlameBreath|null;
   krakenCast?:{id:string;at:number;until:number}|null;
   profile?: Partial<TypingBossTypingState>;
@@ -214,6 +221,7 @@ export interface TypingBossBoss {
 }
 
 export interface TypingBossProjectile {
+  consumeTick?:boolean;
   summonSlot?:number;
   promoted?:boolean;
   animationStartedAt?: number;
@@ -227,7 +235,7 @@ export interface TypingBossProjectile {
   moveId?: string | null;
   bossId?: TypingBossId | null;
   moveLabel: string;
-  bossAttack?: "bite" | "fireball" | "tailWhip" | "flamethrower" | "tentacleStrike" | "tentacleSweep" | "tidalWave";
+  bossAttack?: "bite" | "fireball" | "tailWhip" | "flamethrower" | "tentacleStrike" | "tentacleSweep" | "tidalWave" | WyrmAction['kind'];
   startedAt: number;
   impactAt: number;
   resolvedAt: number | null;
